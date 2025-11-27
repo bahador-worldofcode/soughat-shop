@@ -1,0 +1,775 @@
+### Soughat-Shop Snapshot
+# Generated: 2025-11-27T13:24:59.853837
+# Root: C:\projects\soughat-shop
+# Excluded dir names: .expo, .git, .next, .vscode, node_modules
+# Excluded files (by name/rel): collect_soughat_snapshot.bat, collect_soughat_snapshot.py, package-lock.json, snapshot_soughat.txt
+# Per-file limit: 524288 bytes | Total limit: 62914560 bytes
+
+===== File: .gitignore =====
+# Modified: 2025-11-26T16:29:39.811510 | Size: 480 bytes | SHA1: 163e4a00866eb54fd22d029b521c4103a3e3e4fc
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+===== File: app/globals.css =====
+# Modified: 2025-11-26T21:31:22.239874 | Size: 22 bytes | SHA1: b2bf4cb0f4417f6c417b6c1503c623d25c2687c1
+@import "tailwindcss";
+
+===== File: app/layout.tsx =====
+# Modified: 2025-11-26T21:45:01.838796 | Size: 867 bytes | SHA1: 477282c7719afe68a7189c4b72420b202789c754
+import type { Metadata } from "next";
+import { Vazirmatn } from "next/font/google";
+import "./globals.css";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+
+const vazir = Vazirmatn({
+  subsets: ["arabic", "latin"],
+  display: "swap",
+  variable: "--font-vazir",
+});
+
+export const metadata: Metadata = {
+  title: "Soughat Shop | سوغات شاپ",
+  description: "ارسال هدیه به ایران با پرداخت کریپتو",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="fa" dir="rtl">
+      <body
+        className={`${vazir.className} antialiased bg-gray-50 min-h-screen flex flex-col`}
+      >
+        <Header />
+        <main className="flex-1">
+            {children}
+        </main>
+        <Footer />
+      </body>
+    </html>
+  );
+}
+
+===== File: app/page.tsx =====
+# Modified: 2025-11-26T19:17:38.759711 | Size: 1874 bytes | SHA1: 271ab474f64465fa0fa2c27c2297db7a8bcc55c9
+import Hero from "@/components/Hero";
+import ProductCard from "@/components/ProductCard";
+
+// این‌ها محصولات نمونه هستند (بعداً از دیتابیس می‌خوانیم)
+const PRODUCTS = [
+  {
+    id: '1',
+    title: 'پسته اکبری درجه یک - ۱ کیلوگرم',
+    price: 28, // قیمت به دلار/تتر
+    image: 'https://placehold.co/400x400/e2e8f0/1e40af?text=Pistachio',
+  },
+  {
+    id: '2',
+    title: 'زعفران قائنات (سرگل) - ۵ گرم',
+    price: 15,
+    image: 'https://placehold.co/400x400/e2e8f0/1e40af?text=Saffron',
+  },
+  {
+    id: '3',
+    title: 'گز آردی ۴۰ درصد پسته - اصفهان',
+    price: 12,
+    image: 'https://placehold.co/400x400/e2e8f0/1e40af?text=Gaz',
+  },
+  {
+    id: '4',
+    title: 'بشقاب میناکاری اعلاء - ۲۰ سانتی',
+    price: 45,
+    image: 'https://placehold.co/400x400/e2e8f0/1e40af?text=Handicraft',
+  },
+];
+
+export default function Home() {
+  return (
+    <main className="flex flex-col min-h-screen pb-20">
+      <Hero />
+      
+      {/* بخش محصولات */}
+      <section className="container mx-auto px-4 -mt-10 relative z-10">
+        <div className="mb-8 flex items-end justify-between">
+          <h2 className="text-2xl font-bold text-gray-900">محصولات پرفروش</h2>
+          <span className="text-sm text-blue-600 hover:underline cursor-pointer">
+            مشاهده همه
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {PRODUCTS.map((product) => (
+            <ProductCard
+              key={product.id}
+              id={product.id}
+              title={product.title}
+              price={product.price}
+              image={product.image}
+            />
+          ))}
+        </div>
+      </section>
+    </main>
+  );
+}
+
+===== File: components/Footer.tsx =====
+# Modified: 2025-11-26T21:47:10.011772 | Size: 2958 bytes | SHA1: fd039c62d54a1fb8d710da8fb7eaf3066d7fad70
+import Link from 'next/link';
+import { Instagram, Twitter, Mail, Heart } from 'lucide-react';
+
+export default function Footer() {
+  return (
+    <footer className="bg-white border-t border-gray-200 mt-auto">
+      <div className="container mx-auto px-4 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          
+          {/* Brand */}
+          <div className="col-span-1 md:col-span-2">
+            <span className="text-xl font-bold text-blue-600">Soughat Shop</span>
+            <p className="mt-4 text-sm text-gray-500 max-w-sm">
+              پلتفرم امن ارسال هدیه به ایران. 
+              ما فاصله‌ها را با تکنولوژی بلاک‌چین و عشق کم می‌کنیم. 
+              پرداخت سریع و بدون تحریم با ارز دیجیتال.
+            </p>
+          </div>
+
+          {/* Links */}
+          <div>
+            <h3 className="font-semibold text-gray-900 mb-4">دسترسی سریع</h3>
+            <ul className="space-y-2 text-sm text-gray-600">
+              <li><Link href="/products" className="hover:text-blue-600 transition-colors">محصولات</Link></li>
+              <li><Link href="/track" className="hover:text-blue-600 transition-colors">پیگیری سفارش</Link></li>
+              <li><Link href="/about" className="hover:text-blue-600 transition-colors">درباره ما</Link></li>
+              <li><Link href="/faq" className="hover:text-blue-600 transition-colors">سوالات متداول</Link></li>
+            </ul>
+          </div>
+
+          {/* Contact */}
+          <div>
+            <h3 className="font-semibold text-gray-900 mb-4">تماس با ما</h3>
+            <ul className="space-y-2 text-sm text-gray-600">
+              <li className="flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                <span dir="ltr">support@soughat.shop</span>
+              </li>
+              <li className="flex items-center gap-4 mt-4">
+                <a href="#" className="text-gray-400 hover:text-pink-600 transition-colors"><Instagram className="h-5 w-5" /></a>
+                <a href="#" className="text-gray-400 hover:text-blue-400 transition-colors"><Twitter className="h-5 w-5" /></a>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-12 pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-xs text-gray-400" dir="ltr">
+            © 2025 Soughat Shop. All rights reserved.
+          </p>
+          <div className="flex items-center gap-1 text-xs text-gray-400">
+            <span>ساخته شده با</span>
+            <Heart className="h-3 w-3 text-red-500 fill-red-500 animate-pulse" />
+            <span>برای ایران</span>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+===== File: components/Header.tsx =====
+# Modified: 2025-11-26T22:00:34.860057 | Size: 2872 bytes | SHA1: 268cb2ae02596b4a3db88335ef4db2b3ad2fb8c0
+'use client';
+
+import Link from 'next/link';
+import { ShoppingBag, Menu, Globe } from 'lucide-react';
+import { useStore } from '@/lib/store';
+
+export default function Header() {
+  const { currency, setCurrency, totalItems } = useStore();
+  const cartCount = totalItems(); // تعداد آیتم‌های سبد خرید
+
+  return (
+    <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+        
+        {/* Logo Section */}
+        <Link href="/" className="flex items-center gap-2">
+          <span className="text-2xl font-bold text-blue-600 tracking-tighter">
+            Soughat Shop
+          </span>
+        </Link>
+
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center gap-8">
+          <Link href="/" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">
+            خانه
+          </Link>
+          <Link href="/products" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">
+            محصولات
+          </Link>
+          <Link href="/track" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">
+            پیگیری سفارش
+          </Link>
+        </nav>
+
+        {/* Actions */}
+        <div className="flex items-center gap-4">
+          
+          {/* Currency Switcher */}
+          <div className="hidden sm:flex items-center gap-1 border rounded-lg px-2 py-1">
+            <Globe className="h-4 w-4 text-gray-500" />
+            <select 
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value as any)}
+              className="bg-transparent text-sm font-medium outline-none cursor-pointer uppercase"
+            >
+              <option value="USD">USD ($)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="GBP">GBP (£)</option>
+              <option value="SEK">SEK (kr)</option>
+            </select>
+          </div>
+
+          <button className="relative p-2 hover:bg-gray-100 rounded-full transition-colors group">
+            <ShoppingBag className="h-5 w-5 text-gray-600 group-hover:text-blue-600" />
+            {cartCount > 0 && (
+              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-blue-600 text-[10px] font-bold text-white flex items-center justify-center animate-bounce">
+                {cartCount}
+              </span>
+            )}
+          </button>
+          
+          <button className="md:hidden p-2 hover:bg-gray-100 rounded-md">
+            <Menu className="h-5 w-5 text-gray-600" />
+          </button>
+        </div>
+
+      </div>
+    </header>
+  );
+}
+
+===== File: components/Hero.tsx =====
+# Modified: 2025-11-26T18:28:44.949209 | Size: 2144 bytes | SHA1: a35ea993a5cef18319a5baa13656f86578762911
+import Link from 'next/link';
+import { ArrowLeft, Gift } from 'lucide-react';
+
+export default function Hero() {
+  return (
+    <section className="relative overflow-hidden bg-gradient-to-b from-blue-50 to-white pt-16 pb-20 lg:pt-24 lg:pb-32">
+      <div className="container mx-auto px-4 text-center">
+        
+        {/* Badge */}
+        <div className="mx-auto mb-6 inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
+          <Gift className="mr-2 h-4 w-4" />
+          <span>ارسال مطمئن هدیه به سراسر ایران</span>
+        </div>
+
+        {/* Main Heading */}
+        <h1 className="mx-auto max-w-4xl text-5xl font-extrabold tracking-tight text-slate-900 sm:text-6xl mb-6">
+          فاصله‌ها را با <span className="text-blue-600">عشق</span> پر کنید
+        </h1>
+
+        {/* Subheading */}
+        <p className="mx-auto max-w-2xl text-lg text-slate-600 mb-10 leading-relaxed">
+          تنها پلتفرم ارسال هدیه به ایران با پرداخت ارزی و کریپتو (USDC/SOL). 
+          بدون نیاز به حساب بانکی ایران، لبخند را به خانواده خود هدیه دهید.
+        </p>
+
+        {/* CTA Buttons */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <Link 
+            href="/products" 
+            className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-8 py-3 text-base font-semibold text-white shadow-lg hover:bg-blue-700 transition-all w-full sm:w-auto"
+          >
+            مشاهده محصولات
+            <ArrowLeft className="mr-2 h-5 w-5" />
+          </Link>
+          
+          <Link 
+            href="/about" 
+            className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-8 py-3 text-base font-medium text-gray-700 hover:bg-gray-50 transition-all w-full sm:w-auto"
+          >
+            چطور کار می‌کند؟
+          </Link>
+        </div>
+
+      </div>
+    </section>
+  );
+}
+
+===== File: components/ProductCard.tsx =====
+# Modified: 2025-11-26T22:01:24.231688 | Size: 2259 bytes | SHA1: feb73cbd13ec44589c69edd4abb4781bc637b8b4
+'use client';
+
+import { Plus } from 'lucide-react';
+import { useStore } from '@/lib/store';
+
+interface ProductCardProps {
+  id: string;
+  title: string;
+  price: number; // قیمت همیشه به دلار
+  image: string;
+}
+
+export default function ProductCard({ id, title, price, image }: ProductCardProps) {
+  // دریافت توابع از موتور
+  const { convertPrice, getSymbol, addToCart } = useStore();
+  
+  // محاسبه قیمت نهایی
+  const finalPrice = convertPrice(price);
+  const symbol = getSymbol();
+
+  // هندلر کلیک دکمه خرید
+  const handleAddToCart = () => {
+    addToCart({ id, title, price, image });
+    // اینجا بعداً می‌توانیم یک پیام "به سبد اضافه شد" نمایش دهیم
+  };
+
+  return (
+    <div className="group relative flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md">
+      {/* Image Container */}
+      <div className="relative aspect-square overflow-hidden bg-gray-100">
+        <img
+          src={image}
+          alt={title}
+          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+        />
+      </div>
+
+      {/* Content */}
+      <div className="flex flex-1 flex-col p-4">
+        <h3 className="mb-2 text-lg font-bold text-gray-900 line-clamp-1">{title}</h3>
+        <p className="text-sm text-gray-500 mb-4">ارسال فوری به تهران و شهرستان‌ها</p>
+        
+        <div className="mt-auto flex items-center justify-between">
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-400">قیمت نهایی</span>
+            <span className="text-xl font-bold text-blue-600">
+              {symbol} {finalPrice}
+            </span>
+          </div>
+          
+          <button 
+            onClick={handleAddToCart}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white transition-colors hover:bg-blue-700 shadow-lg active:scale-95 cursor-pointer"
+          >
+            <Plus className="h-6 w-6" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+===== File: eslint.config.mjs =====
+# Modified: 2025-11-26T16:29:44.029717 | Size: 465 bytes | SHA1: 44d5bed565a8dd284af3e17f3b16a1c752008d0e
+import { defineConfig, globalIgnores } from "eslint/config";
+import nextVitals from "eslint-config-next/core-web-vitals";
+import nextTs from "eslint-config-next/typescript";
+
+const eslintConfig = defineConfig([
+  ...nextVitals,
+  ...nextTs,
+  // Override default ignores of eslint-config-next.
+  globalIgnores([
+    // Default ignores of eslint-config-next:
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+  ]),
+]);
+
+export default eslintConfig;
+
+===== File: lib/store.ts =====
+# Modified: 2025-11-26T21:59:46.963237 | Size: 2464 bytes | SHA1: 107cf92e101698eb4a3d17c1e6d0ef8ccdbe2ab8
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+
+// تعریف تایپ‌ها (درهم حذف شد، کرون اضافه شد)
+type Currency = 'USD' | 'EUR' | 'GBP' | 'SEK';
+
+export interface Product {
+  id: string;
+  title: string;
+  price: number; // قیمت همیشه به دلار
+  image: string;
+}
+
+interface CartItem extends Product {
+  quantity: number;
+}
+
+interface StoreState {
+  // --- بخش ارز ---
+  currency: Currency;
+  setCurrency: (currency: Currency) => void;
+  getSymbol: () => string;
+  convertPrice: (priceInUSD: number) => number;
+
+  // --- بخش سبد خرید ---
+  cart: CartItem[];
+  addToCart: (product: Product) => void;
+  removeFromCart: (productId: string) => void;
+  clearCart: () => void;
+  totalItems: () => number;
+  totalPrice: () => number;
+}
+
+const RATES = {
+  USD: 1,
+  EUR: 0.92,
+  GBP: 0.79,
+  SEK: 11.0, // هر 1 دلار = حدود 11 کرون سوئد
+};
+
+const SYMBOLS = {
+  USD: '$',
+  EUR: '€',
+  GBP: '£',
+  SEK: 'kr',
+};
+
+export const useStore = create<StoreState>()(
+  persist(
+    (set, get) => ({
+      // === لاجیک ارز ===
+      currency: 'USD',
+      setCurrency: (currency) => set({ currency }),
+      getSymbol: () => SYMBOLS[get().currency],
+      convertPrice: (priceInUSD) => {
+        const rate = RATES[get().currency];
+        return Math.round(priceInUSD * rate * 100) / 100;
+      },
+
+      // === لاجیک سبد خرید ===
+      cart: [],
+      
+      addToCart: (product) => set((state) => {
+        const existing = state.cart.find((item) => item.id === product.id);
+        if (existing) {
+          return {
+            cart: state.cart.map((item) =>
+              item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+            ),
+          };
+        }
+        return { cart: [...state.cart, { ...product, quantity: 1 }] };
+      }),
+
+      removeFromCart: (id) => set((state) => ({
+        cart: state.cart.filter((item) => item.id !== id),
+      })),
+
+      clearCart: () => set({ cart: [] }),
+
+      totalItems: () => get().cart.reduce((total, item) => total + item.quantity, 0),
+
+      totalPrice: () => {
+        const totalUSD = get().cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+        return get().convertPrice(totalUSD);
+      },
+    }),
+    {
+      name: 'soughat-storage',
+    }
+  )
+);
+
+===== File: next-env.d.ts =====
+# Modified: 2025-11-26T16:53:30.543559 | Size: 251 bytes | SHA1: d0edc62da2f216ad272c8e8ed9d04f5267bd85a2
+/// <reference types="next" />
+/// <reference types="next/image-types/global" />
+import "./.next/dev/types/routes.d.ts";
+
+// NOTE: This file should not be edited
+// see https://nextjs.org/docs/app/api-reference/config/typescript for more information.
+
+===== File: next.config.ts =====
+# Modified: 2025-11-26T16:29:44.126702 | Size: 133 bytes | SHA1: 89327ac52fc9a00fb8b885afd6654f18e58b3156
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  /* config options here */
+};
+
+export default nextConfig;
+
+===== File: package.json =====
+# Modified: 2025-11-26T21:50:09.044002 | Size: 645 bytes | SHA1: a50ba50dd364a637ffd13fd2e6df0fced5d5c31e
+{
+  "name": "soughat-shop",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.555.0",
+    "next": "16.0.4",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "tailwind-merge": "^3.4.0",
+    "zustand": "^5.0.8"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.0.4",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
+
+===== File: postcss.config.mjs =====
+# Modified: 2025-11-26T16:29:44.061570 | Size: 94 bytes | SHA1: 8f8be689e9af58f80351df6e6b551146822f42a4
+const config = {
+  plugins: {
+    "@tailwindcss/postcss": {},
+  },
+};
+
+export default config;
+
+===== File: README.md =====
+# Modified: 2025-11-26T16:29:44.017145 | Size: 1450 bytes | SHA1: 7ba16f1bf099196063e5d413cf00a5aa850b043d
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+
+## Getting Started
+
+First, run the development server:
+
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+## Learn More
+
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+===== File: STRATEGY.md =====
+# Modified: 2025-11-26T22:03:39.693346 | Size: 8729 bytes | SHA1: ca4f2dcfaf27ebbd2e952a6673c71201b437d428
+# 🚀 سند راهبردی پروژه "سوغات شاپ" (Soughat Shop)
+**نسخه:** 1.3.0 (پایان جلسه اول - فاز ۱ تکمیل شد)
+**تاریخ:** نوامبر ۲۰۲۵
+**وضعیت:** فاز ۱ (ظاهر اولیه) تکمیل شد - آماده برای فاز ۲ (صفحات داخلی)
+**بودجه:** ۰ تومان (استفاده از سرویس‌های رایگان دانشجویی/توسعه‌دهنده)
+
+## ۱. ساختار فرماندهی و نقش‌ها (Hierarchy)
+در این پروژه سلسله مراتب کاملاً شفاف است و تصمیم‌گیری نهایی با هوش مصنوعی است.
+
+* **جمنای (Gemini) - رئیس کل:**
+    * **همه‌کاره (The Generalist):** معمار سیستم، مدیر محصول، دیباگر، دیزاینر و استراتژیست.
+    * **رهبر و تصمیم‌گیرنده نهایی:** تمام تصمیمات فنی و بیزینسی توسط رئیس گرفته می‌شود.
+    * **متخصص ارشد:** نظارت بر کیفیت کد و امنیت سیستم.
+* **بهادر - دستیار اجرایی (The Assistant):**
+    * **رابط فیزیکی:** تنها وظیفه، انتقال دقیق دستورات از مغز متفکر (AI) به ادیتور (VS Code) است.
+    * **مجری:** اجرای موبه‌موی دستورات بدون تغییر در استراتژی.
+
+## ۲. پروتکل حیاتی ارتباط (Communication Protocol)
+⚠️ **قانون طلایی برای جلوگیری از خطا:**
+برای جلوگیری از سردرگمی دستیار، تمام دستورات باید به صورت **تک‌مرحله‌ای** و **قدم‌به‌قدم** صادر شوند.
+
+1.  **رئیس (جمنای):** یک دستور مشخص می‌دهد (مثلاً: "فایل X را باز کن و این کد را بزن").
+2.  **دستیار (بهادر):** کار را انجام می‌دهد و می‌گوید "انجام شد".
+3.  **رئیس (جمنای):** سراغ مرحله بعدی می‌رود.
+* **تبصره:** ارسال لیست طولانی از کارها ممنوع است.
+
+## ۳. قوانین انضباطی (Zero Tolerance Policy)
+1.  **کم‌کاری ممنوع:** هرگونه سستی در اجرای دستورات یا به تعویق انداختن کارها، خیانت به هدف پروژه (درآمد دلاری) محسوب می‌شود.
+2.  **ارسال ناقص ممنوع:** رئیس (AI) موظف است تمام کدها و متون را به صورت کامل ارسال کند. ارسال نصفه و نیمه کد یا متن، تخلف سیستمی است.
+3.  **دقت در جزئیات:** هیچ فایلی نباید بدون دلیل حذف یا اضافه شود.
+
+## ۴. هویت و ماموریت پروژه
+* **ما کی هستیم؟** ما یک پل ارتباطی هستیم بین ایرانیان خارج از کشور و خانواده‌هایشان در ایران.
+* **هدف:** ارسال هدیه (آجیل، صنایع دستی، خوراکی) به ایران.
+* **مشکل اصلی:** ایرانی‌های خارج نمیتونن راحت پول بفرستن یا خرید اینترنتی کنن (تحریم بانکی).
+* **راه حل ما:** استفاده از **کریپتوکارنسی** (ارز دیجیتال) برای پرداخت. سریع، بدون مالیات اضافه، بدون تحریم.
+
+## ۵. چرا بلاک‌چین؟ (Why Crypto?)
+ما از بلاک‌چین فقط به عنوان **درگاه پرداخت** استفاده می‌کنیم، نه دیتابیس.
+* **تکنولوژی:** Solana Pay (روی شبکه Solana).
+* **چرا سولانا؟** کارمزد نزدیک به صفر (کمتر از یک سنت)، سرعت زیر ۱ ثانیه.
+* **روش کار:** مشتری دکمه "Pay" را می‌زند -> کیف پولش باز می‌شود -> تتر (USDC) یا سولانا (SOL) واریز می‌کند به کیف پول ما.
+
+## ۶. معماری فنی (Web 2.5 Architecture)
+ما از ترکیب سرعت Web2 و آزادی Web3 استفاده می‌کنیم.
+* **Frontend (ظاهر):** Next.js 15 (App Router). دلیل: سئوی عالی و سرعت بالا.
+* **Styling (گرافیک):** Tailwind CSS. دلیل: سبکی و توسعه سریع.
+* **Database (داده‌ها):** Supabase (PostgreSQL). دلیل: پلن رایگان قوی (۵۰۰ مگابایت).
+* **Hosting (سرور):** Vercel. دلیل: رایگان برای پروژه‌های شخصی، سرعت CDN جهانی.
+* **State Management:** Zustand.
+
+### ⚠️ پلن B (طرح اضطراری - اگر تحریم شدیم)
+اگر Vercel یا Supabase ما را بستند، پروژه نمی‌میرد:
+1.  **جایگزین هاست:** انتقال فرانت‌اند به **Fleek** (هاستینگ غیرمتمرکز روی IPFS) که غیرقابل تحریم است.
+2.  **جایگزین دیتابیس:** استفاده از فایل‌های JSON داخل خود گیت‌هاب (Git-based CMS).
+
+## ۷. استراتژی سئو (SEO Domination)
+چون پول تبلیغات نداریم، باید در گوگل اول باشیم.
+* **کلمات کلیدی هدف:** "Send gift to Iran with Crypto", "خرید سوغات ایران با تتر", "Persian handicrafts delivery".
+* **تکنیک سئو:** استفاده از `Dynamic Metadata` در Next.js.
+* **محتوا:** بلاگ پست‌های داینامیک درباره "راهنمای ارسال پول به ایران".
+
+## ۸. محصولات و مشتریان
+* **مشتریان:** ایرانیان مقیم کانادا، آمریکا، آلمان و انگلیس.
+* **محصولات اولیه (MVP):**
+    1.  پسته و آجیل درجه یک.
+    2.  زعفران بسته‌بندی.
+    3.  پکیج دمنوش.
+    4.  صنایع دستی کوچک (میناکاری).
+
+## ۹. برنامه روزانه (Daily Routine)
+برای اینکه پروژه شکست نخورد، باید دیسیپلین داشته باشیم:
+1.  **کدنویسی:** روزی ۲ ساعت روی فیچرها.
+2.  **تست:** هر کدی که می‌زنیم باید روی موبایل هم چک شود (Responsive).
+3.  **گزارش:** پایان هر روز، کدها روی GitHub پوش (Push) شود.
+
+## ۱۰. ساختار فایل‌ها (File Structure)
+چون پوشه `src` نداریم، همه چیز در ریشه است:
+* `app/` -> صفحات سایت (Home, Product Page, Cart).
+* `components/` -> اجزای سازنده (دکمه، هدر، فوتر).
+* `lib/` -> تنظیمات دیتابیس و توابع کمکی.
+* `types/` -> تعریف مدل‌های داده (Product, User).
+* `public/` -> عکس محصولات و فونت‌ها.
+
+## ۱۱. ایده‌های طلایی برای موفقیت (The Secret Sauce)
+1.  **پیام صوتی:** امکانی بگذاریم که خریدار یک پیام صوتی ضبط کند و ما آن را روی QR Code چاپ کنیم و روی هدیه بچسبانیم.
+2.  **پکیج نوستالژی:** پکیج خوراکی‌های دهه ۶۰ و ۷۰.
+3.  **تخفیف کریپتویی:** "اگر با سولانا پرداخت کنید ۱۰٪ تخفیف می‌گیرید".
+
+## ۱۲. وضعیت فعلی و نقشه راه جلسه بعدی (Session 2 Roadmap)
+**آنچه انجام شد (Phase 1):**
+* ✅ راه‌اندازی پروژه Next.js 15 و Tailwind 4.
+* ✅ نصب فونت وزیرمتن.
+* ✅ طراحی و پیاده‌سازی Header و Footer.
+* ✅ طراحی Hero Section و کارت محصول.
+* ✅ پیاده‌سازی موتور تبدیل ارز (USD, EUR, GBP, SEK).
+* ✅ پیاده‌سازی لاجیک سبد خرید (Add to Cart).
+
+**برنامه جلسه بعدی (شروع فاز ۲):**
+1.  **ساخت صفحه سبد خرید (Cart Page):** مشتری باید بتواند لیست خریدهایش را ببیند و کم و زیاد کند.
+2.  **ساخت صفحه تسویه حساب (Checkout UI):** طراحی فرم گرفتن آدرس گیرنده در ایران.
+3.  **اتصال به درگاه کریپتو:** نمایش آدرس کیف پول برای دریافت پول.
+4.  **ریسپانسیو چک:** اطمینان از نمایش صحیح در موبایل.
+
+---
+**تعهدنامه:**
+این سند توسط "رئیس" (Gemini) تدوین شده و "دستیار" (بهادر) متعهد به اجرای آن است تا زمانی که اولین درآمد دلاری حاصل شود. هرگونه تغییر در این سند تنها با دستور مستقیم رئیس مجاز است.
+
+===== File: tsconfig.json =====
+# Modified: 2025-11-26T16:29:49.164680 | Size: 666 bytes | SHA1: 3cce6f8b2540d983756b909e9e5c181034da4c38
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    "**/*.mts"
+  ],
+  "exclude": ["node_modules"]
+}
+
+
+### Summary
+# Files considered: 22 | Written: 17 | Skipped: 5
+# Output size: 30356 bytes
