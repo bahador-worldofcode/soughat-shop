@@ -2,33 +2,79 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-// آیکون Calculator اضافه شد
-import { LayoutDashboard, ShoppingCart, Package, LogOut, Image as ImageIcon, BookOpen, Wallet, RefreshCw, MessageSquare, Layers, Settings, Calculator } from 'lucide-react';
+// آیکون‌ها
+import { LayoutDashboard, ShoppingCart, Package, LogOut, Image as ImageIcon, BookOpen, Wallet, RefreshCw, MessageSquare, Layers, Settings, Calculator, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useEffect, useState } from 'react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
+  
+  // وضعیت بارگذاری امنیتی (دیوار دفاعی)
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const checkAuth = async () => {
+      // 1. اگر کاربر در صفحه لاگین است، کاری نداشته باش (بذار صفحه لود شه)
+      if (pathname === '/admin/login') {
+        setIsLoading(false);
+        return;
+      }
+
+      // 2. بررسی وضعیت لاگین از سوپابیس
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        // اگر لاگین نبود، بفرستش به صفحه لاگین
+        router.replace('/admin/login');
+      } else {
+        // اگر لاگین بود، اجازه بده محتوا لود شه
+        setIsAuthorized(true);
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [pathname, router]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.replace('/admin/login');
   };
 
+  // --- دیوار امنیتی ---
+  // تا زمانی که داریم چک می‌کنیم، فقط لودینگ نشون بده
+  // این باعث میشه محتوای اصلی حتی برای یک میلی‌ثانیه هم دیده نشه
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+            <p className="text-gray-500 text-sm font-bold">در حال بررسی دسترسی...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // اگر صفحه لاگین بود، قالب ادمین (سایدبار) رو نشون نده، فقط فرم رو نشون بده
   if (pathname === '/admin/login') {
     return <>{children}</>;
   }
 
+  // اگر لودینگ تموم شد ولی کاربر لاگین نبود (حالت گذار ریدارکت)، چیزی نشون نده
+  if (!isAuthorized) {
+    return null;
+  }
+
+  // --- محتوای اصلی پنل (فقط وقتی نشون داده میشه که isAuthorized true باشه) ---
   const menuItems = [
     { name: 'داشبورد', href: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'سفارشات', href: '/admin/orders', icon: ShoppingCart },
     { name: 'محصولات', href: '/admin/products', icon: Package },
     { name: 'دسته‌بندی‌ها', href: '/admin/categories', icon: Layers },
-    { name: 'قیمت‌گذاری', href: '/admin/pricing', icon: Calculator }, // ✅ گزینه جدید اینجاست
+    { name: 'قیمت‌گذاری', href: '/admin/pricing', icon: Calculator }, 
     { name: 'پیام‌ها', href: '/admin/messages', icon: MessageSquare },
     { name: 'درگاه پرداخت', href: '/admin/payments', icon: Wallet },
     { name: 'نرخ ارز', href: '/admin/currencies', icon: RefreshCw },
