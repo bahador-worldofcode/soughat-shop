@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { ShoppingBag, Check, ShieldCheck, Truck, Star } from 'lucide-react';
@@ -50,11 +49,11 @@ export default function ProductClientView({ product }: { product: Product }) {
             </div>
         </div>
 
-        {/* قیمت */}
+        {/* قیمت - اصلاح شده برای نمایش ۲ رقم اعشار */}
         <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 flex items-center justify-between mb-8">
             <span className="text-gray-600 font-medium">قیمت نهایی:</span>
             <div className="text-2xl font-bold text-blue-700 font-mono">
-                {symbol} {finalPrice}
+                {symbol} {typeof finalPrice === 'number' ? finalPrice.toFixed(2) : finalPrice}
             </div>
         </div>
 

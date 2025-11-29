@@ -3,14 +3,14 @@
 import { Plus } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useEffect, useState } from 'react';
-import Link from 'next/link'; // اضافه شد
+import Link from 'next/link';
 
 interface ProductCardProps {
   id: string;
   title: string;
   price: number;
   image: string;
-  slug: string; // اضافه شد: برای لینک دادن
+  slug: string;
 }
 
 export default function ProductCard({ id, title, price, image, slug }: ProductCardProps) {
@@ -49,18 +49,20 @@ export default function ProductCard({ id, title, price, image, slug }: ProductCa
         </Link>
         
         <p className="text-sm text-gray-500 mb-4">ارسال فوری به تهران و شهرستان‌ها</p>
-        
+       
         <div className="mt-auto flex items-center justify-between">
           <div className="flex flex-col">
             <span className="text-xs text-gray-400">قیمت نهایی</span>
             <span className="text-xl font-bold text-blue-600 font-mono">
               {mounted ? (
                 <>
-                  {symbol} {finalPrice}
+                  {/* قیمت تبدیل شده با ۲ رقم اعشار */}
+                  {symbol} {finalPrice.toFixed(2)}
                 </>
               ) : (
                 <>
-                  $ {price}
+                  {/* قیمت پایه دلاری با ۲ رقم اعشار */}
+                  $ {price.toFixed(2)}
                 </>
               )}
             </span>
