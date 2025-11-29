@@ -5,25 +5,23 @@ import Link from 'next/link';
 import { MapPin, ShoppingCart, ChevronLeft, Loader2, Globe, FileText, ShieldCheck, ArrowLeft } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import CryptoPayment from '@/components/CryptoPayment';
-import { supabase } from '@/lib/supabase';
 
 export default function CheckoutPage() {
-  // اضافه شدن 'currency' برای ثبت کد ارز (SEK, EUR, etc.)
+  // دریافت اطلاعات سبد خرید و تنظیمات ارزی از استور
   const { cart, totalPrice, getSymbol, convertPrice, currency } = useStore();
   
-  // محاسبه قیمت نمایشی (برای نشان دادن به کاربر)
+  // محاسبه قیمت نمایشی (برای نشان دادن به کاربر با ارز انتخابی)
   const displayTotal = totalPrice();
   const symbol = getSymbol();
   
-  // محاسبه قیمت واقعی به دلار (برای ذخیره در دیتابیس)
+  // محاسبه قیمت واقعی به دلار (برای ذخیره در دیتابیس به عنوان مبنا)
   const totalBaseUSD = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  
+
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
   const [orderId, setOrderId] = useState('');
 
   const [formData, setFormData] = useState({
@@ -42,38 +40,42 @@ export default function CheckoutPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // --- تابع جدید ثبت سفارش (ارسال به API سرور) ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      const { data, error } = await supabase
-        .from('orders')
-        .insert([
-          {
-            sender_name: formData.senderName,
-            sender_phone: formData.senderPhone,
-            sender_country: formData.senderCountry,
-            order_notes: formData.notes,
-            customer_name: formData.receiverName,
-            customer_phone: formData.receiverPhone,
-            city: formData.city,
-            address: formData.address,
-            items: cart,
-            total_price: totalBaseUSD, 
-            // --- فیلدهای جدید برای پشتیبانی ---
-            display_fiat_amount: displayTotal,
-            display_currency: currency,
-            // ---------------------------------
-            status: 'pending'
-          }
-        ])
-        .select();
+      // ارسال درخواست به API خودمان (نه مستقیم به دیتابیس)
+      // این کار باعث می‌شود مشکل امنیتی RLS حل شود
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          senderName: formData.senderName,
+          senderPhone: formData.senderPhone,
+          senderCountry: formData.senderCountry,
+          notes: formData.notes,
+          receiverName: formData.receiverName,
+          receiverPhone: formData.receiverPhone,
+          city: formData.city,
+          address: formData.address,
+          items: cart,
+          totalPrice: totalBaseUSD, // قیمت دلاری
+          displayFiatAmount: displayTotal, // قیمتی که مشتری دیده
+          displayCurrency: currency, // واحد پولی که مشتری دیده
+        }),
+      });
 
-      if (error) throw error;
+      const result = await response.json();
 
-      if (data && data.length > 0) {
-        setOrderId(data[0].id);
+      if (!response.ok) {
+        throw new Error(result.error || 'خطا در ارتباط با سرور');
+      }
+
+      // اگر موفق بود، آیدی سفارش را می‌گیریم و می‌رویم مرحله پرداخت
+      if (result.id) {
+        setOrderId(result.id);
         setStep(2);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -86,6 +88,7 @@ export default function CheckoutPage() {
     }
   };
 
+  // اگر سبد خالی بود، برگرداندن کاربر
   if (cart.length === 0) {
     return (
       <div className="container mx-auto px-4 py-20 text-center">
@@ -112,7 +115,7 @@ export default function CheckoutPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* ستون راست (فرم) */}
+        {/* ستون راست (فرم و پرداخت) */}
         <div className="lg:col-span-2">
           
           {step === 1 ? (
@@ -267,7 +270,8 @@ export default function CheckoutPage() {
                 <ShieldCheck className="text-blue-600 h-7 w-7" />
                 درگاه پرداخت کریپتو
               </h1>
-              {/* ارسال ID واقعی به کامپوننت پرداخت */}
+              
+              {/* ارسال ID واقعی سفارش به کامپوننت پرداخت */}
               <CryptoPayment orderId={orderId} />
               
               <button 
@@ -299,7 +303,6 @@ export default function CheckoutPage() {
                   <span className="text-gray-700 line-clamp-1 flex-1 ml-2">{item.title}</span>
                   <div className="flex items-center gap-2 whitespace-nowrap">
                     <span className="text-xs text-gray-500">x{item.quantity}</span>
-                    {/* استفاده از convertPrice برای نمایش قیمت صحیح */}
                     <span className="font-medium text-gray-900">
                         {symbol} {convertPrice(item.price * item.quantity)}
                     </span>
@@ -315,7 +318,6 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between items-center font-bold text-lg text-blue-900 mt-2">
                 <span>مبلغ قابل پرداخت</span>
-                {/* اینجا فقط نمایش می‌دهیم، اما ذخیره در دیتابیس همیشه دلاری است */}
                 <span>{mounted ? `${symbol} ${displayTotal}` : '...'}</span>
               </div>
             </div>
