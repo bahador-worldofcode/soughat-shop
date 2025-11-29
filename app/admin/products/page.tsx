@@ -1,0 +1,446 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Plus, Trash2, Edit2, Search, X, Loader2, ImageIcon, Check, Search as SearchIcon, Calculator } from 'lucide-react';
+
+interface Product {
+  id: string;
+  title: string;
+  price: number;        // قیمت فروش (دلار)
+  price_toman: number;  // قیمت خرید (تومان)
+  image: string;
+  slug: string;
+  category: string;
+  description: string;
+  features: string[];
+  seo_title: string;
+  seo_desc: string;
+  created_at?: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface MediaFile {
+  name: string;
+  url: string;
+  id: string;
+}
+
+export default function ProductsPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // تنظیمات سراسری (برای محاسبه هوشمند)
+  const [dollarRate, setDollarRate] = useState(100000);
+  const [profitMargin, setProfitMargin] = useState(25);
+  const [shippingBase, setShippingBase] = useState(300000);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  
+  const [formData, setFormData] = useState({ 
+    title: '', 
+    price: '',         // دلار
+    price_toman: '',   // تومان
+    image: '',
+    slug: '',
+    category: '',
+    description: '',
+    features: '', 
+    seo_title: '',
+    seo_desc: ''
+  });
+
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
+  const [loadingMedia, setLoadingMedia] = useState(false);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    // 1. دریافت محصولات
+    const { data: prodData } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (prodData) setProducts(prodData);
+
+    // 2. دریافت دسته‌بندی‌ها
+    const { data: catData } = await supabase
+      .from('categories')
+      .select('*')
+      .order('name');
+    if (catData) setCategories(catData);
+    
+    // 3. دریافت تنظیمات برای محاسبه
+    const { data: settingsData } = await supabase.from('site_settings').select('*');
+    if (settingsData) {
+        settingsData.forEach(item => {
+            if (item.key === 'dollar_rate') setDollarRate(Number(item.value));
+            if (item.key === 'profit_margin') setProfitMargin(Number(item.value));
+            if (item.key === 'shipping_base') setShippingBase(Number(item.value));
+        });
+    }
+
+    setLoading(false);
+  };
+
+  const fetchMedia = async () => {
+    setLoadingMedia(true);
+    const { data } = await supabase.storage.from('media').list('', {
+      limit: 50,
+      sortBy: { column: 'created_at', order: 'desc' },
+    });
+    if (data) {
+      const files = data.map((file) => {
+        const { data: url } = supabase.storage.from('media').getPublicUrl(file.name);
+        return { name: file.name, id: file.id, url: url.publicUrl };
+      });
+      setMediaFiles(files);
+    }
+    setLoadingMedia(false);
+  };
+
+  // محاسبه قیمت پیشنهادی دلار بر اساس تومان
+  const calculateSuggestedUSD = (tomanStr: string) => {
+    const toman = parseInt(tomanStr) || 0;
+    if (toman === 0) return;
+    
+    const cost = toman + shippingBase;
+    const inUSD = cost / dollarRate;
+    const withProfit = inUSD * (1 + profitMargin / 100);
+    const final = Math.round(withProfit * 100) / 100;
+    
+    // پر کردن خودکار فیلد دلار
+    setFormData(prev => ({ ...prev, price: String(final), price_toman: tomanStr }));
+  };
+
+  const openProductModal = (product?: Product) => {
+    if (product) {
+      setEditingProduct(product);
+      setFormData({ 
+        title: product.title, 
+        price: product.price.toString(), 
+        price_toman: product.price_toman ? product.price_toman.toString() : '0',
+        image: product.image,
+        slug: product.slug || '',
+        category: product.category || (categories[0]?.slug || ''),
+        description: product.description || '',
+        features: product.features ? product.features.join('\n') : '',
+        seo_title: product.seo_title || '',
+        seo_desc: product.seo_desc || ''
+      });
+    } else {
+      setEditingProduct(null);
+      setFormData({ 
+        title: '', 
+        price: '', 
+        price_toman: '',
+        image: '', 
+        slug: '', 
+        category: categories[0]?.slug || '',
+        description: '', 
+        features: '', 
+        seo_title: '', 
+        seo_desc: '' 
+      });
+    }
+    setIsModalOpen(true);
+  };
+
+  const openGallery = () => { setIsGalleryOpen(true); fetchMedia(); };
+  const selectImageFromGallery = (url: string) => { setFormData({ ...formData, image: url }); setIsGalleryOpen(false); };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      const featuresArray = formData.features.split('\n').filter(line => line.trim() !== '');
+      let finalSlug = formData.slug || formData.title;
+      finalSlug = finalSlug.trim().toLowerCase().replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
+
+      const finalCategory = formData.category || categories[0]?.slug || 'nuts';
+
+      const productData = {
+        title: formData.title,
+        price: Number(formData.price),
+        price_toman: Number(formData.price_toman), // ذخیره قیمت تومان
+        image: formData.image,
+        slug: finalSlug,
+        category: finalCategory,
+        description: formData.description,
+        features: featuresArray,
+        seo_title: formData.seo_title,
+        seo_desc: formData.seo_desc
+      };
+
+      let response;
+      if (editingProduct) {
+        response = await fetch('/api/admin/products', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: editingProduct.id, ...productData }),
+        });
+      } else {
+        response = await fetch('/api/admin/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(productData),
+        });
+      }
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'خطا در ذخیره‌سازی');
+      }
+
+      await fetchData();
+      setIsModalOpen(false);
+    } catch (error: any) {
+      alert('خطا: ' + error.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('آیا مطمئن هستید؟')) return;
+    try {
+      const response = await fetch(`/api/admin/products?id=${id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('خطا در حذف');
+      setProducts(products.filter(p => p.id !== id));
+    } catch (error: any) {
+      alert('خطا: ' + error.message);
+    }
+  };
+
+  const filteredProducts = products.filter(p => 
+    p.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const getCategoryName = (slug: string) => {
+    const cat = categories.find(c => c.slug === slug);
+    return cat ? cat.name : slug;
+  };
+
+  if (loading) return <div className="p-10 text-center">در حال دریافت لیست...</div>;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div>
+           <h2 className="text-2xl font-bold text-gray-800">مدیریت محصولات</h2>
+           <p className="text-sm text-gray-500">مدیریت موجودی، قیمت‌گذاری و سئو</p>
+        </div>
+        <button onClick={() => openProductModal()} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 shadow-md">
+          <Plus className="h-5 w-5" />
+          محصول جدید
+        </button>
+      </div>
+
+      <div className="relative max-w-md">
+        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <input type="text" placeholder="جستجو..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pr-9 pl-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-100 outline-none" />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {filteredProducts.map((product) => (
+          <div key={product.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden group flex flex-col">
+            <div className="relative aspect-square bg-gray-100 overflow-hidden">
+              <img src={product.image} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+              <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => openProductModal(product)} className="p-2 bg-white/90 rounded-full text-blue-600 shadow-sm"><Edit2 className="h-4 w-4" /></button>
+                <button onClick={() => handleDelete(product.id)} className="p-2 bg-white/90 rounded-full text-red-500 shadow-sm"><Trash2 className="h-4 w-4" /></button>
+              </div>
+              <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded-full backdrop-blur-sm">
+                 {getCategoryName(product.category)}
+              </span>
+            </div>
+            <div className="p-4 flex flex-col flex-1">
+               <h3 className="font-bold text-gray-900 line-clamp-1 mb-1">{product.title}</h3>
+               <p className="text-xs text-gray-400 mb-2 truncate">/{product.slug}</p>
+              <div className="mt-auto flex justify-between items-center">
+                 <div className="flex flex-col">
+                    <span className="text-[10px] text-gray-400">قیمت خرید: {(product.price_toman || 0).toLocaleString()} ت</span>
+                    <span className="text-lg font-bold text-blue-600">${product.price}</span>
+                 </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 z-[50] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+              <h3 className="text-lg font-bold text-gray-900">{editingProduct ? 'ویرایش' : 'افزودن'} محصول</h3>
+              <button onClick={() => setIsModalOpen(false)}><X className="h-5 w-5 text-gray-400 hover:text-red-500" /></button>
+            </div>
+
+            <form onSubmit={handleSave} className="p-6 space-y-6 overflow-y-auto">
+              <div className="space-y-4">
+                  <h4 className="font-bold text-blue-800 text-sm border-b pb-2">۱. اطلاعات پایه</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">نام محصول</label>
+                        <input type="text" required className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} />
+                      </div>
+                      
+                      {/* بخش قیمت‌گذاری */}
+                      <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                             <label className="block text-xs font-bold text-gray-700 mb-1">قیمت خرید (تومان)</label>
+                             <div className="relative">
+                                <input 
+                                    type="number" 
+                                    required 
+                                    min="0" 
+                                    className="w-full p-2 pl-8 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm font-mono" 
+                                    placeholder="مثال: 500000"
+                                    value={formData.price_toman} 
+                                    onChange={(e) => {
+                                        setFormData({...formData, price_toman: e.target.value});
+                                        calculateSuggestedUSD(e.target.value); // محاسبه خودکار
+                                    }} 
+                                />
+                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-500">T</span>
+                             </div>
+                             <p className="text-[10px] text-gray-500 mt-1">مبنای محاسبه قیمت دلاری</p>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-blue-700 mb-1">قیمت فروش (دلار)</label>
+                            <div className="relative">
+                                <input 
+                                    type="number" 
+                                    required 
+                                    min="0" 
+                                    step="0.01" 
+                                    className="w-full p-2 pl-6 rounded-lg border border-blue-300 outline-none focus:border-blue-600 text-sm font-bold text-blue-800 dir-ltr" 
+                                    value={formData.price} 
+                                    onChange={(e) => setFormData({...formData, price: e.target.value})} 
+                                />
+                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-blue-600">$</span>
+                            </div>
+                            <p className="text-[10px] text-blue-400 mt-1 flex items-center gap-1">
+                                <Calculator className="h-3 w-3"/>
+                                محاسبه شده با سود {profitMargin}٪
+                            </p>
+                          </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">دسته‌بندی</label>
+                         {categories.length > 0 ? (
+                            <select 
+                                value={formData.category} 
+                                onChange={(e) => setFormData({...formData, category: e.target.value})}
+                                className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm bg-white"
+                            >
+                                {categories.map(cat => (
+                                    <option key={cat.id} value={cat.slug}>{cat.name}</option>
+                                ))}
+                            </select>
+                        ) : (
+                            <div className="text-xs text-red-500 flex items-center gap-1">
+                                <Loader2 className="h-3 w-3 animate-spin"/> در حال بارگذاری دسته‌ها...
+                            </div>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">آدرس صفحه (Slug)</label>
+                        <input type="text" className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm dir-ltr text-left" placeholder="مثال: pistachio-akbari" value={formData.slug} onChange={(e) => setFormData({...formData, slug: e.target.value})} />
+                      </div>
+                  </div>
+              </div>
+
+              <div className="space-y-4">
+                   <h4 className="font-bold text-blue-800 text-sm border-b pb-2">۲. جزئیات و محتوا</h4>
+                   <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">توضیحات کامل</label>
+                        <textarea rows={4} className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} />
+                   </div>
+                   <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">ویژگی‌ها (هر خط یک ویژگی)</label>
+                        <textarea rows={3} className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm" value={formData.features} onChange={(e) => setFormData({...formData, features: e.target.value})} />
+                   </div>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="font-bold text-blue-800 text-sm border-b pb-2">۳. تصویر محصول</h4>
+                {formData.image ? (
+                  <div className="relative w-full h-40 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 group">
+                    <img src={formData.image} className="w-full h-full object-cover" alt="Preview" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                       <button type="button" onClick={openGallery} className="bg-white text-blue-600 px-3 py-1.5 rounded-full text-xs font-bold shadow-sm">تغییر</button>
+                       <button type="button" onClick={() => setFormData({...formData, image: ''})} className="bg-red-500 text-white p-1.5 rounded-full shadow-sm"><X className="h-4 w-4" /></button>
+                    </div>
+                  </div>
+                ) : (
+                  <button type="button" onClick={openGallery} className="w-full h-24 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center text-gray-500 hover:bg-gray-50 transition-all">
+                    <ImageIcon className="h-6 w-6 mb-1" />
+                    <span className="text-xs">انتخاب تصویر</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-xl space-y-4 border border-gray-200">
+                   <h4 className="font-bold text-gray-700 text-sm flex items-center gap-1"><SearchIcon className="h-4 w-4"/> تنظیمات سئو</h4>
+                   <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">SEO Title</label>
+                        <input type="text" className="w-full p-2 rounded border border-gray-300 text-sm" value={formData.seo_title} onChange={(e) => setFormData({...formData, seo_title: e.target.value})} />
+                   </div>
+                   <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Meta Description</label>
+                        <textarea rows={2} className="w-full p-2 rounded border border-gray-300 text-sm" value={formData.seo_desc} onChange={(e) => setFormData({...formData, seo_desc: e.target.value})} />
+                   </div>
+               </div>
+
+              <div className="pt-4 flex gap-3">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">انصراف</button>
+                <button type="submit" disabled={isSaving || !formData.image} className="flex-1 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 shadow-md disabled:opacity-50">
+                  {isSaving ? 'در حال ذخیره...' : 'ذخیره محصول'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isGalleryOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in zoom-in duration-200">
+           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl h-[80vh] flex flex-col overflow-hidden">
+             <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 className="font-bold text-gray-900 flex items-center gap-2"><ImageIcon className="h-5 w-5 text-blue-600" />انتخاب تصویر</h3>
+                <button onClick={() => setIsGalleryOpen(false)} className="bg-white p-1 rounded-full text-gray-500 hover:text-red-500 hover:bg-red-50"><X className="h-6 w-6" /></button>
+             </div>
+             <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50">
+               {loadingMedia ? (
+                 <div className="flex items-center justify-center h-full"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
+               ) : (
+                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                   {mediaFiles.map((file) => (
+                      <div key={file.id} onClick={() => selectImageFromGallery(file.url)} className={`group relative aspect-square rounded-xl overflow-hidden cursor-pointer border-2 transition-all ${formData.image === file.url ? 'border-blue-600 ring-2 ring-blue-100' : 'border-gray-200 hover:border-blue-400'}`}>
+                       <img src={file.url} className="w-full h-full object-cover" />
+                       {formData.image === file.url && <div className="absolute top-2 right-2 bg-blue-600 text-white p-1 rounded-full shadow-sm"><Check className="h-3 w-3" /></div>}
+                      </div>
+                    ))}
+                 </div>
+               )}
+             </div>
+           </div>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,14 +1,15 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { supabase } from '@/lib/supabase';
 
-// تعریف تایپ‌ها (درهم حذف شد، کرون اضافه شد)
 type Currency = 'USD' | 'EUR' | 'GBP' | 'SEK';
 
 export interface Product {
   id: string;
   title: string;
-  price: number; // قیمت همیشه به دلار
+  price: number; 
   image: string;
+  category?: string; // اضافه شد
 }
 
 interface CartItem extends Product {
@@ -18,9 +19,13 @@ interface CartItem extends Product {
 interface StoreState {
   // --- بخش ارز ---
   currency: Currency;
+  rates: Record<string, number>;
+  lastRatesUpdate: number;
+  
   setCurrency: (currency: Currency) => void;
   getSymbol: () => string;
   convertPrice: (priceInUSD: number) => number;
+  fetchRates: () => Promise<void>;
 
   // --- بخش سبد خرید ---
   cart: CartItem[];
@@ -31,13 +36,6 @@ interface StoreState {
   totalPrice: () => number;
 }
 
-const RATES = {
-  USD: 1,
-  EUR: 0.92,
-  GBP: 0.79,
-  SEK: 11.0, // هر 1 دلار = حدود 11 کرون سوئد
-};
-
 const SYMBOLS = {
   USD: '$',
   EUR: '€',
@@ -45,16 +43,56 @@ const SYMBOLS = {
   SEK: 'kr',
 };
 
+const DEFAULT_RATES = {
+  USD: 1,
+  EUR: 0.95,
+  GBP: 0.79,
+  SEK: 11.0,
+};
+
+const CACHE_DURATION = 3600 * 1000;
+
 export const useStore = create<StoreState>()(
   persist(
     (set, get) => ({
       // === لاجیک ارز ===
       currency: 'USD',
+      rates: DEFAULT_RATES,
+      lastRatesUpdate: 0,
+
       setCurrency: (currency) => set({ currency }),
+      
       getSymbol: () => SYMBOLS[get().currency],
+      
       convertPrice: (priceInUSD) => {
-        const rate = RATES[get().currency];
-        return Math.round(priceInUSD * rate * 100) / 100;
+        const currentRate = get().rates[get().currency] || 1;
+        return Math.round(priceInUSD * currentRate * 100) / 100;
+      },
+
+      fetchRates: async () => {
+        const now = Date.now();
+        const lastUpdate = get().lastRatesUpdate;
+
+        if (now - lastUpdate < CACHE_DURATION) {
+          console.log('Using cached rates');
+          return;
+        }
+
+        try {
+          const { data } = await supabase.from('currencies').select('code, rate');
+          if (data) {
+            const newRates: Record<string, number> = {};
+            data.forEach(item => {
+              newRates[item.code] = item.rate;
+            });
+            set({ 
+              rates: newRates,
+              lastRatesUpdate: now 
+            });
+          }
+        } catch (error) {
+          console.error('Failed to fetch rates:', error);
+        }
       },
 
       // === لاجیک سبد خرید ===
@@ -87,6 +125,12 @@ export const useStore = create<StoreState>()(
     }),
     {
       name: 'soughat-storage',
+      partialize: (state) => ({ 
+        cart: state.cart, 
+        currency: state.currency,
+        rates: state.rates,
+        lastRatesUpdate: state.lastRatesUpdate
+      }), 
     }
   )
 );

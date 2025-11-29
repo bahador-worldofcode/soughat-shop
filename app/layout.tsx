@@ -3,6 +3,7 @@ import { Vazirmatn } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import FloatingContact from "@/components/FloatingContact"; // اضافه شد
 
 const vazir = Vazirmatn({
   subsets: ["arabic", "latin"],
@@ -30,6 +31,9 @@ export default function RootLayout({
             {children}
         </main>
         <Footer />
+        
+        {/* ویجت شناور در تمام صفحات */}
+        <FloatingContact />
       </body>
     </html>
   );

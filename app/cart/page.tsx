@@ -5,7 +5,8 @@ import { Trash2, ArrowLeft, ShoppingBag } from 'lucide-react';
 import { useStore } from '@/lib/store';
 
 export default function CartPage() {
-  const { cart, removeFromCart, totalPrice, getSymbol } = useStore();
+  // اضافه کردن convertPrice به لیست دریافتی‌ها
+  const { cart, removeFromCart, totalPrice, getSymbol, convertPrice } = useStore();
   const total = totalPrice();
   const symbol = getSymbol();
 
@@ -29,7 +30,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-10">
+    <div className="container mx-auto px-4 py-10 font-[family-name:var(--font-vazir)]">
       <h1 className="text-2xl font-bold text-gray-900 mb-8">سبد خرید شما</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -55,7 +56,8 @@ export default function CartPage() {
                 
                 <div className="flex items-center justify-between mt-4">
                   <span className="font-bold text-blue-600">
-                     {symbol} {item.price}
+                    {/* اصلاحیه: استفاده از convertPrice */}
+                    {symbol} {convertPrice(item.price * item.quantity)}
                   </span>
                   
                   <button 

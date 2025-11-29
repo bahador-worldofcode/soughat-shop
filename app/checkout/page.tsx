@@ -2,28 +2,39 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { MapPin, Phone, User, ArrowLeft, ShieldCheck, ShoppingCart, ChevronLeft } from 'lucide-react';
+import { MapPin, ShoppingCart, ChevronLeft, Loader2, Globe, FileText, ShieldCheck, ArrowLeft } from 'lucide-react';
 import { useStore } from '@/lib/store';
-// ایمپورت کردن کامپوننت پرداخت
 import CryptoPayment from '@/components/CryptoPayment';
+import { supabase } from '@/lib/supabase';
 
 export default function CheckoutPage() {
-  const { cart, totalPrice, getSymbol } = useStore();
-  const total = totalPrice();
+  // اضافه شدن 'currency' برای ثبت کد ارز (SEK, EUR, etc.)
+  const { cart, totalPrice, getSymbol, convertPrice, currency } = useStore();
+  
+  // محاسبه قیمت نمایشی (برای نشان دادن به کاربر)
+  const displayTotal = totalPrice();
   const symbol = getSymbol();
+  
+  // محاسبه قیمت واقعی به دلار (برای ذخیره در دیتابیس)
+  const totalBaseUSD = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  // استیت برای مدیریت مرحله (1: فرم آدرس، 2: پرداخت)
   const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [orderId, setOrderId] = useState('');
 
   const [formData, setFormData] = useState({
-    fullName: '',
-    phone: '',
+    senderName: '',
+    senderPhone: '',
+    senderCountry: '',
+    receiverName: '',
+    receiverPhone: '',
     city: '',
     address: '',
-    postalCode: '',
+    notes: '', 
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -31,11 +42,48 @@ export default function CheckoutPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // به جای آلرت، به مرحله پرداخت می‌رویم
-    setStep(2);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setIsSubmitting(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .insert([
+          {
+            sender_name: formData.senderName,
+            sender_phone: formData.senderPhone,
+            sender_country: formData.senderCountry,
+            order_notes: formData.notes,
+            customer_name: formData.receiverName,
+            customer_phone: formData.receiverPhone,
+            city: formData.city,
+            address: formData.address,
+            items: cart,
+            total_price: totalBaseUSD, 
+            // --- فیلدهای جدید برای پشتیبانی ---
+            display_fiat_amount: displayTotal,
+            display_currency: currency,
+            // ---------------------------------
+            status: 'pending'
+          }
+        ])
+        .select();
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setOrderId(data[0].id);
+        setStep(2);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+    } catch (error: any) {
+      alert('خطا در ثبت سفارش: ' + error.message);
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (cart.length === 0) {
@@ -48,7 +96,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 font-[family-name:var(--font-vazir)]">
       
       {/* نوار وضعیت مراحل */}
       <div className="flex items-center gap-2 text-sm text-gray-500 mb-8 overflow-x-auto pb-2">
@@ -64,101 +112,169 @@ export default function CheckoutPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* ستون راست: محتوا بر اساس مرحله تغییر می‌کند */}
+        {/* ستون راست (فرم) */}
         <div className="lg:col-span-2">
           
           {step === 1 ? (
-            /* --- مرحله ۱: فرم آدرس --- */
+            /* --- مرحله ۱: فرم اطلاعات --- */
             <>
               <h1 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                 <ShieldCheck className="text-green-600 h-7 w-7" />
-                اطلاعات گیرنده
+                تکمیل اطلاعات سفارش
               </h1>
               
-              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                        <User className="h-4 w-4" /> نام و نام خانوادگی
-                      </label>
-                      <input
-                        type="text"
-                        name="fullName"
-                        required
-                        placeholder="گیرنده در ایران"
-                        className="w-full rounded-lg border border-gray-300 p-3 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                        onChange={handleInputChange}
-                      />
+              <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                
+                {/* بخش ۱: اطلاعات فرستنده (شما) */}
+                <div className="bg-blue-50/50 p-6 rounded-xl border border-blue-100">
+                    <h3 className="font-bold text-blue-800 mb-4 flex items-center gap-2 border-b border-blue-200 pb-2">
+                        <Globe className="h-5 w-5" />
+                        ۱. اطلاعات شما (فرستنده)
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                            <label className="text-xs text-gray-600">نام شما <span className="text-red-500">*</span></label>
+                            <input
+                                type="text"
+                                name="senderName"
+                                required
+                                placeholder="نام کامل شما"
+                                className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-white"
+                                onChange={handleInputChange}
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs text-gray-600">کشور محل اقامت <span className="text-red-500">*</span></label>
+                            <input
+                                type="text"
+                                name="senderCountry"
+                                required
+                                placeholder="مثال: آلمان، کانادا"
+                                className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-white"
+                                onChange={handleInputChange}
+                            />
+                        </div>
+                        <div className="space-y-1 md:col-span-2">
+                            <label className="text-xs text-gray-600">شماره واتساپ / موبایل <span className="text-red-500">*</span></label>
+                            <input
+                                type="tel"
+                                name="senderPhone"
+                                required
+                                dir="ltr"
+                                placeholder="+49 ..."
+                                className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-white text-left font-mono"
+                                onChange={handleInputChange}
+                            />
+                        </div>
                     </div>
+                </div>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                        <Phone className="h-4 w-4" /> موبایل
-                      </label>
-                      <input
-                        type="tel"
-                        name="phone"
-                        required
-                        dir="ltr"
-                        placeholder="0912..."
-                        className="w-full rounded-lg border border-gray-300 p-3 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-left"
-                        onChange={handleInputChange}
-                      />
+                {/* بخش ۲: اطلاعات گیرنده (ایران) */}
+                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                    <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2 border-b border-gray-100 pb-2">
+                        <MapPin className="h-5 w-5 text-red-500" />
+                        ۲. اطلاعات گیرنده (در ایران)
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                            <label className="text-xs text-gray-600">نام گیرنده <span className="text-red-500">*</span></label>
+                            <input
+                                type="text"
+                                name="receiverName"
+                                required
+                                placeholder="نام تحویل گیرنده"
+                                className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-gray-50 focus:bg-white transition-colors"
+                                onChange={handleInputChange}
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs text-gray-600">موبایل گیرنده <span className="text-red-500">*</span></label>
+                            <input
+                                type="tel"
+                                name="receiverPhone"
+                                required
+                                dir="ltr"
+                                placeholder="0912..."
+                                className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-gray-50 focus:bg-white transition-colors text-left font-mono"
+                                onChange={handleInputChange}
+                            />
+                        </div>
+                        <div className="space-y-1 md:col-span-2">
+                            <label className="text-xs text-gray-600">استان و شهر <span className="text-red-500">*</span></label>
+                            <input
+                                type="text"
+                                name="city"
+                                required
+                                placeholder="مثال: تهران، شهرک غرب"
+                                className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-gray-50 focus:bg-white transition-colors"
+                                onChange={handleInputChange}
+                            />
+                        </div>
+                        <div className="space-y-1 md:col-span-2">
+                            <label className="text-xs text-gray-600">آدرس دقیق و پلاک <span className="text-red-500">*</span></label>
+                            <textarea
+                                name="address"
+                                required
+                                rows={2}
+                                className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-gray-50 focus:bg-white transition-colors resize-none"
+                                onChange={handleInputChange}
+                            />
+                        </div>
                     </div>
-                  </div>
+                </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                      <MapPin className="h-4 w-4" /> استان و شهر
-                    </label>
-                    <input
-                      type="text"
-                      name="city"
-                      required
-                      placeholder="مثال: تهران، ونک"
-                      className="w-full rounded-lg border border-gray-300 p-3 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                      onChange={handleInputChange}
-                    />
-                  </div>
+                {/* بخش ۳: توضیحات (اختیاری) */}
+                <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
+                    <h3 className="font-bold text-gray-700 mb-4 flex items-center gap-2 border-b border-gray-200 pb-2">
+                        <FileText className="h-5 w-5" />
+                        ۳. توضیحات سفارش (اختیاری)
+                    </h3>
+                    <div className="space-y-1">
+                        <label className="text-xs text-gray-600">توضیحات تکمیلی</label>
+                        <textarea
+                            name="notes"
+                            rows={3}
+                            placeholder="متن کارت هدیه، ساعت تحویل خاص یا هر نکته‌ای که باید بدانیم..."
+                            className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-white transition-colors"
+                            onChange={handleInputChange}
+                            />
+                    </div>
+                </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">آدرس دقیق و پلاک</label>
-                    <textarea
-                      name="address"
-                      required
-                      rows={3}
-                      className="w-full rounded-lg border border-gray-300 p-3 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                      onChange={handleInputChange}
-                    />
-                  </div>
-
-                  <button
+                <button
                     type="submit"
-                    className="w-full hidden lg:flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-4 text-base font-bold text-white shadow-md hover:bg-blue-700 transition-all mt-4"
+                    disabled={isSubmitting}
+                    className="w-full hidden lg:flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-4 text-base font-bold text-white shadow-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all hover:-translate-y-1"
                   >
-                    <span>تایید و رفتن به پرداخت</span>
-                    <ArrowLeft className="h-5 w-5" />
-                  </button>
-                </form>
-              </div>
+                    {isSubmitting ? (
+                        <>
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                            <span>در حال ثبت اطلاعات...</span>
+                        </>
+                    ) : (
+                        <>
+                            <span>تایید اطلاعات و رفتن به پرداخت</span>
+                            <ArrowLeft className="h-5 w-5" />
+                        </>
+                    )}
+                </button>
+              </form>
             </>
           ) : (
-            /* --- مرحله ۲: کامپوننت پرداخت --- */
+            /* --- مرحله ۲: پرداخت --- */
             <>
               <h1 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                 <ShieldCheck className="text-blue-600 h-7 w-7" />
                 درگاه پرداخت کریپتو
               </h1>
-              {/* فراخوانی کامپوننت جدید */}
-              <CryptoPayment />
+              {/* ارسال ID واقعی به کامپوننت پرداخت */}
+              <CryptoPayment orderId={orderId} />
               
               <button 
                 onClick={() => setStep(1)}
                 className="mt-4 text-sm text-gray-500 hover:text-gray-900 underline"
               >
-                بازگشت و اصلاح آدرس
+                بازگشت و اصلاح مشخصات
               </button>
             </>
           )}
@@ -172,7 +288,7 @@ export default function CheckoutPage() {
               <h3 className="font-semibold text-blue-900">سفارش شما</h3>
               {step === 1 && (
                 <Link href="/cart" className="text-xs text-blue-600 hover:underline">
-                  ویرایش
+                  ویرایش سبد
                 </Link>
               )}
             </div>
@@ -183,7 +299,10 @@ export default function CheckoutPage() {
                   <span className="text-gray-700 line-clamp-1 flex-1 ml-2">{item.title}</span>
                   <div className="flex items-center gap-2 whitespace-nowrap">
                     <span className="text-xs text-gray-500">x{item.quantity}</span>
-                    <span className="font-medium text-gray-900">{symbol} {item.price * item.quantity}</span>
+                    {/* استفاده از convertPrice برای نمایش قیمت صحیح */}
+                    <span className="font-medium text-gray-900">
+                        {symbol} {convertPrice(item.price * item.quantity)}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -196,23 +315,33 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between items-center font-bold text-lg text-blue-900 mt-2">
                 <span>مبلغ قابل پرداخت</span>
-                <span>{mounted ? `${symbol} ${total}` : '...'}</span>
+                {/* اینجا فقط نمایش می‌دهیم، اما ذخیره در دیتابیس همیشه دلاری است */}
+                <span>{mounted ? `${symbol} ${displayTotal}` : '...'}</span>
               </div>
             </div>
 
-            {/* دکمه موبایل - فقط در مرحله ۱ نمایش داده شود */}
             {step === 1 && (
               <button
                 onClick={handleSubmit}
-                className="w-full flex lg:hidden items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-4 text-base font-bold text-white shadow-md hover:bg-blue-700 transition-all mt-6"
+                disabled={isSubmitting}
+                className="w-full flex lg:hidden items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-4 text-base font-bold text-white shadow-md hover:bg-blue-700 disabled:bg-gray-400 transition-all mt-6"
               >
-                <span>تایید و پرداخت</span>
-                <ArrowLeft className="h-5 w-5" />
+                 {isSubmitting ? (
+                        <>
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                            <span>ثبت...</span>
+                        </>
+                    ) : (
+                        <>
+                            <span>تایید و پرداخت</span>
+                            <ArrowLeft className="h-5 w-5" />
+                        </>
+                    )}
               </button>
             )}
             
             <p className="mt-4 text-center text-xs text-gray-400">
-              تضمین بازگشت وجه در صورت نرسیدن کالا
+                تضمین بازگشت وجه در صورت نرسیدن کالا
             </p>
           </div>
         </div>

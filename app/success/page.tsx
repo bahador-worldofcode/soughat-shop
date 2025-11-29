@@ -1,22 +1,30 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { CheckCircle, Package, ArrowRight, Copy } from 'lucide-react';
 import { useStore } from '@/lib/store';
 
-export default function SuccessPage() {
+// کامپوننت داخلی برای خواندن پارامترها (منطق اصلی)
+function SuccessContent() {
   const { clearCart } = useStore();
+  const searchParams = useSearchParams(); // ابزار خواندن URL
+  const orderId = searchParams.get('id'); // دریافت شماره سفارش واقعی
   const [trackingCode, setTrackingCode] = useState('');
 
   useEffect(() => {
-    // 1. تولید یک کد رهگیری تصادفی
-    const randomCode = 'SGT-' + Math.floor(100000 + Math.random() * 900000);
-    setTrackingCode(randomCode);
+    // اگر شماره واقعی در آدرس بود، آن را نشان بده
+    // اگر نبود (مثلاً کسی مستقیم آدرس را زد)، یک کد موقت بساز
+    if (orderId) {
+      setTrackingCode(orderId);
+    } else {
+      setTrackingCode('SGT-' + Math.floor(100000 + Math.random() * 900000));
+    }
 
-    // 2. پاک کردن سبد خرید (چون خرید انجام شده)
+    // پاک کردن سبد خرید
     clearCart();
-  }, [clearCart]);
+  }, [clearCart, orderId]);
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(trackingCode);
@@ -42,12 +50,13 @@ export default function SuccessPage() {
 
       {/* کارت کد رهگیری */}
       <div className="bg-white border border-dashed border-gray-300 rounded-xl p-6 w-full max-w-sm mb-8 shadow-sm">
-        <span className="text-xs text-gray-400 uppercase tracking-wider">کد رهگیری سفارش</span>
+        <span className="text-xs text-gray-400 uppercase tracking-wider">کد رهگیری (Order ID)</span>
         <div className="flex items-center justify-between mt-2 bg-gray-50 p-3 rounded-lg border border-gray-100">
-          <span className="text-xl font-mono font-bold text-gray-800 tracking-widest">
+          {/* نمایش کد به صورت فونت ماشین‌تحریر و با شکستن خط اگر طولانی بود */}
+          <span className="text-sm font-mono font-bold text-gray-800 break-all text-left dir-ltr">
             {trackingCode || '...'}
           </span>
-          <button onClick={copyToClipboard} className="text-gray-400 hover:text-blue-600 transition-colors">
+          <button onClick={copyToClipboard} className="text-gray-400 hover:text-blue-600 transition-colors ml-2 flex-shrink-0">
             <Copy className="h-5 w-5" />
           </button>
         </div>
@@ -75,5 +84,14 @@ export default function SuccessPage() {
       </div>
 
     </div>
+  );
+}
+
+// بدنه اصلی صفحه (این بخش ضروری است تا نکست‌جی‌اس ارور ندهد)
+export default function SuccessPage() {
+  return (
+    <Suspense fallback={<div className="p-20 text-center text-gray-500">در حال دریافت رسید...</div>}>
+      <SuccessContent />
+    </Suspense>
   );
 }
