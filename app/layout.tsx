@@ -14,6 +14,9 @@ const vazir = Vazirmatn({
 export const metadata: Metadata = {
   title: "Soughat Shop | سوغات شاپ",
   description: "ارسال هدیه به ایران با پرداخت کریپتو",
+  verification: {
+    google: "889fIOlZo4jHk-UB3Sv_X-vuaJQa-YPzZKLPMqpcYEo",
+  },
 };
 
 export default function RootLayout({
