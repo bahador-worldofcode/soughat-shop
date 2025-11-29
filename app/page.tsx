@@ -2,7 +2,8 @@ import Hero from "@/components/Hero";
 import ProductCard from "@/components/ProductCard";
 import CurrencyRatesBanner from "@/components/CurrencyRatesBanner";
 import FAQ from "@/components/FAQ"; 
-import { supabase } from "@/lib/supabase";
+import HomeSEOContent from "@/components/HomeSEOContent"; // <--- اضافه شد
+import { supabase } from '@/lib/supabase';
 import { ArrowLeft, Layers } from 'lucide-react';
 import Link from 'next/link';
 
@@ -43,7 +44,7 @@ export default async function Home() {
       
       {/* 2. Categories Section (Improved UI) */}
       <section className="container mx-auto px-4 -mt-10 relative z-30 mb-20">
-        <div className="bg-white rounded-3xl p-8 shadow-xl shadow-gray-200/50 border border-gray-100 text-center">
+         <div className="bg-white rounded-3xl p-8 shadow-xl shadow-gray-200/50 border border-gray-100 text-center">
            <h3 className="font-bold text-gray-800 mb-6 flex items-center justify-center gap-2">
               <Layers className="h-5 w-5 text-blue-600" />
               دسترسی سریع به محصولات
@@ -59,7 +60,7 @@ export default async function Home() {
                     href={`/products?category=${cat.slug}`} 
                     className="group flex items-center gap-3 bg-gray-50 hover:bg-blue-600 hover:text-white border border-gray-200 hover:border-blue-600 text-gray-700 px-6 py-4 rounded-2xl transition-all duration-300"
                  >
-                    <span className="font-bold text-sm">{cat.name}</span>
+                  <span className="font-bold text-sm">{cat.name}</span>
                  </Link>
                ))}
              </div>
@@ -77,7 +78,6 @@ export default async function Home() {
               <span className="w-2 h-8 bg-blue-600 rounded-full"></span>
               جدیدترین‌های فروشگاه
             </h2>
-            {/* متن اصلاح شد: حذف 'بسته‌بندی کادویی' و استفاده از متن کلی */}
             <p className="text-sm text-gray-500 mt-2 mr-4">
                منتخب بهترین سوغات‌های ایران، با کیفیت تضمین شده
             </p>
@@ -129,6 +129,9 @@ export default async function Home() {
 
       {/* 5. FAQ Section */}
       <FAQ />
+
+      {/* 6. SEO Content (New) */}
+      <HomeSEOContent /> {/* <--- اضافه شد */}
 
     </main>
   );

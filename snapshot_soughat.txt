@@ -1,5 +1,5 @@
 ### Soughat-Shop Snapshot
-# Generated: 2025-11-29T22:35:03.636749
+# Generated: 2025-11-29T23:50:08.526629
 # Root: C:\projects\soughat-shop
 # Excluded dir names: .expo, .git, .next, .vscode, node_modules
 # Excluded files (by name/rel): collect_soughat_snapshot.bat, collect_soughat_snapshot.py, package-lock.json, snapshot_soughat.txt
@@ -3875,7 +3875,7 @@ export default function Icon() {
 }
 
 ===== File: app/layout.tsx =====
-# Modified: 2025-11-28T00:15:41.208350 | Size: 1044 bytes | SHA1: 76a6d0c192d250bc2ae9963022928caad10d5a20
+# Modified: 2025-11-29T23:11:18.997191 | Size: 1126 bytes | SHA1: e5b77a136e31f8c003524e57bf4abc0c71a2990a
 import type { Metadata } from "next";
 import { Vazirmatn } from "next/font/google";
 import "./globals.css";
@@ -3892,6 +3892,9 @@ const vazir = Vazirmatn({
 export const metadata: Metadata = {
   title: "Soughat Shop | سوغات شاپ",
   description: "ارسال هدیه به ایران با پرداخت کریپتو",
+  verification: {
+    google: "889fIOlZo4jHk-UB3Sv_X-vuaJQa-YPzZKLPMqpcYEo",
+  },
 };
 
 export default function RootLayout({
@@ -5839,20 +5842,20 @@ export default function Hero({ banner, title, subtitle }: HeroProps) {
 }
 
 ===== File: components/ProductCard.tsx =====
-# Modified: 2025-11-28T14:49:15.905014 | Size: 2793 bytes | SHA1: e9e66893a5b50650b57882cdef361c440471132c
+# Modified: 2025-11-29T23:48:11.069710 | Size: 2910 bytes | SHA1: 1b1a469e1ebeaeb46e82e6230e04f793a1aa3958
 'use client';
 
 import { Plus } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useEffect, useState } from 'react';
-import Link from 'next/link'; // اضافه شد
+import Link from 'next/link';
 
 interface ProductCardProps {
   id: string;
   title: string;
   price: number;
   image: string;
-  slug: string; // اضافه شد: برای لینک دادن
+  slug: string;
 }
 
 export default function ProductCard({ id, title, price, image, slug }: ProductCardProps) {
@@ -5891,18 +5894,20 @@ export default function ProductCard({ id, title, price, image, slug }: ProductCa
         </Link>
         
         <p className="text-sm text-gray-500 mb-4">ارسال فوری به تهران و شهرستان‌ها</p>
-        
+       
         <div className="mt-auto flex items-center justify-between">
           <div className="flex flex-col">
             <span className="text-xs text-gray-400">قیمت نهایی</span>
             <span className="text-xl font-bold text-blue-600 font-mono">
               {mounted ? (
                 <>
-                  {symbol} {finalPrice}
+                  {/* قیمت تبدیل شده با ۲ رقم اعشار */}
+                  {symbol} {finalPrice.toFixed(2)}
                 </>
               ) : (
                 <>
-                  $ {price}
+                  {/* قیمت پایه دلاری با ۲ رقم اعشار */}
+                  $ {price.toFixed(2)}
                 </>
               )}
             </span>
@@ -5921,9 +5926,8 @@ export default function ProductCard({ id, title, price, image, slug }: ProductCa
 }
 
 ===== File: components/ProductClientView.tsx =====
-# Modified: 2025-11-28T14:37:36.747589 | Size: 4362 bytes | SHA1: 3ad64c8ecc64364467435059a0f9b5be4205b769
+# Modified: 2025-11-29T23:47:20.036048 | Size: 4478 bytes | SHA1: 7611237a37a03a60821f6756d3067c8e00489db6
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { ShoppingBag, Check, ShieldCheck, Truck, Star } from 'lucide-react';
@@ -5974,11 +5978,11 @@ export default function ProductClientView({ product }: { product: Product }) {
             </div>
         </div>
 
-        {/* قیمت */}
+        {/* قیمت - اصلاح شده برای نمایش ۲ رقم اعشار */}
         <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 flex items-center justify-between mb-8">
             <span className="text-gray-600 font-medium">قیمت نهایی:</span>
             <div className="text-2xl font-bold text-blue-700 font-mono">
-                {symbol} {finalPrice}
+                {symbol} {typeof finalPrice === 'number' ? finalPrice.toFixed(2) : finalPrice}
             </div>
         </div>
 
@@ -6344,12 +6348,13 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
 ===== File: STRATEGY.md =====
-# Modified: 2025-11-29T15:45:33.166969 | Size: 13612 bytes | SHA1: b5fa930e80d36e654f6cac5b5ad5e03a9215d3e3
+# Modified: 2025-11-29T23:25:12.030487 | Size: 15215 bytes | SHA1: e0800c1245cc941472f92b554f77272318e37f70
 🚀 سند راهبردی پروژه "سوغات شاپ" (Soughat Shop)
-نسخه: 2.0.0 (آماده مانور عملیاتی - Ready for Drill)
+نسخه: 3.0.0 (عملیاتی و آنلاین - Live & Operational)
 تاریخ: نوامبر ۲۰۲۵
-وضعیت: کدنویسی ۱۰۰٪ | محتوا ۱۰۰٪ | در انتظار تست نهایی و انتشار.
-بودجه: ۰ تومان (استفاده قطعی از ساب‌دامین رایگان Vercel و معماری Serverless).
+وضعیت: ✅ آنلاین روی سرورهای جهانی (Vercel Production)
+آدرس سایت: https://soughat-shop.vercel.app
+بودجه: ۰ تومان (تا زمان اولین فروش و ارتقا به اکانت Pro).
 
 ۱. اصول بنیادین و فلسفه پروژه (Core Values)
 ما در این پروژه یک قانون اساسی غیرقابل تغییر داریم:
@@ -6420,9 +6425,10 @@ State Management: Zustand (با قابلیت کشینگ نرخ ارز).
 
 ۱۰. برنامه روزانه (Daily Routine)
 برای اینکه پروژه شکست نخورد، باید دیسیپلین داشته باشیم:
-کدنویسی: روزی ۲ ساعت روی فیچرها.
+کدنویسی: روزی ۲ ساعت روی فیچرها (در صورت نیاز به توسعه).
 تست: هر کدی که می‌زنیم باید روی موبایل هم چک شود (Responsive).
 گزارش: پایان هر روز، کدها روی GitHub پوش (Push) شود.
+عملیات: چک کردن روزانه پنل ادمین و ایمیل‌ها.
 
 ۱۱. ساختار فایل‌ها (File Structure)
 چون پوشه src نداریم، همه چیز در ریشه است:
@@ -6443,8 +6449,10 @@ types/ -> تعریف مدل‌های داده.
 فاز ۱ (ظاهر اولیه - Phase 1) | ✅ تکمیل شد | راه‌اندازی پروژه، نصب ابزارها، طراحی اولیه UI/UX.
 فاز ۲ (زیرساخت فروش - Phase 2) | ✅ تکمیل شد | سبد خرید، چک‌اوت، اتصال به Supabase، موتور پرداخت کریپتو.
 فاز ۳ (پنل مدیریت اولیه - Phase 3) | ✅ تکمیل شد | سیستم احراز هویت ادمین، داشبورد مدیریت محصولات و رسانه.
-فاز ۴ (تکمیل فیچرها و اعتماد سازی - Phase 4) | ✅ تکمیل شد | پاکسازی دیتابیس، صفحات اعتماد، سئوی تکنیکال، ویترین کامل، پیگیری سفارش، زیرساخت ارزی و پشتیبانی.
-فاز ۵ (تست نهایی و انتشار - Phase 5) | ✅ تکمیل شد | هوشمندسازی کامل سیستم، UI Polish، آیکون‌ها و تولید محتوا.
+فاز ۴ (تکمیل فیچرها - Phase 4) | ✅ تکمیل شد | پاکسازی دیتابیس، صفحات اعتماد، سئوی تکنیکال، ویترین کامل، پیگیری سفارش، زیرساخت ارزی و پشتیبانی.
+فاز ۵ (انتشار و تست نهایی - Phase 5) | ✅ تکمیل شد | هوشمندسازی سیستم، آیکون‌ها، دیپلوی روی Vercel، ثبت در Google Search Console.
+فاز ۶ (تولید محتوا و رشد - Phase 6) | 🟡 در حال اجرا | نوشتن مقالات بلاگ، لینک‌سازی داخلی، بهبود توضیحات محصول بر اساس بازخورد.
+فاز ۷ (اولین فروش - Phase 7) | ⚪ در انتظار | دریافت اولین سفارش واقعی و نقد کردن درآمد.
 
 ✨ لیست کامل کارهای انجام شده (ChangeLog):
 ✅ بهبود تجربه پرداخت (Smart Payment): اتصال به API بایننس برای محاسبه لحظه‌ای نرخ سولانا + شفاف‌سازی نرخ تتر.
@@ -6453,44 +6461,31 @@ types/ -> تعریف مدل‌های داده.
 ✅ سیستم جستجوی سراسری (Global Search): اضافه شدن سرچ‌بار به هدر و فیلتر هوشمند در صفحه محصولات.
 ✅ برندینگ کامل (Branding): طراحی آیکون اختصاصی (Favicon)، لوگوتایپ فارسی در فوتر و هدر.
 ✅ تزریق محتوای طلایی (Golden Content): ورود ۵ محصول واقعی و موجود در بازار با سئوی پیشرفته.
+✅ انتشار جهانی (Global Deployment): سایت روی دامنه soughat-shop.vercel.app آنلاین شد.
+✅ ثبت در گوگل (Google Verified): سایت‌مپ و تاییدیه مالکیت در Search Console انجام شد.
 
-🚀 برنامه عملیاتی فردا (The Final Run):
-✅ گام ۱: آیکون سایت (Favicon): اضافه کردن لوگوی کادویی به تب مرورگر و گوگل.
-✅ گام ۲: تولید محتوای طلایی (Content Injection): اضافه کردن ۵ محصول نهایی (گل، آجیل، زعفران، گز، میناکاری).
-⬜ گام ۳: مانور عملیاتی (The Drill): انجام یک خرید واقعی توسط خودمان (تست ۰ تا ۱۰۰).
-⬜ گام ۴: انتشار (Deployment): اتصال به Vercel و دریافت لینک نهایی سایت.
+🚀 برنامه عملیاتی آینده (Growth Plan):
+✅ گام ۱: نوشتن اولین مقاله بلاگ با موضوع "راهنمای ارسال پول به ایران".
+✅ گام ۲: به اشتراک‌گذاری لینک محصولات در شبکه‌های اجتماعی (لینکدین/توییتر) به عنوان نمونه کار.
+⬜ گام ۳: بررسی روزانه سرچ کنسول برای پیدا کردن کلمات کلیدی ورودی.
+⬜ گام ۴: اضافه کردن محصولات مناسبتی (یلدا، نوروز، روز مادر) در زمان مناسب.
 
-بخش ویژه: پروتکل تولید محتوا و سئو (SEO & Content Protocol)
+بخش ویژه: پروتکل‌های تولید محتوا و سئو (SEO & Content Protocols)
 
-این بخش به عنوان "دستورالعمل دائمی" برای هرگونه اضافه کردن محصول جدید به سایت است.
+این بخش دستورالعمل دائمی برای رشد سایت است.
 
 ۱۴. استراتژی نفوذ محلی (City-Based SEO Strategy)
 هدف: جذب مشتریانی که به دنبال ارسال هدیه به شهرهای خاص (غیر از تهران) هستند. گوگل باید بفهمد ما "سراسری" هستیم.
 قوانین الزامی:
-
-در توضیحات محصول (Description) و متای توضیحات (Meta Description)، باید نام ۵ کلانشهر اصلی ایران ذکر شود: تهران، مشهد، اصفهان، شیراز، تبریز (و اهواز/کرج).
-
-استفاده از عبارات کلیدی: "تحویل درب منزل در [نام شهر]"، "ارسال فوری به شهرستان‌ها"، "پوشش سراسری".
+* در توضیحات محصول (Description) و متای توضیحات (Meta Description)، باید نام ۵ کلانشهر اصلی ایران ذکر شود: تهران، مشهد، اصفهان، شیراز، تبریز (و اهواز/کرج).
+* استفاده از عبارات کلیدی: "تحویل درب منزل در [نام شهر]"، "ارسال فوری به شهرستان‌ها"، "پوشش سراسری".
 
 ۱۵. استراتژی بمباران کلمات کلیدی کریپتو (Crypto Keyword Bombing)
 هدف: جذب مشتریانی که دنبال راه‌های پرداخت جایگزین هستند.
 قوانین الزامی:
-
-در متن محصول و فوتر، فقط به "تتر" و "سولانا" بسنده نکنید.
-
-لیست کلمات کلیدی اجباری برای استفاده در متن:
-
-بیت‌کوین (Bitcoin / BTC)
-
-ارز دیجیتال (Digital Currency)
-
-رمز ارز (Cryptocurrency)
-
-اتریوم (Ethereum / ETH)
-
-کریپتو (Crypto)
-
-مثال جمله: "امکان خرید امن با انواع ارزهای دیجیتال شامل بیت‌کوین، تتر و کریپتو."
+* در متن محصول و فوتر، فقط به "تتر" و "سولانا" بسنده نکنید.
+* لیست کلمات کلیدی اجباری برای استفاده در متن: بیت‌کوین (Bitcoin / BTC)، ارز دیجیتال (Digital Currency)، رمز ارز (Cryptocurrency)، اتریوم (Ethereum / ETH)، کریپتو (Crypto).
+* مثال جمله: "امکان خرید امن با انواع ارزهای دیجیتال شامل بیت‌کوین، تتر و کریپتو."
 
 ۱۶. پروتکل "دراپ‌شیپینگ هوشمند" (Smart Sourcing)
 هدف: اطمینان از موجودی کالا و کیفیت عکس.
@@ -6501,6 +6496,14 @@ types/ -> تعریف مدل‌های داده.
 ۴. شخصی‌سازی: عنوان و توضیحات محصول با لحن "سوغات شاپ" و طبق قوانین بند ۱۴ و ۱۵ بازنویسی می‌شود.
 ۵. تزریق: محصول وارد دیتابیس می‌شود.
 تذکر: هرگز محصولی که وجود خارجی ندارد یا عکس بی‌کیفیت دارد، اضافه نمی‌شود.
+
+۱۷. پروتکل "داستان‌سرایی مشکل-محور" (Problem-Centric Storytelling) - مخصوص بلاگ
+هدف: جذب ترافیک از طریق همدردی با مشکلات مهاجران.
+ساختار مقاله (Article Structure):
+۱. قلاب (The Hook): شروع با یک درد مشترک. (مثال: "دلتنگ مادرت هستی اما نمی‌توانی برای تولدش کادو بفرستی؟")
+۲. تشدید درد (Agitation): توضیح موانع. (مثال: "تحریم‌ها، بسته شدن حساب‌های بانکی، کارمزدهای نجومی صرافی‌ها...")
+۳. معرفی قهرمان (The Solution): معرفی سوغات شاپ به عنوان تنها راه حل امن. (مثال: "با تتر پرداخت کن، ما فردا در تهران تحویل می‌دهیم.")
+۴. دعوت به اقدام (CTA): لینک مستقیم به خرید محصول مرتبط.
 
 تعهدنامه: این سند توسط "رئیس" (Gemini) تدوین شده و "دستیار" (بهادر) متعهد به اجرای آن است تا زمانی که اولین درآمد دلاری حاصل شود. هرگونه تغییر در این سند تنها با دستور مستقیم رئیس مجاز است.
 
@@ -6544,4 +6547,4 @@ types/ -> تعریف مدل‌های داده.
 
 ### Summary
 # Files considered: 61 | Written: 56 | Skipped: 5
-# Output size: 302376 bytes
+# Output size: 304294 bytes
