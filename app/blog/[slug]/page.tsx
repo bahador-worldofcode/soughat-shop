@@ -38,34 +38,53 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-// --- تابع کمکی برای تبدیل لینک‌های متنی به لینک‌های واقعی ---
+// --- تابع هوشمند جدید (Regex) برای تبدیل متن به لینک ---
+// این تابع هم لینک‌های ساده رو میفهمه، هم فرمت [متن](لینک) رو
 const renderContentWithLinks = (text: string) => {
   if (!text) return null;
 
-  // متن را بر اساس خط جدید جدا می‌کنیم تا پاراگراف‌ها حفظ شوند
   return text.split('\n').map((paragraph, pIndex) => {
     if (!paragraph.trim()) return <br key={pIndex} />;
 
-    // هر پاراگراف را کلمه به کلمه بررسی می‌کنیم تا لینک‌ها را پیدا کنیم
-    const words = paragraph.split(' ');
+    // الگویRegex پیشرفته: هم فرمت [متن](لینک) و هم لینک‌های https را جدا می‌کند
+    const parts = paragraph.split(/(\[.*?\]\(.*?\)|https?:\/\/[^\s]+)/g);
+
     return (
-      <p key={pIndex} className="mb-4">
-        {words.map((word, wIndex) => {
-          // اگر کلمه با http شروع شود، لینک است
-          if (word.startsWith('http://') || word.startsWith('https://')) {
+      <p key={pIndex} className="mb-4 leading-8 text-justify">
+        {parts.map((part, index) => {
+          // حالت اول: فرمت [متن](لینک) -> این همون چیزیه که میخوای
+          const linkMatch = part.match(/^\[(.*?)\]\((.*?)\)$/);
+          if (linkMatch) {
             return (
               <a 
-                key={wIndex} 
-                href={word} 
+                key={index} 
+                href={linkMatch[2]} 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="text-blue-600 font-bold hover:underline break-all"
+                className="text-blue-600 font-bold hover:underline"
               >
-                {word}{' '}
+                {linkMatch[1]}
               </a>
             );
           }
-          return word + ' ';
+
+          // حالت دوم: لینک خام (اگر جایی یادمون رفت فرمت بدیم)
+          if (part.match(/^https?:\/\//)) {
+             return (
+              <a 
+                key={index} 
+                href={part} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-blue-600 break-all hover:underline"
+              >
+                {part}
+              </a>
+            );
+          }
+
+          // حالت سوم: متن معمولی
+          return part;
         })}
       </p>
     );
@@ -151,8 +170,8 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
             </span>
           </div>
           
-          {/* متن مقاله (اصلاح شده برای لینک‌دهی) */}
-          <article className="prose prose-lg prose-blue max-w-none text-gray-800 leading-9 text-justify">
+          {/* متن مقاله */}
+          <article className="prose prose-lg prose-blue max-w-none text-gray-800">
              {renderContentWithLinks(post.content)}
           </article>
 
