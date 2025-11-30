@@ -5,9 +5,26 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    // اعتبارسنجی اولیه (که دیتای خالی نیاد)
+    // 1. اعتبارسنجی: چک کردن خالی نبودن سبد خرید
     if (!body.items || body.items.length === 0) {
       return NextResponse.json({ error: 'سبد خرید خالی است' }, { status: 400 });
+    }
+
+    // 2. اعتبارسنجی: چک کردن فیلدهای ضروری (لایه امنیتی دوم - سمت سرور)
+    // این بخش تضمین می‌کند که هیچ دیتای ناقصی وارد دیتابیس نمی‌شود
+    if (
+      !body.senderName ||
+      !body.senderPhone ||
+      !body.senderCountry ||
+      !body.receiverName ||
+      !body.receiverPhone ||
+      !body.address ||
+      !body.city
+    ) {
+      return NextResponse.json(
+        { error: 'اطلاعات سفارش ناقص است. لطفا تمام فیلدهای ستاره‌دار را پر کنید.' }, 
+        { status: 400 }
+      );
     }
 
     // ثبت سفارش با قدرت ادمین (Bypass RLS)
@@ -24,9 +41,9 @@ export async function POST(request: Request) {
           city: body.city,
           address: body.address,
           items: body.items,
-          total_price: body.totalPrice, // قیمت محاسبه شده
-          display_fiat_amount: body.displayFiatAmount,
-          display_currency: body.displayCurrency,
+          total_price: body.totalPrice, // قیمت محاسبه شده دلاری
+          display_fiat_amount: body.displayFiatAmount, // قیمتی که مشتری دیده
+          display_currency: body.displayCurrency, // واحد پولی
           status: 'pending' // وضعیت اولیه
         }
       ])

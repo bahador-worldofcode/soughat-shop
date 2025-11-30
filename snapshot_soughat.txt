@@ -1,5 +1,5 @@
 ### Soughat-Shop Snapshot
-# Generated: 2025-11-29T23:50:08.526629
+# Generated: 2025-11-30T14:12:21.360420
 # Root: C:\projects\soughat-shop
 # Excluded dir names: .expo, .git, .next, .vscode, node_modules
 # Excluded files (by name/rel): collect_soughat_snapshot.bat, collect_soughat_snapshot.py, package-lock.json, snapshot_soughat.txt
@@ -797,38 +797,84 @@ export default function DashboardPage() {
 }
 
 ===== File: app/admin/layout.tsx =====
-# Modified: 2025-11-29T16:07:04.245429 | Size: 3895 bytes | SHA1: 32e02c5651f8857d9c0adc90a4a7f699b3e0230e
+# Modified: 2025-11-30T00:29:17.872153 | Size: 5823 bytes | SHA1: f7334b4e0144e162cf7f898e3760f6aa82cce3a0
 'use client';
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-// آیکون Calculator اضافه شد
-import { LayoutDashboard, ShoppingCart, Package, LogOut, Image as ImageIcon, BookOpen, Wallet, RefreshCw, MessageSquare, Layers, Settings, Calculator } from 'lucide-react';
+// آیکون‌ها
+import { LayoutDashboard, ShoppingCart, Package, LogOut, Image as ImageIcon, BookOpen, Wallet, RefreshCw, MessageSquare, Layers, Settings, Calculator, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useEffect, useState } from 'react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
+  
+  // وضعیت بارگذاری امنیتی (دیوار دفاعی)
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const checkAuth = async () => {
+      // 1. اگر کاربر در صفحه لاگین است، کاری نداشته باش (بذار صفحه لود شه)
+      if (pathname === '/admin/login') {
+        setIsLoading(false);
+        return;
+      }
+
+      // 2. بررسی وضعیت لاگین از سوپابیس
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        // اگر لاگین نبود، بفرستش به صفحه لاگین
+        router.replace('/admin/login');
+      } else {
+        // اگر لاگین بود، اجازه بده محتوا لود شه
+        setIsAuthorized(true);
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [pathname, router]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.replace('/admin/login');
   };
 
+  // --- دیوار امنیتی ---
+  // تا زمانی که داریم چک می‌کنیم، فقط لودینگ نشون بده
+  // این باعث میشه محتوای اصلی حتی برای یک میلی‌ثانیه هم دیده نشه
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+            <p className="text-gray-500 text-sm font-bold">در حال بررسی دسترسی...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // اگر صفحه لاگین بود، قالب ادمین (سایدبار) رو نشون نده، فقط فرم رو نشون بده
   if (pathname === '/admin/login') {
     return <>{children}</>;
   }
 
+  // اگر لودینگ تموم شد ولی کاربر لاگین نبود (حالت گذار ریدارکت)، چیزی نشون نده
+  if (!isAuthorized) {
+    return null;
+  }
+
+  // --- محتوای اصلی پنل (فقط وقتی نشون داده میشه که isAuthorized true باشه) ---
   const menuItems = [
     { name: 'داشبورد', href: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'سفارشات', href: '/admin/orders', icon: ShoppingCart },
     { name: 'محصولات', href: '/admin/products', icon: Package },
     { name: 'دسته‌بندی‌ها', href: '/admin/categories', icon: Layers },
-    { name: 'قیمت‌گذاری', href: '/admin/pricing', icon: Calculator }, // ✅ گزینه جدید اینجاست
+    { name: 'قیمت‌گذاری', href: '/admin/pricing', icon: Calculator }, 
     { name: 'پیام‌ها', href: '/admin/messages', icon: MessageSquare },
     { name: 'درگاه پرداخت', href: '/admin/payments', icon: Wallet },
     { name: 'نرخ ارز', href: '/admin/currencies', icon: RefreshCw },
@@ -2884,6 +2930,52 @@ export async function POST(request: Request) {
   }
 }
 
+===== File: app/api/orders/route.ts =====
+# Modified: 2025-11-30T00:48:06.752717 | Size: 1529 bytes | SHA1: 5bf26b2f88a2c08b44dd4102843d7e2a5e2eb111
+import { NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+
+    // اعتبارسنجی اولیه (که دیتای خالی نیاد)
+    if (!body.items || body.items.length === 0) {
+      return NextResponse.json({ error: 'سبد خرید خالی است' }, { status: 400 });
+    }
+
+    // ثبت سفارش با قدرت ادمین (Bypass RLS)
+    const { data, error } = await supabaseAdmin
+      .from('orders')
+      .insert([
+        {
+          sender_name: body.senderName,
+          sender_phone: body.senderPhone,
+          sender_country: body.senderCountry,
+          order_notes: body.notes,
+          customer_name: body.receiverName,
+          customer_phone: body.receiverPhone,
+          city: body.city,
+          address: body.address,
+          items: body.items,
+          total_price: body.totalPrice, // قیمت محاسبه شده
+          display_fiat_amount: body.displayFiatAmount,
+          display_currency: body.displayCurrency,
+          status: 'pending' // وضعیت اولیه
+        }
+      ])
+      .select('id') // فقط آیدی رو برگردون
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json({ id: data.id });
+  } catch (error: any) {
+    console.error('Order creation failed:', error.message);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
 ===== File: app/blog/[slug]/page.tsx =====
 # Modified: 2025-11-27T15:36:45.636375 | Size: 3640 bytes | SHA1: 95c09fa57f39a7f3ab9c2698ed0e86ad7a0a82ca
 import { notFound } from 'next/navigation';
@@ -3174,7 +3266,7 @@ export default function CartPage() {
 }
 
 ===== File: app/checkout/page.tsx =====
-# Modified: 2025-11-28T17:00:35.622303 | Size: 17272 bytes | SHA1: 771e94a31fae293e81c64fc9fa0f9c5d7917e900
+# Modified: 2025-11-30T00:50:26.170223 | Size: 17622 bytes | SHA1: 83f497efce3c81e3ab64f9c9e3aacef355a55e17
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -3182,25 +3274,23 @@ import Link from 'next/link';
 import { MapPin, ShoppingCart, ChevronLeft, Loader2, Globe, FileText, ShieldCheck, ArrowLeft } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import CryptoPayment from '@/components/CryptoPayment';
-import { supabase } from '@/lib/supabase';
 
 export default function CheckoutPage() {
-  // اضافه شدن 'currency' برای ثبت کد ارز (SEK, EUR, etc.)
+  // دریافت اطلاعات سبد خرید و تنظیمات ارزی از استور
   const { cart, totalPrice, getSymbol, convertPrice, currency } = useStore();
   
-  // محاسبه قیمت نمایشی (برای نشان دادن به کاربر)
+  // محاسبه قیمت نمایشی (برای نشان دادن به کاربر با ارز انتخابی)
   const displayTotal = totalPrice();
   const symbol = getSymbol();
   
-  // محاسبه قیمت واقعی به دلار (برای ذخیره در دیتابیس)
+  // محاسبه قیمت واقعی به دلار (برای ذخیره در دیتابیس به عنوان مبنا)
   const totalBaseUSD = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  
+
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
   const [orderId, setOrderId] = useState('');
 
   const [formData, setFormData] = useState({
@@ -3219,38 +3309,42 @@ export default function CheckoutPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // --- تابع جدید ثبت سفارش (ارسال به API سرور) ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      const { data, error } = await supabase
-        .from('orders')
-        .insert([
-          {
-            sender_name: formData.senderName,
-            sender_phone: formData.senderPhone,
-            sender_country: formData.senderCountry,
-            order_notes: formData.notes,
-            customer_name: formData.receiverName,
-            customer_phone: formData.receiverPhone,
-            city: formData.city,
-            address: formData.address,
-            items: cart,
-            total_price: totalBaseUSD, 
-            // --- فیلدهای جدید برای پشتیبانی ---
-            display_fiat_amount: displayTotal,
-            display_currency: currency,
-            // ---------------------------------
-            status: 'pending'
-          }
-        ])
-        .select();
+      // ارسال درخواست به API خودمان (نه مستقیم به دیتابیس)
+      // این کار باعث می‌شود مشکل امنیتی RLS حل شود
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          senderName: formData.senderName,
+          senderPhone: formData.senderPhone,
+          senderCountry: formData.senderCountry,
+          notes: formData.notes,
+          receiverName: formData.receiverName,
+          receiverPhone: formData.receiverPhone,
+          city: formData.city,
+          address: formData.address,
+          items: cart,
+          totalPrice: totalBaseUSD, // قیمت دلاری
+          displayFiatAmount: displayTotal, // قیمتی که مشتری دیده
+          displayCurrency: currency, // واحد پولی که مشتری دیده
+        }),
+      });
 
-      if (error) throw error;
+      const result = await response.json();
 
-      if (data && data.length > 0) {
-        setOrderId(data[0].id);
+      if (!response.ok) {
+        throw new Error(result.error || 'خطا در ارتباط با سرور');
+      }
+
+      // اگر موفق بود، آیدی سفارش را می‌گیریم و می‌رویم مرحله پرداخت
+      if (result.id) {
+        setOrderId(result.id);
         setStep(2);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -3263,6 +3357,7 @@ export default function CheckoutPage() {
     }
   };
 
+  // اگر سبد خالی بود، برگرداندن کاربر
   if (cart.length === 0) {
     return (
       <div className="container mx-auto px-4 py-20 text-center">
@@ -3289,7 +3384,7 @@ export default function CheckoutPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* ستون راست (فرم) */}
+        {/* ستون راست (فرم و پرداخت) */}
         <div className="lg:col-span-2">
           
           {step === 1 ? (
@@ -3444,7 +3539,8 @@ export default function CheckoutPage() {
                 <ShieldCheck className="text-blue-600 h-7 w-7" />
                 درگاه پرداخت کریپتو
               </h1>
-              {/* ارسال ID واقعی به کامپوننت پرداخت */}
+              
+              {/* ارسال ID واقعی سفارش به کامپوننت پرداخت */}
               <CryptoPayment orderId={orderId} />
               
               <button 
@@ -3476,7 +3572,6 @@ export default function CheckoutPage() {
                   <span className="text-gray-700 line-clamp-1 flex-1 ml-2">{item.title}</span>
                   <div className="flex items-center gap-2 whitespace-nowrap">
                     <span className="text-xs text-gray-500">x{item.quantity}</span>
-                    {/* استفاده از convertPrice برای نمایش قیمت صحیح */}
                     <span className="font-medium text-gray-900">
                         {symbol} {convertPrice(item.price * item.quantity)}
                     </span>
@@ -3492,7 +3587,6 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between items-center font-bold text-lg text-blue-900 mt-2">
                 <span>مبلغ قابل پرداخت</span>
-                {/* اینجا فقط نمایش می‌دهیم، اما ذخیره در دیتابیس همیشه دلاری است */}
                 <span>{mounted ? `${symbol} ${displayTotal}` : '...'}</span>
               </div>
             </div>
@@ -3921,12 +4015,13 @@ export default function RootLayout({
 }
 
 ===== File: app/page.tsx =====
-# Modified: 2025-11-29T01:34:04.934309 | Size: 5532 bytes | SHA1: 4464a803018dcbd37d002480bcff0cd883171dbd
+# Modified: 2025-11-30T00:00:21.240442 | Size: 5580 bytes | SHA1: 320cc8cd8544c8910514b2258eb1072202fd92cf
 import Hero from "@/components/Hero";
 import ProductCard from "@/components/ProductCard";
 import CurrencyRatesBanner from "@/components/CurrencyRatesBanner";
 import FAQ from "@/components/FAQ"; 
-import { supabase } from "@/lib/supabase";
+import HomeSEOContent from "@/components/HomeSEOContent"; // <--- اضافه شد
+import { supabase } from '@/lib/supabase';
 import { ArrowLeft, Layers } from 'lucide-react';
 import Link from 'next/link';
 
@@ -3967,7 +4062,7 @@ export default async function Home() {
       
       {/* 2. Categories Section (Improved UI) */}
       <section className="container mx-auto px-4 -mt-10 relative z-30 mb-20">
-        <div className="bg-white rounded-3xl p-8 shadow-xl shadow-gray-200/50 border border-gray-100 text-center">
+         <div className="bg-white rounded-3xl p-8 shadow-xl shadow-gray-200/50 border border-gray-100 text-center">
            <h3 className="font-bold text-gray-800 mb-6 flex items-center justify-center gap-2">
               <Layers className="h-5 w-5 text-blue-600" />
               دسترسی سریع به محصولات
@@ -3983,7 +4078,7 @@ export default async function Home() {
                     href={`/products?category=${cat.slug}`} 
                     className="group flex items-center gap-3 bg-gray-50 hover:bg-blue-600 hover:text-white border border-gray-200 hover:border-blue-600 text-gray-700 px-6 py-4 rounded-2xl transition-all duration-300"
                  >
-                    <span className="font-bold text-sm">{cat.name}</span>
+                  <span className="font-bold text-sm">{cat.name}</span>
                  </Link>
                ))}
              </div>
@@ -4001,7 +4096,6 @@ export default async function Home() {
               <span className="w-2 h-8 bg-blue-600 rounded-full"></span>
               جدیدترین‌های فروشگاه
             </h2>
-            {/* متن اصلاح شد: حذف 'بسته‌بندی کادویی' و استفاده از متن کلی */}
             <p className="text-sm text-gray-500 mt-2 mr-4">
                منتخب بهترین سوغات‌های ایران، با کیفیت تضمین شده
             </p>
@@ -4054,12 +4148,15 @@ export default async function Home() {
       {/* 5. FAQ Section */}
       <FAQ />
 
+      {/* 6. SEO Content (New) */}
+      <HomeSEOContent /> {/* <--- اضافه شد */}
+
     </main>
   );
 }
 
 ===== File: app/products/[slug]/page.tsx =====
-# Modified: 2025-11-28T16:09:40.801205 | Size: 2287 bytes | SHA1: 175c55b21c72df8d2f58d6b9d87667a1993a0a28
+# Modified: 2025-11-30T00:10:47.828317 | Size: 4606 bytes | SHA1: 1164e8a329bcdcb24086397b997e46178145c798
 import { supabase } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
@@ -4067,31 +4164,61 @@ import ProductClientView from '@/components/ProductClientView';
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
-// آپدیت قیمت و موجودی هر ۶۰ ثانیه یکبار
+// آپدیت قیمت و موجودی هر ۶۰ ثانیه یکبار (ISR)
 export const revalidate = 60;
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
-// 1. تولید متاتگ‌های سئو به صورت داینامیک
+// 1. تولید متاتگ‌های سئو و OpenGraph (کارت ویزیت لینک‌ها)
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const decodedSlug = decodeURIComponent(slug);
   
+  // دریافت اطلاعات سئو از دیتابیس
   const { data: product } = await supabase
     .from('products')
-    .select('seo_title, seo_desc, title, description, image')
+    .select('seo_title, seo_desc, title, description, image, price')
     .eq('slug', decodedSlug)
     .single();
 
   if (!product) return { title: 'محصول یافت نشد' };
 
+  // تنظیم عنوان و توضیحات (اگر فیلد سئو خالی بود، از تایتل معمولی استفاده کن)
+  const pageTitle = product.seo_title || `${product.title} | ارسال هدیه به ایران`;
+  const pageDesc = product.seo_desc || product.description?.substring(0, 160);
+  
+  // آدرس سایت (اگر متغیر محیطی نبود، آدرس ورسل رو بذار)
+  const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat-shop.vercel.app';
+
   return {
-    title: product.seo_title || `${product.title} | خرید و ارسال به ایران`,
-    description: product.seo_desc || product.description?.substring(0, 160),
+    title: pageTitle,
+    description: pageDesc,
     openGraph: {
+      title: pageTitle,
+      description: pageDesc,
+      url: `${siteUrl}/products/${decodedSlug}`,
+      images: [
+        {
+          url: product.image,
+          width: 800,
+          height: 800,
+          alt: product.title,
+        },
+      ],
+      type: 'website',
+      locale: 'fa_IR', // زبان محتوای سایت فارسی است
+      siteName: 'Soughat Shop',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: pageTitle,
+      description: pageDesc,
       images: [product.image],
+    },
+    alternates: {
+      canonical: `${siteUrl}/products/${decodedSlug}`,
     },
   };
 }
@@ -4111,11 +4238,39 @@ export default async function ProductPage({ params }: Props) {
     notFound();
   }
 
+  // --- بخش جدید: ساختار داده استاندارد گوگل (Schema Markup) ---
+  // این بخش به صورت اتوماتیک اطلاعات محصول را به زبان گوگل ترجمه می‌کند
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.title,
+    image: product.image,
+    description: product.seo_desc || product.description,
+    offers: {
+      '@type': 'Offer',
+      priceCurrency: 'USD', // قیمت پایه همیشه دلار است
+      price: product.price,
+      availability: 'https://schema.org/InStock', // محصول موجود است
+      url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat-shop.vercel.app'}/products/${product.slug}`,
+      seller: {
+        '@type': 'Organization',
+        name: 'Soughat Shop'
+      }
+    },
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-12 font-[family-name:var(--font-vazir)]">
+      
+      {/* تزریق کد مخفی اسکیما برای گوگل */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       <div className="container mx-auto px-4 max-w-6xl">
         
-        {/* Breadcrumb */}
+        {/* نوار بازگشت (Breadcrumb) - دست نخورده باقی ماند */}
         <div className="mb-8">
             <Link href="/products" className="inline-flex items-center text-sm text-gray-500 hover:text-blue-600 transition-colors">
                 <ArrowRight className="ml-1 h-4 w-4" />
@@ -4123,7 +4278,7 @@ export default async function ProductPage({ params }: Props) {
             </Link>
         </div>
 
-        {/* Main Content */}
+        {/* محتوای اصلی محصول (کامپوننت کلاینت) - دست نخورده باقی ماند */}
         <div className="bg-white rounded-3xl p-6 md:p-12 shadow-xl shadow-gray-200/50">
             <ProductClientView product={product} />
         </div>
@@ -5841,6 +5996,95 @@ export default function Hero({ banner, title, subtitle }: HeroProps) {
   );
 }
 
+===== File: components/HomeSEOContent.tsx =====
+# Modified: 2025-11-29T23:59:02.767688 | Size: 6266 bytes | SHA1: 91738cfb7a960db5a9c4f2913d1061f34d826feb
+'use client';
+
+import { MapPin, ShieldCheck, Zap, Globe } from 'lucide-react';
+
+export default function HomeSEOContent() {
+  return (
+    <section className="bg-white border-t border-gray-100 py-16 font-[family-name:var(--font-vazir)]">
+      <div className="container mx-auto px-4 max-w-5xl">
+        
+        {/* Main Title & Intro */}
+        <div className="mb-12">
+          <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-6 leading-tight">
+            سوغات شاپ: پل مطمئن ارسال هدیه به ایران از سراسر جهان
+          </h2>
+          <p className="text-gray-600 leading-8 text-lg text-justify">
+            آیا تا به حال خواسته‌اید برای تولد مادر، روز پدر یا تبریک سال نو به خانواده‌تان در 
+            <span className="font-bold text-gray-800"> ایران </span> 
+            هدیه‌ای بفرستید اما با درهای بسته بانکی مواجه شده‌اید؟ 
+            <strong>سوغات شاپ (Soughat Shop)</strong> دقیقاً برای حل همین مشکل متولد شده است. 
+            ما اولین پلتفرم تخصصی هستیم که به ایرانیان مقیم خارج (کانادا، آمریکا، اروپا، انگلیس و استرالیا) امکان می‌دهد بدون نیاز به کارت‌های بانکی ایرانی و تنها با استفاده از 
+            <span className="font-bold text-blue-600"> ارزهای دیجیتال (تتر و سولانا) </span>، 
+            بهترین سوغات و هدایا را درب منزل عزیزانشان در ایران تحویل دهند.
+          </p>
+        </div>
+
+        {/* How it works (SEO focused) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+          <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100">
+            <h3 className="text-xl font-bold text-blue-900 mb-3 flex items-center gap-2">
+              <Zap className="h-5 w-5" />
+              چرا پرداخت با کریپتو؟
+            </h3>
+            <p className="text-gray-700 text-sm leading-7 text-justify">
+              به دلیل تحریم‌های بانکی، استفاده از ویزا کارت (Visa) و مستر کارت (MasterCard) برای خرید مستقیم از فروشگاه‌های داخل ایران ممکن نیست. ما این مانع را با تکنولوژی بلاک‌چین دور زده‌ایم. شما می‌توانید مبلغ سفارش را با 
+              <strong> تتر (USDT) </strong> یا <strong> سولانا (SOL) </strong> 
+              پرداخت کنید. این روش نه تنها ۱۰۰٪ امن و قانونی است، بلکه کارمزد انتقال آن نزدیک به صفر است و پرداخت شما در کمتر از ۳ دقیقه تایید می‌شود.
+            </p>
+          </div>
+
+          <div className="bg-green-50 p-6 rounded-2xl border border-green-100">
+            <h3 className="text-xl font-bold text-green-900 mb-3 flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5" />
+              تضمین کیفیت و بازگشت وجه
+            </h3>
+            <p className="text-gray-700 text-sm leading-7 text-justify">
+              ما می‌دانیم که شما هزاران کیلومتر دورتر هستید و روی کیفیت حساسید. تمام محصولات ما (از پسته و زعفران اعلاء گرفته تا صنایع دستی) از بهترین تامین‌کنندگان تهران تهیه می‌شوند. اگر سفارش شما به هر دلیلی (مفقودی یا آسیب در پست) به دست گیرنده نرسد، ما 
+              <span className="font-bold"> ضمانت بازگشت ۱۰۰٪ وجه </span> 
+              داریم. اعتماد شما، سرمایه ماست.
+            </p>
+          </div>
+        </div>
+
+        {/* Coverage Area */}
+        <div className="bg-gray-50 rounded-2xl p-8 border border-gray-200">
+          <h3 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <MapPin className="h-6 w-6 text-red-600" />
+            پوشش سراسری ارسال به تمام شهرهای ایران
+          </h3>
+          <p className="text-gray-600 leading-7 mb-6">
+            فرقی نمی‌کند خانواده شما در کدام شهر زندگی می‌کنند. شبکه توزیع سوغات شاپ با همکاری پست پیشتاز و پیک‌های اختصاصی، سفارش شما را در سریع‌ترین زمان ممکن تحویل می‌دهد. ما به تمام کلان‌شهرها و شهرستان‌ها خدمات می‌دهیم:
+          </p>
+          
+          <div className="flex flex-wrap gap-3">
+            {['تهران (تحویل فوری)', 'مشهد', 'اصفهان', 'شیراز', 'تبریز', 'کرج', 'اهواز', 'رشت', 'ساری', 'کرمان', 'یزد', 'همدان', 'بندرعباس'].map((city) => (
+              <span key={city} className="bg-white px-4 py-2 rounded-lg text-sm font-bold text-gray-700 shadow-sm border border-gray-100 flex items-center gap-1">
+                <Globe className="h-3 w-3 text-gray-400" />
+                {city}
+              </span>
+            ))}
+            <span className="bg-white px-4 py-2 rounded-lg text-sm text-gray-500 border border-gray-100">
+              و سایر شهرهای ایران...
+            </span>
+          </div>
+        </div>
+
+        {/* Final SEO Keywords Footer */}
+        <div className="mt-12 text-center text-sm text-gray-400 leading-6">
+          <p>
+            کلیدواژه‌های مرتبط: ارسال پول به ایران، خرید اینترنتی برای خانواده در ایران، ارسال کادو تولد به ایران، صرافی آنلاین هدایا، خرید پسته صادراتی برای ایران، فروشگاه آنلاین ایرانیان خارج از کشور.
+          </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}
+
 ===== File: components/ProductCard.tsx =====
 # Modified: 2025-11-29T23:48:11.069710 | Size: 2910 bytes | SHA1: 1b1a469e1ebeaeb46e82e6230e04f793a1aa3958
 'use client';
@@ -6546,5 +6790,5 @@ types/ -> تعریف مدل‌های داده.
 
 
 ### Summary
-# Files considered: 61 | Written: 56 | Skipped: 5
-# Output size: 304294 bytes
+# Files considered: 63 | Written: 58 | Skipped: 5
+# Output size: 316809 bytes

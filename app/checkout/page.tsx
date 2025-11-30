@@ -9,14 +9,12 @@ import CryptoPayment from '@/components/CryptoPayment';
 export default function CheckoutPage() {
   // دریافت اطلاعات سبد خرید و تنظیمات ارزی از استور
   const { cart, totalPrice, getSymbol, convertPrice, currency } = useStore();
-  
   // محاسبه قیمت نمایشی (برای نشان دادن به کاربر با ارز انتخابی)
   const displayTotal = totalPrice();
   const symbol = getSymbol();
   
   // محاسبه قیمت واقعی به دلار (برای ذخیره در دیتابیس به عنوان مبنا)
   const totalBaseUSD = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -43,6 +41,22 @@ export default function CheckoutPage() {
   // --- تابع جدید ثبت سفارش (ارسال به API سرور) ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // *** تغییر جدید: اعتبارسنجی دستی قبل از ارسال ***
+    // اگر فیلدهای ستاره‌دار خالی باشند، همینجا استوپ می‌زنیم
+    if (
+      !formData.senderName.trim() ||
+      !formData.senderPhone.trim() ||
+      !formData.senderCountry.trim() ||
+      !formData.receiverName.trim() ||
+      !formData.receiverPhone.trim() ||
+      !formData.city.trim() ||
+      !formData.address.trim()
+    ) {
+      alert('لطفاً تمام فیلدهای ستاره‌دار (*) را پر کنید.');
+      return; // توقف تابع، اجازه نمی‌دهد به خط‌های بعدی برود
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -144,6 +158,7 @@ export default function CheckoutPage() {
                                 placeholder="نام کامل شما"
                                 className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-white"
                                 onChange={handleInputChange}
+                                value={formData.senderName}
                             />
                         </div>
                         <div className="space-y-1">
@@ -155,6 +170,7 @@ export default function CheckoutPage() {
                                 placeholder="مثال: آلمان، کانادا"
                                 className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-white"
                                 onChange={handleInputChange}
+                                value={formData.senderCountry}
                             />
                         </div>
                         <div className="space-y-1 md:col-span-2">
@@ -167,6 +183,7 @@ export default function CheckoutPage() {
                                 placeholder="+49 ..."
                                 className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-white text-left font-mono"
                                 onChange={handleInputChange}
+                                value={formData.senderPhone}
                             />
                         </div>
                     </div>
@@ -188,6 +205,7 @@ export default function CheckoutPage() {
                                 placeholder="نام تحویل گیرنده"
                                 className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-gray-50 focus:bg-white transition-colors"
                                 onChange={handleInputChange}
+                                value={formData.receiverName}
                             />
                         </div>
                         <div className="space-y-1">
@@ -200,6 +218,7 @@ export default function CheckoutPage() {
                                 placeholder="0912..."
                                 className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-gray-50 focus:bg-white transition-colors text-left font-mono"
                                 onChange={handleInputChange}
+                                value={formData.receiverPhone}
                             />
                         </div>
                         <div className="space-y-1 md:col-span-2">
@@ -211,6 +230,7 @@ export default function CheckoutPage() {
                                 placeholder="مثال: تهران، شهرک غرب"
                                 className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-gray-50 focus:bg-white transition-colors"
                                 onChange={handleInputChange}
+                                value={formData.city}
                             />
                         </div>
                         <div className="space-y-1 md:col-span-2">
@@ -221,6 +241,7 @@ export default function CheckoutPage() {
                                 rows={2}
                                 className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-gray-50 focus:bg-white transition-colors resize-none"
                                 onChange={handleInputChange}
+                                value={formData.address}
                             />
                         </div>
                     </div>
@@ -240,6 +261,7 @@ export default function CheckoutPage() {
                             placeholder="متن کارت هدیه، ساعت تحویل خاص یا هر نکته‌ای که باید بدانیم..."
                             className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-white transition-colors"
                             onChange={handleInputChange}
+                            value={formData.notes}
                             />
                     </div>
                 </div>
