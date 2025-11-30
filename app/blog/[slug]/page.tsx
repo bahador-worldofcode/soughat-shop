@@ -4,7 +4,6 @@ import { Calendar, ArrowRight, User, Tag, Folder } from 'lucide-react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
-// 1. تولید متاتگ‌های سئو (دینامیک)
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const decodedSlug = decodeURIComponent(slug);
@@ -38,54 +37,65 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-// --- تابع هوشمند جدید (Regex) برای تبدیل متن به لینک ---
-// این تابع هم لینک‌های ساده رو میفهمه، هم فرمت [متن](لینک) رو
-const renderContentWithLinks = (text: string) => {
+// --- تابع هوشمند پردازش متن (لینک + تیتر) ---
+const renderContent = (text: string) => {
   if (!text) return null;
 
-  return text.split('\n').map((paragraph, pIndex) => {
-    if (!paragraph.trim()) return <br key={pIndex} />;
+  return text.split('\n').map((line, index) => {
+    if (!line.trim()) return <br key={index} />;
 
-    // الگویRegex پیشرفته: هم فرمت [متن](لینک) و هم لینک‌های https را جدا می‌کند
-    const parts = paragraph.split(/(\[.*?\]\(.*?\)|https?:\/\/[^\s]+)/g);
+    // تشخیص تیترها (اگر با ## شروع شود)
+    const isHeading = line.startsWith('## ');
+    const cleanLine = isHeading ? line.replace(/^##\s+/, '') : line;
+
+    // پردازش لینک‌ها در هر خط
+    const parts = cleanLine.split(/(\[.*?\]\(.*?\)|https?:\/\/[^\s]+)/g);
+    
+    const renderedParts = parts.map((part, partIndex) => {
+      // 1. فرمت [متن](لینک)
+      const linkMatch = part.match(/^\[(.*?)\]\((.*?)\)$/);
+      if (linkMatch) {
+        return (
+          <a 
+            key={partIndex} 
+            href={linkMatch[2]} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="text-blue-600 hover:underline"
+          >
+            {linkMatch[1]}
+          </a>
+        );
+      }
+      // 2. لینک ساده
+      if (part.match(/^https?:\/\//)) {
+         return (
+          <a 
+            key={partIndex} 
+            href={part} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="text-blue-600 break-all hover:underline"
+          >
+            {part}
+          </a>
+        );
+      }
+      return part;
+    });
+
+    // اگر تیتر بود، با استایل H2 برگردان، اگر نه پاراگراف
+    if (isHeading) {
+      return (
+        <h2 key={index} className="text-xl md:text-2xl font-bold text-gray-900 mt-8 mb-4 border-r-4 border-blue-500 pr-3">
+          {renderedParts}
+        </h2>
+      );
+    }
 
     return (
-      <p key={pIndex} className="mb-4 leading-8 text-justify">
-        {parts.map((part, index) => {
-          // حالت اول: فرمت [متن](لینک) -> این همون چیزیه که میخوای
-          const linkMatch = part.match(/^\[(.*?)\]\((.*?)\)$/);
-          if (linkMatch) {
-            return (
-              <a 
-                key={index} 
-                href={linkMatch[2]} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="text-blue-600 font-bold hover:underline"
-              >
-                {linkMatch[1]}
-              </a>
-            );
-          }
-
-          // حالت دوم: لینک خام (اگر جایی یادمون رفت فرمت بدیم)
-          if (part.match(/^https?:\/\//)) {
-             return (
-              <a 
-                key={index} 
-                href={part} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="text-blue-600 break-all hover:underline"
-              >
-                {part}
-              </a>
-            );
-          }
-
-          // حالت سوم: متن معمولی
-          return part;
-        })}
+      <p key={index} className="mb-4 leading-8 text-justify text-gray-700">
+        {renderedParts}
       </p>
     );
   });
@@ -127,7 +137,6 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      {/* 1. هدر تصویر */}
       <div className="relative h-[300px] md:h-[450px] w-full bg-gray-900">
         {post.image ? (
           <img 
@@ -154,11 +163,9 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
         </div>
       </div>
 
-      {/* 2. بدنه اصلی */}
       <div className="container mx-auto px-4 relative z-10 -mt-10">
         <div className="bg-white rounded-3xl shadow-xl p-6 md:p-12 max-w-4xl mx-auto border border-gray-100">
           
-          {/* اطلاعات نویسنده و تاریخ */}
           <div className="flex flex-wrap items-center gap-6 text-gray-500 text-sm font-medium mb-10 pb-6 border-b border-gray-100">
             <span className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-blue-500" />
@@ -170,12 +177,10 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
             </span>
           </div>
           
-          {/* متن مقاله */}
-          <article className="prose prose-lg prose-blue max-w-none text-gray-800">
-             {renderContentWithLinks(post.content)}
+          <article className="max-w-none">
+             {renderContent(post.content)}
           </article>
 
-          {/* بخش تگ‌ها */}
           {post.tags && post.tags.length > 0 && (
             <div className="mt-12 pt-8 border-t border-gray-100">
                 <div className="flex items-center gap-2 mb-4 text-gray-700 font-bold text-sm">
@@ -191,7 +196,6 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
             </div>
           )}
 
-          {/* دکمه بازگشت */}
           <div className="mt-10">
             <Link href="/blog" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-bold transition-colors group">
                  <ArrowRight className="ml-2 h-4 w-4 group-hover:mr-1 transition-all" /> بازگشت به لیست مقالات
