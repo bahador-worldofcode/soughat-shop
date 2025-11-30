@@ -22,23 +22,36 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'سفارش یافت نشد' }, { status: 404 });
     }
 
-    // 2. دریافت نرخ لحظه‌ای از بایننس
+    // 2. دریافت نرخ لحظه‌ای (تغییر منبع به CoinCap برای سازگاری با Vercel)
     let rate = 1;
     const cleanSymbol = symbol.toUpperCase().trim();
 
     if (cleanSymbol !== 'USDT') {
       try {
-        const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${cleanSymbol}USDT`, {
+        // استفاده از API کوین‌کپ (پایدارتر روی سرورهای ابری)
+        // برای سولانا id میشه solana
+        const cryptoId = cleanSymbol === 'SOL' ? 'solana' : 'bitcoin'; 
+        
+        const res = await fetch(`https://api.coincap.io/v2/assets/${cryptoId}`, {
           next: { revalidate: 30 }
         });
+        
         const data = await res.json();
-        if (data.price) {
-          rate = parseFloat(data.price);
+        
+        if (data.data && data.data.priceUsd) {
+          rate = parseFloat(data.data.priceUsd);
         } else {
-          throw new Error('Invalid rate data');
+          // فال‌بک (Fallback) اگر اولی کار نکرد، از کوین‌گکو بگیر
+           const backupRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${cryptoId}&vs_currencies=usd`);
+           const backupData = await backupRes.json();
+           if(backupData[cryptoId] && backupData[cryptoId].usd) {
+               rate = backupData[cryptoId].usd;
+           } else {
+               throw new Error('Price fetch failed');
+           }
         }
       } catch (err) {
-        console.error('Binance API Error:', err);
+        console.error('Crypto API Error:', err);
         return NextResponse.json({ error: 'خطا در دریافت نرخ ارز' }, { status: 503 });
       }
     }
@@ -49,12 +62,10 @@ export async function POST(request: Request) {
     
     // محاسبه: تقسیم قیمت بر نرخ ارز
     const rawAmount = totalPriceUSD.dividedBy(cryptoRate);
-
-    // رند کردن به سمت بالا تا ۴ رقم اعشار (BigNumber باقی می‌ماند)
+    
+    // رند کردن به سمت بالا تا ۴ رقم اعشار (برای جلوگیری از خطای کسری)
     const roundedAmount = rawAmount.decimalPlaces(4, BigNumber.ROUND_CEIL);
 
-    // تبدیل به رشته (این تابع خودکار صفرهای اضافه آخر را حذف می‌کند)
-    // مثلا 60.0000 میشود "60" و 0.4260 میشود "0.426"
     const payableAmount = roundedAmount.toString();
 
     return NextResponse.json({
