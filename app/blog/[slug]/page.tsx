@@ -17,10 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   if (!post) return { title: 'مقاله یافت نشد' };
 
-  // اولویت با تایتل سئو هست، اگر نبود تایتل معمولی
   const pageTitle = post.seo_title || `${post.title} | وبلاگ سوغات شاپ`;
-  
-  // اولویت با دیسکریپشن سئو، اگر نبود خلاصه، اگر نبود بخشی از متن
   const pageDesc = post.seo_desc || post.summary || post.content.substring(0, 160);
 
   return {
@@ -41,6 +38,40 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
+// --- تابع کمکی برای تبدیل لینک‌های متنی به لینک‌های واقعی ---
+const renderContentWithLinks = (text: string) => {
+  if (!text) return null;
+
+  // متن را بر اساس خط جدید جدا می‌کنیم تا پاراگراف‌ها حفظ شوند
+  return text.split('\n').map((paragraph, pIndex) => {
+    if (!paragraph.trim()) return <br key={pIndex} />;
+
+    // هر پاراگراف را کلمه به کلمه بررسی می‌کنیم تا لینک‌ها را پیدا کنیم
+    const words = paragraph.split(' ');
+    return (
+      <p key={pIndex} className="mb-4">
+        {words.map((word, wIndex) => {
+          // اگر کلمه با http شروع شود، لینک است
+          if (word.startsWith('http://') || word.startsWith('https://')) {
+            return (
+              <a 
+                key={wIndex} 
+                href={word} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-blue-600 font-bold hover:underline break-all"
+              >
+                {word}{' '}
+              </a>
+            );
+          }
+          return word + ' ';
+        })}
+      </p>
+    );
+  });
+};
+
 export default async function BlogPost({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const decodedSlug = decodeURIComponent(slug);
@@ -55,7 +86,6 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
     notFound();
   }
 
-  // ساختار داده استاندارد گوگل (Schema Markup) برای مقاله
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
@@ -73,7 +103,6 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
   return (
     <div className="min-h-screen bg-gray-50 pb-20 font-[family-name:var(--font-vazir)]">
       
-      {/* تزریق اسکیما برای گوگل */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -94,7 +123,6 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent" />
         
-        {/* تایتل روی عکس (برای موبایل جذاب‌تره) */}
         <div className="absolute bottom-0 left-0 right-0 p-6 md:p-12 container mx-auto">
             {post.category && (
                 <span className="inline-flex items-center gap-1 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold mb-4">
@@ -123,20 +151,20 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
             </span>
           </div>
           
-          {/* متن مقاله */}
-          <article className="prose prose-lg prose-blue max-w-none text-gray-800 leading-9 text-justify whitespace-pre-wrap">
-            {post.content}
+          {/* متن مقاله (اصلاح شده برای لینک‌دهی) */}
+          <article className="prose prose-lg prose-blue max-w-none text-gray-800 leading-9 text-justify">
+             {renderContentWithLinks(post.content)}
           </article>
 
-          {/* بخش تگ‌ها (لینک‌سازی داخلی) */}
+          {/* بخش تگ‌ها */}
           {post.tags && post.tags.length > 0 && (
             <div className="mt-12 pt-8 border-t border-gray-100">
                 <div className="flex items-center gap-2 mb-4 text-gray-700 font-bold text-sm">
-                    <Tag className="h-4 w-4" /> برچسب‌ها:
+                   <Tag className="h-4 w-4" /> برچسب‌ها:
                 </div>
                 <div className="flex flex-wrap gap-2">
                     {post.tags.map((tag: string, idx: number) => (
-                        <span key={idx} className="bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg text-xs hover:bg-blue-50 hover:text-blue-600 transition-colors cursor-pointer">
+                        <span key={idx} className="bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg text-xs">
                             #{tag}
                         </span>
                     ))}

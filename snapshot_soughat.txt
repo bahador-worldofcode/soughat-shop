@@ -1,5 +1,5 @@
 ### Soughat-Shop Snapshot
-# Generated: 2025-11-30T14:12:21.360420
+# Generated: 2025-11-30T15:13:38.290327
 # Root: C:\projects\soughat-shop
 # Excluded dir names: .expo, .git, .next, .vscode, node_modules
 # Excluded files (by name/rel): collect_soughat_snapshot.bat, collect_soughat_snapshot.py, package-lock.json, snapshot_soughat.txt
@@ -140,12 +140,11 @@ export default function AboutPage() {
 }
 
 ===== File: app/admin/blog/page.tsx =====
-# Modified: 2025-11-27T15:29:41.493955 | Size: 12005 bytes | SHA1: 3c78ad225e0dc60d5e07a0928db599c132633633
+# Modified: 2025-11-30T15:06:40.744051 | Size: 18532 bytes | SHA1: 62bfdef17c4a748817a6791db7d8ed56b53a9808
 'use client';
-
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Plus, Trash2, Edit2, Search, X, ImageIcon, Check, BookOpen, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Edit2, Search, X, ImageIcon, Check, BookOpen, Loader2, Tag, Layers, FileText } from 'lucide-react';
 
 interface Post {
   id: string;
@@ -154,6 +153,12 @@ interface Post {
   content: string;
   image: string;
   created_at: string;
+  // فیلدهای جدید سئو
+  seo_title?: string;
+  seo_desc?: string;
+  summary?: string;
+  category?: string;
+  tags?: string[];
 }
 
 interface MediaFile {
@@ -171,7 +176,19 @@ export default function BlogPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
-  const [formData, setFormData] = useState({ title: '', slug: '', content: '', image: '' });
+  
+  // فرم دیتا شامل فیلدهای جدید
+  const [formData, setFormData] = useState({ 
+    title: '', 
+    slug: '', 
+    content: '', 
+    image: '',
+    summary: '',
+    category: '',
+    seo_title: '',
+    seo_desc: '',
+    tags: '' // تگ‌ها رو به صورت متنی (با کاما) از کاربر می‌گیریم
+  });
 
   // Gallery State
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
@@ -204,10 +221,23 @@ export default function BlogPage() {
   const openModal = (post?: Post) => {
     if (post) {
       setEditingPost(post);
-      setFormData({ title: post.title, slug: post.slug, content: post.content, image: post.image });
+      setFormData({ 
+        title: post.title, 
+        slug: post.slug, 
+        content: post.content, 
+        image: post.image,
+        summary: post.summary || '',
+        category: post.category || 'عمومی',
+        seo_title: post.seo_title || '',
+        seo_desc: post.seo_desc || '',
+        tags: post.tags ? post.tags.join(', ') : '' // آرایه رو به رشته تبدیل می‌کنیم برای نمایش
+      });
     } else {
       setEditingPost(null);
-      setFormData({ title: '', slug: '', content: '', image: '' });
+      setFormData({ 
+        title: '', slug: '', content: '', image: '', 
+        summary: '', category: 'عمومی', seo_title: '', seo_desc: '', tags: '' 
+      });
     }
     setIsModalOpen(true);
   };
@@ -216,13 +246,26 @@ export default function BlogPage() {
     e.preventDefault();
     setIsSaving(true);
     try {
-        // ساخت Slug (آدرس) خودکار از روی عنوان اگر خالی باشد
-        let finalSlug = formData.slug;
-        if (!finalSlug) {
-            finalSlug = formData.title.trim().toLowerCase().replace(/\s+/g, '-');
-        }
+      // ساخت Slug خودکار
+      let finalSlug = formData.slug;
+      if (!finalSlug) {
+        finalSlug = formData.title.trim().toLowerCase().replace(/\s+/g, '-');
+      }
 
-      const postData = { ...formData, slug: finalSlug };
+      // تبدیل تگ‌های متنی به آرایه
+      const tagsArray = formData.tags.split(',').map(t => t.trim()).filter(t => t !== '');
+
+      const postData = { 
+        title: formData.title,
+        slug: finalSlug,
+        content: formData.content,
+        image: formData.image,
+        summary: formData.summary,
+        category: formData.category,
+        seo_title: formData.seo_title,
+        seo_desc: formData.seo_desc,
+        tags: tagsArray
+      };
 
       if (editingPost) {
         const { error } = await supabase.from('posts').update(postData).eq('id', editingPost.id);
@@ -258,8 +301,8 @@ export default function BlogPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-           <h2 className="text-2xl font-bold text-gray-800">وبلاگ و مقالات</h2>
-           <p className="text-sm text-gray-500">مدیریت محتوای آموزشی برای سئو</p>
+           <h2 className="text-2xl font-bold text-gray-800">وبلاگ و مقالات (SEO Pro)</h2>
+           <p className="text-sm text-gray-500">مدیریت محتوای قدرتمند برای جذب ترافیک گوگل</p>
         </div>
         <button onClick={() => openModal()} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 shadow-md">
           <Plus className="h-5 w-5" />
@@ -275,21 +318,30 @@ export default function BlogPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredPosts.map((post) => (
           <div key={post.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-all">
-            <div className="relative h-48 bg-gray-100">
+            <div className="relative h-48 bg-gray-100 group">
                 {post.image ? (
                     <img src={post.image} className="w-full h-full object-cover" />
                 ) : (
                     <div className="flex items-center justify-center h-full text-gray-300"><BookOpen className="h-10 w-10"/></div>
                 )}
-                <div className="absolute top-2 right-2 flex gap-2">
+                <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => openModal(post)} className="p-2 bg-white/90 rounded-full text-blue-600 shadow-sm"><Edit2 className="h-4 w-4" /></button>
                     <button onClick={() => handleDelete(post.id)} className="p-2 bg-white/90 rounded-full text-red-500 shadow-sm"><Trash2 className="h-4 w-4" /></button>
                 </div>
+                {post.category && (
+                    <span className="absolute bottom-2 right-2 bg-black/50 text-white text-[10px] px-2 py-1 rounded backdrop-blur-sm">
+                        {post.category}
+                    </span>
+                )}
             </div>
             <div className="p-4 flex-1 flex flex-col">
                 <h3 className="font-bold text-gray-900 mb-2 line-clamp-1">{post.title}</h3>
-                <p className="text-xs text-gray-400 font-mono mb-4">/{post.slug}</p>
-                <p className="text-sm text-gray-600 line-clamp-3 mt-auto">{post.content}</p>
+                <p className="text-xs text-gray-400 font-mono mb-2">/{post.slug}</p>
+                {post.summary ? (
+                    <p className="text-sm text-gray-600 line-clamp-3 mt-auto">{post.summary}</p>
+                ) : (
+                    <p className="text-sm text-gray-400 line-clamp-3 mt-auto italic">بدون چکیده</p>
+                )}
             </div>
           </div>
         ))}
@@ -298,46 +350,99 @@ export default function BlogPage() {
       {/* MODAL EDIT/ADD */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl h-[90vh] flex flex-col">
-            <div className="p-5 border-b border-gray-100 flex justify-between items-center">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col">
+            <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
               <h3 className="text-lg font-bold text-gray-900">{editingPost ? 'ویرایش مقاله' : 'نوشتن مقاله جدید'}</h3>
               <button onClick={() => setIsModalOpen(false)}><X className="h-5 w-5 text-gray-400 hover:text-red-500" /></button>
             </div>
-            <form onSubmit={handleSave} className="p-6 space-y-4 overflow-y-auto flex-1">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">عنوان مقاله</label>
-                <input type="text" required className="w-full p-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} placeholder="مثال: راهنمای ارسال ارز" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">آدرس (Slug)</label>
-                <input type="text" className="w-full p-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500 dir-ltr text-left" value={formData.slug} onChange={(e) => setFormData({...formData, slug: e.target.value})} placeholder="how-to-send-crypto (اختیاری)" />
-                <p className="text-xs text-gray-400 mt-1">اگر خالی بگذارید، از روی عنوان ساخته می‌شود.</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">تصویر شاخص</label>
-                {formData.image ? (
-                  <div className="relative h-40 w-full rounded-lg overflow-hidden border border-gray-200 group">
-                    <img src={formData.image} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                        <button type="button" onClick={openGallery} className="bg-white text-blue-600 px-3 py-1 rounded-full text-sm">تغییر</button>
-                        <button type="button" onClick={() => setFormData({...formData, image: ''})} className="bg-red-500 text-white p-1 rounded-full"><X className="h-4 w-4"/></button>
+            
+            <form onSubmit={handleSave} className="p-6 overflow-y-auto flex-1 space-y-8">
+              
+              {/* بخش ۱: اطلاعات اصلی */}
+              <div className="space-y-4">
+                 <h4 className="font-bold text-blue-800 text-sm border-b pb-2 flex items-center gap-2">
+                    <BookOpen className="h-4 w-4"/> ۱. اطلاعات اصلی مقاله
+                 </h4>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                        <label className="block text-xs font-bold text-gray-700 mb-1">عنوان مقاله (H1)</label>
+                        <input type="text" required className="w-full p-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} placeholder="مثال: راهنمای جامع ارسال پسته" />
                     </div>
-                  </div>
-                ) : (
-                  <button type="button" onClick={openGallery} className="w-full h-24 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-500 hover:border-blue-400 hover:text-blue-600">
-                    <ImageIcon className="h-6 w-6 mb-1"/>
-                    <span className="text-sm">انتخاب تصویر از رسانه</span>
-                  </button>
-                )}
+                    <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">آدرس (Slug)</label>
+                        <input type="text" className="w-full p-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500 dir-ltr text-left" value={formData.slug} onChange={(e) => setFormData({...formData, slug: e.target.value})} placeholder="send-pistachio-iran" />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">دسته‌بندی</label>
+                        <input type="text" className="w-full p-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500" value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} placeholder="مثال: آموزش ارز دیجیتال" />
+                    </div>
+                    <div className="md:col-span-2">
+                        <label className="block text-xs font-bold text-gray-700 mb-1">خلاصه‌ی مقاله (چکیده)</label>
+                        <textarea rows={2} className="w-full p-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500 resize-none" value={formData.summary} onChange={(e) => setFormData({...formData, summary: e.target.value})} placeholder="یک متن کوتاه ۲-۳ خطی برای نمایش در کارت مقاله..." />
+                    </div>
+                 </div>
               </div>
-              <div className="h-full">
-                <label className="block text-sm font-medium text-gray-700 mb-1">متن مقاله</label>
-                <textarea required className="w-full h-64 p-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500 resize-none" value={formData.content} onChange={(e) => setFormData({...formData, content: e.target.value})} placeholder="متن خود را اینجا بنویسید..." />
+
+              {/* بخش ۲: محتوا */}
+              <div className="space-y-4">
+                 <h4 className="font-bold text-blue-800 text-sm border-b pb-2 flex items-center gap-2">
+                    <FileText className="h-4 w-4"/> ۲. محتوای مقاله و تصویر
+                 </h4>
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="md:col-span-2">
+                        <label className="block text-xs font-bold text-gray-700 mb-1">متن کامل مقاله</label>
+                        <textarea required className="w-full h-64 p-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500 resize-none" value={formData.content} onChange={(e) => setFormData({...formData, content: e.target.value})} placeholder="متن خود را اینجا بنویسید..." />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">تصویر شاخص</label>
+                        {formData.image ? (
+                        <div className="relative h-40 w-full rounded-lg overflow-hidden border border-gray-200 group">
+                            <img src={formData.image} className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                <button type="button" onClick={openGallery} className="bg-white text-blue-600 px-3 py-1 rounded-full text-sm">تغییر</button>
+                                <button type="button" onClick={() => setFormData({...formData, image: ''})} className="bg-red-500 text-white p-1 rounded-full"><X className="h-4 w-4"/></button>
+                            </div>
+                        </div>
+                        ) : (
+                        <button type="button" onClick={openGallery} className="w-full h-40 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-all">
+                            <ImageIcon className="h-8 w-8 mb-2"/>
+                            <span className="text-xs">انتخاب تصویر</span>
+                        </button>
+                        )}
+                    </div>
+                 </div>
               </div>
+
+              {/* بخش ۳: تنظیمات سئو */}
+              <div className="bg-gray-50 p-4 rounded-xl space-y-4 border border-gray-200">
+                 <h4 className="font-bold text-gray-800 text-sm border-b border-gray-200 pb-2 flex items-center gap-2">
+                    <Search className="h-4 w-4"/> ۳. تنظیمات پیشرفته سئو (SEO)
+                 </h4>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                        <label className="block text-xs font-bold text-gray-500 mb-1">عنوان سئو (SEO Title)</label>
+                        <input type="text" className="w-full p-2 rounded border border-gray-300 text-sm" value={formData.seo_title} onChange={(e) => setFormData({...formData, seo_title: e.target.value})} placeholder="اگر خالی باشد، از عنوان اصلی استفاده می‌شود" />
+                        <p className="text-[10px] text-gray-400 mt-1">عنوانی که در نتایج گوگل نمایش داده می‌شود (حداکثر ۶۰ کاراکتر).</p>
+                    </div>
+                    <div className="md:col-span-2">
+                        <label className="block text-xs font-bold text-gray-500 mb-1">توضیحات متا (Meta Description)</label>
+                        <textarea rows={2} className="w-full p-2 rounded border border-gray-300 text-sm" value={formData.seo_desc} onChange={(e) => setFormData({...formData, seo_desc: e.target.value})} placeholder="توضیحی جذاب برای نمایش در گوگل..." />
+                        <p className="text-[10px] text-gray-400 mt-1">مهم‌ترین بخش برای افزایش کلیک (حداکثر ۱۶۰ کاراکتر).</p>
+                    </div>
+                    <div className="md:col-span-2">
+                        <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center gap-1"><Tag className="h-3 w-3"/> کلمات کلیدی (Tags)</label>
+                        <input type="text" className="w-full p-2 rounded border border-gray-300 text-sm" value={formData.tags} onChange={(e) => setFormData({...formData, tags: e.target.value})} placeholder="ارسال پول، ارز دیجیتال، سوغات (با کاما جدا کنید)" />
+                    </div>
+                 </div>
+              </div>
+
             </form>
-            <div className="p-4 border-t border-gray-100 flex gap-3">
-                <button onClick={() => setIsModalOpen(false)} className="flex-1 py-3 rounded-lg border border-gray-300 text-gray-700">انصراف</button>
-                <button onClick={handleSave} disabled={isSaving} className="flex-1 py-3 rounded-lg bg-blue-600 text-white shadow-md disabled:opacity-50">{isSaving ? 'در حال ذخیره...' : 'انتشار مقاله'}</button>
+            <div className="p-4 border-t border-gray-100 flex gap-3 bg-gray-50">
+                <button onClick={() => setIsModalOpen(false)} className="flex-1 py-3 rounded-lg border border-gray-300 text-gray-700 bg-white hover:bg-gray-50">انصراف</button>
+                <button onClick={handleSave} disabled={isSaving} className="flex-1 py-3 rounded-lg bg-blue-600 text-white shadow-md hover:bg-blue-700 disabled:opacity-50 flex justify-center items-center gap-2">
+                    {isSaving ? <Loader2 className="animate-spin h-5 w-5" /> : <Check className="h-5 w-5" />}
+                    {isSaving ? 'در حال انتشار...' : 'انتشار مقاله'}
+                </button>
             </div>
           </div>
         </div>
@@ -355,13 +460,13 @@ export default function BlogPage() {
                {loadingMedia ? <div className="flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div> : (
                  <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
                    {mediaFiles.map((file) => (
-                     <div key={file.id} onClick={() => selectImage(file.url)} className="aspect-square rounded-xl overflow-hidden cursor-pointer border hover:border-blue-500 relative">
+                     <div key={file.id} onClick={() => selectImage(file.url)} className="aspect-square rounded-xl overflow-hidden cursor-pointer border hover:border-blue-500 relative group">
                        <img src={file.url} className="w-full h-full object-cover" />
                      </div>
                    ))}
                  </div>
                )}
-             </div>
+            </div>
            </div>
         </div>
       )}
@@ -2859,10 +2964,13 @@ export async function DELETE(request: Request) {
 }
 
 ===== File: app/api/crypto/calc/route.ts =====
-# Modified: 2025-11-28T16:23:15.914846 | Size: 2455 bytes | SHA1: ff04a7086fdcc870efa6e95b075db4478da488ae
+# Modified: 2025-11-30T14:36:22.150222 | Size: 3063 bytes | SHA1: 54a52692491aa958cc9a062096ba8eafc5cbec2f
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import BigNumber from 'bignumber.js';
+
+// جلوگیری از کش شدن نتیجه (برای اینکه قیمت همیشه تازه باشه)
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
@@ -2884,39 +2992,44 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'سفارش یافت نشد' }, { status: 404 });
     }
 
-    // 2. دریافت نرخ لحظه‌ای از بایننس
+    // 2. دریافت نرخ لحظه‌ای از Coinbase (پایدارترین گزینه برای Vercel)
     let rate = 1;
     const cleanSymbol = symbol.toUpperCase().trim();
 
+    // اگر تتر بود که نرخ 1 هست، اگر نه استعلام بگیر
     if (cleanSymbol !== 'USDT') {
       try {
-        const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${cleanSymbol}USDT`, {
-          next: { revalidate: 30 }
+        // پترن کوین‌بیس: SOL-USD
+        const pair = `${cleanSymbol}-USD`;
+        const res = await fetch(`https://api.coinbase.com/v2/prices/${pair}/spot`, {
+          cache: 'no-store' // مهم: اصلاً کش نکن
         });
+        
         const data = await res.json();
-        if (data.price) {
-          rate = parseFloat(data.price);
+        
+        // ساختار کوین‌بیس: { data: { amount: "20.55", base: "SOL", currency: "USD" } }
+        if (data.data && data.data.amount) {
+          rate = parseFloat(data.data.amount);
         } else {
-          throw new Error('Invalid rate data');
+          console.error('Coinbase Response Error:', data);
+          throw new Error('Invalid price data from Coinbase');
         }
       } catch (err) {
-        console.error('Binance API Error:', err);
-        return NextResponse.json({ error: 'خطا در دریافت نرخ ارز' }, { status: 503 });
+        console.error('API Error:', err);
+        // اگر کوین‌بیس هم جواب نداد (که بعیده)، یه ارور تمیز برگردون
+        return NextResponse.json({ error: 'خطا در دریافت نرخ ارز. لطفا لحظاتی دیگر تلاش کنید.' }, { status: 503 });
       }
     }
 
-    // 3. محاسبه دقیق ریاضی با BigNumber
+    // 3. محاسبه دقیق ریاضی
     const totalPriceUSD = new BigNumber(order.total_price);
     const cryptoRate = new BigNumber(rate);
     
-    // محاسبه: تقسیم قیمت بر نرخ ارز
+    // محاسبه: قیمت کل تقسیم بر نرخ ارز
     const rawAmount = totalPriceUSD.dividedBy(cryptoRate);
-
-    // رند کردن به سمت بالا تا ۴ رقم اعشار (BigNumber باقی می‌ماند)
-    const roundedAmount = rawAmount.decimalPlaces(4, BigNumber.ROUND_CEIL);
-
-    // تبدیل به رشته (این تابع خودکار صفرهای اضافه آخر را حذف می‌کند)
-    // مثلا 60.0000 میشود "60" و 0.4260 میشود "0.426"
+    
+    // رند کردن: تا 5 رقم اعشار برای دقت بالاتر در سولانا
+    const roundedAmount = rawAmount.decimalPlaces(5, BigNumber.ROUND_CEIL);
     const payableAmount = roundedAmount.toString();
 
     return NextResponse.json({
@@ -2926,12 +3039,13 @@ export async function POST(request: Request) {
     });
 
   } catch (error: any) {
+    console.error('Server Error:', error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
 ===== File: app/api/orders/route.ts =====
-# Modified: 2025-11-30T00:48:06.752717 | Size: 1529 bytes | SHA1: 5bf26b2f88a2c08b44dd4102843d7e2a5e2eb111
+# Modified: 2025-11-30T14:20:37.266261 | Size: 2272 bytes | SHA1: 620052c98a52444ab076f7537070958e299a7586
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
@@ -2939,9 +3053,26 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    // اعتبارسنجی اولیه (که دیتای خالی نیاد)
+    // 1. اعتبارسنجی: چک کردن خالی نبودن سبد خرید
     if (!body.items || body.items.length === 0) {
       return NextResponse.json({ error: 'سبد خرید خالی است' }, { status: 400 });
+    }
+
+    // 2. اعتبارسنجی: چک کردن فیلدهای ضروری (لایه امنیتی دوم - سمت سرور)
+    // این بخش تضمین می‌کند که هیچ دیتای ناقصی وارد دیتابیس نمی‌شود
+    if (
+      !body.senderName ||
+      !body.senderPhone ||
+      !body.senderCountry ||
+      !body.receiverName ||
+      !body.receiverPhone ||
+      !body.address ||
+      !body.city
+    ) {
+      return NextResponse.json(
+        { error: 'اطلاعات سفارش ناقص است. لطفا تمام فیلدهای ستاره‌دار را پر کنید.' }, 
+        { status: 400 }
+      );
     }
 
     // ثبت سفارش با قدرت ادمین (Bypass RLS)
@@ -2958,9 +3089,9 @@ export async function POST(request: Request) {
           city: body.city,
           address: body.address,
           items: body.items,
-          total_price: body.totalPrice, // قیمت محاسبه شده
-          display_fiat_amount: body.displayFiatAmount,
-          display_currency: body.displayCurrency,
+          total_price: body.totalPrice, // قیمت محاسبه شده دلاری
+          display_fiat_amount: body.displayFiatAmount, // قیمتی که مشتری دیده
+          display_currency: body.displayCurrency, // واحد پولی
           status: 'pending' // وضعیت اولیه
         }
       ])
@@ -2977,23 +3108,47 @@ export async function POST(request: Request) {
 }
 
 ===== File: app/blog/[slug]/page.tsx =====
-# Modified: 2025-11-27T15:36:45.636375 | Size: 3640 bytes | SHA1: 95c09fa57f39a7f3ab9c2698ed0e86ad7a0a82ca
+# Modified: 2025-11-30T15:07:59.445737 | Size: 6290 bytes | SHA1: a78a11a32489747ee6a9e7692da2df301f44080f
 import { notFound } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Calendar, ArrowRight, User } from 'lucide-react';
+import { Calendar, ArrowRight, User, Tag, Folder } from 'lucide-react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
+// 1. تولید متاتگ‌های سئو (دینامیک)
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const decodedSlug = decodeURIComponent(slug);
-  const { data: post } = await supabase.from('posts').select('title, content').eq('slug', decodedSlug).single();
+  
+  const { data: post } = await supabase
+    .from('posts')
+    .select('title, content, seo_title, seo_desc, summary, image')
+    .eq('slug', decodedSlug)
+    .single();
 
   if (!post) return { title: 'مقاله یافت نشد' };
 
+  // اولویت با تایتل سئو هست، اگر نبود تایتل معمولی
+  const pageTitle = post.seo_title || `${post.title} | وبلاگ سوغات شاپ`;
+  
+  // اولویت با دیسکریپشن سئو، اگر نبود خلاصه، اگر نبود بخشی از متن
+  const pageDesc = post.seo_desc || post.summary || post.content.substring(0, 160);
+
   return {
-    title: `${post.title} | وبلاگ سوغات شاپ`,
-    description: post.content ? post.content.substring(0, 160) : '',
+    title: pageTitle,
+    description: pageDesc,
+    openGraph: {
+      title: pageTitle,
+      description: pageDesc,
+      type: 'article',
+      images: post.image ? [{ url: post.image }] : [],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: pageTitle,
+      description: pageDesc,
+      images: post.image ? [post.image] : [],
+    }
   };
 }
 
@@ -3011,60 +3166,104 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
     notFound();
   }
 
+  // ساختار داده استاندارد گوگل (Schema Markup) برای مقاله
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.seo_title || post.title,
+    image: post.image ? [post.image] : [],
+    datePublished: post.created_at,
+    author: {
+      '@type': 'Organization',
+      name: 'Soughat Shop Team'
+    },
+    description: post.seo_desc || post.summary,
+    articleBody: post.content
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20 font-[family-name:var(--font-vazir)]">
       
-      {/* 1. عکس مقاله (به عنوان هدر) */}
-      <div className="relative h-[250px] md:h-[400px] w-full bg-gray-200">
+      {/* تزریق اسکیما برای گوگل */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
+      {/* 1. هدر تصویر */}
+      <div className="relative h-[300px] md:h-[450px] w-full bg-gray-900">
         {post.image ? (
           <img 
             src={post.image} 
             alt={post.title} 
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover opacity-60"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-400">
-             <span className="text-4xl font-bold opacity-20">Soughat Blog</span>
+          <div className="w-full h-full flex items-center justify-center opacity-20">
+             <span className="text-6xl font-black text-white">BLOG</span>
           </div>
         )}
-        {/* سایه پایین عکس */}
-        <div className="absolute inset-0 bg-gradient-to-t from-gray-900/50 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent" />
+        
+        {/* تایتل روی عکس (برای موبایل جذاب‌تره) */}
+        <div className="absolute bottom-0 left-0 right-0 p-6 md:p-12 container mx-auto">
+            {post.category && (
+                <span className="inline-flex items-center gap-1 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold mb-4">
+                    <Folder className="h-3 w-3" /> {post.category}
+                </span>
+            )}
+            <h1 className="text-3xl md:text-5xl font-extrabold text-white leading-tight drop-shadow-lg max-w-4xl">
+                {post.title}
+            </h1>
+        </div>
       </div>
 
-      {/* 2. بدنه اصلی (باکس سفید) */}
-      <div className="container mx-auto px-4 -mt-20 relative z-10">
-        <div className="bg-white rounded-2xl shadow-xl p-6 md:p-12 max-w-4xl mx-auto border border-gray-100">
+      {/* 2. بدنه اصلی */}
+      <div className="container mx-auto px-4 relative z-10 -mt-10">
+        <div className="bg-white rounded-3xl shadow-xl p-6 md:p-12 max-w-4xl mx-auto border border-gray-100">
           
-          {/* دکمه بازگشت */}
-          <Link href="/blog" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-8 text-sm font-bold transition-colors">
-            <ArrowRight className="ml-2 h-4 w-4" /> بازگشت به لیست مقالات
-          </Link>
-
-          {/* عنوان اصلی: رنگ تیره (مشکی) */}
-          <h1 className="text-3xl md:text-5xl font-extrabold text-gray-900 leading-tight mb-6">
-            {post.title}
-          </h1>
-
           {/* اطلاعات نویسنده و تاریخ */}
-          <div className="flex flex-wrap items-center gap-6 text-gray-500 text-sm font-medium mb-8 pb-8 border-b border-gray-100">
-            <span className="flex items-center gap-2 bg-gray-50 px-3 py-1 rounded-full">
+          <div className="flex flex-wrap items-center gap-6 text-gray-500 text-sm font-medium mb-10 pb-6 border-b border-gray-100">
+            <span className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-blue-500" />
               {new Date(post.created_at).toLocaleDateString('fa-IR', { dateStyle: 'long' })}
             </span>
-            <span className="flex items-center gap-2 bg-gray-50 px-3 py-1 rounded-full">
+            <span className="flex items-center gap-2">
               <User className="h-4 w-4 text-blue-500" />
-              نویسنده: ادمین سوغات شاپ
+              نویسنده: تیم محتوای سوغات شاپ
             </span>
           </div>
           
-          {/* متن مقاله: رنگ تیره */}
-          <div className="text-gray-800 leading-9 text-lg text-justify whitespace-pre-wrap">
+          {/* متن مقاله */}
+          <article className="prose prose-lg prose-blue max-w-none text-gray-800 leading-9 text-justify whitespace-pre-wrap">
             {post.content}
+          </article>
+
+          {/* بخش تگ‌ها (لینک‌سازی داخلی) */}
+          {post.tags && post.tags.length > 0 && (
+            <div className="mt-12 pt-8 border-t border-gray-100">
+                <div className="flex items-center gap-2 mb-4 text-gray-700 font-bold text-sm">
+                    <Tag className="h-4 w-4" /> برچسب‌ها:
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    {post.tags.map((tag: string, idx: number) => (
+                        <span key={idx} className="bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg text-xs hover:bg-blue-50 hover:text-blue-600 transition-colors cursor-pointer">
+                            #{tag}
+                        </span>
+                    ))}
+                </div>
+            </div>
+          )}
+
+          {/* دکمه بازگشت */}
+          <div className="mt-10">
+            <Link href="/blog" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-bold transition-colors group">
+                 <ArrowRight className="ml-2 h-4 w-4 group-hover:mr-1 transition-all" /> بازگشت به لیست مقالات
+            </Link>
           </div>
 
         </div>
       </div>
-      
     </div>
   );
 }
@@ -3266,7 +3465,7 @@ export default function CartPage() {
 }
 
 ===== File: app/checkout/page.tsx =====
-# Modified: 2025-11-30T00:50:26.170223 | Size: 17622 bytes | SHA1: 83f497efce3c81e3ab64f9c9e3aacef355a55e17
+# Modified: 2025-11-30T14:18:39.215940 | Size: 18788 bytes | SHA1: 587bcbf1fd97234e7de53b16d2d6b377caf5c638
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -3278,14 +3477,12 @@ import CryptoPayment from '@/components/CryptoPayment';
 export default function CheckoutPage() {
   // دریافت اطلاعات سبد خرید و تنظیمات ارزی از استور
   const { cart, totalPrice, getSymbol, convertPrice, currency } = useStore();
-  
   // محاسبه قیمت نمایشی (برای نشان دادن به کاربر با ارز انتخابی)
   const displayTotal = totalPrice();
   const symbol = getSymbol();
   
   // محاسبه قیمت واقعی به دلار (برای ذخیره در دیتابیس به عنوان مبنا)
   const totalBaseUSD = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -3312,6 +3509,22 @@ export default function CheckoutPage() {
   // --- تابع جدید ثبت سفارش (ارسال به API سرور) ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // *** تغییر جدید: اعتبارسنجی دستی قبل از ارسال ***
+    // اگر فیلدهای ستاره‌دار خالی باشند، همینجا استوپ می‌زنیم
+    if (
+      !formData.senderName.trim() ||
+      !formData.senderPhone.trim() ||
+      !formData.senderCountry.trim() ||
+      !formData.receiverName.trim() ||
+      !formData.receiverPhone.trim() ||
+      !formData.city.trim() ||
+      !formData.address.trim()
+    ) {
+      alert('لطفاً تمام فیلدهای ستاره‌دار (*) را پر کنید.');
+      return; // توقف تابع، اجازه نمی‌دهد به خط‌های بعدی برود
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -3413,6 +3626,7 @@ export default function CheckoutPage() {
                                 placeholder="نام کامل شما"
                                 className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-white"
                                 onChange={handleInputChange}
+                                value={formData.senderName}
                             />
                         </div>
                         <div className="space-y-1">
@@ -3424,6 +3638,7 @@ export default function CheckoutPage() {
                                 placeholder="مثال: آلمان، کانادا"
                                 className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-white"
                                 onChange={handleInputChange}
+                                value={formData.senderCountry}
                             />
                         </div>
                         <div className="space-y-1 md:col-span-2">
@@ -3436,6 +3651,7 @@ export default function CheckoutPage() {
                                 placeholder="+49 ..."
                                 className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-white text-left font-mono"
                                 onChange={handleInputChange}
+                                value={formData.senderPhone}
                             />
                         </div>
                     </div>
@@ -3457,6 +3673,7 @@ export default function CheckoutPage() {
                                 placeholder="نام تحویل گیرنده"
                                 className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-gray-50 focus:bg-white transition-colors"
                                 onChange={handleInputChange}
+                                value={formData.receiverName}
                             />
                         </div>
                         <div className="space-y-1">
@@ -3469,6 +3686,7 @@ export default function CheckoutPage() {
                                 placeholder="0912..."
                                 className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-gray-50 focus:bg-white transition-colors text-left font-mono"
                                 onChange={handleInputChange}
+                                value={formData.receiverPhone}
                             />
                         </div>
                         <div className="space-y-1 md:col-span-2">
@@ -3480,6 +3698,7 @@ export default function CheckoutPage() {
                                 placeholder="مثال: تهران، شهرک غرب"
                                 className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-gray-50 focus:bg-white transition-colors"
                                 onChange={handleInputChange}
+                                value={formData.city}
                             />
                         </div>
                         <div className="space-y-1 md:col-span-2">
@@ -3490,6 +3709,7 @@ export default function CheckoutPage() {
                                 rows={2}
                                 className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-gray-50 focus:bg-white transition-colors resize-none"
                                 onChange={handleInputChange}
+                                value={formData.address}
                             />
                         </div>
                     </div>
@@ -3509,6 +3729,7 @@ export default function CheckoutPage() {
                             placeholder="متن کارت هدیه، ساعت تحویل خاص یا هر نکته‌ای که باید بدانیم..."
                             className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-white transition-colors"
                             onChange={handleInputChange}
+                            value={formData.notes}
                             />
                     </div>
                 </div>
@@ -6592,9 +6813,9 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
 ===== File: STRATEGY.md =====
-# Modified: 2025-11-29T23:25:12.030487 | Size: 15215 bytes | SHA1: e0800c1245cc941472f92b554f77272318e37f70
+# Modified: 2025-11-30T15:10:27.364436 | Size: 16188 bytes | SHA1: 257aac8c6194fff4a72620272192378849f6e57e
 🚀 سند راهبردی پروژه "سوغات شاپ" (Soughat Shop)
-نسخه: 3.0.0 (عملیاتی و آنلاین - Live & Operational)
+نسخه: 3.1.0 (عملیاتی و ارتقا یافته - Live & Upgraded)
 تاریخ: نوامبر ۲۰۲۵
 وضعیت: ✅ آنلاین روی سرورهای جهانی (Vercel Production)
 آدرس سایت: https://soughat-shop.vercel.app
@@ -6658,6 +6879,7 @@ State Management: Zustand (با قابلیت کشینگ نرخ ارز).
 نقشه سایت (sitemap.xml) و robots.txt داینامیک.
 لینک‌سازی داخلی در فوتر.
 استفاده از Slugهای انگلیسی و تمیز برای محصولات.
+استفاده از سیستم پیشرفته Blog 2.0 (متاتگ‌های اختصاصی و اسکیما).
 
 ۹. محصولات و مشتریان
 مشتریان: ایرانیان مقیم کانادا، آمریکا، آلمان و انگلیس.
@@ -6707,6 +6929,8 @@ types/ -> تعریف مدل‌های داده.
 ✅ تزریق محتوای طلایی (Golden Content): ورود ۵ محصول واقعی و موجود در بازار با سئوی پیشرفته.
 ✅ انتشار جهانی (Global Deployment): سایت روی دامنه soughat-shop.vercel.app آنلاین شد.
 ✅ ثبت در گوگل (Google Verified): سایت‌مپ و تاییدیه مالکیت در Search Console انجام شد.
+✅ امنیت ۱۰۰٪ (Security Patch): بستن باگ سفارشات خالی در فرانت‌اند و بک‌اند + تغییر API ارز به Coinbase برای رفع تحریم.
+✅ ارتقای وبلاگ (Blog 2.0): افزودن فیلدهای سئو، متاتگ‌ها، اسکیما و دسته‌بندی به سیستم وبلاگ.
 
 🚀 برنامه عملیاتی آینده (Growth Plan):
 ✅ گام ۱: نوشتن اولین مقاله بلاگ با موضوع "راهنمای ارسال پول به ایران".
@@ -6741,15 +6965,21 @@ types/ -> تعریف مدل‌های داده.
 ۵. تزریق: محصول وارد دیتابیس می‌شود.
 تذکر: هرگز محصولی که وجود خارجی ندارد یا عکس بی‌کیفیت دارد، اضافه نمی‌شود.
 
-۱۷. پروتکل "داستان‌سرایی مشکل-محور" (Problem-Centric Storytelling) - مخصوص بلاگ
-هدف: جذب ترافیک از طریق همدردی با مشکلات مهاجران.
-ساختار مقاله (Article Structure):
-۱. قلاب (The Hook): شروع با یک درد مشترک. (مثال: "دلتنگ مادرت هستی اما نمی‌توانی برای تولدش کادو بفرستی؟")
-۲. تشدید درد (Agitation): توضیح موانع. (مثال: "تحریم‌ها، بسته شدن حساب‌های بانکی، کارمزدهای نجومی صرافی‌ها...")
-۳. معرفی قهرمان (The Solution): معرفی سوغات شاپ به عنوان تنها راه حل امن. (مثال: "با تتر پرداخت کن، ما فردا در تهران تحویل می‌دهیم.")
-۴. دعوت به اقدام (CTA): لینک مستقیم به خرید محصول مرتبط.
+۱۷. پروتکل "تولید محتوای بلاگ سئو-محور" (SEO-Centric Blog Protocol) - بروز شده ⚠️
+هدف: کسب رتبه اول گوگل برای کلمات کلیدی خاص (Long-tail) با استفاده از زیرساخت جدید وبلاگ.
+قوانین الزامی تولید هر مقاله:
+۱. پر کردن فیلد عنوان سئو (SEO Title): عنوان باید جذاب باشد و شامل کلمه کلیدی اصلی باشد (حداکثر ۶۰ کاراکتر). مثال: "ارسال پول به ایران | امن‌ترین روش با تتر"
+۲. پر کردن توضیحات متا (Meta Description): چکیده جذاب برای افزایش کلیک (حداکثر ۱۶۰ کاراکتر). باید شامل کلمه کلیدی و دعوت به اقدام باشد.
+۳. دسته‌بندی دقیق: انتخاب دسته‌بندی درست (آموزش، اخبار، راهنما) برای نظم‌دهی به سایت.
+۴. کلمات کلیدی (Tags): حداقل ۳ و حداکثر ۵ تگ مرتبط وارد شود.
+۵. ساختار مقاله:
+   * مقدمه جذاب (Hook) با اشاره به درد کاربر.
+   * بدنه اصلی با استفاده از تیتراژ H2 و H3.
+   * لینک‌سازی داخلی به صفحه محصولات یا مقالات مرتبط.
+   * نتیجه‌گیری و دعوت به اقدام (CTA) در انتهای متن.
 
-تعهدنامه: این سند توسط "رئیس" (Gemini) تدوین شده و "دستیار" (بهادر) متعهد به اجرای آن است تا زمانی که اولین درآمد دلاری حاصل شود. هرگونه تغییر در این سند تنها با دستور مستقیم رئیس مجاز است.
+۱۸. تعهدنامه
+این سند توسط "رئیس" (Gemini) تدوین شده و "دستیار" (بهادر) متعهد به اجرای آن است تا زمانی که اولین درآمد دلاری حاصل شود. هرگونه تغییر در این سند تنها با دستور مستقیم رئیس مجاز است.
 
 ===== File: tsconfig.json =====
 # Modified: 2025-11-26T16:29:49.164680 | Size: 666 bytes | SHA1: 3cce6f8b2540d983756b909e9e5c181034da4c38
@@ -6791,4 +7021,4 @@ types/ -> تعریف مدل‌های داده.
 
 ### Summary
 # Files considered: 63 | Written: 58 | Skipped: 5
-# Output size: 316809 bytes
+# Output size: 329246 bytes
