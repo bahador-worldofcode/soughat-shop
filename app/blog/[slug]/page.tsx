@@ -37,18 +37,22 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-// --- تابع هوشمند پردازش متن (لینک + تیتر) ---
+// --- تابع هوشمند پردازش متن (لینک + H2 + H3) ---
 const renderContent = (text: string) => {
   if (!text) return null;
 
   return text.split('\n').map((line, index) => {
     if (!line.trim()) return <br key={index} />;
 
-    // تشخیص تیترها (اگر با ## شروع شود)
-    const isHeading = line.startsWith('## ');
-    const cleanLine = isHeading ? line.replace(/^##\s+/, '') : line;
+    // تشخیص سطح تیتر
+    let headingLevel = 0; // 0 = پاراگراف
+    if (line.startsWith('### ')) headingLevel = 3;
+    else if (line.startsWith('## ')) headingLevel = 2;
 
-    // پردازش لینک‌ها در هر خط
+    // تمیز کردن متن از علامت‌های #
+    const cleanLine = line.replace(/^#+\s+/, '');
+
+    // پردازش لینک‌ها در هر خط (لینک متنی و لینک ساده)
     const parts = cleanLine.split(/(\[.*?\]\(.*?\)|https?:\/\/[^\s]+)/g);
     
     const renderedParts = parts.map((part, partIndex) => {
@@ -61,13 +65,13 @@ const renderContent = (text: string) => {
             href={linkMatch[2]} 
             target="_blank" 
             rel="noopener noreferrer" 
-            className="text-blue-600 hover:underline"
+            className="text-blue-600 font-bold hover:underline"
           >
             {linkMatch[1]}
           </a>
         );
       }
-      // 2. لینک ساده
+      // 2. لینک ساده (https://...)
       if (part.match(/^https?:\/\//)) {
          return (
           <a 
@@ -84,12 +88,20 @@ const renderContent = (text: string) => {
       return part;
     });
 
-    // اگر تیتر بود، با استایل H2 برگردان، اگر نه پاراگراف
-    if (isHeading) {
+    // رندر کردن بر اساس نوع (H2, H3 یا پاراگراف)
+    if (headingLevel === 2) {
       return (
-        <h2 key={index} className="text-xl md:text-2xl font-bold text-gray-900 mt-8 mb-4 border-r-4 border-blue-500 pr-3">
+        <h2 key={index} className="text-xl md:text-2xl font-bold text-gray-900 mt-8 mb-4 border-r-4 border-blue-500 pr-3 leading-tight">
           {renderedParts}
         </h2>
+      );
+    }
+
+    if (headingLevel === 3) {
+      return (
+        <h3 key={index} className="text-lg md:text-xl font-bold text-gray-800 mt-6 mb-3 pr-1">
+          {renderedParts}
+        </h3>
       );
     }
 
@@ -137,6 +149,7 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
+      {/* 1. هدر تصویر */}
       <div className="relative h-[300px] md:h-[450px] w-full bg-gray-900">
         {post.image ? (
           <img 
@@ -163,9 +176,11 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
         </div>
       </div>
 
+      {/* 2. بدنه اصلی */}
       <div className="container mx-auto px-4 relative z-10 -mt-10">
         <div className="bg-white rounded-3xl shadow-xl p-6 md:p-12 max-w-4xl mx-auto border border-gray-100">
           
+          {/* اطلاعات نویسنده و تاریخ */}
           <div className="flex flex-wrap items-center gap-6 text-gray-500 text-sm font-medium mb-10 pb-6 border-b border-gray-100">
             <span className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-blue-500" />
@@ -177,10 +192,12 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
             </span>
           </div>
           
+          {/* متن مقاله */}
           <article className="max-w-none">
              {renderContent(post.content)}
           </article>
 
+          {/* بخش تگ‌ها */}
           {post.tags && post.tags.length > 0 && (
             <div className="mt-12 pt-8 border-t border-gray-100">
                 <div className="flex items-center gap-2 mb-4 text-gray-700 font-bold text-sm">
@@ -196,6 +213,7 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
             </div>
           )}
 
+          {/* دکمه بازگشت */}
           <div className="mt-10">
             <Link href="/blog" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-bold transition-colors group">
                  <ArrowRight className="ml-2 h-4 w-4 group-hover:mr-1 transition-all" /> بازگشت به لیست مقالات
