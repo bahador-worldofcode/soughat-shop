@@ -1,8 +1,9 @@
 'use client';
+
 import { useState, useEffect, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import ProductCard from '@/components/ProductCard';
-import { Search, ShoppingBag, ArrowDownUp, Loader2 } from 'lucide-react';
+import { Search, ShoppingBag, ArrowDownUp, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 
 interface Product {
@@ -21,80 +22,104 @@ interface Category {
   slug: string;
 }
 
+// تعداد محصول در هر صفحه (می‌تونی تغییر بدی)
+const PAGE_SIZE = 12;
+
 function ProductList() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]); 
   const [loading, setLoading] = useState(true);
   
+  // صفحه‌بندی و تعداد کل
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortOrder, setSortOrder] = useState<'newest' | 'price-asc' | 'price-desc'>('newest');
 
+  // ۱. فقط یکبار دسته‌بندی‌ها رو بگیر
   useEffect(() => {
-    fetchData();
+    fetchCategories();
   }, []);
 
-  // *** تغییر مهم: خواندن همزمان q (جستجو) و category (دسته‌بندی) از URL ***
+  // ۲. هر وقت فیلترها یا صفحه عوض شد، محصولات جدید رو بگیر
   useEffect(() => {
+    // خواندن پارامترهای URL (فقط بار اول یا وقتی تغییر کنن)
     const query = searchParams.get('q');
     const catParam = searchParams.get('category');
+    if (query && query !== searchTerm) setSearchTerm(query);
+    if (catParam && catParam !== selectedCategory) setSelectedCategory(catParam);
     
-    if (query) setSearchTerm(query);
-    if (catParam) setSelectedCategory(catParam);
-    
-  }, [searchParams]);
+    // فچ کردن محصولات با شرایط جدید
+    fetchProducts();
+  }, [page, searchTerm, selectedCategory, sortOrder, searchParams]);
 
-  const fetchData = async () => {
-    const { data: prodData } = await supabase
-      .from('products')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (prodData) {
-      setProducts(prodData);
-      setFilteredProducts(prodData);
-    }
+  // وقتی فیلتر عوض میشه (نه صفحه)، باید برگردیم صفحه ۱
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, selectedCategory, sortOrder]);
 
+  const fetchCategories = async () => {
     const { data: catData } = await supabase
       .from('categories')
       .select('*')
       .order('name');
-    
     if (catData) {
       setCategories([
         { id: 'all', name: 'همه محصولات', slug: 'all' }, 
         ...catData
       ]);
     }
+  };
 
+  const fetchProducts = async () => {
+    setLoading(true);
+
+    // شروع ساخت کوئری هوشمند
+    let query = supabase
+      .from('products')
+      .select('*', { count: 'exact' }); // count: exact یعنی تعداد کل رو هم بشمار
+
+    // اعمال فیلتر جستجو
+    if (searchTerm) {
+      query = query.ilike('title', `%${searchTerm}%`);
+    }
+
+    // اعمال فیلتر دسته‌بندی
+    if (selectedCategory !== 'all') {
+      query = query.eq('category', selectedCategory);
+    }
+
+    // اعمال مرتب‌سازی
+    if (sortOrder === 'newest') {
+      query = query.order('created_at', { ascending: false });
+    } else if (sortOrder === 'price-asc') {
+      query = query.order('price', { ascending: true });
+    } else if (sortOrder === 'price-desc') {
+      query = query.order('price', { ascending: false });
+    }
+
+    // اعمال صفحه‌بندی (جادوی اصلی)
+    const from = (page - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+    query = query.range(from, to);
+
+    const { data, count, error } = await query;
+
+    if (error) {
+        console.error('Error fetching products:', error);
+    } else {
+        setProducts(data || []);
+        setTotalCount(count || 0);
+    }
+    
     setLoading(false);
   };
 
-  useEffect(() => {
-    let result = [...products];
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
-    if (searchTerm) {
-      result = result.filter(p => 
-        p.title.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (selectedCategory !== 'all') {
-        result = result.filter(p => p.category === selectedCategory);
-    }
-
-    if (sortOrder === 'price-asc') {
-      result.sort((a, b) => a.price - b.price);
-    } else if (sortOrder === 'price-desc') {
-      result.sort((a, b) => b.price - a.price);
-    }
-
-    setFilteredProducts(result);
-  }, [searchTerm, sortOrder, selectedCategory, products]);
-
-  // بقیه کد دقیقاً مثل قبله...
   return (
     <div className="container mx-auto px-4">
         
@@ -127,7 +152,7 @@ function ProductList() {
             </div>
 
             <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                {loading ? (
+                {categories.length === 0 ? (
                     <div className="flex gap-2 animate-pulse">
                         <div className="h-9 w-24 bg-gray-200 rounded-full"></div>
                         <div className="h-9 w-24 bg-gray-200 rounded-full"></div>
@@ -151,31 +176,56 @@ function ProductList() {
             </div>
         </div>
 
-        {loading && (
+        {loading ? (
             <div className="text-center py-20">
                 <Loader2 className="h-10 w-10 animate-spin text-blue-600 mx-auto mb-4" />
-                <p className="text-gray-500">در حال چیدمان ویترین...</p>
+                <p className="text-gray-500">در حال دریافت محصولات...</p>
             </div>
-        )}
-
-        {!loading && filteredProducts.length === 0 ? (
+        ) : products.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
             <ShoppingBag className="h-16 w-16 text-gray-300 mb-4" />
             <p className="text-xl text-gray-500 font-bold">محصولی یافت نشد</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                id={product.id}
-                title={product.title}
-                price={product.price}
-                image={product.image}
-                slug={product.slug}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              {products.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  id={product.id}
+                  title={product.title}
+                  price={product.price}
+                  image={product.image}
+                  slug={product.slug}
+                />
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-4 mt-12">
+                    <button
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={page === 1}
+                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                        <ChevronRight className="h-5 w-5" />
+                    </button>
+                    
+                    <span className="text-sm font-bold text-gray-700">
+                        صفحه {page} از {totalPages}
+                    </span>
+
+                    <button
+                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                        disabled={page === totalPages}
+                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                        <ChevronLeft className="h-5 w-5" />
+                    </button>
+                </div>
+            )}
+          </>
         )}
     </div>
   );
