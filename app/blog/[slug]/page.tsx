@@ -88,7 +88,7 @@ const renderContent = (text: string) => {
     const trimmedLine = line.trim();
     if (!trimmedLine) return <br key={index} />;
 
-    // H4 (####) -> اضافه شده برای رفع مشکل شما
+    // H4 (####)
     if (line.startsWith('#### ')) {
         return (
           <h4 key={index} className="text-base md:text-lg font-extrabold text-gray-800 mt-6 mb-2">
@@ -226,7 +226,8 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
                 </div>
                 <div className="flex flex-wrap gap-2">
                     {post.tags.map((tag: string, idx: number) => (
-                        <Link key={idx} href={`/products?q=${tag}`} className="bg-gray-100 hover:bg-blue-50 hover:text-blue-600 transition-colors text-gray-600 px-3 py-1.5 rounded-lg text-xs">
+                        // FIX: لینک‌ها الان به صفحه وبلاگ میرن نه محصولات
+                        <Link key={idx} href={`/blog`} className="bg-gray-100 hover:bg-blue-50 hover:text-blue-600 transition-colors text-gray-600 px-3 py-1.5 rounded-lg text-xs">
                             #{tag}
                         </Link>
                     ))}
