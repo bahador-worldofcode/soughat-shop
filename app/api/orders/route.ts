@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
+// حداقل مبلغ خرید (دلار) - قانون بیزینسی
+const MIN_ORDER_AMOUNT = 25;
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -10,8 +13,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'سبد خرید خالی است' }, { status: 400 });
     }
 
-    // 2. اعتبارسنجی: چک کردن فیلدهای ضروری (لایه امنیتی دوم - سمت سرور)
-    // این بخش تضمین می‌کند که هیچ دیتای ناقصی وارد دیتابیس نمی‌شود
+    // 2. اعتبارسنجی: چک کردن حداقل مبلغ سفارش (امنیت مالی) - جدید
+    if (body.totalPrice < MIN_ORDER_AMOUNT) {
+      return NextResponse.json(
+        { error: `مبلغ سفارش کمتر از حد مجاز است. حداقل خرید ${MIN_ORDER_AMOUNT} دلار می‌باشد.` },
+        { status: 400 }
+      );
+    }
+
+    // 3. اعتبارسنجی: چک کردن فیلدهای ضروری
     if (
       !body.senderName ||
       !body.senderPhone ||

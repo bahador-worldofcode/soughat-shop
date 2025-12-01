@@ -2,19 +2,24 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { MapPin, ShoppingCart, ChevronLeft, Loader2, Globe, FileText, ShieldCheck, ArrowLeft } from 'lucide-react';
+import { MapPin, ShoppingCart, ChevronLeft, Loader2, Globe, FileText, ShieldCheck, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import CryptoPayment from '@/components/CryptoPayment';
 
 export default function CheckoutPage() {
   // دریافت اطلاعات سبد خرید و تنظیمات ارزی از استور
   const { cart, totalPrice, getSymbol, convertPrice, currency } = useStore();
+  
   // محاسبه قیمت نمایشی (برای نشان دادن به کاربر با ارز انتخابی)
   const displayTotal = totalPrice();
   const symbol = getSymbol();
   
-  // محاسبه قیمت واقعی به دلار (برای ذخیره در دیتابیس به عنوان مبنا)
+  // محاسبه قیمت واقعی به دلار (برای چک کردن حداقل خرید و ذخیره در دیتابیس)
   const totalBaseUSD = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  
+  // قانون حداقل خرید
+  const MIN_ORDER_AMOUNT = 25;
+
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -38,12 +43,10 @@ export default function CheckoutPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // --- تابع جدید ثبت سفارش (ارسال به API سرور) ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // *** تغییر جدید: اعتبارسنجی دستی قبل از ارسال ***
-    // اگر فیلدهای ستاره‌دار خالی باشند، همینجا استوپ می‌زنیم
+    
+    // اعتبارسنجی دستی قبل از ارسال
     if (
       !formData.senderName.trim() ||
       !formData.senderPhone.trim() ||
@@ -54,14 +57,11 @@ export default function CheckoutPage() {
       !formData.address.trim()
     ) {
       alert('لطفاً تمام فیلدهای ستاره‌دار (*) را پر کنید.');
-      return; // توقف تابع، اجازه نمی‌دهد به خط‌های بعدی برود
+      return;
     }
 
     setIsSubmitting(true);
-
     try {
-      // ارسال درخواست به API خودمان (نه مستقیم به دیتابیس)
-      // این کار باعث می‌شود مشکل امنیتی RLS حل شود
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -87,7 +87,6 @@ export default function CheckoutPage() {
         throw new Error(result.error || 'خطا در ارتباط با سرور');
       }
 
-      // اگر موفق بود، آیدی سفارش را می‌گیریم و می‌رویم مرحله پرداخت
       if (result.id) {
         setOrderId(result.id);
         setStep(2);
@@ -102,13 +101,40 @@ export default function CheckoutPage() {
     }
   };
 
-  // اگر سبد خالی بود، برگرداندن کاربر
+  if (!mounted) return null;
+
+  // اگر سبد خالی بود
   if (cart.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-20 text-center">
-        <h1 className="text-xl font-bold">سبد خرید خالی است</h1>
+      <div className="container mx-auto px-4 py-20 text-center font-[family-name:var(--font-vazir)]">
+        <h1 className="text-xl font-bold text-gray-800">سبد خرید خالی است</h1>
         <Link href="/" className="text-blue-600 mt-4 block hover:underline">بازگشت به فروشگاه</Link>
       </div>
+    );
+  }
+
+  // --- محافظ امنیتی (Security Guard) ---
+  // اگر مبلغ کمتر از حد مجاز بود، اجازه دیدن فرم را نده
+  if (totalBaseUSD < MIN_ORDER_AMOUNT) {
+    return (
+        <div className="container mx-auto px-4 py-20 text-center font-[family-name:var(--font-vazir)] flex flex-col items-center">
+            <div className="bg-amber-100 p-4 rounded-full mb-4">
+                <AlertTriangle className="h-10 w-10 text-amber-600" />
+            </div>
+            <h1 className="text-xl font-bold text-gray-800">مبلغ سفارش کمتر از حد مجاز است</h1>
+            <p className="text-gray-500 mt-2 max-w-md mx-auto leading-7">
+                حداقل مبلغ خرید برای پردازش و ارسال به ایران <strong>{MIN_ORDER_AMOUNT} دلار</strong> می‌باشد.
+                <br/>
+                لطفاً اقلام بیشتری به سبد خرید اضافه کنید.
+            </p>
+            <div className="mt-6 bg-gray-50 border border-gray-200 p-4 rounded-xl min-w-[200px]">
+                <div className="text-xs text-gray-400 mb-1">جمع فعلی سبد (دلار)</div>
+                <div className="text-xl font-bold text-gray-800 dir-ltr font-mono">${totalBaseUSD.toFixed(2)}</div>
+            </div>
+            <Link href="/products" className="bg-blue-600 text-white px-8 py-3 rounded-xl mt-8 hover:bg-blue-700 transition-colors font-bold shadow-lg">
+                بازگشت و تکمیل خرید
+            </Link>
+        </div>
     );
   }
 
@@ -262,7 +288,7 @@ export default function CheckoutPage() {
                             className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-white transition-colors"
                             onChange={handleInputChange}
                             value={formData.notes}
-                            />
+                        />
                     </div>
                 </div>
 
