@@ -4,7 +4,7 @@ import { Calendar, ArrowRight, User, Tag, Folder } from 'lucide-react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
-// --- تنظیمات کش (اختیاری) ---
+// --- تنظیمات کش ---
 export const revalidate = 60;
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -40,19 +40,16 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-// --- موتور پردازش متن جدید (Fix: Bold + Lists) ---
+// --- موتور پردازش متن (نسخه ۳: اضافه شدن H4) ---
 const parseInlineStyles = (text: string) => {
-  // این تابع متن رو تیکه تیکه میکنه: لینک ها، بولدها و متن ساده
-  // الگوی تشخیص: لینک مارک‌داون OR لینک ساده OR متن بولد (**...**)
   const parts = text.split(/(\[.*?\]\(.*?\)|https?:\/\/[^\s]+|\*\*.*?\*\*)/g);
 
   return parts.map((part, index) => {
-    // 1. تشخیص بولد (**متن**)
+    // 1. بولد
     if (part.startsWith('**') && part.endsWith('**')) {
       return <strong key={index} className="font-extrabold text-gray-900">{part.slice(2, -2)}</strong>;
     }
-    
-    // 2. تشخیص لینک مارک‌داون [متن](لینک)
+    // 2. لینک مارک‌داون
     const linkMatch = part.match(/^\[(.*?)\]\((.*?)\)$/);
     if (linkMatch) {
       return (
@@ -67,8 +64,7 @@ const parseInlineStyles = (text: string) => {
         </a>
       );
     }
-
-    // 3. تشخیص لینک ساده
+    // 3. لینک ساده
     if (part.match(/^https?:\/\//)) {
       return (
         <a 
@@ -82,8 +78,6 @@ const parseInlineStyles = (text: string) => {
         </a>
       );
     }
-
-    // 4. متن معمولی
     return part;
   });
 };
@@ -94,7 +88,16 @@ const renderContent = (text: string) => {
     const trimmedLine = line.trim();
     if (!trimmedLine) return <br key={index} />;
 
-    // تشخیص تیترها
+    // H4 (####) -> اضافه شده برای رفع مشکل شما
+    if (line.startsWith('#### ')) {
+        return (
+          <h4 key={index} className="text-base md:text-lg font-extrabold text-gray-800 mt-6 mb-2">
+            {parseInlineStyles(line.replace('#### ', ''))}
+          </h4>
+        );
+    }
+
+    // H3 (###)
     if (line.startsWith('### ')) {
       return (
         <h3 key={index} className="text-lg md:text-xl font-bold text-gray-800 mt-8 mb-3 pr-2 border-r-2 border-blue-200">
@@ -102,6 +105,8 @@ const renderContent = (text: string) => {
         </h3>
       );
     }
+
+    // H2 (##)
     if (line.startsWith('## ')) {
       return (
         <h2 key={index} className="text-xl md:text-2xl font-bold text-gray-900 mt-10 mb-4 border-r-4 border-blue-600 pr-4 leading-tight">
@@ -110,8 +115,7 @@ const renderContent = (text: string) => {
       );
     }
 
-    // تشخیص لیست‌ها (شروع با - یا عدد.)
-    // این بخش باعث میشه لیست‌ها تو رفتگی داشته باشن
+    // Lists
     const isList = line.match(/^(\d+\.|-)\s/);
     if (isList) {
         return (
@@ -124,7 +128,7 @@ const renderContent = (text: string) => {
         )
     }
 
-    // پاراگراف معمولی
+    // Paragraph
     return (
       <p key={index} className="mb-4 leading-8 text-justify text-gray-700">
         {parseInlineStyles(line)}
@@ -169,7 +173,7 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      {/* 1. هدر تصویر */}
+      {/* 1. Header Image */}
       <div className="relative h-[300px] md:h-[450px] w-full bg-gray-900">
         {post.image ? (
           <img 
@@ -196,11 +200,10 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
         </div>
       </div>
 
-      {/* 2. بدنه اصلی */}
+      {/* 2. Main Content */}
       <div className="container mx-auto px-4 relative z-10 -mt-10">
         <div className="bg-white rounded-3xl shadow-xl p-6 md:p-12 max-w-4xl mx-auto border border-gray-100">
           
-          {/* اطلاعات نویسنده و تاریخ */}
           <div className="flex flex-wrap items-center gap-6 text-gray-500 text-sm font-medium mb-10 pb-6 border-b border-gray-100">
             <span className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-blue-500" />
@@ -212,12 +215,10 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
             </span>
           </div>
           
-          {/* متن مقاله */}
           <article className="max-w-none">
              {renderContent(post.content)}
           </article>
 
-          {/* بخش تگ‌ها */}
           {post.tags && post.tags.length > 0 && (
             <div className="mt-12 pt-8 border-t border-gray-100">
                 <div className="flex items-center gap-2 mb-4 text-gray-700 font-bold text-sm">
@@ -233,7 +234,6 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
             </div>
           )}
 
-          {/* دکمه بازگشت */}
           <div className="mt-10">
              <Link href="/blog" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-bold transition-colors group">
                  <ArrowRight className="ml-2 h-4 w-4 group-hover:mr-1 transition-all" /> بازگشت به لیست مقالات
