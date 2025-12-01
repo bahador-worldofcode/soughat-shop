@@ -1,11 +1,10 @@
 import { MetadataRoute } from 'next';
 import { supabase } from '@/lib/supabase';
 
-export const revalidate = 3600; // آپدیت ساعتی
+export const revalidate = 3600; 
+// آپدیت ساعتی (کش تا یک ساعت می‌مونه)
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // این خط به صورت خودکار آدرس سایت را پیدا می‌کند (چه لوکال باشد چه آدرس رایگان Vercel)
-  // اگر روی سرور باشیم آدرس واقعی را می‌گیرد، اگر نه لوکال‌هاست
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
   // 1. دریافت لیست مقالات وبلاگ
@@ -13,7 +12,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .from('posts')
     .select('slug, created_at');
 
-  // 2. تعریف صفحات ثابت
+  // 2. دریافت لیست محصولات (بخش جدید)
+  const { data: products } = await supabase
+    .from('products')
+    .select('slug, created_at');
+
+  // 3. تعریف صفحات ثابت (استاتیک)
   const routes = [
     '',
     '/about',
@@ -23,6 +27,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/products',
     '/blog',
     '/track',
+    '/how-it-works', // اضافه شد
   ].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date().toISOString(),
@@ -30,7 +35,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: route === '' ? 1 : 0.8,
   }));
 
-  // 3. تعریف صفحات وبلاگ
+  // 4. مپ کردن مقالات وبلاگ
   const blogRoutes = posts?.map((post) => ({
     url: `${baseUrl}/blog/${post.slug}`,
     lastModified: post.created_at,
@@ -38,5 +43,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   })) || [];
 
-  return [...routes, ...blogRoutes];
+  // 5. مپ کردن محصولات (بخش جدید)
+  const productRoutes = products?.map((product) => ({
+    url: `${baseUrl}/products/${product.slug}`,
+    lastModified: product.created_at || new Date().toISOString(),
+    changeFrequency: 'daily' as const, // محصولات چون قیمت و موجودی دارن روزانه چک بشن بهتره
+    priority: 0.9, // اولویت بالا برای محصولات (چون پولساز هستن)
+  })) || [];
+
+  // ترکیب همه مسیرها
+  return [...routes, ...blogRoutes, ...productRoutes];
 }
