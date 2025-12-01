@@ -1,14 +1,13 @@
 'use client';
-
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Plus, Trash2, Edit2, Search, X, Loader2, ImageIcon, Check, Search as SearchIcon, Calculator } from 'lucide-react';
+import { Plus, Trash2, Edit2, Search, X, Loader2, ImageIcon, Check, Search as SearchIcon, Calculator, LayoutGrid, List } from 'lucide-react';
 
 interface Product {
   id: string;
   title: string;
   price: number;        // قیمت فروش (دلار)
-  price_toman: number;  // قیمت خرید (تومان)
+  price_toman: number; // قیمت خرید (تومان)
   image: string;
   slug: string;
   category: string;
@@ -37,6 +36,9 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
+  // --- حالت نمایش (جدید) ---
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
   // تنظیمات سراسری (برای محاسبه هوشمند)
   const [dollarRate, setDollarRate] = useState(100000);
   const [profitMargin, setProfitMargin] = useState(25);
@@ -82,17 +84,29 @@ export default function ProductsPage() {
       .order('name');
     if (catData) setCategories(catData);
     
-    // 3. دریافت تنظیمات برای محاسبه
+    // 3. دریافت تنظیمات (شامل نرخ دلار و حالت نمایش)
     const { data: settingsData } = await supabase.from('site_settings').select('*');
     if (settingsData) {
         settingsData.forEach(item => {
             if (item.key === 'dollar_rate') setDollarRate(Number(item.value));
             if (item.key === 'profit_margin') setProfitMargin(Number(item.value));
             if (item.key === 'shipping_base') setShippingBase(Number(item.value));
+            // دریافت حالت نمایش ذخیره شده
+            if (item.key === 'admin_product_view_mode') setViewMode(item.value as 'grid' | 'list');
         });
     }
 
     setLoading(false);
+  };
+
+  // --- تابع تغییر حالت نمایش و ذخیره در دیتابیس (جدید) ---
+  const handleViewModeChange = async (mode: 'grid' | 'list') => {
+    setViewMode(mode); // تغییر فوری در ظاهر
+    // ذخیره در دیتابیس
+    await supabase.from('site_settings').upsert({ 
+        key: 'admin_product_view_mode', 
+        value: mode 
+    }, { onConflict: 'key' });
   };
 
   const fetchMedia = async () => {
@@ -120,7 +134,6 @@ export default function ProductsPage() {
     const inUSD = cost / dollarRate;
     const withProfit = inUSD * (1 + profitMargin / 100);
     const final = Math.round(withProfit * 100) / 100;
-    
     // پر کردن خودکار فیلد دلار
     setFormData(prev => ({ ...prev, price: String(final), price_toman: tomanStr }));
   };
@@ -174,7 +187,7 @@ export default function ProductsPage() {
       const productData = {
         title: formData.title,
         price: Number(formData.price),
-        price_toman: Number(formData.price_toman), // ذخیره قیمت تومان
+        price_toman: Number(formData.price_toman),
         image: formData.image,
         slug: finalSlug,
         category: finalCategory,
@@ -242,10 +255,31 @@ export default function ProductsPage() {
            <h2 className="text-2xl font-bold text-gray-800">مدیریت محصولات</h2>
            <p className="text-sm text-gray-500">مدیریت موجودی، قیمت‌گذاری و سئو</p>
         </div>
-        <button onClick={() => openProductModal()} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 shadow-md">
-          <Plus className="h-5 w-5" />
-          محصول جدید
-        </button>
+        
+        <div className="flex items-center gap-2">
+            {/* دکمه‌های تغییر ویو */}
+            <div className="bg-gray-100 p-1 rounded-lg flex items-center border border-gray-200">
+                <button 
+                    onClick={() => handleViewModeChange('grid')}
+                    className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:bg-gray-200'}`}
+                    title="نمایش شبکه‌ای"
+                >
+                    <LayoutGrid className="h-4 w-4" />
+                </button>
+                <button 
+                    onClick={() => handleViewModeChange('list')}
+                    className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:bg-gray-200'}`}
+                    title="نمایش لیستی"
+                >
+                    <List className="h-4 w-4" />
+                </button>
+            </div>
+
+            <button onClick={() => openProductModal()} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 shadow-md h-[42px]">
+            <Plus className="h-5 w-5" />
+            محصول جدید
+            </button>
+        </div>
       </div>
 
       <div className="relative max-w-md">
@@ -253,32 +287,64 @@ export default function ProductsPage() {
         <input type="text" placeholder="جستجو..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pr-9 pl-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-100 outline-none" />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {filteredProducts.map((product) => (
-          <div key={product.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden group flex flex-col">
-            <div className="relative aspect-square bg-gray-100 overflow-hidden">
-              <img src={product.image} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-              <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => openProductModal(product)} className="p-2 bg-white/90 rounded-full text-blue-600 shadow-sm"><Edit2 className="h-4 w-4" /></button>
-                <button onClick={() => handleDelete(product.id)} className="p-2 bg-white/90 rounded-full text-red-500 shadow-sm"><Trash2 className="h-4 w-4" /></button>
-              </div>
-              <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded-full backdrop-blur-sm">
-                 {getCategoryName(product.category)}
-              </span>
-            </div>
-            <div className="p-4 flex flex-col flex-1">
-               <h3 className="font-bold text-gray-900 line-clamp-1 mb-1">{product.title}</h3>
-               <p className="text-xs text-gray-400 mb-2 truncate">/{product.slug}</p>
-              <div className="mt-auto flex justify-between items-center">
-                 <div className="flex flex-col">
-                    <span className="text-[10px] text-gray-400">قیمت خرید: {(product.price_toman || 0).toLocaleString()} ت</span>
-                    <span className="text-lg font-bold text-blue-600">${product.price}</span>
-                 </div>
-              </div>
-            </div>
+      {/* --- View Mode Logic --- */}
+      {viewMode === 'grid' ? (
+          /* GRID VIEW */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in duration-300">
+            {filteredProducts.map((product) => (
+                <div key={product.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden group flex flex-col">
+                    <div className="relative aspect-square bg-gray-100 overflow-hidden">
+                        <img src={product.image} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                        <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => openProductModal(product)} className="p-2 bg-white/90 rounded-full text-blue-600 shadow-sm"><Edit2 className="h-4 w-4" /></button>
+                            <button onClick={() => handleDelete(product.id)} className="p-2 bg-white/90 rounded-full text-red-500 shadow-sm"><Trash2 className="h-4 w-4" /></button>
+                        </div>
+                        <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded-full backdrop-blur-sm">
+                            {getCategoryName(product.category)}
+                        </span>
+                    </div>
+                    <div className="p-4 flex flex-col flex-1">
+                        <h3 className="font-bold text-gray-900 line-clamp-1 mb-1">{product.title}</h3>
+                        <p className="text-xs text-gray-400 mb-2 truncate">/{product.slug}</p>
+                        <div className="mt-auto flex justify-between items-center">
+                            <div className="flex flex-col">
+                                <span className="text-[10px] text-gray-400">قیمت خرید: {(product.price_toman || 0).toLocaleString()} ت</span>
+                                <span className="text-lg font-bold text-blue-600">${product.price}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ))}
           </div>
-        ))}
-      </div>
+      ) : (
+          /* LIST VIEW (Compact) */
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-in fade-in duration-300">
+              <div className="divide-y divide-gray-100">
+                  {filteredProducts.map((product) => (
+                      <div key={product.id} className="p-3 hover:bg-gray-50 transition-colors flex items-center justify-between group">
+                          {/* نام محصول (قابل کپی راحت) */}
+                          <div className="flex items-center gap-3">
+                              <span className="font-bold text-gray-800 text-sm select-all cursor-text">{product.title}</span>
+                              <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded hidden sm:inline-block">{getCategoryName(product.category)}</span>
+                          </div>
+                          
+                          {/* دکمه‌های عملیات (کوچک شده) */}
+                          <div className="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => openProductModal(product)} className="text-blue-600 hover:bg-blue-50 p-1.5 rounded" title="ویرایش">
+                                    <Edit2 className="h-4 w-4" />
+                                </button>
+                                <button onClick={() => handleDelete(product.id)} className="text-red-500 hover:bg-red-50 p-1.5 rounded" title="حذف">
+                                    <Trash2 className="h-4 w-4" />
+                                </button>
+                          </div>
+                      </div>
+                  ))}
+                  {filteredProducts.length === 0 && (
+                      <div className="p-8 text-center text-gray-400 text-sm">محصولی یافت نشد.</div>
+                  )}
+              </div>
+          </div>
+      )}
 
       {isModalOpen && (
         <div className="fixed inset-0 z-[50] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
@@ -340,7 +406,7 @@ export default function ProductsPage() {
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">دسته‌بندی</label>
+                         <label className="block text-xs font-medium text-gray-700 mb-1">دسته‌بندی</label>
                          {categories.length > 0 ? (
                             <select 
                                 value={formData.category} 
@@ -351,7 +417,7 @@ export default function ProductsPage() {
                                     <option key={cat.id} value={cat.slug}>{cat.name}</option>
                                 ))}
                             </select>
-                        ) : (
+                         ) : (
                             <div className="text-xs text-red-500 flex items-center gap-1">
                                 <Loader2 className="h-3 w-3 animate-spin"/> در حال بارگذاری دسته‌ها...
                             </div>
@@ -404,7 +470,7 @@ export default function ProductsPage() {
                         <label className="block text-xs font-medium text-gray-500 mb-1">Meta Description</label>
                         <textarea rows={2} className="w-full p-2 rounded border border-gray-300 text-sm" value={formData.seo_desc} onChange={(e) => setFormData({...formData, seo_desc: e.target.value})} />
                    </div>
-               </div>
+                </div>
 
               <div className="pt-4 flex gap-3">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">انصراف</button>
@@ -423,7 +489,7 @@ export default function ProductsPage() {
              <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                 <h3 className="font-bold text-gray-900 flex items-center gap-2"><ImageIcon className="h-5 w-5 text-blue-600" />انتخاب تصویر</h3>
                 <button onClick={() => setIsGalleryOpen(false)} className="bg-white p-1 rounded-full text-gray-500 hover:text-red-500 hover:bg-red-50"><X className="h-6 w-6" /></button>
-             </div>
+              </div>
              <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50">
                {loadingMedia ? (
                  <div className="flex items-center justify-center h-full"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
@@ -434,7 +500,7 @@ export default function ProductsPage() {
                        <img src={file.url} className="w-full h-full object-cover" />
                        {formData.image === file.url && <div className="absolute top-2 right-2 bg-blue-600 text-white p-1 rounded-full shadow-sm"><Check className="h-3 w-3" /></div>}
                       </div>
-                    ))}
+                     ))}
                  </div>
                )}
              </div>
