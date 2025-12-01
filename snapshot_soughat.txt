@@ -1,5 +1,5 @@
 ### Soughat-Shop Snapshot
-# Generated: 2025-12-01T17:03:59.514068
+# Generated: 2025-12-01T18:46:37.678605
 # Root: C:\projects\soughat-shop
 # Excluded dir names: .expo, .git, .next, .vscode, node_modules
 # Excluded files (by name/rel): collect_soughat_snapshot.bat, collect_soughat_snapshot.py, package-lock.json, snapshot_soughat.txt
@@ -3251,9 +3251,12 @@ export async function POST(request: Request) {
 }
 
 ===== File: app/api/orders/route.ts =====
-# Modified: 2025-11-30T14:20:37.266261 | Size: 2272 bytes | SHA1: 620052c98a52444ab076f7537070958e299a7586
+# Modified: 2025-12-01T17:14:43.796608 | Size: 2586 bytes | SHA1: 36e138dbd16fe63625b44d5088b3a3c7bf6a292d
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+
+// حداقل مبلغ خرید (دلار) - قانون بیزینسی
+const MIN_ORDER_AMOUNT = 25;
 
 export async function POST(request: Request) {
   try {
@@ -3264,8 +3267,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'سبد خرید خالی است' }, { status: 400 });
     }
 
-    // 2. اعتبارسنجی: چک کردن فیلدهای ضروری (لایه امنیتی دوم - سمت سرور)
-    // این بخش تضمین می‌کند که هیچ دیتای ناقصی وارد دیتابیس نمی‌شود
+    // 2. اعتبارسنجی: چک کردن حداقل مبلغ سفارش (امنیت مالی) - جدید
+    if (body.totalPrice < MIN_ORDER_AMOUNT) {
+      return NextResponse.json(
+        { error: `مبلغ سفارش کمتر از حد مجاز است. حداقل خرید ${MIN_ORDER_AMOUNT} دلار می‌باشد.` },
+        { status: 400 }
+      );
+    }
+
+    // 3. اعتبارسنجی: چک کردن فیلدهای ضروری
     if (
       !body.senderName ||
       !body.senderPhone ||
@@ -3621,18 +3631,38 @@ export default async function BlogIndex() {
 }
 
 ===== File: app/cart/page.tsx =====
-# Modified: 2025-11-28T17:08:48.569778 | Size: 5199 bytes | SHA1: f6d1719055b34baa418aeaf87bd649d0f61ea439
+# Modified: 2025-12-01T17:28:44.583252 | Size: 7276 bytes | SHA1: 0ba0dd77ff63805c8b50f6cfa7911c7b7cd2fd75
 'use client';
 
 import Link from 'next/link';
-import { Trash2, ArrowLeft, ShoppingBag } from 'lucide-react';
+import { Trash2, ArrowLeft, ShoppingBag, AlertTriangle } from 'lucide-react';
 import { useStore } from '@/lib/store';
+import { useEffect, useState } from 'react';
 
 export default function CartPage() {
-  // اضافه کردن convertPrice به لیست دریافتی‌ها
   const { cart, removeFromCart, totalPrice, getSymbol, convertPrice } = useStore();
-  const total = totalPrice();
-  const symbol = getSymbol();
+  
+  // محاسبه قیمت‌ها
+  const displayTotal = totalPrice(); // قیمتی که مشتری با ارز انتخابی می‌بیند (عدد)
+  const symbol = getSymbol(); // نماد ارز انتخابی
+
+  // محاسبه قیمت پایه دلاری برای چک کردن محدودیت (لاجیک بیزینس)
+  const totalBaseUSD = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  
+  // قانون حداقل خرید (ثابت سیستم)
+  const MIN_ORDER_AMOUNT_USD = 25;
+  
+  // لاجیک: آیا زیر ۲۵ دلار است؟
+  const isBelowMinimum = totalBaseUSD < MIN_ORDER_AMOUNT_USD;
+
+  // نمایش: ۲۵ دلار به پول مشتری چقدر می‌شود؟
+  const minOrderDisplay = convertPrice(MIN_ORDER_AMOUNT_USD);
+
+  // حل مشکل هیدریشن
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
 
   // اگر سبد خالی بود
   if (cart.length === 0) {
@@ -3662,7 +3692,6 @@ export default function CartPage() {
         <div className="lg:col-span-2 space-y-4">
           {cart.map((item) => (
             <div key={item.id} className="flex gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-              {/* عکس محصول */}
               <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 border border-gray-200">
                 <img 
                   src={item.image} 
@@ -3671,7 +3700,6 @@ export default function CartPage() {
                 />
               </div>
 
-              {/* جزئیات */}
               <div className="flex flex-1 flex-col justify-between">
                 <div>
                   <h3 className="text-base font-semibold text-gray-900 line-clamp-1">{item.title}</h3>
@@ -3680,7 +3708,6 @@ export default function CartPage() {
                 
                 <div className="flex items-center justify-between mt-4">
                   <span className="font-bold text-blue-600">
-                    {/* اصلاحیه: استفاده از convertPrice */}
                     {symbol} {convertPrice(item.price * item.quantity)}
                   </span>
                   
@@ -3705,7 +3732,7 @@ export default function CartPage() {
             <div className="space-y-2 mb-4">
               <div className="flex justify-between text-sm text-gray-600">
                 <span>مجموع اقلام</span>
-                <span>{symbol} {total}</span>
+                <span>{symbol} {displayTotal}</span>
               </div>
               <div className="flex justify-between text-sm text-gray-600">
                 <span>هزینه ارسال</span>
@@ -3716,22 +3743,46 @@ export default function CartPage() {
             <div className="border-t border-gray-200 pt-4 mb-6">
               <div className="flex justify-between items-center">
                 <span className="text-base font-bold text-gray-900">مبلغ قابل پرداخت</span>
-                <span className="text-xl font-bold text-blue-600">{symbol} {total}</span>
+                <span className="text-xl font-bold text-blue-600">{symbol} {displayTotal}</span>
               </div>
               <p className="text-xs text-gray-500 mt-1 text-left">محاسبه شده بر اساس نرخ لحظه‌ای</p>
             </div>
 
+            {/* هشدار حداقل خرید (هوشمند شده با واحد پول کاربر) */}
+            {isBelowMinimum && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 flex items-start gap-2 text-amber-800">
+                    <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm">
+                        <p className="font-bold">
+                            حداقل مبلغ سفارش: {symbol} {minOrderDisplay}
+                        </p>
+                        <p className="text-xs mt-1 opacity-80">
+                            مبلغ فعلی شما: <span className="dir-ltr font-mono font-bold">{symbol} {displayTotal}</span>
+                            <br/>
+                            لطفاً برای تکمیل سفارش، اقلام بیشتری اضافه کنید.
+                        </p>
+                    </div>
+                </div>
+            )}
+
             <Link 
-              href="/checkout"
-              className="w-full inline-flex items-center justify-center rounded-lg bg-green-600 px-6 py-4 text-base font-bold text-white shadow-md hover:bg-green-700 transition-all hover:shadow-lg gap-2"
+              href={isBelowMinimum ? '#' : '/checkout'}
+              onClick={(e) => isBelowMinimum && e.preventDefault()}
+              className={`w-full inline-flex items-center justify-center rounded-lg px-6 py-4 text-base font-bold text-white shadow-md transition-all gap-2 ${
+                  isBelowMinimum 
+                  ? 'bg-gray-400 cursor-not-allowed shadow-none' 
+                  : 'bg-green-600 hover:bg-green-700 hover:shadow-lg'
+              }`}
             >
               <span>نهایی کردن خرید</span>
-              <ArrowLeft className="h-5 w-5" />
+              {!isBelowMinimum && <ArrowLeft className="h-5 w-5" />}
             </Link>
             
-            <p className="mt-4 text-center text-xs text-gray-400">
-              پرداخت امن با Solana Pay / USDT
-            </p>
+            {!isBelowMinimum && (
+                <p className="mt-4 text-center text-xs text-gray-400">
+                پرداخت امن با Solana Pay / USDT
+                </p>
+            )}
           </div>
         </div>
       </div>
@@ -3740,24 +3791,27 @@ export default function CartPage() {
 }
 
 ===== File: app/checkout/page.tsx =====
-# Modified: 2025-11-30T14:18:39.215940 | Size: 18788 bytes | SHA1: 587bcbf1fd97234e7de53b16d2d6b377caf5c638
+# Modified: 2025-12-01T17:29:07.596226 | Size: 19451 bytes | SHA1: 95c6ae95affb74e7082c2341e3c85d39228b029e
 'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { MapPin, ShoppingCart, ChevronLeft, Loader2, Globe, FileText, ShieldCheck, ArrowLeft } from 'lucide-react';
+import { MapPin, ShoppingCart, ChevronLeft, Loader2, Globe, FileText, ShieldCheck, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import CryptoPayment from '@/components/CryptoPayment';
 
 export default function CheckoutPage() {
-  // دریافت اطلاعات سبد خرید و تنظیمات ارزی از استور
   const { cart, totalPrice, getSymbol, convertPrice, currency } = useStore();
-  // محاسبه قیمت نمایشی (برای نشان دادن به کاربر با ارز انتخابی)
+  
+  // قیمت‌ها
   const displayTotal = totalPrice();
   const symbol = getSymbol();
-  
-  // محاسبه قیمت واقعی به دلار (برای ذخیره در دیتابیس به عنوان مبنا)
   const totalBaseUSD = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  
+  // قانون حداقل خرید
+  const MIN_ORDER_AMOUNT_USD = 25;
+  const minOrderDisplay = convertPrice(MIN_ORDER_AMOUNT_USD);
+
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -3781,12 +3835,9 @@ export default function CheckoutPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // --- تابع جدید ثبت سفارش (ارسال به API سرور) ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // *** تغییر جدید: اعتبارسنجی دستی قبل از ارسال ***
-    // اگر فیلدهای ستاره‌دار خالی باشند، همینجا استوپ می‌زنیم
+    
     if (
       !formData.senderName.trim() ||
       !formData.senderPhone.trim() ||
@@ -3797,14 +3848,11 @@ export default function CheckoutPage() {
       !formData.address.trim()
     ) {
       alert('لطفاً تمام فیلدهای ستاره‌دار (*) را پر کنید.');
-      return; // توقف تابع، اجازه نمی‌دهد به خط‌های بعدی برود
+      return;
     }
 
     setIsSubmitting(true);
-
     try {
-      // ارسال درخواست به API خودمان (نه مستقیم به دیتابیس)
-      // این کار باعث می‌شود مشکل امنیتی RLS حل شود
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -3830,7 +3878,6 @@ export default function CheckoutPage() {
         throw new Error(result.error || 'خطا در ارتباط با سرور');
       }
 
-      // اگر موفق بود، آیدی سفارش را می‌گیریم و می‌رویم مرحله پرداخت
       if (result.id) {
         setOrderId(result.id);
         setStep(2);
@@ -3845,13 +3892,39 @@ export default function CheckoutPage() {
     }
   };
 
-  // اگر سبد خالی بود، برگرداندن کاربر
+  if (!mounted) return null;
+
   if (cart.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-20 text-center">
-        <h1 className="text-xl font-bold">سبد خرید خالی است</h1>
+      <div className="container mx-auto px-4 py-20 text-center font-[family-name:var(--font-vazir)]">
+        <h1 className="text-xl font-bold text-gray-800">سبد خرید خالی است</h1>
         <Link href="/" className="text-blue-600 mt-4 block hover:underline">بازگشت به فروشگاه</Link>
       </div>
+    );
+  }
+
+  // --- محافظ امنیتی (Security Guard) ---
+  // اگر مبلغ کمتر از حد مجاز بود، اجازه دیدن فرم را نده
+  if (totalBaseUSD < MIN_ORDER_AMOUNT_USD) {
+    return (
+        <div className="container mx-auto px-4 py-20 text-center font-[family-name:var(--font-vazir)] flex flex-col items-center">
+            <div className="bg-amber-100 p-4 rounded-full mb-4">
+                <AlertTriangle className="h-10 w-10 text-amber-600" />
+            </div>
+            <h1 className="text-xl font-bold text-gray-800">مبلغ سفارش کمتر از حد مجاز است</h1>
+            <p className="text-gray-500 mt-2 max-w-md mx-auto leading-7">
+                حداقل مبلغ خرید برای پردازش و ارسال به ایران <strong>{symbol} {minOrderDisplay}</strong> ({MIN_ORDER_AMOUNT_USD} USD) می‌باشد.
+                <br/>
+                لطفاً اقلام بیشتری به سبد خرید اضافه کنید.
+            </p>
+            <div className="mt-6 bg-gray-50 border border-gray-200 p-4 rounded-xl min-w-[200px]">
+                <div className="text-xs text-gray-400 mb-1">جمع فعلی سبد</div>
+                <div className="text-xl font-bold text-gray-800 dir-ltr font-mono">{symbol} {displayTotal}</div>
+            </div>
+            <Link href="/products" className="bg-blue-600 text-white px-8 py-3 rounded-xl mt-8 hover:bg-blue-700 transition-colors font-bold shadow-lg">
+                بازگشت و تکمیل خرید
+            </Link>
+        </div>
     );
   }
 
@@ -3885,7 +3958,7 @@ export default function CheckoutPage() {
               
               <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 
-                {/* بخش ۱: اطلاعات فرستنده (شما) */}
+                {/* بخش ۱: اطلاعات فرستنده */}
                 <div className="bg-blue-50/50 p-6 rounded-xl border border-blue-100">
                     <h3 className="font-bold text-blue-800 mb-4 flex items-center gap-2 border-b border-blue-200 pb-2">
                         <Globe className="h-5 w-5" />
@@ -3932,7 +4005,7 @@ export default function CheckoutPage() {
                     </div>
                 </div>
 
-                {/* بخش ۲: اطلاعات گیرنده (ایران) */}
+                {/* بخش ۲: اطلاعات گیرنده */}
                 <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                     <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2 border-b border-gray-100 pb-2">
                         <MapPin className="h-5 w-5 text-red-500" />
@@ -3990,7 +4063,7 @@ export default function CheckoutPage() {
                     </div>
                 </div>
 
-                {/* بخش ۳: توضیحات (اختیاری) */}
+                {/* بخش ۳: توضیحات */}
                 <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
                     <h3 className="font-bold text-gray-700 mb-4 flex items-center gap-2 border-b border-gray-200 pb-2">
                         <FileText className="h-5 w-5" />
@@ -4005,7 +4078,7 @@ export default function CheckoutPage() {
                             className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-white transition-colors"
                             onChange={handleInputChange}
                             value={formData.notes}
-                            />
+                        />
                     </div>
                 </div>
 
@@ -4036,7 +4109,6 @@ export default function CheckoutPage() {
                 درگاه پرداخت کریپتو
               </h1>
               
-              {/* ارسال ID واقعی سفارش به کامپوننت پرداخت */}
               <CryptoPayment orderId={orderId} />
               
               <button 
@@ -4785,12 +4857,13 @@ export default async function ProductPage({ params }: Props) {
 }
 
 ===== File: app/products/page.tsx =====
-# Modified: 2025-11-29T01:17:30.386544 | Size: 7682 bytes | SHA1: 95cdcd62d0980fdd40fd14dd076612ba9d704b5d
+# Modified: 2025-12-01T17:39:58.044524 | Size: 10158 bytes | SHA1: 4e316c64cd0f4d90292727a98ab87e134a702547
 'use client';
+
 import { useState, useEffect, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import ProductCard from '@/components/ProductCard';
-import { Search, ShoppingBag, ArrowDownUp, Loader2 } from 'lucide-react';
+import { Search, ShoppingBag, ArrowDownUp, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 
 interface Product {
@@ -4809,80 +4882,104 @@ interface Category {
   slug: string;
 }
 
+// تعداد محصول در هر صفحه (می‌تونی تغییر بدی)
+const PAGE_SIZE = 12;
+
 function ProductList() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]); 
   const [loading, setLoading] = useState(true);
   
+  // صفحه‌بندی و تعداد کل
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortOrder, setSortOrder] = useState<'newest' | 'price-asc' | 'price-desc'>('newest');
 
+  // ۱. فقط یکبار دسته‌بندی‌ها رو بگیر
   useEffect(() => {
-    fetchData();
+    fetchCategories();
   }, []);
 
-  // *** تغییر مهم: خواندن همزمان q (جستجو) و category (دسته‌بندی) از URL ***
+  // ۲. هر وقت فیلترها یا صفحه عوض شد، محصولات جدید رو بگیر
   useEffect(() => {
+    // خواندن پارامترهای URL (فقط بار اول یا وقتی تغییر کنن)
     const query = searchParams.get('q');
     const catParam = searchParams.get('category');
+    if (query && query !== searchTerm) setSearchTerm(query);
+    if (catParam && catParam !== selectedCategory) setSelectedCategory(catParam);
     
-    if (query) setSearchTerm(query);
-    if (catParam) setSelectedCategory(catParam);
-    
-  }, [searchParams]);
+    // فچ کردن محصولات با شرایط جدید
+    fetchProducts();
+  }, [page, searchTerm, selectedCategory, sortOrder, searchParams]);
 
-  const fetchData = async () => {
-    const { data: prodData } = await supabase
-      .from('products')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (prodData) {
-      setProducts(prodData);
-      setFilteredProducts(prodData);
-    }
+  // وقتی فیلتر عوض میشه (نه صفحه)، باید برگردیم صفحه ۱
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, selectedCategory, sortOrder]);
 
+  const fetchCategories = async () => {
     const { data: catData } = await supabase
       .from('categories')
       .select('*')
       .order('name');
-    
     if (catData) {
       setCategories([
         { id: 'all', name: 'همه محصولات', slug: 'all' }, 
         ...catData
       ]);
     }
+  };
 
+  const fetchProducts = async () => {
+    setLoading(true);
+
+    // شروع ساخت کوئری هوشمند
+    let query = supabase
+      .from('products')
+      .select('*', { count: 'exact' }); // count: exact یعنی تعداد کل رو هم بشمار
+
+    // اعمال فیلتر جستجو
+    if (searchTerm) {
+      query = query.ilike('title', `%${searchTerm}%`);
+    }
+
+    // اعمال فیلتر دسته‌بندی
+    if (selectedCategory !== 'all') {
+      query = query.eq('category', selectedCategory);
+    }
+
+    // اعمال مرتب‌سازی
+    if (sortOrder === 'newest') {
+      query = query.order('created_at', { ascending: false });
+    } else if (sortOrder === 'price-asc') {
+      query = query.order('price', { ascending: true });
+    } else if (sortOrder === 'price-desc') {
+      query = query.order('price', { ascending: false });
+    }
+
+    // اعمال صفحه‌بندی (جادوی اصلی)
+    const from = (page - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+    query = query.range(from, to);
+
+    const { data, count, error } = await query;
+
+    if (error) {
+        console.error('Error fetching products:', error);
+    } else {
+        setProducts(data || []);
+        setTotalCount(count || 0);
+    }
+    
     setLoading(false);
   };
 
-  useEffect(() => {
-    let result = [...products];
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
-    if (searchTerm) {
-      result = result.filter(p => 
-        p.title.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (selectedCategory !== 'all') {
-        result = result.filter(p => p.category === selectedCategory);
-    }
-
-    if (sortOrder === 'price-asc') {
-      result.sort((a, b) => a.price - b.price);
-    } else if (sortOrder === 'price-desc') {
-      result.sort((a, b) => b.price - a.price);
-    }
-
-    setFilteredProducts(result);
-  }, [searchTerm, sortOrder, selectedCategory, products]);
-
-  // بقیه کد دقیقاً مثل قبله...
   return (
     <div className="container mx-auto px-4">
         
@@ -4915,7 +5012,7 @@ function ProductList() {
             </div>
 
             <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                {loading ? (
+                {categories.length === 0 ? (
                     <div className="flex gap-2 animate-pulse">
                         <div className="h-9 w-24 bg-gray-200 rounded-full"></div>
                         <div className="h-9 w-24 bg-gray-200 rounded-full"></div>
@@ -4939,31 +5036,56 @@ function ProductList() {
             </div>
         </div>
 
-        {loading && (
+        {loading ? (
             <div className="text-center py-20">
                 <Loader2 className="h-10 w-10 animate-spin text-blue-600 mx-auto mb-4" />
-                <p className="text-gray-500">در حال چیدمان ویترین...</p>
+                <p className="text-gray-500">در حال دریافت محصولات...</p>
             </div>
-        )}
-
-        {!loading && filteredProducts.length === 0 ? (
+        ) : products.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
             <ShoppingBag className="h-16 w-16 text-gray-300 mb-4" />
             <p className="text-xl text-gray-500 font-bold">محصولی یافت نشد</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                id={product.id}
-                title={product.title}
-                price={product.price}
-                image={product.image}
-                slug={product.slug}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              {products.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  id={product.id}
+                  title={product.title}
+                  price={product.price}
+                  image={product.image}
+                  slug={product.slug}
+                />
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-4 mt-12">
+                    <button
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={page === 1}
+                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                        <ChevronRight className="h-5 w-5" />
+                    </button>
+                    
+                    <span className="text-sm font-bold text-gray-700">
+                        صفحه {page} از {totalPages}
+                    </span>
+
+                    <button
+                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                        disabled={page === totalPages}
+                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                        <ChevronLeft className="h-5 w-5" />
+                    </button>
+                </div>
+            )}
+          </>
         )}
     </div>
   );
@@ -6417,9 +6539,9 @@ export default function Header() {
 }
 
 ===== File: components/Hero.tsx =====
-# Modified: 2025-11-29T01:41:11.694098 | Size: 3287 bytes | SHA1: 4b78bd776995c6bc28006ae1e890e4e3498dbb77
+# Modified: 2025-12-01T18:42:19.278936 | Size: 4321 bytes | SHA1: 4aaf29dc5b119d427dfd83ce482e337aacb97dd2
 import Link from 'next/link';
-import { ArrowLeft, Gift } from 'lucide-react';
+import { ArrowLeft, Gift, ShieldCheck } from 'lucide-react';
 
 interface HeroProps {
   banner?: string;
@@ -6428,65 +6550,75 @@ interface HeroProps {
 }
 
 export default function Hero({ banner, title, subtitle }: HeroProps) {
-  // ۱. متن پیش‌فرض با ذکر تتر و سولانا (طبق دستور شما)
   const displayTitle = title || 'فاصله‌ها را با عشق پر کنید';
   const displaySubtitle = subtitle || 'تنها پلتفرم ارسال هدیه به ایران با پرداخت ارزی و کریپتو (USDT / Solana).';
+  const hasBanner = !!banner;
 
   return (
-    <section className="relative overflow-hidden font-[family-name:var(--font-vazir)] min-h-[500px] flex items-center justify-center">
+    <section className="relative overflow-hidden font-[family-name:var(--font-vazir)] bg-gradient-to-br from-indigo-950 via-blue-900 to-blue-950 min-h-[auto] md:min-h-[600px] py-12 md:py-0">
       
-      {/* Background Logic */}
-      {banner ? (
-        <>
-          {/* تصویر پس‌زمینه (بدون هیچ هاله سیاه) */}
-          <div 
-            className="absolute inset-0 bg-cover bg-center z-0" 
-            style={{ backgroundImage: `url('${banner}')` }}
-          />
-        </>
-      ) : (
-        // اگر عکس نبود، گرادینت ساده
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-50 to-white z-0" />
-      )}
+      {/* کانتینر اصلی */}
+      <div className="container mx-auto px-4 relative z-10">
+        <div className="flex flex-col-reverse md:flex-row items-center justify-between gap-8 md:gap-12">
+          
+          {/* --- ستون ۱: متن‌ها (سمت راست) --- */}
+          <div className="flex-1 text-center md:text-right w-full z-20">
+            
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-800/50 border border-blue-700 text-blue-200 text-xs md:text-sm mb-6">
+              <Gift className="h-4 w-4 text-yellow-400" />
+              <span>ارسال مطمئن هدیه به سراسر ایران</span>
+            </div>
 
-      <div className="container mx-auto px-4 text-center relative z-20 pt-10">
-        
-        {/* Badge */}
-        <div className="mx-auto mb-6 inline-flex items-center rounded-full px-3 py-1 text-sm font-medium animate-in fade-in slide-in-from-top-4 duration-700 bg-blue-100/80 text-blue-800 shadow-sm border border-blue-200 backdrop-blur-sm">
-          <Gift className="mr-2 h-4 w-4" />
-          <span>ارسال مطمئن هدیه به سراسر ایران</span>
-        </div>
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-white leading-tight mb-6 drop-shadow-lg">
+              {displayTitle}
+            </h1>
 
-        {/* Main Heading */}
-        <h1 className="mx-auto max-w-4xl text-5xl font-extrabold tracking-tight sm:text-6xl mb-6 leading-tight text-slate-900 drop-shadow-2xl shadow-white">
-          {displayTitle}
-        </h1>
-
-        {/* Subheading: باکس شیشه‌ای اختصاصی */}
-        <div className="flex justify-center mb-10">
-            <p className="max-w-2xl text-lg leading-relaxed dir-ltr text-slate-900 font-bold bg-white/40 backdrop-blur-md border border-white/50 px-6 py-3 rounded-2xl shadow-lg">
+            {/* اصلاحیه نهایی: 
+                1. md:whitespace-nowrap -> در دسکتاپ حتماً یک خطی باشد.
+                2. text-xs sm:text-base -> در موبایل فونت کوچکتر شود تا بیشتر جا شود.
+                3. max-w-full -> کل عرض را استفاده کند.
+            */}
+            <p className="text-xs sm:text-base md:text-lg text-blue-100 leading-8 mb-8 max-w-full md:max-w-none mx-auto md:mx-0 md:whitespace-nowrap">
               {displaySubtitle}
             </p>
-        </div>
 
-        {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link 
-            href="/products" 
-            className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-8 py-4 text-base font-bold text-white shadow-lg hover:bg-blue-700 transition-all w-full sm:w-auto hover:shadow-blue-500/30 hover:-translate-y-1"
-          >
-            مشاهده محصولات
-            <ArrowLeft className="mr-2 h-5 w-5" />
-          </Link>
-          
-          <Link 
-            href="/how-it-works" 
-            className="inline-flex items-center justify-center rounded-xl border px-8 py-4 text-base font-medium transition-all w-full sm:w-auto bg-white/80 hover:bg-white text-gray-800 border-gray-300 backdrop-blur-sm shadow-sm"
-          >
-             چطور کار می‌کند؟
-          </Link>
-        </div>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+              <Link 
+                href="/products" 
+                className="inline-flex items-center justify-center rounded-xl bg-yellow-500 hover:bg-yellow-400 text-blue-900 px-8 py-4 text-base font-bold shadow-lg transition-all hover:-translate-y-1"
+              >
+                شروع خرید
+                <ArrowLeft className="mr-2 h-5 w-5" />
+              </Link>
+              
+              <Link 
+                href="/how-it-works" 
+                className="inline-flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white px-8 py-4 text-base font-medium backdrop-blur-sm transition-all"
+              >
+                <ShieldCheck className="ml-2 h-5 w-5" />
+                چطور اعتماد کنم؟
+              </Link>
+            </div>
+          </div>
 
+          {/* --- ستون ۲: تصویر کادو (سمت چپ) --- */}
+          <div className="flex-1 flex justify-center w-full relative z-10">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200px] h-[200px] md:w-[400px] md:h-[400px] bg-blue-500/30 blur-[70px] rounded-full pointer-events-none"></div>
+            
+            {hasBanner ? (
+                 <img 
+                    src={banner} 
+                    alt="Gift Box" 
+                    className="relative w-auto h-auto max-w-[250px] md:max-w-[450px] max-h-[300px] md:max-h-[500px] object-contain drop-shadow-2xl animate-in fade-in zoom-in duration-700 hover:scale-105 transition-transform"
+                 />
+               ) : (
+                 <div className="relative z-10 w-64 h-64 flex items-center justify-center border-2 border-dashed border-white/20 rounded-3xl bg-white/5 text-white/50 p-4 text-center text-sm">
+                    تصویر کادو (PNG) را در تنظیمات پنل ادمین آپلود کنید
+                 </div>
+               )}
+          </div>
+
+        </div>
       </div>
     </section>
   );
@@ -7327,4 +7459,4 @@ types/ -> تعریف مدل‌های داده.
 
 ### Summary
 # Files considered: 63 | Written: 58 | Skipped: 5
-# Output size: 342837 bytes
+# Output size: 349270 bytes

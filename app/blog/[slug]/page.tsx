@@ -4,6 +4,9 @@ import { Calendar, ArrowRight, User, Tag, Folder } from 'lucide-react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
+// --- تنظیمات کش (اختیاری) ---
+export const revalidate = 60;
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const decodedSlug = decodeURIComponent(slug);
@@ -37,77 +40,94 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-// --- تابع هوشمند پردازش متن (لینک + H2 + H3) ---
+// --- موتور پردازش متن جدید (Fix: Bold + Lists) ---
+const parseInlineStyles = (text: string) => {
+  // این تابع متن رو تیکه تیکه میکنه: لینک ها، بولدها و متن ساده
+  // الگوی تشخیص: لینک مارک‌داون OR لینک ساده OR متن بولد (**...**)
+  const parts = text.split(/(\[.*?\]\(.*?\)|https?:\/\/[^\s]+|\*\*.*?\*\*)/g);
+
+  return parts.map((part, index) => {
+    // 1. تشخیص بولد (**متن**)
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={index} className="font-extrabold text-gray-900">{part.slice(2, -2)}</strong>;
+    }
+    
+    // 2. تشخیص لینک مارک‌داون [متن](لینک)
+    const linkMatch = part.match(/^\[(.*?)\]\((.*?)\)$/);
+    if (linkMatch) {
+      return (
+        <a 
+          key={index} 
+          href={linkMatch[2]} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="text-blue-600 font-bold hover:underline"
+        >
+          {linkMatch[1]}
+        </a>
+      );
+    }
+
+    // 3. تشخیص لینک ساده
+    if (part.match(/^https?:\/\//)) {
+      return (
+        <a 
+          key={index} 
+          href={part} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="text-blue-600 break-all hover:underline"
+        >
+          {part}
+        </a>
+      );
+    }
+
+    // 4. متن معمولی
+    return part;
+  });
+};
+
 const renderContent = (text: string) => {
   if (!text) return null;
-
   return text.split('\n').map((line, index) => {
-    if (!line.trim()) return <br key={index} />;
+    const trimmedLine = line.trim();
+    if (!trimmedLine) return <br key={index} />;
 
-    // تشخیص سطح تیتر
-    let headingLevel = 0; // 0 = پاراگراف
-    if (line.startsWith('### ')) headingLevel = 3;
-    else if (line.startsWith('## ')) headingLevel = 2;
-
-    // تمیز کردن متن از علامت‌های #
-    const cleanLine = line.replace(/^#+\s+/, '');
-
-    // پردازش لینک‌ها در هر خط (لینک متنی و لینک ساده)
-    const parts = cleanLine.split(/(\[.*?\]\(.*?\)|https?:\/\/[^\s]+)/g);
-    
-    const renderedParts = parts.map((part, partIndex) => {
-      // 1. فرمت [متن](لینک)
-      const linkMatch = part.match(/^\[(.*?)\]\((.*?)\)$/);
-      if (linkMatch) {
-        return (
-          <a 
-            key={partIndex} 
-            href={linkMatch[2]} 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="text-blue-600 font-bold hover:underline"
-          >
-            {linkMatch[1]}
-          </a>
-        );
-      }
-      // 2. لینک ساده (https://...)
-      if (part.match(/^https?:\/\//)) {
-         return (
-          <a 
-            key={partIndex} 
-            href={part} 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="text-blue-600 break-all hover:underline"
-          >
-            {part}
-          </a>
-        );
-      }
-      return part;
-    });
-
-    // رندر کردن بر اساس نوع (H2, H3 یا پاراگراف)
-    if (headingLevel === 2) {
+    // تشخیص تیترها
+    if (line.startsWith('### ')) {
       return (
-        <h2 key={index} className="text-xl md:text-2xl font-bold text-gray-900 mt-8 mb-4 border-r-4 border-blue-500 pr-3 leading-tight">
-          {renderedParts}
+        <h3 key={index} className="text-lg md:text-xl font-bold text-gray-800 mt-8 mb-3 pr-2 border-r-2 border-blue-200">
+          {parseInlineStyles(line.replace('### ', ''))}
+        </h3>
+      );
+    }
+    if (line.startsWith('## ')) {
+      return (
+        <h2 key={index} className="text-xl md:text-2xl font-bold text-gray-900 mt-10 mb-4 border-r-4 border-blue-600 pr-4 leading-tight">
+          {parseInlineStyles(line.replace('## ', ''))}
         </h2>
       );
     }
 
-    if (headingLevel === 3) {
-      return (
-        <h3 key={index} className="text-lg md:text-xl font-bold text-gray-800 mt-6 mb-3 pr-1">
-          {renderedParts}
-        </h3>
-      );
+    // تشخیص لیست‌ها (شروع با - یا عدد.)
+    // این بخش باعث میشه لیست‌ها تو رفتگی داشته باشن
+    const isList = line.match(/^(\d+\.|-)\s/);
+    if (isList) {
+        return (
+            <div key={index} className="flex gap-2 mb-2 pr-4 md:pr-8 items-start">
+                 <span className="text-blue-500 font-bold mt-1.5 text-xs">●</span>
+                 <p className="text-gray-700 leading-8 text-justify">
+                    {parseInlineStyles(line.replace(/^(\d+\.|-)\s/, ''))}
+                 </p>
+            </div>
+        )
     }
 
+    // پاراگراف معمولی
     return (
       <p key={index} className="mb-4 leading-8 text-justify text-gray-700">
-        {renderedParts}
+        {parseInlineStyles(line)}
       </p>
     );
   });
@@ -167,7 +187,7 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
         <div className="absolute bottom-0 left-0 right-0 p-6 md:p-12 container mx-auto">
             {post.category && (
                 <span className="inline-flex items-center gap-1 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold mb-4">
-                    <Folder className="h-3 w-3" /> {post.category}
+                     <Folder className="h-3 w-3" /> {post.category}
                 </span>
             )}
             <h1 className="text-3xl md:text-5xl font-extrabold text-white leading-tight drop-shadow-lg max-w-4xl">
@@ -205,9 +225,9 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
                 </div>
                 <div className="flex flex-wrap gap-2">
                     {post.tags.map((tag: string, idx: number) => (
-                        <span key={idx} className="bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg text-xs">
+                        <Link key={idx} href={`/products?q=${tag}`} className="bg-gray-100 hover:bg-blue-50 hover:text-blue-600 transition-colors text-gray-600 px-3 py-1.5 rounded-lg text-xs">
                             #{tag}
-                        </span>
+                        </Link>
                     ))}
                 </div>
             </div>
@@ -215,7 +235,7 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
 
           {/* دکمه بازگشت */}
           <div className="mt-10">
-            <Link href="/blog" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-bold transition-colors group">
+             <Link href="/blog" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-bold transition-colors group">
                  <ArrowRight className="ml-2 h-4 w-4 group-hover:mr-1 transition-all" /> بازگشت به لیست مقالات
             </Link>
           </div>
