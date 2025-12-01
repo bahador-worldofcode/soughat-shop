@@ -17,9 +17,6 @@ export default function Hero({ banner, title, subtitle }: HeroProps) {
       
       {/* کانتینر اصلی */}
       <div className="container mx-auto px-4 relative z-10">
-        {/* اینجا جادوی اصلی اتفاق میفته: فلکس باکس دو ستونه */}
-        {/* flex-col-reverse یعنی در موبایل اول عکس باشه بعد متن */}
-        {/* md:flex-row یعنی در دسکتاپ متن راست باشه، عکس چپ */}
         <div className="flex flex-col-reverse md:flex-row items-center justify-between gap-8 md:gap-12">
           
           {/* --- ستون ۱: متن‌ها (سمت راست) --- */}
@@ -34,7 +31,12 @@ export default function Hero({ banner, title, subtitle }: HeroProps) {
               {displayTitle}
             </h1>
 
-            <p className="text-base md:text-lg text-blue-100 leading-8 mb-8 max-w-lg mx-auto md:mx-0">
+            {/* اصلاحیه نهایی: 
+                1. md:whitespace-nowrap -> در دسکتاپ حتماً یک خطی باشد.
+                2. text-xs sm:text-base -> در موبایل فونت کوچکتر شود تا بیشتر جا شود.
+                3. max-w-full -> کل عرض را استفاده کند.
+            */}
+            <p className="text-xs sm:text-base md:text-lg text-blue-100 leading-8 mb-8 max-w-full md:max-w-none mx-auto md:mx-0 md:whitespace-nowrap">
               {displaySubtitle}
             </p>
 
@@ -58,22 +60,16 @@ export default function Hero({ banner, title, subtitle }: HeroProps) {
           </div>
 
           {/* --- ستون ۲: تصویر کادو (سمت چپ) --- */}
-          {/* این دیو کاملاً جداست و امکان نداره بره زیر متن */}
           <div className="flex-1 flex justify-center w-full relative z-10">
-            
-            {/* یک دایره نورانی پشت عکس برای زیبایی */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200px] h-[200px] md:w-[400px] md:h-[400px] bg-blue-500/30 blur-[70px] rounded-full pointer-events-none"></div>
             
             {hasBanner ? (
                  <img 
                     src={banner} 
                     alt="Gift Box" 
-                    // این کلاس‌ها سایز رو کنترل می‌کنن که کل صفحه رو نگیره
-                    // object-contain: عکس رو برش نزن و کامل نشون بده
                     className="relative w-auto h-auto max-w-[250px] md:max-w-[450px] max-h-[300px] md:max-h-[500px] object-contain drop-shadow-2xl animate-in fade-in zoom-in duration-700 hover:scale-105 transition-transform"
                  />
                ) : (
-                 // اگر عکسی نبود این رو نشون میده
                  <div className="relative z-10 w-64 h-64 flex items-center justify-center border-2 border-dashed border-white/20 rounded-3xl bg-white/5 text-white/50 p-4 text-center text-sm">
                     تصویر کادو (PNG) را در تنظیمات پنل ادمین آپلود کنید
                  </div>
