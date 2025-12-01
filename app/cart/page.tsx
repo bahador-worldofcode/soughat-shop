@@ -9,17 +9,22 @@ export default function CartPage() {
   const { cart, removeFromCart, totalPrice, getSymbol, convertPrice } = useStore();
   
   // محاسبه قیمت‌ها
-  const displayTotal = totalPrice(); // قیمتی که مشتری با ارز انتخابی می‌بیند
+  const displayTotal = totalPrice(); // قیمتی که مشتری با ارز انتخابی می‌بیند (عدد)
   const symbol = getSymbol(); // نماد ارز انتخابی
 
-  // محاسبه قیمت پایه دلاری برای چک کردن محدودیت
+  // محاسبه قیمت پایه دلاری برای چک کردن محدودیت (لاجیک بیزینس)
   const totalBaseUSD = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   
-  // قانون حداقل خرید
-  const MIN_ORDER_AMOUNT = 25;
-  const isBelowMinimum = totalBaseUSD < MIN_ORDER_AMOUNT;
+  // قانون حداقل خرید (ثابت سیستم)
+  const MIN_ORDER_AMOUNT_USD = 25;
+  
+  // لاجیک: آیا زیر ۲۵ دلار است؟
+  const isBelowMinimum = totalBaseUSD < MIN_ORDER_AMOUNT_USD;
 
-  // حل مشکل هیدریشن (چون از localStorage میخونه)
+  // نمایش: ۲۵ دلار به پول مشتری چقدر می‌شود؟
+  const minOrderDisplay = convertPrice(MIN_ORDER_AMOUNT_USD);
+
+  // حل مشکل هیدریشن
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -53,7 +58,6 @@ export default function CartPage() {
         <div className="lg:col-span-2 space-y-4">
           {cart.map((item) => (
             <div key={item.id} className="flex gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-              {/* عکس محصول */}
               <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 border border-gray-200">
                 <img 
                   src={item.image} 
@@ -62,7 +66,6 @@ export default function CartPage() {
                 />
               </div>
 
-              {/* جزئیات */}
               <div className="flex flex-1 flex-col justify-between">
                 <div>
                   <h3 className="text-base font-semibold text-gray-900 line-clamp-1">{item.title}</h3>
@@ -111,14 +114,16 @@ export default function CartPage() {
               <p className="text-xs text-gray-500 mt-1 text-left">محاسبه شده بر اساس نرخ لحظه‌ای</p>
             </div>
 
-            {/* هشدار حداقل خرید */}
+            {/* هشدار حداقل خرید (هوشمند شده با واحد پول کاربر) */}
             {isBelowMinimum && (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 flex items-start gap-2 text-amber-800">
                     <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" />
                     <div className="text-sm">
-                        <p className="font-bold">حداقل مبلغ سفارش: ${MIN_ORDER_AMOUNT}</p>
+                        <p className="font-bold">
+                            حداقل مبلغ سفارش: {symbol} {minOrderDisplay}
+                        </p>
                         <p className="text-xs mt-1 opacity-80">
-                            مبلغ فعلی شما: <span className="dir-ltr font-mono font-bold">${totalBaseUSD.toFixed(2)}</span>
+                            مبلغ فعلی شما: <span className="dir-ltr font-mono font-bold">{symbol} {displayTotal}</span>
                             <br/>
                             لطفاً برای تکمیل سفارش، اقلام بیشتری اضافه کنید.
                         </p>
