@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useEffect, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useStore } from '@/lib/store';
@@ -94,14 +93,32 @@ export default function CryptoPayment({ orderId }: Props) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handlePaymentDone = () => {
+  // --- تغییر اصلی اینجاست: اتصال به API تایید سفارش ---
+  const handlePaymentDone = async () => {
     setIsChecking(true);
+    
+    try {
+        // ارسال نوتیفیکیشن به بله (شامل نوع ارز و تایید پرداخت)
+        await fetch('/api/orders/confirm', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                orderId: orderId,
+                paymentMethod: selectedMethod?.symbol || 'Crypto'
+            })
+        });
+    } catch (e) {
+        console.error('Notification failed', e);
+        // حتی اگر نوتیفیکیشن فیل شد، نذار کاربر گیر کنه، بفرستش صفحه موفقیت
+    }
+
+    // انتقال به صفحه موفقیت
     setTimeout(() => {
       router.push(`/success?id=${orderId}`);
-    }, 2000);
+    }, 1000);
   };
 
-  // تابع کمکی برای آیکون (دقیقاً مثل ادمین)
+  // تابع کمکی برای آیکون
   const getCryptoIcon = (symbol: string) => {
     return `https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/${symbol.toLowerCase().trim()}.png`;
   };
@@ -126,7 +143,6 @@ export default function CryptoPayment({ orderId }: Props) {
                   : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
               }`}
             >
-              {/* آیکون کوچک داخل دکمه */}
               <img src={getCryptoIcon(method.symbol)} className="w-5 h-5" alt="" />
               <span className="uppercase">{method.symbol}</span>
             </button>
@@ -153,7 +169,7 @@ export default function CryptoPayment({ orderId }: Props) {
            </div>
            
            <div className="flex justify-between items-center text-gray-900 border-t border-gray-200 pt-3">
-             <div className="flex flex-col">
+              <div className="flex flex-col">
                 <span className="font-bold text-sm flex items-center gap-1">
                     <Info className="h-4 w-4 text-blue-500"/> مبلغ قابل پرداخت:
                 </span>
@@ -167,7 +183,7 @@ export default function CryptoPayment({ orderId }: Props) {
                         نرخ لحظه‌ای: 1 {selectedMethod?.symbol} ≈ ${serverRate}
                     </span>
                 )}
-             </div>
+              </div>
              
              <div className="text-right">
                 <span className="text-2xl font-bold text-blue-600 font-mono tracking-tight">
@@ -178,7 +194,7 @@ export default function CryptoPayment({ orderId }: Props) {
            </div>
         </div>
 
-        {/* باکس راهنمای پرداخت (ساده) */}
+        {/* باکس راهنمای پرداخت */}
         <div className="text-center mb-6 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
             <div className="flex items-center justify-center gap-2 text-blue-800 mb-1">
                 <ScanLine className="h-5 w-5" />
@@ -200,7 +216,6 @@ export default function CryptoPayment({ orderId }: Props) {
                         level="H"
                         includeMargin={true}
                     />
-                    {/* لوگوی وسط QR */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                         <div className="bg-white p-1 rounded-full shadow-sm">
                             <img src={getCryptoIcon(selectedMethod.symbol)} className="w-8 h-8" alt="" />
@@ -209,7 +224,6 @@ export default function CryptoPayment({ orderId }: Props) {
                 </div>
 
                 <div className="w-full mb-6">
-                    {/* هدر آدرس (بهبود UX) */}
                     <div className="flex items-center justify-center gap-2 mb-2">
                         <span className="text-xs text-gray-500">آدرس کیف پول</span>
                         <span className="font-bold text-sm text-gray-800 uppercase">{selectedMethod.symbol}</span>
