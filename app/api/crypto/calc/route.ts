@@ -25,45 +25,45 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'سفارش یافت نشد' }, { status: 404 });
     }
 
-    // 2. دریافت نرخ لحظه‌ای از Coinbase (پایدارترین گزینه برای Vercel)
+    // 2. دریافت نرخ لحظه‌ای
     let rate = 1;
     const cleanSymbol = symbol.toUpperCase().trim();
 
     // اگر تتر بود که نرخ 1 هست، اگر نه استعلام بگیر
     if (cleanSymbol !== 'USDT') {
       try {
-        // پترن کوین‌بیس: SOL-USD
         const pair = `${cleanSymbol}-USD`;
         const res = await fetch(`https://api.coinbase.com/v2/prices/${pair}/spot`, {
-          cache: 'no-store' // مهم: اصلاً کش نکن
+          cache: 'no-store'
         });
-        
         const data = await res.json();
         
-        // ساختار کوین‌بیس: { data: { amount: "20.55", base: "SOL", currency: "USD" } }
         if (data.data && data.data.amount) {
           rate = parseFloat(data.data.amount);
         } else {
-          console.error('Coinbase Response Error:', data);
-          throw new Error('Invalid price data from Coinbase');
+          throw new Error('Invalid price data');
         }
       } catch (err) {
         console.error('API Error:', err);
-        // اگر کوین‌بیس هم جواب نداد (که بعیده)، یه ارور تمیز برگردون
-        return NextResponse.json({ error: 'خطا در دریافت نرخ ارز. لطفا لحظاتی دیگر تلاش کنید.' }, { status: 503 });
+        return NextResponse.json({ error: 'خطا در دریافت نرخ ارز.' }, { status: 503 });
       }
     }
 
-    // 3. محاسبه دقیق ریاضی
+    // 3. محاسبه دقیق ریاضی (بخش اصلاح شده)
     const totalPriceUSD = new BigNumber(order.total_price);
     const cryptoRate = new BigNumber(rate);
     
-    // محاسبه: قیمت کل تقسیم بر نرخ ارز
+    // تقسیم قیمت کل بر نرخ ارز
     const rawAmount = totalPriceUSD.dividedBy(cryptoRate);
+
+    // ✨ هوشمندسازی اعشار: تتر ۲ رقم، بقیه ۵ رقم
+    const decimalPlaces = cleanSymbol === 'USDT' ? 2 : 5;
     
-    // رند کردن: تا 5 رقم اعشار برای دقت بالاتر در سولانا
-    const roundedAmount = rawAmount.decimalPlaces(5, BigNumber.ROUND_CEIL);
-    const payableAmount = roundedAmount.toString();
+    // رند کردن رو به بالا (CEIL) تا حتی ۱ سنت هم کم نیاد
+    const roundedAmount = rawAmount.decimalPlaces(decimalPlaces, BigNumber.ROUND_CEIL);
+    
+    // تبدیل به رشته استاندارد (بدون صفرهای اضافه تهش)
+    const payableAmount = roundedAmount.toFixed(decimalPlaces);
 
     return NextResponse.json({
       amount: payableAmount,
