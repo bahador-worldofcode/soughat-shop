@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { orderId, paymentMethod } = body; // مثلا paymentMethod = "USDT"
+    const { orderId, paymentMethod } = body;
 
     // 1. دریافت اطلاعات کامل سفارش از دیتابیس
     const { data: order, error } = await supabaseAdmin
@@ -29,19 +29,22 @@ export async function POST(request: Request) {
 🔖 کد: ${order.id}
 💎 *روش پرداخت: ${paymentMethod}*
 ➖➖➖➖➖➖➖➖
-🌍 *فرستنده:*
-👤 ${order.sender_name} | 📱 ${order.sender_phone}
-🏳️ ${order.sender_country}
+🌍 *اطلاعات فرستنده (خارج):*
+👤 نام: ${order.sender_name}
+📱 تلفن: ${order.sender_phone}
+🏳️ کشور: ${order.sender_country}
 
-📍 *گیرنده:*
-👤 ${order.customer_name} | 📱 ${order.customer_phone}
-🏙 ${order.city}
-🏠 ${order.address}
+📍 *اطلاعات گیرنده (ایران):*
+👤 نام: ${order.customer_name}
+📱 تلفن: ${order.customer_phone}
+🏙 شهر: ${order.city}
+🏠 آدرس: ${order.address}
 ➖➖➖➖➖➖➖➖
 🛒 *اقلام:*
 ${itemsList}
 
-📝 *یادداشت:* ${order.order_notes || '-'}
+📝 *یادداشت:*
+${order.order_notes || 'ندارد'}
 ➖➖➖➖➖➖➖➖
 💰 *مالی:*
 💵 پایه: ${order.total_price} دلار
