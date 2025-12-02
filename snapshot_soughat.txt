@@ -1,5 +1,5 @@
 ### Soughat-Shop Snapshot
-# Generated: 2025-12-02T13:02:21.083429
+# Generated: 2025-12-02T14:53:49.341298
 # Root: C:\projects\soughat-shop
 # Excluded dir names: .expo, .git, .next, .vscode, node_modules
 # Excluded files (by name/rel): collect_soughat_snapshot.bat, collect_soughat_snapshot.py, package-lock.json, snapshot_soughat.txt
@@ -4212,9 +4212,12 @@ export default function CheckoutPage() {
 }
 
 ===== File: app/contact/page.tsx =====
-# Modified: 2025-11-27T23:38:52.800455 | Size: 4724 bytes | SHA1: 45ffa9e4a58f2f0fee5a1a40af1eb8597f746115
+# Modified: 2025-12-02T14:49:10.049294 | Size: 4225 bytes | SHA1: d53241b3d00a1db6028dbb85f1ae23a3ab8d10f2
+// app/contact/page.tsx
+
 import type { Metadata } from 'next';
-import { Mail, MessageCircle, MapPin, Phone, ArrowLeft } from 'lucide-react';
+import { MapPin, Phone, ArrowLeft, ShieldCheck } from 'lucide-react'; // Mail حذف شد
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'تماس با ما | پشتیبانی ارسال به ایران',
@@ -4229,19 +4232,10 @@ export default function ContactPage() {
         <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">تماس با ما</h1>
         <p className="text-gray-500 text-center mb-12">ما همیشه در کنار شما هستیم تا خیالتان از بابت ارسال هدیه به ایران راحت باشد.</p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+        {/* تغییر گرید به 2 ستون و وسط‌چین کردن */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16 max-w-4xl mx-auto">
           
-          {/* Email Card */}
-          <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 text-center hover:shadow-md transition-shadow group">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-              <Mail className="h-6 w-6" />
-            </div>
-            <h3 className="font-bold text-gray-900 mb-2">ایمیل سازمانی</h3>
-            <p className="text-gray-500 text-sm mb-4">پاسخگویی سریع به سوالات شما</p>
-            <a href="mailto:support@soughat.shop" className="text-blue-600 font-mono dir-ltr font-bold hover:underline">support@soughat.shop</a>
-          </div>
-
-          {/* Chat/Phone Card - UPDATED */}
+          {/* کارت تماس و واتساپ */}
           <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 text-center hover:shadow-md transition-shadow group relative overflow-hidden">
             <div className="absolute top-0 right-0 bg-green-500 text-white text-[10px] px-2 py-1 rounded-bl-lg">پاسخگویی فوری</div>
             <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600 group-hover:bg-green-600 group-hover:text-white transition-colors">
@@ -4250,17 +4244,17 @@ export default function ContactPage() {
             <h3 className="font-bold text-gray-900 mb-2">تماس و واتساپ</h3>
             <p className="text-gray-500 text-sm mb-4">پشتیبانی مستقیم مدیریت</p>
             
-            <div className="flex flex-col gap-2 items-center justify-center dir-ltr">
-                <a href="tel:+989168038017" className="text-gray-900 font-bold text-lg hover:text-green-600 transition-colors">
+            <div className="flex flex-col gap-2 items-center justify-center" dir="ltr">
+                <a href="tel:+989168038017" className="text-gray-900 font-bold text-lg hover:text-green-600 transition-colors font-mono">
                     +98 916 803 8017
                 </a>
-                <a href="https://wa.me/989168038017" target="_blank" className="text-xs inline-flex items-center text-green-600 hover:underline">
-                    ارسال پیام در واتساپ <ArrowLeft className="h-3 w-3 ml-1" />
+                <a href="https://wa.me/989168038017" target="_blank" className="text-xs inline-flex items-center text-green-600 hover:underline" dir="rtl">
+                   ارسال پیام در واتساپ <ArrowLeft className="h-3 w-3 mr-1" />
                 </a>
             </div>
           </div>
 
-          {/* Office Card */}
+          {/* کارت آدرس دفتر */}
           <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 text-center hover:shadow-md transition-shadow group">
             <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-600 group-hover:bg-red-600 group-hover:text-white transition-colors">
               <MapPin className="h-6 w-6" />
@@ -4269,13 +4263,15 @@ export default function ContactPage() {
             <p className="text-gray-500 text-sm mb-4">انبار مرکزی ارسال کالا</p>
             <span className="text-gray-700 text-sm block">تهران، میدان آزادی، خیابان آزادی (دفتر توزیع)</span>
           </div>
+
         </div>
 
         {/* FAQ Teaser */}
-        <div className="text-center bg-blue-50 rounded-xl p-8 border border-blue-100">
+        <div className="text-center bg-blue-50 rounded-xl p-8 border border-blue-100 max-w-3xl mx-auto">
           <h2 className="text-xl font-bold text-gray-900 mb-2">سوال فوری دارید؟</h2>
           <p className="text-gray-600 mb-6">شاید پاسخ شما در بخش قوانین باشد.</p>
           <a href="/terms" className="text-blue-600 font-bold hover:underline flex items-center justify-center gap-2">
+            <ShieldCheck className="h-5 w-5" />
             مشاهده قوانین و ضمانت‌نامه
           </a>
         </div>
@@ -4911,14 +4907,17 @@ export default async function ProductPage({ params }: Props) {
 }
 
 ===== File: app/products/page.tsx =====
-# Modified: 2025-12-01T17:39:58.044524 | Size: 10158 bytes | SHA1: 4e316c64cd0f4d90292727a98ab87e134a702547
+# Modified: 2025-12-02T13:15:14.209244 | Size: 10955 bytes | SHA1: 9df74d95f39d68dc94c67ca71edb67edcc783eed
+// app/products/page.tsx
+
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import ProductCard from '@/components/ProductCard';
 import { Search, ShoppingBag, ArrowDownUp, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
+// اضافه شدن هوک‌های ضروری برای مدیریت URL
+import { useSearchParams, useRouter } from 'next/navigation';
 
 interface Product {
   id: string;
@@ -4936,10 +4935,17 @@ interface Category {
   slug: string;
 }
 
-// تعداد محصول در هر صفحه (می‌تونی تغییر بدی)
+// تعداد محصول در هر صفحه
 const PAGE_SIZE = 12;
 
 function ProductList() {
+  const router = useRouter(); 
+  const searchParams = useSearchParams();
+
+  // خواندن مقادیر مستقیماً از URL (منبع حقیقت)
+  const currentCategory = searchParams.get('category') || 'all';
+  const currentSearch = searchParams.get('q') || '';
+
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]); 
   const [loading, setLoading] = useState(true);
@@ -4948,32 +4954,23 @@ function ProductList() {
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
-  const searchParams = useSearchParams();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  // مرتب‌سازی (فعلاً لوکال نگه داشتیم چون پیچیدگی URL ندارد)
   const [sortOrder, setSortOrder] = useState<'newest' | 'price-asc' | 'price-desc'>('newest');
 
-  // ۱. فقط یکبار دسته‌بندی‌ها رو بگیر
+  // ۱. دریافت دسته‌بندی‌ها (فقط یکبار در زمان لود)
   useEffect(() => {
     fetchCategories();
   }, []);
 
-  // ۲. هر وقت فیلترها یا صفحه عوض شد، محصولات جدید رو بگیر
+  // ۲. هر وقت URL (دسته‌بندی یا سرچ)، شماره صفحه یا ترتیب نمایش عوض شد، محصولات جدید بگیر
   useEffect(() => {
-    // خواندن پارامترهای URL (فقط بار اول یا وقتی تغییر کنن)
-    const query = searchParams.get('q');
-    const catParam = searchParams.get('category');
-    if (query && query !== searchTerm) setSearchTerm(query);
-    if (catParam && catParam !== selectedCategory) setSelectedCategory(catParam);
-    
-    // فچ کردن محصولات با شرایط جدید
     fetchProducts();
-  }, [page, searchTerm, selectedCategory, sortOrder, searchParams]);
+  }, [searchParams, page, sortOrder]);
 
-  // وقتی فیلتر عوض میشه (نه صفحه)، باید برگردیم صفحه ۱
+  // ۳. اگر دسته‌بندی یا سرچ عوض شد، حتماً برگرد به صفحه ۱ (تا کاربر در صفحه خالی گیر نکند)
   useEffect(() => {
     setPage(1);
-  }, [searchTerm, selectedCategory, sortOrder]);
+  }, [currentCategory, currentSearch]);
 
   const fetchCategories = async () => {
     const { data: catData } = await supabase
@@ -4991,19 +4988,18 @@ function ProductList() {
   const fetchProducts = async () => {
     setLoading(true);
 
-    // شروع ساخت کوئری هوشمند
     let query = supabase
       .from('products')
-      .select('*', { count: 'exact' }); // count: exact یعنی تعداد کل رو هم بشمار
+      .select('*', { count: 'exact' });
 
-    // اعمال فیلتر جستجو
-    if (searchTerm) {
-      query = query.ilike('title', `%${searchTerm}%`);
+    // فیلتر بر اساس جستجو (از URL)
+    if (currentSearch) {
+      query = query.ilike('title', `%${currentSearch}%`);
     }
 
-    // اعمال فیلتر دسته‌بندی
-    if (selectedCategory !== 'all') {
-      query = query.eq('category', selectedCategory);
+    // فیلتر بر اساس دسته‌بندی (از URL)
+    if (currentCategory !== 'all') {
+      query = query.eq('category', currentCategory);
     }
 
     // اعمال مرتب‌سازی
@@ -5015,7 +5011,7 @@ function ProductList() {
       query = query.order('price', { ascending: false });
     }
 
-    // اعمال صفحه‌بندی (جادوی اصلی)
+    // اعمال صفحه‌بندی
     const from = (page - 1) * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
     query = query.range(from, to);
@@ -5032,6 +5028,31 @@ function ProductList() {
     setLoading(false);
   };
 
+  // --- هندلرهای جدید برای تغییر URL ---
+
+  const handleCategoryChange = (slug: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    
+    if (slug === 'all') {
+      params.delete('category');
+    } else {
+      params.set('category', slug);
+    }
+    
+    // پارامتر scroll: false باعث می‌شود صفحه پرش نکند
+    router.push(`/products?${params.toString()}`, { scroll: false });
+  };
+
+  const handleSearchChange = (val: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (val) {
+      params.set('q', val);
+    } else {
+      params.delete('q');
+    }
+    router.replace(`/products?${params.toString()}`, { scroll: false });
+  };
+
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   return (
@@ -5045,8 +5066,9 @@ function ProductList() {
                     <input 
                     type="text" 
                     placeholder="جستجو..." 
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    // استفاده از defaultValue برای جلوگیری از پرش فوکوس هنگام تایپ
+                    defaultValue={currentSearch}
+                    onChange={(e) => handleSearchChange(e.target.value)}
                     className="w-full pr-10 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
                     />
                 </div>
@@ -5076,9 +5098,9 @@ function ProductList() {
                     categories.map(cat => (
                         <button
                             key={cat.id}
-                            onClick={() => setSelectedCategory(cat.slug)}
+                            onClick={() => handleCategoryChange(cat.slug)}
                             className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold border transition-all ${
-                                selectedCategory === cat.slug 
+                                currentCategory === cat.slug 
                                 ? 'bg-blue-600 text-white border-blue-600 shadow-md' 
                                 : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
                             }`}
@@ -7527,4 +7549,4 @@ types/ -> تعریف مدل‌های داده.
 
 ### Summary
 # Files considered: 63 | Written: 58 | Skipped: 5
-# Output size: 352196 bytes
+# Output size: 352472 bytes

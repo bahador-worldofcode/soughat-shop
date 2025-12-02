@@ -20,15 +20,30 @@ export default function FloatingContact() {
 
     setSending(true);
     try {
+      // 1. ذخیره در دیتابیس سوپابیس (برای پنل ادمین)
       const { error } = await supabase.from('messages').insert([{
         user_contact: formData.contact,
         content: formData.content
       }]);
       if (error) throw error;
+
+      // 2. ارسال فوری به گروه بله (کد جدید اضافه شده)
+      await fetch('/api/bale', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'TICKET',
+          data: {
+            contact: formData.contact,
+            content: formData.content
+          }
+        })
+      });
       
       setView('success');
       setFormData({ contact: '', content: '' }); // پاک کردن فرم
     } catch (error) {
+      console.error(error);
       alert('خطا در ارسال پیام. لطفاً دوباره تلاش کنید.');
     } finally {
       setSending(false);
@@ -68,7 +83,7 @@ export default function FloatingContact() {
             {/* دکمه بازگشت (فقط در حالت فرم) */}
             {view === 'form' && (
                 <button onClick={() => setView('menu')} className="text-white/80 hover:text-white">
-                   <ArrowLeft className="h-5 w-5" />
+                  <ArrowLeft className="h-5 w-5" />
                 </button>
             )}
           </div>
@@ -113,7 +128,7 @@ export default function FloatingContact() {
 
             {/* 2. FORM VIEW */}
             {view === 'form' && (
-                <form onSubmit={handleSend} className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
+              <form onSubmit={handleSend} className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
                     <div>
                         <label className="text-xs text-gray-500 mb-1 block">شماره تماس شما (واتساپ):</label>
                         <input 
@@ -161,7 +176,7 @@ export default function FloatingContact() {
                         onClick={() => setView('menu')}
                         className="text-blue-600 text-sm font-bold hover:underline"
                     >
-                        بازگشت به منو
+                       بازگشت به منو
                     </button>
                 </div>
             )}
