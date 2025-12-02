@@ -1,29 +1,27 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { MapPin, ShoppingCart, ChevronLeft, Loader2, Globe, FileText, ShieldCheck, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { MapPin, ShoppingCart, ChevronLeft, Loader2, Globe, FileText, ShieldCheck, ArrowLeft, AlertTriangle, Trash2, X } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import CryptoPayment from '@/components/CryptoPayment';
 
 export default function CheckoutPage() {
   const { cart, totalPrice, getSymbol, convertPrice, currency } = useStore();
-  
   // قیمت‌ها
   const displayTotal = totalPrice();
   const symbol = getSymbol();
   const totalBaseUSD = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  
   // قانون حداقل خرید
   const MIN_ORDER_AMOUNT_USD = 25;
   const minOrderDisplay = convertPrice(MIN_ORDER_AMOUNT_USD);
 
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderId, setOrderId] = useState('');
+  
+  // مودال پاک کردن فرم
+  const [showClearModal, setShowClearModal] = useState(false);
 
   const [formData, setFormData] = useState({
     senderName: '',
@@ -36,14 +34,44 @@ export default function CheckoutPage() {
     notes: '', 
   });
 
+  // 1. لود کردن اطلاعات از حافظه مرورگر (فقط یکبار در شروع)
+  useEffect(() => {
+    setMounted(true);
+    const savedData = localStorage.getItem('checkout_draft');
+    if (savedData) {
+        try {
+            setFormData(JSON.parse(savedData));
+        } catch (e) {
+            console.error('Error loading draft', e);
+        }
+    }
+  }, []);
+
+  // 2. ذخیره اتوماتیک در حافظه مرورگر با هر تغییر
+  useEffect(() => {
+    if (mounted) {
+        localStorage.setItem('checkout_draft', JSON.stringify(formData));
+    }
+  }, [formData, mounted]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // تابع پاک کردن فرم (دستی)
+  const clearForm = () => {
+    const emptyState = {
+        senderName: '', senderPhone: '', senderCountry: '',
+        receiverName: '', receiverPhone: '', city: '', address: '', notes: ''
+    };
+    setFormData(emptyState);
+    localStorage.removeItem('checkout_draft');
+    setShowClearModal(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (
       !formData.senderName.trim() ||
       !formData.senderPhone.trim() ||
@@ -79,12 +107,14 @@ export default function CheckoutPage() {
       });
 
       const result = await response.json();
-
       if (!response.ok) {
         throw new Error(result.error || 'خطا در ارتباط با سرور');
       }
 
       if (result.id) {
+        // موفقیت: پاک کردن پیش‌نویس چون سفارش ثبت شد
+        localStorage.removeItem('checkout_draft');
+        
         setOrderId(result.id);
         setStep(2);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -99,7 +129,6 @@ export default function CheckoutPage() {
   };
 
   if (!mounted) return null;
-
   if (cart.length === 0) {
     return (
       <div className="container mx-auto px-4 py-20 text-center font-[family-name:var(--font-vazir)]">
@@ -110,7 +139,6 @@ export default function CheckoutPage() {
   }
 
   // --- محافظ امنیتی (Security Guard) ---
-  // اگر مبلغ کمتر از حد مجاز بود، اجازه دیدن فرم را نده
   if (totalBaseUSD < MIN_ORDER_AMOUNT_USD) {
     return (
         <div className="container mx-auto px-4 py-20 text-center font-[family-name:var(--font-vazir)] flex flex-col items-center">
@@ -135,8 +163,39 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 font-[family-name:var(--font-vazir)]">
+    <div className="container mx-auto px-4 py-8 font-[family-name:var(--font-vazir)] relative">
       
+      {/* مدال تایید پاک کردن */}
+      {showClearModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+                <div className="p-6 text-center">
+                    <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Trash2 className="h-6 w-6 text-red-600" />
+                    </div>
+                    <h3 className="font-bold text-lg text-gray-900 mb-2">پاک کردن فرم؟</h3>
+                    <p className="text-sm text-gray-500 leading-6">
+                        آیا مطمئن هستید که می‌خواهید تمام اطلاعات وارد شده (آدرس و مشخصات) را پاک کنید؟ این کار قابل بازگشت نیست.
+                    </p>
+                </div>
+                <div className="bg-gray-50 p-4 flex gap-3">
+                    <button 
+                        onClick={() => setShowClearModal(false)}
+                        className="flex-1 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-bold hover:bg-white transition-colors"
+                    >
+                        خیر، نگه دار
+                    </button>
+                    <button 
+                        onClick={clearForm}
+                        className="flex-1 py-2.5 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition-colors shadow-md shadow-red-200"
+                    >
+                        بله، پاک کن
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
+
       {/* نوار وضعیت مراحل */}
       <div className="flex items-center gap-2 text-sm text-gray-500 mb-8 overflow-x-auto pb-2">
         <Link href="/cart" className="flex items-center hover:text-blue-600 whitespace-nowrap">
@@ -157,10 +216,22 @@ export default function CheckoutPage() {
           {step === 1 ? (
             /* --- مرحله ۱: فرم اطلاعات --- */
             <>
-              <h1 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                <ShieldCheck className="text-green-600 h-7 w-7" />
-                تکمیل اطلاعات سفارش
-              </h1>
+              <div className="flex justify-between items-center mb-6">
+                  <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <ShieldCheck className="text-green-600 h-7 w-7" />
+                    تکمیل اطلاعات سفارش
+                  </h1>
+                  
+                  {/* دکمه پاک کردن فرم */}
+                  <button 
+                    onClick={() => setShowClearModal(true)}
+                    className="text-xs flex items-center gap-1 text-red-500 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors"
+                    title="پاک کردن فرم"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    پاک کردن فرم
+                  </button>
+              </div>
               
               <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 
@@ -347,7 +418,7 @@ export default function CheckoutPage() {
                   <div className="flex items-center gap-2 whitespace-nowrap">
                     <span className="text-xs text-gray-500">x{item.quantity}</span>
                     <span className="font-medium text-gray-900">
-                        {symbol} {convertPrice(item.price * item.quantity)}
+                        {symbol} {convertPrice(item.price * item.quantity).toFixed(2)}
                     </span>
                   </div>
                 </div>
