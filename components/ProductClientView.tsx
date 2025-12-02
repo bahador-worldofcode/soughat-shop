@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
-import { ShoppingBag, Check, ShieldCheck, Truck, Star } from 'lucide-react';
+import { ShoppingBag, Check, ShieldCheck, Truck, Star, Plus, Minus, Trash2 } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -13,20 +13,18 @@ interface Product {
 }
 
 export default function ProductClientView({ product }: { product: Product }) {
-  const { convertPrice, getSymbol, addToCart } = useStore();
+  // اضافه کردن cart و decreaseFromCart به هوک
+  const { convertPrice, getSymbol, addToCart, decreaseFromCart, cart } = useStore();
   const [mounted, setMounted] = useState(false);
-  const [added, setAdded] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
   const finalPrice = mounted ? convertPrice(product.price) : product.price;
   const symbol = mounted ? getSymbol() : '$';
 
-  const handleAddToCart = () => {
-    addToCart(product);
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
-  };
+  // پیدا کردن تعداد این محصول در سبد خرید
+  const cartItem = cart.find(item => item.id === product.id);
+  const quantity = cartItem ? cartItem.quantity : 0;
 
   // --- موتور پردازش متن ---
   const renderDescription = (text: string) => {
@@ -60,12 +58,21 @@ export default function ProductClientView({ product }: { product: Product }) {
           alt={product.title} 
           className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
         />
+        {/* بج (Badge) تعداد روی عکس (اختیاری ولی جذاب) */}
+        {quantity > 0 && (
+            <div className="absolute top-4 right-4 bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg animate-bounce">
+                {quantity}
+            </div>
+        )}
       </div>
 
       {/* بخش اطلاعات */}
       <div className="flex flex-col">
         <div className="mb-6">
-            <h1 className="text-3xl font-black text-gray-900 mb-2 leading-tight">{product.title}</h1>
+            {/* اصلاح سایز فونت موبایل و فاصله خطوط */}
+            <h1 className="text-2xl md:text-3xl font-black text-gray-900 mb-3 leading-relaxed md:leading-normal">
+                {product.title}
+            </h1>
             <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-3 py-1 rounded-full w-fit">
                 <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
                 <span className="font-bold text-gray-700">۵.۰</span>
@@ -108,29 +115,40 @@ export default function ProductClientView({ product }: { product: Product }) {
             {renderDescription(product.description)}
         </div>
 
-        {/* دکمه خرید (حالت استاندارد و غیر شناور) */}
+        {/* کنترل‌های خرید (هوشمند) */}
         <div className="mt-8 space-y-4">
-            <button 
-                onClick={handleAddToCart}
-                disabled={added}
-                className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-xl transform active:scale-95 ${
-                    added 
-                    ? 'bg-green-600 text-white shadow-green-200' 
-                    : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-blue-200 hover:-translate-y-1'
-                }`}
-            >
-                {added ? (
-                    <>
-                        <Check className="h-6 w-6" />
-                        به سبد اضافه شد
-                    </>
-                ) : (
-                    <>
-                        <ShoppingBag className="h-6 w-6" />
-                        افزودن به سبد خرید
-                    </>
-                )}
-            </button>
+            {quantity > 0 ? (
+                // حالت دوم: دکمه‌های کم و زیاد
+                <div className="flex items-center justify-between bg-white border-2 border-blue-600 rounded-xl p-2 shadow-lg animate-in fade-in zoom-in duration-200">
+                    <button 
+                        onClick={() => decreaseFromCart(product.id)}
+                        className="w-12 h-12 flex items-center justify-center bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                    >
+                        {quantity === 1 ? <Trash2 className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
+                    </button>
+                    
+                    <div className="flex flex-col items-center">
+                        <span className="text-lg font-black text-gray-900">{quantity} عدد</span>
+                        <span className="text-[10px] text-gray-400">در سبد خرید شما</span>
+                    </div>
+
+                    <button 
+                        onClick={() => addToCart(product)}
+                        className="w-12 h-12 flex items-center justify-center bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors"
+                    >
+                        <Plus className="h-5 w-5" />
+                    </button>
+                </div>
+            ) : (
+                // حالت اول: دکمه افزودن
+                <button 
+                    onClick={() => addToCart(product)}
+                    className="w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-blue-200 hover:-translate-y-1 active:scale-95"
+                >
+                    <ShoppingBag className="h-6 w-6" />
+                    افزودن به سبد خرید
+                </button>
+            )}
             
             <div className="grid grid-cols-2 gap-4 text-xs text-gray-500 text-center bg-gray-50 py-3 rounded-xl border border-gray-100">
                 <div className="flex items-center justify-center gap-1 font-medium"><ShieldCheck className="h-4 w-4 text-green-600"/> ضمانت بازگشت وجه</div>
