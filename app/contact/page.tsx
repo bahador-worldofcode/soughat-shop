@@ -1,5 +1,8 @@
+// app/contact/page.tsx
+
 import type { Metadata } from 'next';
-import { Mail, MessageCircle, MapPin, Phone, ArrowLeft } from 'lucide-react';
+import { Mail, MapPin, Phone, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'تماس با ما | پشتیبانی ارسال به ایران',
@@ -23,7 +26,8 @@ export default function ContactPage() {
             </div>
             <h3 className="font-bold text-gray-900 mb-2">ایمیل سازمانی</h3>
             <p className="text-gray-500 text-sm mb-4">پاسخگویی سریع به سوالات شما</p>
-            <a href="mailto:support@soughat.shop" className="text-blue-600 font-mono dir-ltr font-bold hover:underline">support@soughat.shop</a>
+            {/* اصلاح جهت ایمیل */}
+            <a href="mailto:support@soughat.shop" className="text-blue-600 font-mono font-bold hover:underline block" dir="ltr">support@soughat.shop</a>
           </div>
 
           {/* Chat/Phone Card - UPDATED */}
@@ -35,12 +39,14 @@ export default function ContactPage() {
             <h3 className="font-bold text-gray-900 mb-2">تماس و واتساپ</h3>
             <p className="text-gray-500 text-sm mb-4">پشتیبانی مستقیم مدیریت</p>
             
-            <div className="flex flex-col gap-2 items-center justify-center dir-ltr">
-                <a href="tel:+989168038017" className="text-gray-900 font-bold text-lg hover:text-green-600 transition-colors">
+            {/* اصلاح جهت شماره تلفن: اضافه کردن dir="ltr" به کانتینر */}
+            <div className="flex flex-col gap-2 items-center justify-center" dir="ltr">
+                <a href="tel:+989168038017" className="text-gray-900 font-bold text-lg hover:text-green-600 transition-colors font-mono">
                     +98 916 803 8017
                 </a>
-                <a href="https://wa.me/989168038017" target="_blank" className="text-xs inline-flex items-center text-green-600 hover:underline">
-                    ارسال پیام در واتساپ <ArrowLeft className="h-3 w-3 ml-1" />
+                <a href="https://wa.me/989168038017" target="_blank" className="text-xs inline-flex items-center text-green-600 hover:underline" dir="rtl">
+                   {/* چون کانتینر LTR شد، برای متن فارسی واتساپ دوباره RTL رو فورس می‌کنیم تا آیکون و متن درست وایسن */}
+                   ارسال پیام در واتساپ <ArrowLeft className="h-3 w-3 mr-1" />
                 </a>
             </div>
           </div>
