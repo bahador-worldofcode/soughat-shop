@@ -1,10 +1,13 @@
+// app/products/page.tsx
+
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import ProductCard from '@/components/ProductCard';
 import { Search, ShoppingBag, ArrowDownUp, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
+// اضافه شدن هوک‌های ضروری برای مدیریت URL
+import { useSearchParams, useRouter } from 'next/navigation';
 
 interface Product {
   id: string;
@@ -22,10 +25,17 @@ interface Category {
   slug: string;
 }
 
-// تعداد محصول در هر صفحه (می‌تونی تغییر بدی)
+// تعداد محصول در هر صفحه
 const PAGE_SIZE = 12;
 
 function ProductList() {
+  const router = useRouter(); 
+  const searchParams = useSearchParams();
+
+  // خواندن مقادیر مستقیماً از URL (منبع حقیقت)
+  const currentCategory = searchParams.get('category') || 'all';
+  const currentSearch = searchParams.get('q') || '';
+
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]); 
   const [loading, setLoading] = useState(true);
@@ -34,32 +44,23 @@ function ProductList() {
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
-  const searchParams = useSearchParams();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  // مرتب‌سازی (فعلاً لوکال نگه داشتیم چون پیچیدگی URL ندارد)
   const [sortOrder, setSortOrder] = useState<'newest' | 'price-asc' | 'price-desc'>('newest');
 
-  // ۱. فقط یکبار دسته‌بندی‌ها رو بگیر
+  // ۱. دریافت دسته‌بندی‌ها (فقط یکبار در زمان لود)
   useEffect(() => {
     fetchCategories();
   }, []);
 
-  // ۲. هر وقت فیلترها یا صفحه عوض شد، محصولات جدید رو بگیر
+  // ۲. هر وقت URL (دسته‌بندی یا سرچ)، شماره صفحه یا ترتیب نمایش عوض شد، محصولات جدید بگیر
   useEffect(() => {
-    // خواندن پارامترهای URL (فقط بار اول یا وقتی تغییر کنن)
-    const query = searchParams.get('q');
-    const catParam = searchParams.get('category');
-    if (query && query !== searchTerm) setSearchTerm(query);
-    if (catParam && catParam !== selectedCategory) setSelectedCategory(catParam);
-    
-    // فچ کردن محصولات با شرایط جدید
     fetchProducts();
-  }, [page, searchTerm, selectedCategory, sortOrder, searchParams]);
+  }, [searchParams, page, sortOrder]);
 
-  // وقتی فیلتر عوض میشه (نه صفحه)، باید برگردیم صفحه ۱
+  // ۳. اگر دسته‌بندی یا سرچ عوض شد، حتماً برگرد به صفحه ۱ (تا کاربر در صفحه خالی گیر نکند)
   useEffect(() => {
     setPage(1);
-  }, [searchTerm, selectedCategory, sortOrder]);
+  }, [currentCategory, currentSearch]);
 
   const fetchCategories = async () => {
     const { data: catData } = await supabase
@@ -77,19 +78,18 @@ function ProductList() {
   const fetchProducts = async () => {
     setLoading(true);
 
-    // شروع ساخت کوئری هوشمند
     let query = supabase
       .from('products')
-      .select('*', { count: 'exact' }); // count: exact یعنی تعداد کل رو هم بشمار
+      .select('*', { count: 'exact' });
 
-    // اعمال فیلتر جستجو
-    if (searchTerm) {
-      query = query.ilike('title', `%${searchTerm}%`);
+    // فیلتر بر اساس جستجو (از URL)
+    if (currentSearch) {
+      query = query.ilike('title', `%${currentSearch}%`);
     }
 
-    // اعمال فیلتر دسته‌بندی
-    if (selectedCategory !== 'all') {
-      query = query.eq('category', selectedCategory);
+    // فیلتر بر اساس دسته‌بندی (از URL)
+    if (currentCategory !== 'all') {
+      query = query.eq('category', currentCategory);
     }
 
     // اعمال مرتب‌سازی
@@ -101,7 +101,7 @@ function ProductList() {
       query = query.order('price', { ascending: false });
     }
 
-    // اعمال صفحه‌بندی (جادوی اصلی)
+    // اعمال صفحه‌بندی
     const from = (page - 1) * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
     query = query.range(from, to);
@@ -118,6 +118,31 @@ function ProductList() {
     setLoading(false);
   };
 
+  // --- هندلرهای جدید برای تغییر URL ---
+
+  const handleCategoryChange = (slug: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    
+    if (slug === 'all') {
+      params.delete('category');
+    } else {
+      params.set('category', slug);
+    }
+    
+    // پارامتر scroll: false باعث می‌شود صفحه پرش نکند
+    router.push(`/products?${params.toString()}`, { scroll: false });
+  };
+
+  const handleSearchChange = (val: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (val) {
+      params.set('q', val);
+    } else {
+      params.delete('q');
+    }
+    router.replace(`/products?${params.toString()}`, { scroll: false });
+  };
+
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   return (
@@ -131,8 +156,9 @@ function ProductList() {
                     <input 
                     type="text" 
                     placeholder="جستجو..." 
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    // استفاده از defaultValue برای جلوگیری از پرش فوکوس هنگام تایپ
+                    defaultValue={currentSearch}
+                    onChange={(e) => handleSearchChange(e.target.value)}
                     className="w-full pr-10 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
                     />
                 </div>
@@ -162,9 +188,9 @@ function ProductList() {
                     categories.map(cat => (
                         <button
                             key={cat.id}
-                            onClick={() => setSelectedCategory(cat.slug)}
+                            onClick={() => handleCategoryChange(cat.slug)}
                             className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold border transition-all ${
-                                selectedCategory === cat.slug 
+                                currentCategory === cat.slug 
                                 ? 'bg-blue-600 text-white border-blue-600 shadow-md' 
                                 : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
                             }`}

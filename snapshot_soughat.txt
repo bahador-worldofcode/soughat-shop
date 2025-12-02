@@ -1,5 +1,5 @@
 ### Soughat-Shop Snapshot
-# Generated: 2025-12-01T23:42:28.867682
+# Generated: 2025-12-02T13:02:21.083429
 # Root: C:\projects\soughat-shop
 # Excluded dir names: .expo, .git, .next, .vscode, node_modules
 # Excluded files (by name/rel): collect_soughat_snapshot.bat, collect_soughat_snapshot.py, package-lock.json, snapshot_soughat.txt
@@ -4558,13 +4558,13 @@ export default function Icon() {
 }
 
 ===== File: app/layout.tsx =====
-# Modified: 2025-11-29T23:11:18.997191 | Size: 1126 bytes | SHA1: e5b77a136e31f8c003524e57bf4abc0c71a2990a
+# Modified: 2025-12-01T23:55:37.800521 | Size: 2886 bytes | SHA1: ab5f611118cd4815f995e3d2ff21bfa22bf82c0f
 import type { Metadata } from "next";
 import { Vazirmatn } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import FloatingContact from "@/components/FloatingContact"; // اضافه شد
+import FloatingContact from "@/components/FloatingContact";
 
 const vazir = Vazirmatn({
   subsets: ["arabic", "latin"],
@@ -4573,8 +4573,41 @@ const vazir = Vazirmatn({
 });
 
 export const metadata: Metadata = {
-  title: "Soughat Shop | سوغات شاپ",
-  description: "ارسال هدیه به ایران با پرداخت کریپتو",
+  // آدرس اصلی سایت (بسیار مهم برای سئو)
+  metadataBase: new URL('https://soughat-shop.vercel.app'),
+  
+  // تایتل هوشمند: اگر در صفحه‌ای تایتل نداشتیم، این رو نشون میده
+  title: {
+    default: "سوغات شاپ | ارسال هدیه به ایران با ارز دیجیتال",
+    template: "%s | سوغات شاپ"
+  },
+  
+  // توضیحات جذاب و کامل (بین ۱۵۰ تا ۱۶۰ کاراکتر عالیه)
+  description: "اولین پلتفرم تخصصی ارسال هدیه، سوغات و پول به ایران برای ایرانیان خارج از کشور. خرید پسته، زعفران و کادو با پرداخت امن تتر (USDT) و سولانا. تحویل فوری در سراسر ایران.",
+  
+  // کلمات کلیدی برای گوگل
+  keywords: ["ارسال هدیه به ایران", "خرید سوغات ایران", "ارسال پول با تتر", "سوغات شاپ", "Soughat Shop", "خرید پسته صادراتی", "گیفت شاپ ایران", "پرداخت با کریپتو"],
+  
+  // اطلاعات نویسنده و ربات‌ها
+  authors: [{ name: "تیم سوغات شاپ" }],
+  creator: "Soughat Shop",
+  publisher: "Soughat Shop",
+  robots: {
+    index: true,
+    follow: true,
+  },
+
+  // تنظیمات شبکه اجتماعی (وقتی لینک رو شیر میکنی این شکلی میشه)
+  openGraph: {
+    title: "سوغات شاپ | پل ارتباطی با ایران",
+    description: "عزیزانتان در ایران را خوشحال کنید. ارسال آنی هدیه و سوغات با پرداخت ارزی و کریپتو.",
+    url: 'https://soughat-shop.vercel.app',
+    siteName: 'Soughat Shop',
+    locale: 'fa_IR',
+    type: 'website',
+  },
+  
+  // کد تایید گوگل که داشتی (دست‌نخورده باقی ماند)
   verification: {
     google: "889fIOlZo4jHk-UB3Sv_X-vuaJQa-YPzZKLPMqpcYEo",
   },
@@ -5149,15 +5182,14 @@ export default function robots(): MetadataRoute.Robots {
 }
 
 ===== File: app/sitemap.ts =====
-# Modified: 2025-11-27T23:25:50.841660 | Size: 1380 bytes | SHA1: fd563438bb3b9bbed8005afecc5802a77cbd88ea
+# Modified: 2025-12-01T23:46:54.843036 | Size: 1919 bytes | SHA1: b256947589f25ccc62f2e868fa1dcca3a5d45366
 import { MetadataRoute } from 'next';
 import { supabase } from '@/lib/supabase';
 
-export const revalidate = 3600; // آپدیت ساعتی
+export const revalidate = 3600; 
+// آپدیت ساعتی (کش تا یک ساعت می‌مونه)
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // این خط به صورت خودکار آدرس سایت را پیدا می‌کند (چه لوکال باشد چه آدرس رایگان Vercel)
-  // اگر روی سرور باشیم آدرس واقعی را می‌گیرد، اگر نه لوکال‌هاست
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
   // 1. دریافت لیست مقالات وبلاگ
@@ -5165,7 +5197,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .from('posts')
     .select('slug, created_at');
 
-  // 2. تعریف صفحات ثابت
+  // 2. دریافت لیست محصولات (بخش جدید)
+  const { data: products } = await supabase
+    .from('products')
+    .select('slug, created_at');
+
+  // 3. تعریف صفحات ثابت (استاتیک)
   const routes = [
     '',
     '/about',
@@ -5175,6 +5212,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/products',
     '/blog',
     '/track',
+    '/how-it-works', // اضافه شد
   ].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date().toISOString(),
@@ -5182,7 +5220,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: route === '' ? 1 : 0.8,
   }));
 
-  // 3. تعریف صفحات وبلاگ
+  // 4. مپ کردن مقالات وبلاگ
   const blogRoutes = posts?.map((post) => ({
     url: `${baseUrl}/blog/${post.slug}`,
     lastModified: post.created_at,
@@ -5190,7 +5228,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   })) || [];
 
-  return [...routes, ...blogRoutes];
+  // 5. مپ کردن محصولات (بخش جدید)
+  const productRoutes = products?.map((product) => ({
+    url: `${baseUrl}/products/${product.slug}`,
+    lastModified: product.created_at || new Date().toISOString(),
+    changeFrequency: 'daily' as const, // محصولات چون قیمت و موجودی دارن روزانه چک بشن بهتره
+    priority: 0.9, // اولویت بالا برای محصولات (چون پولساز هستن)
+  })) || [];
+
+  // ترکیب همه مسیرها
+  return [...routes, ...blogRoutes, ...productRoutes];
 }
 
 ===== File: app/success/page.tsx =====
@@ -7480,4 +7527,4 @@ types/ -> تعریف مدل‌های داده.
 
 ### Summary
 # Files considered: 63 | Written: 58 | Skipped: 5
-# Output size: 349911 bytes
+# Output size: 352196 bytes
