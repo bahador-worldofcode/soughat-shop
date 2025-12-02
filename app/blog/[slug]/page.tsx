@@ -130,7 +130,7 @@ const renderContent = (text: string) => {
 
     // Paragraph
     return (
-      <p key={index} className="mb-4 leading-8 text-justify text-gray-700">
+      <p key={index} className="mb-2 leading-7 text-justify text-gray-700">
         {parseInlineStyles(line)}
       </p>
     );
