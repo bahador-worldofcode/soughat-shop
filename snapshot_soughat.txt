@@ -1,5 +1,5 @@
 ### Soughat-Shop Snapshot
-# Generated: 2025-12-02T16:24:21.464867
+# Generated: 2025-12-02T20:15:53.166561
 # Root: C:\projects\soughat-shop
 # Excluded dir names: .expo, .git, .next, .vscode, node_modules
 # Excluded files (by name/rel): collect_soughat_snapshot.bat, collect_soughat_snapshot.py, package-lock.json, snapshot_soughat.txt
@@ -3214,7 +3214,7 @@ ${data.content}
 }
 
 ===== File: app/api/crypto/calc/route.ts =====
-# Modified: 2025-11-30T14:36:22.150222 | Size: 3063 bytes | SHA1: 54a52692491aa958cc9a062096ba8eafc5cbec2f
+# Modified: 2025-12-02T18:09:04.157912 | Size: 2836 bytes | SHA1: 61b32cba8b68997778fd889878ffe7d679e9a78b
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import BigNumber from 'bignumber.js';
@@ -3242,45 +3242,45 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'سفارش یافت نشد' }, { status: 404 });
     }
 
-    // 2. دریافت نرخ لحظه‌ای از Coinbase (پایدارترین گزینه برای Vercel)
+    // 2. دریافت نرخ لحظه‌ای
     let rate = 1;
     const cleanSymbol = symbol.toUpperCase().trim();
 
     // اگر تتر بود که نرخ 1 هست، اگر نه استعلام بگیر
     if (cleanSymbol !== 'USDT') {
       try {
-        // پترن کوین‌بیس: SOL-USD
         const pair = `${cleanSymbol}-USD`;
         const res = await fetch(`https://api.coinbase.com/v2/prices/${pair}/spot`, {
-          cache: 'no-store' // مهم: اصلاً کش نکن
+          cache: 'no-store'
         });
-        
         const data = await res.json();
         
-        // ساختار کوین‌بیس: { data: { amount: "20.55", base: "SOL", currency: "USD" } }
         if (data.data && data.data.amount) {
           rate = parseFloat(data.data.amount);
         } else {
-          console.error('Coinbase Response Error:', data);
-          throw new Error('Invalid price data from Coinbase');
+          throw new Error('Invalid price data');
         }
       } catch (err) {
         console.error('API Error:', err);
-        // اگر کوین‌بیس هم جواب نداد (که بعیده)، یه ارور تمیز برگردون
-        return NextResponse.json({ error: 'خطا در دریافت نرخ ارز. لطفا لحظاتی دیگر تلاش کنید.' }, { status: 503 });
+        return NextResponse.json({ error: 'خطا در دریافت نرخ ارز.' }, { status: 503 });
       }
     }
 
-    // 3. محاسبه دقیق ریاضی
+    // 3. محاسبه دقیق ریاضی (بخش اصلاح شده)
     const totalPriceUSD = new BigNumber(order.total_price);
     const cryptoRate = new BigNumber(rate);
     
-    // محاسبه: قیمت کل تقسیم بر نرخ ارز
+    // تقسیم قیمت کل بر نرخ ارز
     const rawAmount = totalPriceUSD.dividedBy(cryptoRate);
+
+    // ✨ هوشمندسازی اعشار: تتر ۲ رقم، بقیه ۵ رقم
+    const decimalPlaces = cleanSymbol === 'USDT' ? 2 : 5;
     
-    // رند کردن: تا 5 رقم اعشار برای دقت بالاتر در سولانا
-    const roundedAmount = rawAmount.decimalPlaces(5, BigNumber.ROUND_CEIL);
-    const payableAmount = roundedAmount.toString();
+    // رند کردن رو به بالا (CEIL) تا حتی ۱ سنت هم کم نیاد
+    const roundedAmount = rawAmount.decimalPlaces(decimalPlaces, BigNumber.ROUND_CEIL);
+    
+    // تبدیل به رشته استاندارد (بدون صفرهای اضافه تهش)
+    const payableAmount = roundedAmount.toFixed(decimalPlaces);
 
     return NextResponse.json({
       amount: payableAmount,
@@ -3295,7 +3295,7 @@ export async function POST(request: Request) {
 }
 
 ===== File: app/api/orders/confirm/route.ts =====
-# Modified: 2025-12-02T16:24:18.911622 | Size: 2227 bytes | SHA1: 68d0b9d1b18e092975b03ece2dbf3e4c8967ddc8
+# Modified: 2025-12-02T18:05:42.257244 | Size: 2227 bytes | SHA1: 68d0b9d1b18e092975b03ece2dbf3e4c8967ddc8
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
@@ -3744,24 +3744,23 @@ export default async function BlogIndex() {
 }
 
 ===== File: app/cart/page.tsx =====
-# Modified: 2025-12-01T17:28:44.583252 | Size: 7276 bytes | SHA1: 0ba0dd77ff63805c8b50f6cfa7911c7b7cd2fd75
+# Modified: 2025-12-02T18:13:35.404303 | Size: 8812 bytes | SHA1: f21d7fba3db4c6073b8db615e5af8df0baae5517
 'use client';
 
 import Link from 'next/link';
-import { Trash2, ArrowLeft, ShoppingBag, AlertTriangle } from 'lucide-react';
+import { Trash2, ArrowLeft, ShoppingBag, AlertTriangle, Plus, Minus } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useEffect, useState } from 'react';
 
 export default function CartPage() {
-  const { cart, removeFromCart, totalPrice, getSymbol, convertPrice } = useStore();
+  const { cart, removeFromCart, addToCart, decreaseFromCart, totalPrice, getSymbol, convertPrice } = useStore();
   
   // محاسبه قیمت‌ها
   const displayTotal = totalPrice(); // قیمتی که مشتری با ارز انتخابی می‌بیند (عدد)
-  const symbol = getSymbol(); // نماد ارز انتخابی
+  const symbol = getSymbol();
 
   // محاسبه قیمت پایه دلاری برای چک کردن محدودیت (لاجیک بیزینس)
   const totalBaseUSD = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  
   // قانون حداقل خرید (ثابت سیستم)
   const MIN_ORDER_AMOUNT_USD = 25;
   
@@ -3804,8 +3803,10 @@ export default function CartPage() {
         {/* لیست آیتم‌ها */}
         <div className="lg:col-span-2 space-y-4">
           {cart.map((item) => (
-            <div key={item.id} className="flex gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-              <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 border border-gray-200">
+            <div key={item.id} className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+              
+              {/* عکس محصول */}
+              <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 border border-gray-200 mx-auto sm:mx-0">
                 <img 
                   src={item.image} 
                   alt={item.title} 
@@ -3816,21 +3817,45 @@ export default function CartPage() {
               <div className="flex flex-1 flex-col justify-between">
                 <div>
                   <h3 className="text-base font-semibold text-gray-900 line-clamp-1">{item.title}</h3>
-                  <p className="mt-1 text-sm text-gray-500">تعداد: {item.quantity}</p>
+                  <p className="mt-1 text-xs text-gray-500">قیمت واحد: {symbol} {convertPrice(item.price)}</p>
                 </div>
                 
-                <div className="flex items-center justify-between mt-4">
-                  <span className="font-bold text-blue-600">
-                    {symbol} {convertPrice(item.price * item.quantity)}
-                  </span>
+                <div className="flex flex-col sm:flex-row items-center justify-between mt-4 gap-4 sm:gap-0">
                   
-                  <button 
-                    onClick={() => removeFromCart(item.id)}
-                    className="flex items-center gap-1 text-sm text-red-500 hover:text-red-700 transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    <span>حذف</span>
-                  </button>
+                  {/* کنترل تعداد (دکمه‌های جدید) */}
+                  <div className="flex items-center bg-gray-50 rounded-lg border border-gray-200 p-1">
+                    <button 
+                        onClick={() => decreaseFromCart(item.id)}
+                        className="w-8 h-8 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-600 hover:text-red-500 hover:bg-red-50 transition-colors"
+                    >
+                        {item.quantity === 1 ? <Trash2 className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+                    </button>
+                    
+                    <span className="w-8 text-center font-bold text-gray-800 text-sm">{item.quantity}</span>
+                    
+                    <button 
+                        onClick={() => addToCart(item)}
+                        className="w-8 h-8 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-600 hover:text-green-600 hover:bg-green-50 transition-colors"
+                    >
+                        <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* قیمت کل آیتم */}
+                  <div className="flex items-center gap-4">
+                      <span className="font-bold text-blue-600 text-lg">
+                        {symbol} {convertPrice(item.price * item.quantity).toFixed(2)}
+                      </span>
+                      
+                      <button 
+                        onClick={() => removeFromCart(item.id)}
+                        className="text-gray-400 hover:text-red-500 transition-colors p-2"
+                        title="حذف کامل"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </button>
+                  </div>
+
                 </div>
               </div>
             </div>
@@ -3904,33 +3929,31 @@ export default function CartPage() {
 }
 
 ===== File: app/checkout/page.tsx =====
-# Modified: 2025-12-01T17:29:07.596226 | Size: 19451 bytes | SHA1: 95c6ae95affb74e7082c2341e3c85d39228b029e
+# Modified: 2025-12-02T18:29:04.699775 | Size: 23035 bytes | SHA1: dc93caf004afcf3bdb30d5ff3f6179921d0c6469
 'use client';
-
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { MapPin, ShoppingCart, ChevronLeft, Loader2, Globe, FileText, ShieldCheck, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { MapPin, ShoppingCart, ChevronLeft, Loader2, Globe, FileText, ShieldCheck, ArrowLeft, AlertTriangle, Trash2, X } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import CryptoPayment from '@/components/CryptoPayment';
 
 export default function CheckoutPage() {
   const { cart, totalPrice, getSymbol, convertPrice, currency } = useStore();
-  
   // قیمت‌ها
   const displayTotal = totalPrice();
   const symbol = getSymbol();
   const totalBaseUSD = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  
   // قانون حداقل خرید
   const MIN_ORDER_AMOUNT_USD = 25;
   const minOrderDisplay = convertPrice(MIN_ORDER_AMOUNT_USD);
 
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderId, setOrderId] = useState('');
+  
+  // مودال پاک کردن فرم
+  const [showClearModal, setShowClearModal] = useState(false);
 
   const [formData, setFormData] = useState({
     senderName: '',
@@ -3943,14 +3966,44 @@ export default function CheckoutPage() {
     notes: '', 
   });
 
+  // 1. لود کردن اطلاعات از حافظه مرورگر (فقط یکبار در شروع)
+  useEffect(() => {
+    setMounted(true);
+    const savedData = localStorage.getItem('checkout_draft');
+    if (savedData) {
+        try {
+            setFormData(JSON.parse(savedData));
+        } catch (e) {
+            console.error('Error loading draft', e);
+        }
+    }
+  }, []);
+
+  // 2. ذخیره اتوماتیک در حافظه مرورگر با هر تغییر
+  useEffect(() => {
+    if (mounted) {
+        localStorage.setItem('checkout_draft', JSON.stringify(formData));
+    }
+  }, [formData, mounted]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // تابع پاک کردن فرم (دستی)
+  const clearForm = () => {
+    const emptyState = {
+        senderName: '', senderPhone: '', senderCountry: '',
+        receiverName: '', receiverPhone: '', city: '', address: '', notes: ''
+    };
+    setFormData(emptyState);
+    localStorage.removeItem('checkout_draft');
+    setShowClearModal(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (
       !formData.senderName.trim() ||
       !formData.senderPhone.trim() ||
@@ -3986,12 +4039,14 @@ export default function CheckoutPage() {
       });
 
       const result = await response.json();
-
       if (!response.ok) {
         throw new Error(result.error || 'خطا در ارتباط با سرور');
       }
 
       if (result.id) {
+        // موفقیت: پاک کردن پیش‌نویس چون سفارش ثبت شد
+        localStorage.removeItem('checkout_draft');
+        
         setOrderId(result.id);
         setStep(2);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -4006,7 +4061,6 @@ export default function CheckoutPage() {
   };
 
   if (!mounted) return null;
-
   if (cart.length === 0) {
     return (
       <div className="container mx-auto px-4 py-20 text-center font-[family-name:var(--font-vazir)]">
@@ -4017,7 +4071,6 @@ export default function CheckoutPage() {
   }
 
   // --- محافظ امنیتی (Security Guard) ---
-  // اگر مبلغ کمتر از حد مجاز بود، اجازه دیدن فرم را نده
   if (totalBaseUSD < MIN_ORDER_AMOUNT_USD) {
     return (
         <div className="container mx-auto px-4 py-20 text-center font-[family-name:var(--font-vazir)] flex flex-col items-center">
@@ -4042,8 +4095,39 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 font-[family-name:var(--font-vazir)]">
+    <div className="container mx-auto px-4 py-8 font-[family-name:var(--font-vazir)] relative">
       
+      {/* مدال تایید پاک کردن */}
+      {showClearModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+                <div className="p-6 text-center">
+                    <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Trash2 className="h-6 w-6 text-red-600" />
+                    </div>
+                    <h3 className="font-bold text-lg text-gray-900 mb-2">پاک کردن فرم؟</h3>
+                    <p className="text-sm text-gray-500 leading-6">
+                        آیا مطمئن هستید که می‌خواهید تمام اطلاعات وارد شده (آدرس و مشخصات) را پاک کنید؟ این کار قابل بازگشت نیست.
+                    </p>
+                </div>
+                <div className="bg-gray-50 p-4 flex gap-3">
+                    <button 
+                        onClick={() => setShowClearModal(false)}
+                        className="flex-1 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-bold hover:bg-white transition-colors"
+                    >
+                        خیر، نگه دار
+                    </button>
+                    <button 
+                        onClick={clearForm}
+                        className="flex-1 py-2.5 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition-colors shadow-md shadow-red-200"
+                    >
+                        بله، پاک کن
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
+
       {/* نوار وضعیت مراحل */}
       <div className="flex items-center gap-2 text-sm text-gray-500 mb-8 overflow-x-auto pb-2">
         <Link href="/cart" className="flex items-center hover:text-blue-600 whitespace-nowrap">
@@ -4064,10 +4148,22 @@ export default function CheckoutPage() {
           {step === 1 ? (
             /* --- مرحله ۱: فرم اطلاعات --- */
             <>
-              <h1 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                <ShieldCheck className="text-green-600 h-7 w-7" />
-                تکمیل اطلاعات سفارش
-              </h1>
+              <div className="flex justify-between items-center mb-6">
+                  <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <ShieldCheck className="text-green-600 h-7 w-7" />
+                    تکمیل اطلاعات سفارش
+                  </h1>
+                  
+                  {/* دکمه پاک کردن فرم */}
+                  <button 
+                    onClick={() => setShowClearModal(true)}
+                    className="text-xs flex items-center gap-1 text-red-500 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors"
+                    title="پاک کردن فرم"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    پاک کردن فرم
+                  </button>
+              </div>
               
               <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 
@@ -4254,7 +4350,7 @@ export default function CheckoutPage() {
                   <div className="flex items-center gap-2 whitespace-nowrap">
                     <span className="text-xs text-gray-500">x{item.quantity}</span>
                     <span className="font-medium text-gray-900">
-                        {symbol} {convertPrice(item.price * item.quantity)}
+                        {symbol} {convertPrice(item.price * item.quantity).toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -7145,7 +7241,7 @@ const eslintConfig = defineConfig([
 export default eslintConfig;
 
 ===== File: lib/store.ts =====
-# Modified: 2025-11-29T00:59:50.540506 | Size: 3571 bytes | SHA1: 9372f05763233285bf84325d43a42e6179bcbff9
+# Modified: 2025-12-02T18:13:03.604943 | Size: 4644 bytes | SHA1: 168fbe29acfb8ef97a10a92af055e862fa9975db
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '@/lib/supabase';
@@ -7157,7 +7253,7 @@ export interface Product {
   title: string;
   price: number; 
   image: string;
-  category?: string; // اضافه شد
+  category?: string;
 }
 
 interface CartItem extends Product {
@@ -7169,7 +7265,6 @@ interface StoreState {
   currency: Currency;
   rates: Record<string, number>;
   lastRatesUpdate: number;
-  
   setCurrency: (currency: Currency) => void;
   getSymbol: () => string;
   convertPrice: (priceInUSD: number) => number;
@@ -7178,6 +7273,7 @@ interface StoreState {
   // --- بخش سبد خرید ---
   cart: CartItem[];
   addToCart: (product: Product) => void;
+  decreaseFromCart: (productId: string) => void; // <--- تابع جدید
   removeFromCart: (productId: string) => void;
   clearCart: () => void;
   totalItems: () => number;
@@ -7246,6 +7342,7 @@ export const useStore = create<StoreState>()(
       // === لاجیک سبد خرید ===
       cart: [],
       
+      // افزودن (یکی زیاد کردن)
       addToCart: (product) => set((state) => {
         const existing = state.cart.find((item) => item.id === product.id);
         if (existing) {
@@ -7258,6 +7355,26 @@ export const useStore = create<StoreState>()(
         return { cart: [...state.cart, { ...product, quantity: 1 }] };
       }),
 
+      // کاهش (یکی کم کردن) - جدید
+      decreaseFromCart: (id) => set((state) => {
+        const existing = state.cart.find((item) => item.id === id);
+        // اگر تعداد بیشتر از 1 بود، کم کن. اگر 1 بود، حذفش نکن (بذار کاربر خودش دکمه حذف رو بزنه یا اگه میخوای حذف شه بگو)
+        // استراتژی: اگر 1 بود و زد، حذف میشه (مثل دیجی‌کالا)
+        if (existing && existing.quantity > 1) {
+            return {
+                cart: state.cart.map((item) =>
+                    item.id === id ? { ...item, quantity: item.quantity - 1 } : item
+                ),
+            };
+        } else {
+            // اگر 1 بود و منفی زد، حذف بشه
+            return {
+                cart: state.cart.filter((item) => item.id !== id),
+            };
+        }
+      }),
+
+      // حذف کامل آیتم
       removeFromCart: (id) => set((state) => ({
         cart: state.cart.filter((item) => item.id !== id),
       })),
@@ -7670,4 +7787,4 @@ types/ -> تعریف مدل‌های داده.
 
 ### Summary
 # Files considered: 65 | Written: 60 | Skipped: 5
-# Output size: 356155 bytes
+# Output size: 362004 bytes
