@@ -9,7 +9,7 @@ export interface Product {
   title: string;
   price: number; 
   image: string;
-  category?: string; // اضافه شد
+  category?: string;
 }
 
 interface CartItem extends Product {
@@ -21,7 +21,6 @@ interface StoreState {
   currency: Currency;
   rates: Record<string, number>;
   lastRatesUpdate: number;
-  
   setCurrency: (currency: Currency) => void;
   getSymbol: () => string;
   convertPrice: (priceInUSD: number) => number;
@@ -30,6 +29,7 @@ interface StoreState {
   // --- بخش سبد خرید ---
   cart: CartItem[];
   addToCart: (product: Product) => void;
+  decreaseFromCart: (productId: string) => void; // <--- تابع جدید
   removeFromCart: (productId: string) => void;
   clearCart: () => void;
   totalItems: () => number;
@@ -98,6 +98,7 @@ export const useStore = create<StoreState>()(
       // === لاجیک سبد خرید ===
       cart: [],
       
+      // افزودن (یکی زیاد کردن)
       addToCart: (product) => set((state) => {
         const existing = state.cart.find((item) => item.id === product.id);
         if (existing) {
@@ -110,6 +111,26 @@ export const useStore = create<StoreState>()(
         return { cart: [...state.cart, { ...product, quantity: 1 }] };
       }),
 
+      // کاهش (یکی کم کردن) - جدید
+      decreaseFromCart: (id) => set((state) => {
+        const existing = state.cart.find((item) => item.id === id);
+        // اگر تعداد بیشتر از 1 بود، کم کن. اگر 1 بود، حذفش نکن (بذار کاربر خودش دکمه حذف رو بزنه یا اگه میخوای حذف شه بگو)
+        // استراتژی: اگر 1 بود و زد، حذف میشه (مثل دیجی‌کالا)
+        if (existing && existing.quantity > 1) {
+            return {
+                cart: state.cart.map((item) =>
+                    item.id === id ? { ...item, quantity: item.quantity - 1 } : item
+                ),
+            };
+        } else {
+            // اگر 1 بود و منفی زد، حذف بشه
+            return {
+                cart: state.cart.filter((item) => item.id !== id),
+            };
+        }
+      }),
+
+      // حذف کامل آیتم
       removeFromCart: (id) => set((state) => ({
         cart: state.cart.filter((item) => item.id !== id),
       })),

@@ -1,20 +1,19 @@
 'use client';
 
 import Link from 'next/link';
-import { Trash2, ArrowLeft, ShoppingBag, AlertTriangle } from 'lucide-react';
+import { Trash2, ArrowLeft, ShoppingBag, AlertTriangle, Plus, Minus } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useEffect, useState } from 'react';
 
 export default function CartPage() {
-  const { cart, removeFromCart, totalPrice, getSymbol, convertPrice } = useStore();
+  const { cart, removeFromCart, addToCart, decreaseFromCart, totalPrice, getSymbol, convertPrice } = useStore();
   
   // محاسبه قیمت‌ها
   const displayTotal = totalPrice(); // قیمتی که مشتری با ارز انتخابی می‌بیند (عدد)
-  const symbol = getSymbol(); // نماد ارز انتخابی
+  const symbol = getSymbol();
 
   // محاسبه قیمت پایه دلاری برای چک کردن محدودیت (لاجیک بیزینس)
   const totalBaseUSD = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  
   // قانون حداقل خرید (ثابت سیستم)
   const MIN_ORDER_AMOUNT_USD = 25;
   
@@ -57,8 +56,10 @@ export default function CartPage() {
         {/* لیست آیتم‌ها */}
         <div className="lg:col-span-2 space-y-4">
           {cart.map((item) => (
-            <div key={item.id} className="flex gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-              <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 border border-gray-200">
+            <div key={item.id} className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+              
+              {/* عکس محصول */}
+              <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 border border-gray-200 mx-auto sm:mx-0">
                 <img 
                   src={item.image} 
                   alt={item.title} 
@@ -69,21 +70,45 @@ export default function CartPage() {
               <div className="flex flex-1 flex-col justify-between">
                 <div>
                   <h3 className="text-base font-semibold text-gray-900 line-clamp-1">{item.title}</h3>
-                  <p className="mt-1 text-sm text-gray-500">تعداد: {item.quantity}</p>
+                  <p className="mt-1 text-xs text-gray-500">قیمت واحد: {symbol} {convertPrice(item.price)}</p>
                 </div>
                 
-                <div className="flex items-center justify-between mt-4">
-                  <span className="font-bold text-blue-600">
-                    {symbol} {convertPrice(item.price * item.quantity)}
-                  </span>
+                <div className="flex flex-col sm:flex-row items-center justify-between mt-4 gap-4 sm:gap-0">
                   
-                  <button 
-                    onClick={() => removeFromCart(item.id)}
-                    className="flex items-center gap-1 text-sm text-red-500 hover:text-red-700 transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    <span>حذف</span>
-                  </button>
+                  {/* کنترل تعداد (دکمه‌های جدید) */}
+                  <div className="flex items-center bg-gray-50 rounded-lg border border-gray-200 p-1">
+                    <button 
+                        onClick={() => decreaseFromCart(item.id)}
+                        className="w-8 h-8 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-600 hover:text-red-500 hover:bg-red-50 transition-colors"
+                    >
+                        {item.quantity === 1 ? <Trash2 className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+                    </button>
+                    
+                    <span className="w-8 text-center font-bold text-gray-800 text-sm">{item.quantity}</span>
+                    
+                    <button 
+                        onClick={() => addToCart(item)}
+                        className="w-8 h-8 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-600 hover:text-green-600 hover:bg-green-50 transition-colors"
+                    >
+                        <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* قیمت کل آیتم */}
+                  <div className="flex items-center gap-4">
+                      <span className="font-bold text-blue-600 text-lg">
+                        {symbol} {convertPrice(item.price * item.quantity).toFixed(2)}
+                      </span>
+                      
+                      <button 
+                        onClick={() => removeFromCart(item.id)}
+                        className="text-gray-400 hover:text-red-500 transition-colors p-2"
+                        title="حذف کامل"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </button>
+                  </div>
+
                 </div>
               </div>
             </div>
