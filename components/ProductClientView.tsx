@@ -13,7 +13,6 @@ interface Product {
 }
 
 export default function ProductClientView({ product }: { product: Product }) {
-  // اضافه کردن cart و decreaseFromCart به هوک
   const { convertPrice, getSymbol, addToCart, decreaseFromCart, cart } = useStore();
   const [mounted, setMounted] = useState(false);
 
@@ -22,18 +21,20 @@ export default function ProductClientView({ product }: { product: Product }) {
   const finalPrice = mounted ? convertPrice(product.price) : product.price;
   const symbol = mounted ? getSymbol() : '$';
 
-  // پیدا کردن تعداد این محصول در سبد خرید
   const cartItem = cart.find(item => item.id === product.id);
   const quantity = cartItem ? cartItem.quantity : 0;
 
-  // --- موتور پردازش متن ---
+  // --- موتور پردازش متن (بهینه‌شده) ---
   const renderDescription = (text: string) => {
     if (!text) return null;
     return text.split('\n').map((line, index) => {
-      if (!line.trim()) return <br key={index} />;
+      // اگر خط خالی بود، با ارتفاع کم رندر کن تا فاصله الکی نیفته
+      if (!line.trim()) return <div key={index} className="h-2"></div>;
+      
       const parts = line.split(/(\*\*.*?\*\*)/g);
       return (
-        <p key={index} className="mb-4 leading-8 text-justify text-gray-600">
+        // تغییر مهم: mb-4 شد mb-2 و leading-8 شد leading-7
+        <p key={index} className="mb-2 leading-7 text-justify text-gray-600">
           {parts.map((part, i) => {
             if (part.startsWith('**') && part.endsWith('**')) {
               return (
@@ -52,15 +53,14 @@ export default function ProductClientView({ product }: { product: Product }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* بخش تصویر */}
-      <div className="relative aspect-square bg-gray-100 rounded-3xl overflow-hidden border border-gray-200 shadow-sm">
+      <div className="relative aspect-square bg-gray-100 rounded-3xl overflow-hidden border border-gray-200 shadow-sm group">
         <img 
           src={product.image} 
           alt={product.title} 
-          className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         />
-        {/* بج (Badge) تعداد روی عکس (اختیاری ولی جذاب) */}
         {quantity > 0 && (
-            <div className="absolute top-4 right-4 bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg animate-bounce">
+            <div className="absolute top-4 right-4 bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg border-2 border-white animate-in zoom-in">
                 {quantity}
             </div>
         )}
@@ -69,22 +69,20 @@ export default function ProductClientView({ product }: { product: Product }) {
       {/* بخش اطلاعات */}
       <div className="flex flex-col">
         <div className="mb-6">
-            {/* اصلاح سایز فونت موبایل و فاصله خطوط */}
-            <h1 className="text-2xl md:text-3xl font-black text-gray-900 mb-3 leading-relaxed md:leading-normal">
+            <h1 className="text-2xl md:text-3xl font-black text-gray-900 mb-3 leading-snug">
                 {product.title}
             </h1>
-            <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-3 py-1 rounded-full w-fit">
+            <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-3 py-1 rounded-full w-fit border border-gray-100">
                 <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
                 <span className="font-bold text-gray-700">۵.۰</span>
-                <span>(تضمین اصالت و کیفیت)</span>
+                <span className="text-xs">(تضمین اصالت و کیفیت)</span>
             </div>
         </div>
 
         {/* قیمت */}
-        <div className="bg-blue-50 p-5 rounded-2xl border border-blue-100 flex items-center justify-between mb-8 shadow-sm">
+        <div className="bg-gradient-to-r from-blue-50 to-white p-5 rounded-2xl border border-blue-100 flex items-center justify-between mb-8 shadow-sm">
             <div>
-                <span className="text-gray-500 text-xs block mb-1">قیمت تمام شده (شامل ارسال):</span>
-                <span className="text-blue-800 font-bold text-lg">قیمت نهایی:</span>
+                <span className="text-gray-500 text-xs block mb-1">قیمت نهایی (شامل ارسال):</span>
             </div>
             <div className="text-3xl font-bold text-blue-700 font-mono tracking-tight">
                 {symbol} {typeof finalPrice === 'number' ? finalPrice.toFixed(2) : finalPrice}
@@ -93,12 +91,12 @@ export default function ProductClientView({ product }: { product: Product }) {
 
         {/* ویژگی‌ها */}
         {product.features && product.features.length > 0 && (
-            <div className="mb-8 bg-gray-50 p-5 rounded-2xl border border-gray-100">
-                <h3 className="font-bold text-gray-900 mb-4 text-sm flex items-center gap-2">
+            <div className="mb-6 bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                <h3 className="font-bold text-gray-900 mb-3 text-sm flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-600" />
-                    ویژگی‌های این محصول:
+                    ویژگی‌های محصول:
                 </h3>
-                <ul className="space-y-3">
+                <ul className="space-y-2">
                     {product.features.map((feat, index) => (
                         <li key={index} className="flex items-start gap-2 text-sm text-gray-700 leading-6">
                             <span className="mt-1.5 w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0"></span>
@@ -111,36 +109,42 @@ export default function ProductClientView({ product }: { product: Product }) {
 
         {/* توضیحات */}
         <div className="mb-8">
-            <h3 className="font-bold text-gray-900 mb-3 text-lg border-b pb-2">توضیحات محصول</h3>
-            {renderDescription(product.description)}
+            <h3 className="font-bold text-gray-900 mb-3 text-lg border-b pb-2">توضیحات</h3>
+            <div className="text-sm md:text-base">
+               {renderDescription(product.description)}
+            </div>
         </div>
 
-        {/* کنترل‌های خرید (هوشمند) */}
+        {/* کنترل‌های خرید (UI جدید و شیک) */}
         <div className="mt-8 space-y-4">
             {quantity > 0 ? (
-                // حالت دوم: دکمه‌های کم و زیاد
-                <div className="flex items-center justify-between bg-white border-2 border-blue-600 rounded-xl p-2 shadow-lg animate-in fade-in zoom-in duration-200">
+                // حالت دوم: کنترلر شیک و بزرگ
+                <div className="flex items-center justify-between bg-white border border-gray-200 rounded-2xl p-2 shadow-xl shadow-blue-100/50 animate-in fade-in zoom-in duration-200">
+                    
+                    {/* دکمه کاهش */}
                     <button 
                         onClick={() => decreaseFromCart(product.id)}
-                        className="w-12 h-12 flex items-center justify-center bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                        className="w-14 h-12 flex items-center justify-center bg-gray-50 text-red-500 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all border border-transparent hover:border-red-100 active:scale-95"
                     >
                         {quantity === 1 ? <Trash2 className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
                     </button>
                     
-                    <div className="flex flex-col items-center">
-                        <span className="text-lg font-black text-gray-900">{quantity} عدد</span>
-                        <span className="text-[10px] text-gray-400">در سبد خرید شما</span>
+                    {/* نمایشگر تعداد */}
+                    <div className="flex flex-col items-center px-4">
+                        <span className="text-xl font-black text-gray-800 tabular-nums">{quantity}</span>
+                        <span className="text-[10px] text-gray-400 font-medium">عدد در سبد</span>
                     </div>
 
+                    {/* دکمه افزایش */}
                     <button 
                         onClick={() => addToCart(product)}
-                        className="w-12 h-12 flex items-center justify-center bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors"
+                        className="w-14 h-12 flex items-center justify-center bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-md shadow-blue-200 transition-all active:scale-95"
                     >
-                        <Plus className="h-5 w-5" />
+                        <Plus className="h-6 w-6" />
                     </button>
                 </div>
             ) : (
-                // حالت اول: دکمه افزودن
+                // حالت اول: دکمه افزودن (گرادینت)
                 <button 
                     onClick={() => addToCart(product)}
                     className="w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-blue-200 hover:-translate-y-1 active:scale-95"
