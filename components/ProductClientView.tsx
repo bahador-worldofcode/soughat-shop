@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { ShoppingBag, Check, ShieldCheck, Truck, Star, Plus, Minus, Trash2, Tag, LayoutGrid } from 'lucide-react';
 import Link from 'next/link';
-import ProductCard from './ProductCard'; // ایمپورت کامپوننت کارت محصول
+import ProductCard from './ProductCard';
 
 interface Product {
   id: string;
@@ -12,10 +12,9 @@ interface Product {
   image: string;
   description: string;
   features: string[];
-  slug: string; // اسلاگ برای لینک دادن نیازه
+  slug: string;
 }
 
-// اینترفیس ساده برای محصولات مرتبط
 interface RelatedItem {
     id: string;
     title: string;
@@ -64,6 +63,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
   return (
     <>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        
         {/* بخش تصویر */}
         <div className="relative aspect-square bg-gray-100 rounded-3xl overflow-hidden border border-gray-200 shadow-sm group">
             <img src={product.image} alt={product.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
@@ -77,7 +77,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
         {/* بخش اطلاعات */}
         <div className="flex flex-col">
             
-            {/* Breadcrumb (دسته بندی) */}
+            {/* Breadcrumb */}
             <div className="mb-4">
                 <Link 
                     href={`/products?category=${categorySlug}`} 
@@ -105,14 +105,13 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                 </div>
             </div>
 
-            {/* ویژگی‌ها */}
+            {/* ویژگی‌ها (اصلاح شده: بدون عنوان، تیک روی آیتم‌ها) */}
             {product.features && product.features.length > 0 && (
                 <div className="mb-6 bg-gray-50 p-5 rounded-2xl border border-gray-100">
-                    <h3 className="font-bold text-gray-900 mb-3 text-sm flex items-center gap-2"><Check className="h-5 w-5 text-green-600" /> ویژگی‌های محصول:</h3>
-                    <ul className="space-y-2">
+                    <ul className="space-y-3">
                         {product.features.map((feat, index) => (
-                            <li key={index} className="flex items-start gap-2 text-sm text-gray-700 leading-6">
-                                <span className="mt-1.5 w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0"></span>
+                            <li key={index} className="flex items-start gap-2 text-sm text-gray-700 leading-6 font-medium">
+                                <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
                                 {feat}
                             </li>
                         ))}
@@ -154,7 +153,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
         </div>
         </div>
 
-        {/* --- بخش جدید: محصولات پیشنهادی --- */}
+        {/* محصولات پیشنهادی */}
         {relatedProducts.length > 0 && (
             <div className="mt-20 pt-10 border-t border-gray-100">
                 <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
