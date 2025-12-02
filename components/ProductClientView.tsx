@@ -28,14 +28,11 @@ export default function ProductClientView({ product }: { product: Product }) {
     setTimeout(() => setAdded(false), 2000);
   };
 
-  // --- موتور پردازش متن (جدید) ---
+  // --- موتور پردازش متن ---
   const renderDescription = (text: string) => {
     if (!text) return null;
     return text.split('\n').map((line, index) => {
-      // اگر خط خالی بود، فاصله بنداز
       if (!line.trim()) return <br key={index} />;
-
-      // پردازش بولد کردن متن بین ** **
       const parts = line.split(/(\*\*.*?\*\*)/g);
       return (
         <p key={index} className="mb-4 leading-8 text-justify text-gray-600">
@@ -105,14 +102,14 @@ export default function ProductClientView({ product }: { product: Product }) {
             </div>
         )}
 
-        {/* توضیحات (اصلاح شده با موتور متن) */}
+        {/* توضیحات */}
         <div className="mb-8">
             <h3 className="font-bold text-gray-900 mb-3 text-lg border-b pb-2">توضیحات محصول</h3>
             {renderDescription(product.description)}
         </div>
 
-        {/* دکمه خرید */}
-        <div className="mt-auto space-y-4 sticky bottom-4 z-10">
+        {/* دکمه خرید (حالت استاندارد و غیر شناور) */}
+        <div className="mt-8 space-y-4">
             <button 
                 onClick={handleAddToCart}
                 disabled={added}
@@ -135,7 +132,7 @@ export default function ProductClientView({ product }: { product: Product }) {
                 )}
             </button>
             
-            <div className="grid grid-cols-2 gap-4 text-xs text-gray-500 text-center bg-white/80 backdrop-blur py-2 rounded-xl">
+            <div className="grid grid-cols-2 gap-4 text-xs text-gray-500 text-center bg-gray-50 py-3 rounded-xl border border-gray-100">
                 <div className="flex items-center justify-center gap-1 font-medium"><ShieldCheck className="h-4 w-4 text-green-600"/> ضمانت بازگشت وجه</div>
                 <div className="flex items-center justify-center gap-1 font-medium"><Truck className="h-4 w-4 text-blue-600"/> ارسال رایگان به ایران</div>
             </div>
