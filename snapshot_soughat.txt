@@ -1,5 +1,5 @@
 ### Soughat-Shop Snapshot
-# Generated: 2025-12-02T20:15:53.166561
+# Generated: 2025-12-04T21:32:02.356959
 # Root: C:\projects\soughat-shop
 # Excluded dir names: .expo, .git, .next, .vscode, node_modules
 # Excluded files (by name/rel): collect_soughat_snapshot.bat, collect_soughat_snapshot.py, package-lock.json, snapshot_soughat.txt
@@ -3416,7 +3416,7 @@ export async function POST(request: Request) {
 }
 
 ===== File: app/blog/[slug]/page.tsx =====
-# Modified: 2025-12-01T20:10:49.077477 | Size: 8590 bytes | SHA1: b5893183c654a7bf79a82a722364f62a43ea0572
+# Modified: 2025-12-02T23:42:45.934646 | Size: 8590 bytes | SHA1: 64b4dd4f70967db9ab26e64ece9cf3bb3bf60bdc
 import { notFound } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Calendar, ArrowRight, User, Tag, Folder } from 'lucide-react';
@@ -3549,7 +3549,7 @@ const renderContent = (text: string) => {
 
     // Paragraph
     return (
-      <p key={index} className="mb-4 leading-8 text-justify text-gray-700">
+      <p key={index} className="mb-2 leading-7 text-justify text-gray-700">
         {parseInlineStyles(line)}
       </p>
     );
@@ -3667,22 +3667,43 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
 }
 
 ===== File: app/blog/page.tsx =====
-# Modified: 2025-11-27T15:31:01.699196 | Size: 3307 bytes | SHA1: af05257f32b97b1d80ff94ab16850a7b2b8e711e
+# Modified: 2025-12-02T20:36:42.645523 | Size: 6119 bytes | SHA1: 610fc94a8ad0d54b0a5cb215b86a083b2f8641a7
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { Calendar, ArrowLeft } from 'lucide-react';
+import { Calendar, ArrowLeft, ArrowRight } from 'lucide-react';
 
-// کش کردن دیتا برای سرعت بالا (ISR)
+// کش کردن دیتا برای سرعت بالا (ISR) - هر ۶۰ ثانیه
 export const revalidate = 60;
 
-export default async function BlogIndex() {
-  const { data: posts } = await supabase
+// تعداد پست در هر صفحه
+const POSTS_PER_PAGE = 9;
+
+interface BlogPageProps {
+  searchParams: Promise<{ page?: string }>;
+}
+
+export default async function BlogIndex({ searchParams }: BlogPageProps) {
+  // 1. دریافت شماره صفحه از URL
+  const params = await searchParams;
+  const currentPage = Number(params?.page) || 1;
+
+  // 2. محاسبه بازه دریافت اطلاعات (از کجا تا کجا)
+  const from = (currentPage - 1) * POSTS_PER_PAGE;
+  const to = from + POSTS_PER_PAGE - 1;
+
+  // 3. دریافت پست‌ها با محدودیت (Range)
+  const { data: posts, count } = await supabase
     .from('posts')
-    .select('*')
-    .order('created_at', { ascending: false });
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(from, to);
+
+  // 4. محاسبه تعداد کل صفحات
+  const totalPosts = count || 0;
+  const totalPages = Math.ceil(totalPosts / POSTS_PER_PAGE);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-gray-50 py-12 font-[family-name:var(--font-vazir)]">
       <div className="container mx-auto px-4">
         
         <div className="text-center mb-16">
@@ -3694,49 +3715,87 @@ export default async function BlogIndex() {
 
         {!posts || posts.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-gray-500">هنوز مقاله‌ای منتشر نشده است.</p>
+            <p className="text-gray-500">هنوز مقاله‌ای منتشر نشده است (یا صفحه‌ای وجود ندارد).</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {posts.map((post) => (
-              <article key={post.id} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col">
-                <Link href={`/blog/${post.slug}`} className="block relative h-56 bg-gray-200 overflow-hidden group">
-                  {post.image ? (
-                    <img 
-                      src={post.image} 
-                      alt={post.title} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-blue-50 text-blue-200 text-4xl font-bold">Blog</div>
-                  )}
-                </Link>
-                
-                <div className="p-6 flex flex-col flex-1">
-                  <div className="flex items-center gap-2 text-xs text-gray-400 mb-3">
-                    <Calendar className="h-3 w-3" />
-                    <time>{new Date(post.created_at).toLocaleDateString('fa-IR')}</time>
-                  </div>
-                  
-                  <Link href={`/blog/${post.slug}`}>
-                    <h2 className="text-xl font-bold text-gray-900 mb-3 hover:text-blue-600 transition-colors line-clamp-2">
-                      {post.title}
-                    </h2>
+          <>
+            {/* لیست پست‌ها */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+              {posts.map((post) => (
+                <article key={post.id} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col group">
+                  <Link href={`/blog/${post.slug}`} className="block relative h-56 bg-gray-200 overflow-hidden">
+                    {post.image ? (
+                      <img 
+                        src={post.image} 
+                        alt={post.title} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-blue-50 text-blue-200 text-4xl font-bold">Blog</div>
+                    )}
                   </Link>
                   
-                  <p className="text-gray-500 text-sm line-clamp-3 mb-6">
-                    {post.content.substring(0, 150)}...
-                  </p>
-                  
-                  <div className="mt-auto pt-4 border-t border-gray-50">
-                    <Link href={`/blog/${post.slug}`} className="inline-flex items-center text-blue-600 font-medium text-sm hover:gap-2 transition-all">
-                      ادامه مطلب <ArrowLeft className="mr-1 h-4 w-4" />
+                  <div className="p-6 flex flex-col flex-1">
+                    <div className="flex items-center gap-2 text-xs text-gray-400 mb-3">
+                      <Calendar className="h-3 w-3" />
+                      <time>{new Date(post.created_at).toLocaleDateString('fa-IR')}</time>
+                    </div>
+                    
+                    <Link href={`/blog/${post.slug}`}>
+                      <h2 className="text-xl font-bold text-gray-900 mb-3 hover:text-blue-600 transition-colors line-clamp-2">
+                        {post.title}
+                      </h2>
                     </Link>
+                    
+                    <p className="text-gray-500 text-sm line-clamp-3 mb-6 leading-7">
+                      {post.summary || post.content.substring(0, 150)}...
+                    </p>
+                    
+                    <div className="mt-auto pt-4 border-t border-gray-50">
+                      <Link href={`/blog/${post.slug}`} className="inline-flex items-center text-blue-600 font-medium text-sm hover:gap-2 transition-all">
+                        ادامه مطلب <ArrowLeft className="mr-1 h-4 w-4" />
+                      </Link>
+                    </div>
                   </div>
-                </div>
-              </article>
-            ))}
-          </div>
+                </article>
+              ))}
+            </div>
+
+            {/* کنترل‌های Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-4 border-t border-gray-200 pt-8">
+                {/* دکمه قبلی */}
+                <Link
+                  href={currentPage > 1 ? `/blog?page=${currentPage - 1}` : '#'}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                    currentPage > 1 
+                      ? 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50' 
+                      : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed pointer-events-none'
+                  }`}
+                  aria-disabled={currentPage <= 1}
+                >
+                  <ArrowRight className="h-4 w-4" /> صفحه قبل
+                </Link>
+
+                <span className="text-sm text-gray-600 font-bold">
+                  صفحه {currentPage} از {totalPages}
+                </span>
+
+                {/* دکمه بعدی */}
+                <Link
+                  href={currentPage < totalPages ? `/blog?page=${currentPage + 1}` : '#'}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                    currentPage < totalPages 
+                      ? 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50' 
+                      : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed pointer-events-none'
+                  }`}
+                  aria-disabled={currentPage >= totalPages}
+                >
+                  صفحه بعد <ArrowLeft className="h-4 w-4" />
+                </Link>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -4962,7 +5021,7 @@ export default async function Home() {
 }
 
 ===== File: app/products/[slug]/page.tsx =====
-# Modified: 2025-11-30T00:10:47.828317 | Size: 4606 bytes | SHA1: 1164e8a329bcdcb24086397b997e46178145c798
+# Modified: 2025-12-02T21:32:23.334959 | Size: 4237 bytes | SHA1: c939acf41f7f28cfa67141d4e2cbf93a59939fcb
 import { supabase } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
@@ -4970,19 +5029,16 @@ import ProductClientView from '@/components/ProductClientView';
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
-// آپدیت قیمت و موجودی هر ۶۰ ثانیه یکبار (ISR)
 export const revalidate = 60;
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
-// 1. تولید متاتگ‌های سئو و OpenGraph (کارت ویزیت لینک‌ها)
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const decodedSlug = decodeURIComponent(slug);
   
-  // دریافت اطلاعات سئو از دیتابیس
   const { data: product } = await supabase
     .from('products')
     .select('seo_title, seo_desc, title, description, image, price')
@@ -4991,11 +5047,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!product) return { title: 'محصول یافت نشد' };
 
-  // تنظیم عنوان و توضیحات (اگر فیلد سئو خالی بود، از تایتل معمولی استفاده کن)
   const pageTitle = product.seo_title || `${product.title} | ارسال هدیه به ایران`;
   const pageDesc = product.seo_desc || product.description?.substring(0, 160);
-  
-  // آدرس سایت (اگر متغیر محیطی نبود، آدرس ورسل رو بذار)
   const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat-shop.vercel.app';
 
   return {
@@ -5005,16 +5058,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: pageTitle,
       description: pageDesc,
       url: `${siteUrl}/products/${decodedSlug}`,
-      images: [
-        {
-          url: product.image,
-          width: 800,
-          height: 800,
-          alt: product.title,
-        },
-      ],
+      images: [{ url: product.image, width: 800, height: 800, alt: product.title }],
       type: 'website',
-      locale: 'fa_IR', // زبان محتوای سایت فارسی است
+      locale: 'fa_IR',
       siteName: 'Soughat Shop',
     },
     twitter: {
@@ -5029,11 +5075,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-// 2. کامپوننت اصلی صفحه
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params;
   const decodedSlug = decodeURIComponent(slug);
 
+  // 1. دریافت خود محصول
   const { data: product } = await supabase
     .from('products')
     .select('*')
@@ -5044,8 +5090,21 @@ export default async function ProductPage({ params }: Props) {
     notFound();
   }
 
-  // --- بخش جدید: ساختار داده استاندارد گوگل (Schema Markup) ---
-  // این بخش به صورت اتوماتیک اطلاعات محصول را به زبان گوگل ترجمه می‌کند
+  // 2. دریافت نام فارسی دسته‌بندی
+  const { data: categoryData } = await supabase
+    .from('categories')
+    .select('name, slug')
+    .eq('slug', product.category)
+    .single();
+
+  // 3. دریافت محصولات مرتبط (هم‌دسته، به جز خودش) - حداکثر 4 تا
+  const { data: relatedProducts } = await supabase
+    .from('products')
+    .select('id, title, price, image, slug')
+    .eq('category', product.category)
+    .neq('id', product.id) // خودش رو نیاره
+    .limit(4);
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -5054,41 +5113,39 @@ export default async function ProductPage({ params }: Props) {
     description: product.seo_desc || product.description,
     offers: {
       '@type': 'Offer',
-      priceCurrency: 'USD', // قیمت پایه همیشه دلار است
+      priceCurrency: 'USD',
       price: product.price,
-      availability: 'https://schema.org/InStock', // محصول موجود است
+      availability: 'https://schema.org/InStock',
       url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat-shop.vercel.app'}/products/${product.slug}`,
-      seller: {
-        '@type': 'Organization',
-        name: 'Soughat Shop'
-      }
+      seller: { '@type': 'Organization', name: 'Soughat Shop' }
     },
   };
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 font-[family-name:var(--font-vazir)]">
-      
-      {/* تزریق کد مخفی اسکیما برای گوگل */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
       <div className="container mx-auto px-4 max-w-6xl">
-        
-        {/* نوار بازگشت (Breadcrumb) - دست نخورده باقی ماند */}
-        <div className="mb-8">
+        {/* نوار بازگشت */}
+        <div className="mb-6 flex items-center justify-between">
             <Link href="/products" className="inline-flex items-center text-sm text-gray-500 hover:text-blue-600 transition-colors">
                 <ArrowRight className="ml-1 h-4 w-4" />
-                بازگشت به لیست محصولات
+                بازگشت به لیست
             </Link>
         </div>
 
-        {/* محتوای اصلی محصول (کامپوننت کلاینت) - دست نخورده باقی ماند */}
-        <div className="bg-white rounded-3xl p-6 md:p-12 shadow-xl shadow-gray-200/50">
-            <ProductClientView product={product} />
+        {/* محتوای اصلی */}
+        <div className="bg-white rounded-3xl p-6 md:p-12 shadow-xl shadow-gray-200/50 mb-16">
+            <ProductClientView 
+                product={product} 
+                categoryName={categoryData?.name || product.category} 
+                categorySlug={product.category}
+                relatedProducts={relatedProducts || []}
+            />
         </div>
-
       </div>
     </div>
   );
@@ -5374,20 +5431,26 @@ export default function ProductsPage() {
 }
 
 ===== File: app/robots.ts =====
-# Modified: 2025-11-27T23:30:01.944905 | Size: 640 bytes | SHA1: 69f9c15b35d5a8825c23aac865d843d4c710fd76
+# Modified: 2025-12-02T20:28:14.934160 | Size: 1106 bytes | SHA1: ca75af6d9dd14b2109f6fff0bb3c3a34c730e396
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  // دریافت آدرس سایت (چه لوکال، چه آدرس اصلی)
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  // آدرس سایت را از متغیر محیطی می‌گیریم، اگر نبود آدرس اصلی را می‌گذاریم
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat-shop.vercel.app';
 
   return {
     rules: {
-      userAgent: '*', // اجازه به تمام ربات‌ها (گوگل، بینگ و...)
-      allow: '/',     // اجازه دسترسی به همه صفحات
-      disallow: '/admin/', // ممنوعیت ورود به پنل ادمین (برای امنیت)
+      userAgent: '*', // قانون برای همه ربات‌ها (گوگل، بینگ و...)
+      allow: '/',     // اجازه دسترسی به همه صفحات به صورت پیش‌فرض
+      disallow: [
+        '/admin/',      // ⛔ پنل مدیریت (امنیت)
+        '/cart/',       // ⛔ سبد خرید (شخصی و بدون ارزش سئو)
+        '/checkout/',   // ⛔ صفحه پرداخت (شخصی و حساس)
+        '/success/',    // ⛔ رسید پرداخت (تکراری و بی‌ارزش برای گوگل)
+        '/api/',        // ⛔ بک‌‌اند و APIها (فنی)
+      ],
     },
-    sitemap: `${baseUrl}/sitemap.xml`, // آدرس نقشه سایت
+    sitemap: `${baseUrl}/sitemap.xml`, // آدرس نقشه سایت برای هدایت ربات‌ها
   };
 }
 
@@ -7105,11 +7168,13 @@ export default function ProductCard({ id, title, price, image, slug }: ProductCa
 }
 
 ===== File: components/ProductClientView.tsx =====
-# Modified: 2025-11-29T23:47:20.036048 | Size: 4478 bytes | SHA1: 7611237a37a03a60821f6756d3067c8e00489db6
+# Modified: 2025-12-02T21:46:15.752662 | Size: 9006 bytes | SHA1: 94cd1dc904c3517c3fbe679112391003b2ab7670
 'use client';
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
-import { ShoppingBag, Check, ShieldCheck, Truck, Star } from 'lucide-react';
+import { ShoppingBag, Check, ShieldCheck, Truck, Star, Plus, Minus, Trash2, Tag, LayoutGrid } from 'lucide-react';
+import Link from 'next/link';
+import ProductCard from './ProductCard';
 
 interface Product {
   id: string;
@@ -7118,104 +7183,169 @@ interface Product {
   image: string;
   description: string;
   features: string[];
+  slug: string;
 }
 
-export default function ProductClientView({ product }: { product: Product }) {
-  const { convertPrice, getSymbol, addToCart } = useStore();
+interface RelatedItem {
+    id: string;
+    title: string;
+    price: number;
+    image: string;
+    slug: string;
+}
+
+interface Props {
+    product: Product;
+    categoryName: string;
+    categorySlug: string;
+    relatedProducts: RelatedItem[];
+}
+
+export default function ProductClientView({ product, categoryName, categorySlug, relatedProducts }: Props) {
+  const { convertPrice, getSymbol, addToCart, decreaseFromCart, cart } = useStore();
   const [mounted, setMounted] = useState(false);
-  const [added, setAdded] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
   const finalPrice = mounted ? convertPrice(product.price) : product.price;
   const symbol = mounted ? getSymbol() : '$';
 
-  const handleAddToCart = () => {
-    addToCart(product);
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
+  const cartItem = cart.find(item => item.id === product.id);
+  const quantity = cartItem ? cartItem.quantity : 0;
+
+  const renderDescription = (text: string) => {
+    if (!text) return null;
+    return text.split('\n').map((line, index) => {
+      if (!line.trim()) return <div key={index} className="h-2"></div>;
+      const parts = line.split(/(\*\*.*?\*\*)/g);
+      return (
+        <p key={index} className="mb-2 leading-7 text-justify text-gray-600">
+          {parts.map((part, i) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+              return <strong key={i} className="font-bold text-gray-900">{part.slice(2, -2)}</strong>;
+            }
+            return part;
+          })}
+        </p>
+      );
+    });
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
-      {/* بخش تصویر */}
-      <div className="relative aspect-square bg-gray-100 rounded-3xl overflow-hidden border border-gray-200">
-        <img 
-          src={product.image} 
-          alt={product.title} 
-          className="w-full h-full object-cover"
-        />
-      </div>
-
-      {/* بخش اطلاعات */}
-      <div className="flex flex-col">
-        <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.title}</h1>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-                <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                <span>۵.۰ (تضمین کیفیت)</span>
-            </div>
+    <>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        
+        {/* بخش تصویر */}
+        <div className="relative aspect-square bg-gray-100 rounded-3xl overflow-hidden border border-gray-200 shadow-sm group">
+            <img src={product.image} alt={product.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+            {quantity > 0 && (
+                <div className="absolute top-4 right-4 bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg border-2 border-white animate-in zoom-in">
+                    {quantity}
+                </div>
+            )}
         </div>
 
-        {/* قیمت - اصلاح شده برای نمایش ۲ رقم اعشار */}
-        <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 flex items-center justify-between mb-8">
-            <span className="text-gray-600 font-medium">قیمت نهایی:</span>
-            <div className="text-2xl font-bold text-blue-700 font-mono">
-                {symbol} {typeof finalPrice === 'number' ? finalPrice.toFixed(2) : finalPrice}
+        {/* بخش اطلاعات */}
+        <div className="flex flex-col">
+            
+            {/* Breadcrumb */}
+            <div className="mb-4">
+                <Link 
+                    href={`/products?category=${categorySlug}`} 
+                    className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                    <Tag className="h-3 w-3" />
+                    {categoryName}
+                </Link>
             </div>
-        </div>
 
-        {/* ویژگی‌ها */}
-        {product.features && product.features.length > 0 && (
+            <div className="mb-6">
+                <h1 className="text-2xl md:text-3xl font-black text-gray-900 mb-3 leading-snug">{product.title}</h1>
+                <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-3 py-1 rounded-full w-fit border border-gray-100">
+                    <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                    <span className="font-bold text-gray-700">۵.۰</span>
+                    <span className="text-xs">(تضمین اصالت و کیفیت)</span>
+                </div>
+            </div>
+
+            {/* قیمت */}
+            <div className="bg-gradient-to-r from-blue-50 to-white p-5 rounded-2xl border border-blue-100 flex items-center justify-between mb-8 shadow-sm">
+                <div><span className="text-gray-500 text-xs block mb-1">قیمت نهایی (شامل ارسال):</span></div>
+                <div className="text-3xl font-bold text-blue-700 font-mono tracking-tight">
+                    {symbol} {typeof finalPrice === 'number' ? finalPrice.toFixed(2) : finalPrice}
+                </div>
+            </div>
+
+            {/* ویژگی‌ها (اصلاح شده: بدون عنوان، تیک روی آیتم‌ها) */}
+            {product.features && product.features.length > 0 && (
+                <div className="mb-6 bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                    <ul className="space-y-3">
+                        {product.features.map((feat, index) => (
+                            <li key={index} className="flex items-start gap-2 text-sm text-gray-700 leading-6 font-medium">
+                                <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                                {feat}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
+            {/* توضیحات */}
             <div className="mb-8">
-                <h3 className="font-bold text-gray-900 mb-3 text-sm">ویژگی‌های محصول:</h3>
-                <ul className="space-y-2">
-                    {product.features.map((feat, index) => (
-                        <li key={index} className="flex items-center gap-2 text-sm text-gray-700">
-                            <Check className="h-4 w-4 text-green-500" />
-                            {feat}
-                        </li>
+                <h3 className="font-bold text-gray-900 mb-3 text-lg border-b pb-2">توضیحات</h3>
+                <div className="text-sm md:text-base">{renderDescription(product.description)}</div>
+            </div>
+
+            {/* کنترل‌های خرید */}
+            <div className="mt-8 space-y-4">
+                {quantity > 0 ? (
+                    <div className="flex items-center justify-between bg-white border border-gray-200 rounded-2xl p-2 shadow-xl shadow-blue-100/50 animate-in fade-in zoom-in duration-200">
+                        <button onClick={() => decreaseFromCart(product.id)} className="w-14 h-12 flex items-center justify-center bg-gray-50 text-red-500 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all border border-transparent hover:border-red-100 active:scale-95">
+                            {quantity === 1 ? <Trash2 className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
+                        </button>
+                        <div className="flex flex-col items-center px-4">
+                            <span className="text-xl font-black text-gray-800 tabular-nums">{quantity}</span>
+                            <span className="text-[10px] text-gray-400 font-medium">عدد در سبد</span>
+                        </div>
+                        <button onClick={() => addToCart(product)} className="w-14 h-12 flex items-center justify-center bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-md shadow-blue-200 transition-all active:scale-95">
+                            <Plus className="h-6 w-6" />
+                        </button>
+                    </div>
+                ) : (
+                    <button onClick={() => addToCart(product)} className="w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-blue-200 hover:-translate-y-1 active:scale-95">
+                        <ShoppingBag className="h-6 w-6" /> افزودن به سبد خرید
+                    </button>
+                )}
+                <div className="grid grid-cols-2 gap-4 text-xs text-gray-500 text-center bg-gray-50 py-3 rounded-xl border border-gray-100">
+                    <div className="flex items-center justify-center gap-1 font-medium"><ShieldCheck className="h-4 w-4 text-green-600"/> ضمانت بازگشت وجه</div>
+                    <div className="flex items-center justify-center gap-1 font-medium"><Truck className="h-4 w-4 text-blue-600"/> ارسال رایگان به ایران</div>
+                </div>
+            </div>
+        </div>
+        </div>
+
+        {/* محصولات پیشنهادی */}
+        {relatedProducts.length > 0 && (
+            <div className="mt-20 pt-10 border-t border-gray-100">
+                <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                    <LayoutGrid className="h-5 w-5 text-blue-600" />
+                    محصولات مشابه (شاید بپسندید)
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {relatedProducts.map((item) => (
+                        <ProductCard 
+                            key={item.id}
+                            id={item.id}
+                            title={item.title}
+                            price={item.price}
+                            image={item.image}
+                            slug={item.slug}
+                        />
                     ))}
-                </ul>
+                </div>
             </div>
         )}
-
-        {/* توضیحات */}
-        <div className="mb-8 prose prose-sm text-gray-600 leading-7 text-justify">
-            <p>{product.description}</p>
-        </div>
-
-        {/* دکمه خرید */}
-        <div className="mt-auto space-y-4">
-            <button 
-                onClick={handleAddToCart}
-                disabled={added}
-                className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-lg ${
-                    added 
-                    ? 'bg-green-600 text-white shadow-green-200' 
-                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200 hover:-translate-y-1'
-                }`}
-            >
-                {added ? (
-                    <>
-                        <Check className="h-6 w-6" />
-                        به سبد اضافه شد
-                    </>
-                ) : (
-                    <>
-                        <ShoppingBag className="h-6 w-6" />
-                        افزودن به سبد خرید
-                    </>
-                )}
-            </button>
-            
-            <div className="grid grid-cols-2 gap-4 text-xs text-gray-400 text-center">
-                <div className="flex items-center justify-center gap-1"><ShieldCheck className="h-4 w-4"/> ضمانت بازگشت وجه</div>
-                <div className="flex items-center justify-center gap-1"><Truck className="h-4 w-4"/> ارسال رایگان به ایران</div>
-            </div>
-        </div>
-      </div>
-    </div>
+    </>
   );
 }
 
@@ -7548,7 +7678,7 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
 ===== File: STRATEGY.md =====
-# Modified: 2025-12-01T03:36:18.077358 | Size: 17675 bytes | SHA1: 7a661a174b29f8df42a13af969dbde9c8b323ffc
+# Modified: 2025-12-04T15:10:33.101422 | Size: 20288 bytes | SHA1: 8836281b1ad7d73e1567f1d26c5b8fbebeeb23a0
 🚀 سند راهبردی پروژه "سوغات شاپ" (Soughat Shop)
 نسخه: 3.1.0 (عملیاتی و ارتقا یافته - Live & Upgraded)
 تاریخ: نوامبر ۲۰۲۵
@@ -7672,80 +7802,100 @@ types/ -> تعریف مدل‌های داده.
 ✅ گام ۲: به اشتراک‌گذاری لینک محصولات در شبکه‌های اجتماعی (لینکدین/توییتر) به عنوان نمونه کار.
 ⬜ گام ۳: بررسی روزانه سرچ کنسول برای پیدا کردن کلمات کلیدی ورودی.
 ⬜ گام ۴: اضافه کردن محصولات مناسبتی (یلدا، نوروز، روز مادر) در زمان مناسب.
-
 بخش ویژه: پروتکل‌های تولید محتوا و سئو (SEO & Content Protocols)
+(نسخه ۳.۳.۰ - Updated Dec 2025)
 
-این بخش دستورالعمل دائمی برای رشد سایت است.
+این بخش دستورالعمل دائمی و لازم‌الاجرا برای رشد ارگانیک سایت و جذب ترافیک هدفمند از خارج کشور است.
+۱۴. استراتژی نفوذ محلی (City-Based SEO Strategy) هدف: جذب مشتریانی که به دنبال ارسال هدیه به شهرهای خاص (غیر از تهران) هستند. گوگل باید بفهمد ما "سراسری" هستیم. قوانین الزامی:
 
-۱۴. استراتژی نفوذ محلی (City-Based SEO Strategy)
-هدف: جذب مشتریانی که به دنبال ارسال هدیه به شهرهای خاص (غیر از تهران) هستند. گوگل باید بفهمد ما "سراسری" هستیم.
-قوانین الزامی:
-* در توضیحات محصول (Description) و متای توضیحات (Meta Description)، باید نام ۵ کلانشهر اصلی ایران ذکر شود: تهران، مشهد، اصفهان، شیراز، تبریز (و اهواز/کرج).
-* استفاده از عبارات کلیدی: "تحویل درب منزل در [نام شهر]"، "ارسال فوری به شهرستان‌ها"، "پوشش سراسری".
+در توضیحات محصول (Description) و متای توضیحات (Meta Description)، باید نام ۵ کلانشهر اصلی ایران ذکر شود: تهران، مشهد، اصفهان، شیراز، تبریز (و اهواز/کرج/رشت).
 
-۱۵. استراتژی بمباران کلمات کلیدی کریپتو (Crypto Keyword Bombing)
-هدف: جذب مشتریانی که دنبال راه‌های پرداخت جایگزین هستند.
-قوانین الزامی:
-* در متن محصول و فوتر، فقط به "تتر" و "سولانا" بسنده نکنید.
-* لیست کلمات کلیدی اجباری برای استفاده در متن: بیت‌کوین (Bitcoin / BTC)، ارز دیجیتال (Digital Currency)، رمز ارز (Cryptocurrency)، اتریوم (Ethereum / ETH)، کریپتو (Crypto).
-* مثال جمله: "امکان خرید امن با انواع ارزهای دیجیتال شامل بیت‌کوین، تتر و کریپتو."
+استفاده از عبارات کلیدی: "تحویل درب منزل در [نام شهر]"، "ارسال فوری به شهرستان‌ها"، "پوشش سراسری".
 
-۱۶. پروتکل "دراپ‌شیپینگ هوشمند" (Smart Sourcing)
-هدف: اطمینان از موجودی کالا و کیفیت عکس.
-روش کار (Workflow):
-۱. رصد بازار: ابتدا محصول مورد تقاضا (مثلاً "گل رز") در وب‌سایت‌های معتبر ایرانی (مثل گل‌ستان، دیجی‌کالا، بارجیل) پیدا می‌شود.
-۲. انتخاب واقعی: محصولی انتخاب می‌شود که عکس باکیفیت و قیمت مشخص دارد.
-۳. استخراج: عکس و مشخصات فنی (وزن، ابعاد) از سایت مرجع برداشته می‌شود.
-۴. شخصی‌سازی: عنوان و توضیحات محصول با لحن "سوغات شاپ" و طبق قوانین بند ۱۴ و ۱۵ بازنویسی می‌شود.
-۵. تزریق: محصول وارد دیتابیس می‌شود.
-تذکر: هرگز محصولی که وجود خارجی ندارد یا عکس بی‌کیفیت دارد، اضافه نمی‌شود.
+۱۵. استراتژی بمباران کلمات کلیدی کریپتو (Crypto Keyword Bombing) هدف: جذب مشتریانی که دنبال راه‌های پرداخت جایگزین و سریع هستند. قوانین الزامی:
 
-۱۷. پروتکل "تولید محتوای بلاگ سئو-محور" (SEO-Centric Blog Protocol) - بروز شده ⚠️
-هدف: کسب رتبه اول گوگل برای کلمات کلیدی خاص (Long-tail) با استفاده از زیرساخت جدید وبلاگ.
-قوانین الزامی تولید هر مقاله:
-۱. پر کردن فیلد عنوان سئو (SEO Title): عنوان باید جذاب باشد و شامل کلمه کلیدی اصلی باشد (حداکثر ۶۰ کاراکتر). مثال: "ارسال پول به ایران | امن‌ترین روش با تتر"
-۲. پر کردن توضیحات متا (Meta Description): چکیده جذاب برای افزایش کلیک (حداکثر ۱۶۰ کاراکتر). باید شامل کلمه کلیدی و دعوت به اقدام باشد.
-۳. دسته‌بندی دقیق: انتخاب دسته‌بندی درست (آموزش، اخبار، راهنما) برای نظم‌دهی به سایت.
-۴. کلمات کلیدی (Tags): حداقل ۳ و حداکثر ۵ تگ مرتبط وارد شود.
-۵. ساختار مقاله:
-   * مقدمه جذاب (Hook) با اشاره به درد کاربر.
-   * بدنه اصلی با استفاده از تیتراژ H2 و H3.
-   * لینک‌سازی داخلی به صفحه محصولات یا مقالات مرتبط.
-   * نتیجه‌گیری و دعوت به اقدام (CTA) در انتهای متن.
+لیست کلمات کلیدی اجباری: بیت‌کوین (Bitcoin / BTC)، ارز دیجیتال (Digital Currency)، رمز ارز (Cryptocurrency)، اتریوم (Ethereum / ETH)، کریپتو (Crypto)، تتر (USDT)، سولانا (SOL).
 
-۱۸. تعهدنامه
-این سند توسط "رئیس" (Gemini) تدوین شده و "دستیار" (بهادر) متعهد به اجرای آن است تا زمانی که اولین درآمد دلاری حاصل شود. هرگونه تغییر در این سند تنها با دستور مستقیم رئیس مجاز است.
+۱۶. استراتژی سئوی "پرداخت ارزی" (Fiat Currency SEO Strategy) - جدید 🆕 هدف: جذب ایرانیانی که در گوگل عبارت‌هایی مثل "ارسال پول با دلار"، "خرید با یورو برای ایران" یا "پرداخت ارزی" را جستجو می‌کنند. منطق: مشتری باید بداند که ما معادل ارزی این واحدها را می‌پذیریم. قوانین الزامی:
 
+حتماً در متن توضیحات محصول، به واحدهای پولی رایج ایرانیان خارج از کشور اشاره شود:
 
+دلار (Dollar) - برای آمریکا/کانادا/استرالیا
 
-نکته ی مهم و حساس : اگر قرار شد به ساخت محصول جدید یا همون تولید محتوا برای محصول جدید 
-بهادر باید علاوه بر نام محصول و اطلاعات لینک ارسالی از سمت جمنای و همینطور قیمت تومانی و لینک عکس بارگذاری شده در وبسایت 
-باید قیمت های نرخ ارز که در دیتابیس ذخیره شده رو بفرستد 
-جمنای وظیفه دارد این را یادآوری کند: 
-این 3 : 
-قیمت نرخ تتر لحظه ای : 
-قیمت ثابت: 
-و درصد سود ثبت شده در سیستم: 
+یورو (Euro) - برای آلمان/فرانسه/اروپا
 
+پوند (Pound) - برای انگلیس
 
-تا الان 6 محصول ساخته شده و در دیتابیس وجود دارد: 
-هدف 100 محصول و 100 پست 
+کرون (Krona) - برای سوئد/اسکاندیناوی
 
-محصولات فعلی: 
-پسته اکبری زعفرانی اعلاء (۱ کیلوگرم)
-آجیل و خشکبار
-گلدان میناکاری اعلاء (۲۵ سانتی) - جعبه مخمل کادویی
-صنایع دستی
-گز لقمه‌ای کرمانی (طرح خاتم) - مخلوط پسته و بادام
-شیرینی و تنقلات
-پک هدیه زعفران اعلاء (۲ مثقال) - جعبه جیر لوکس
-زعفران اعلاء
-آجیل چهار مغز فوق لوکس (۱ کیلوگرم) - برشته زعفرانی
-آجیل و خشکبار
-باکس گل رز قرمز هلندی (۲۰ شاخه) - مدل کلاسیک
-گل و گیاه
+مثال کاربردی در متن: "شما می‌توانید معادل هزینه این کالا را به صورت دلاری، یورو یا پوند از طریق درگاه امن تتر پرداخت کنید." یا "بهترین روش پرداخت ارزی برای ایرانیان خارج از کشور."
 
+۱۷. پروتکل "دراپ‌شیپینگ هوشمند" (Smart Sourcing) هدف: اطمینان از موجودی کالا و کیفیت عکس. روش کار:
 
+رصد بازار: محصول مورد تقاضا در وب‌سایت‌های معتبر ایرانی پیدا می‌شود.
+
+انتخاب واقعی: محصولی انتخاب می‌شود که عکس باکیفیت و قیمت مشخص دارد.
+
+استخراج: عکس و مشخصات فنی برداشته می‌شود.
+
+شخصی‌سازی: عنوان و توضیحات محصول با لحن "سوغات شاپ" بازنویسی می‌شود.
+
+تزریق: محصول وارد دیتابیس می‌شود.
+
+۱۸. پروتکل "تولید محتوای بلاگ راه‌حل‌محور و پرسش‌مبنا" (Solution-Oriented Blog Protocol) - (آپدیت شده) 🔄 هدف: تسخیر گوگل در کوئری‌های طولانی (Long-tail) و پاسخ به سوالات ذهنی کاربران (How-to Keywords). قوانین الزامی استراتژی:
+
+تیترهای سوالی و جذاب: تیتر باید دقیقاً همان عبارتی باشد که کاربر سرچ می‌کند.
+
+الگو: "چطور [محصول] را به ایران بفرستیم؟" یا "بهترین راه ارسال کادو به ایران از [کشور خارجی]".
+
+تمرکز بر "چالش کاربر": پاراگراف اول باید مستقیماً دست بگذارد روی درد کاربر (فاصله، دلتنگی، نداشتن کارت بانکی ایرانی).
+
+ارائه راه‌حل تکنولوژیک (How it works): توضیح شفاف اینکه سیستم چطور کار می‌کند (انتخاب ارز -> پرداخت کریپتو -> تحویل).
+
+سئوی ترکیبی: استفاده همزمان از کلمات کلیدی "ارزهای فیات" (دلار/یورو)، "کریپتو" (تتر/سولانا) و "شهرهای ایران" (تهران/شیراز/...).
+
+دسته‌بندی و تگ‌ها: انتخاب دقیق دسته‌بندی و استفاده از ۵ تگ ترکیبی (مشکل + راه حل + محصول).
+
+۱۹. تعهدنامه این سند توسط "رئیس" (Gemini) تدوین شده و "دستیار" (بهادر) متعهد به اجرای آن است تا زمانی که اولین درآمد دلاری حاصل شود.
+
+۲۰. پروتکل "استاندارد طلایی تولید محتوا" (The Golden Content Standard) ⚠️ (حیاتی‌ترین بخش برای جلوگیری از خطا و دوباره‌کاری) هدف: تولید محصولاتی که ۱۰۰٪ با زیرساخت فعلی سازگار باشند و سئوی ترکیبی (کریپتو + ارزی + محلی) داشته باشند.
+
+بخش الف: افزودن محصول جدید (Product Protocol) برای هر محصول جدید، رئیس (AI) موظف است این ۴ مرحله را طی کند: ۱. فرمول قیمت‌گذاری (Pricing Math): * فرمول: (قیمت خرید تومان + هزینه ثابت) ÷ نرخ تتر × (۱ + درصد سود). ۲. ساختار متن توضیحات (Description Rules): * شروع طوفانی (Power Opener). * بمباران کلمات کلیدی (سه‌گانه: شهرها، کریپتو، ارزهای فیات). * فرمت‌دهی: متن یک‌پارچه، بدون تیترهای ## در داخل توضیحات محصول. ۳. جلوگیری از دسته‌بندی تکراری: * چک کردن لیست موجود و استفاده از ON CONFLICT DO NOTHING برای دسته‌های جدید. ۴. دستور SQL نهایی: استفاده از INSERT استاندارد.
+
+بخش ب: استاندارد طلایی نگارش بلاگ (The Creative Blog Standard) - (آپدیت شده) 🆕 ۱. استراتژی محتوایی (The Narrative):
+
+شروع با "چطور": مقاله باید یک راهنما (Guide) باشد که به سوال کاربر پاسخ می‌دهد.
+
+سناریوی "شهروند جهانی": مخاطب در خارج از کشور است. صحبت از "ریال" و "تومان" در پروسه پرداخت ممنوع است. باید گفته شود: "سیستم بر پایه دلار است، شما ارز خود (یورو/پوند) را انتخاب و با کریپتو پرداخت می‌کنید."
+
+توضیح "پروسه جادویی" (The Process): باید دقیق توضیح داده شود سیستم چطور کار می‌کند:
+
+انتخاب ارز (Currency Switcher).
+
+پرداخت کریپتو (بدون مرز/بدون بانک).
+
+پردازش در تهران.
+
+تحویل درب منزل.
+
+بمباران جغرافیایی: نام بردن حداقل ۵ کلانشهر (تهران، مشهد، اصفهان، شیراز، تبریز، رشت، اهواز) در متن برای القای حس "پوشش سراسری".
+
+۲. قوانین نگارش و فرمت:
+
+لحن (Tone): صمیمی، اطمینان‌بخش، اما حرفه‌ای.
+
+لینک‌سازی: لینک داخلی در انتهای متن به صفحه محصول با انکر تکست جذاب (CTA).
+
+فاصله‌گذاری: استفاده از #### برای تیترهای داخلی و اینتر بین پاراگراف‌ها.
+
+بخش ج: هوشمندسازی دیتابیس (The Sync Trick) قانون: پس از هر INSERT بلاگ، یک UPDATE صوری اجرا شود تا تریگر دیتابیس فعال گردد.
+
+SQL
+
+-- الگوی استاندارد
+INSERT INTO posts (...) VALUES (...);
+UPDATE posts SET category = category WHERE slug = 'slug-name';
+تعهد: هر زمان دستور تولید محتوا صادر شد، تمام بخش‌های پروتکل ۲۰ باید موبه‌مو اجرا شوند.
 
 ===== File: tsconfig.json =====
 # Modified: 2025-11-26T16:29:49.164680 | Size: 666 bytes | SHA1: 3cce6f8b2540d983756b909e9e5c181034da4c38
@@ -7787,4 +7937,4 @@ types/ -> تعریف مدل‌های داده.
 
 ### Summary
 # Files considered: 65 | Written: 60 | Skipped: 5
-# Output size: 362004 bytes
+# Output size: 371907 bytes
