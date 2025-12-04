@@ -1,21 +1,25 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation'; // اضافه شده برای تشخیص آدرس
+import { usePathname } from 'next/navigation';
 import { MessageCircle, X, Send, Phone, MessageSquare, ArrowLeft, Loader2, CheckCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 type ViewState = 'menu' | 'form' | 'success';
 
 export default function FloatingContact() {
-  const pathname = usePathname(); // دریافت آدرس فعلی
-  const [mounted, setMounted] = useState(false); // برای حل مشکل هیدریشن
+  const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
 
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState<ViewState>('menu');
   
   const [formData, setFormData] = useState({ contact: '', content: '' });
   const [sending, setSending] = useState(false);
+
+  // تشخیص اینکه آیا در صفحه جزئیات محصول هستیم؟ (برای تنظیم ارتفاع آیکون)
+  // اگر آدرس با /products/ شروع شود (ولی خود /products نباشد) یعنی در صفحه محصولیم
+  const isProductPage = pathname?.startsWith('/products/') && pathname !== '/products';
 
   useEffect(() => {
     setMounted(true);
@@ -63,12 +67,16 @@ export default function FloatingContact() {
     }, 300);
   };
 
-  // --- شرط حیاتی: اگر هنوز لود نشده یا در پنل ادمین هستیم، هیچی نشون نده ---
   if (!mounted) return null;
+  // مخفی کردن در پنل ادمین
   if (pathname?.startsWith('/admin')) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end font-[family-name:var(--font-vazir)]">
+    <div 
+      className={`fixed right-6 z-50 flex flex-col items-end font-[family-name:var(--font-vazir)] transition-all duration-300 ${
+        isProductPage ? 'bottom-24 md:bottom-6' : 'bottom-6'
+      }`}
+    >
       
       {/* Chat Window */}
       {isOpen && (
