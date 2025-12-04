@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
-import { ShoppingBag, Check, ShieldCheck, Truck, Star, Plus, Minus, Trash2, Tag, LayoutGrid, ArrowLeft } from 'lucide-react';
+import { ShoppingBag, Check, ShieldCheck, Truck, Star, Plus, Minus, Trash2, Tag, LayoutGrid, FileText } from 'lucide-react';
 import Link from 'next/link';
 import ProductCard from './ProductCard';
 
@@ -49,7 +49,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
       if (!line.trim()) return <div key={index} className="h-2"></div>;
       const parts = line.split(/(\*\*.*?\*\*)/g);
       return (
-        <p key={index} className="mb-2 leading-7 text-justify text-gray-600">
+        <p key={index} className="mb-2 leading-8 text-justify text-gray-600 text-sm md:text-base">
           {parts.map((part, i) => {
             if (part.startsWith('**') && part.endsWith('**')) {
               return <strong key={i} className="font-bold text-gray-900">{part.slice(2, -2)}</strong>;
@@ -93,6 +93,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
   return (
     <div className="pb-24 md:pb-0 relative"> {/* پدینگ پایین برای موبایل که دکمه چسبان محتوا رو نپوشونه */}
         
+        {/* بخش بالایی: عکس و اطلاعات اصلی */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 animate-in fade-in slide-in-from-bottom-4 duration-500 items-start">
         
             {/* --- ستون تصویر (سمت راست در دسکتاپ - ۵ واحد) --- */}
@@ -120,7 +121,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                         {categoryName}
                     </Link>
                     
-                    {/* امتیاز (فیک ولی خوشگل) */}
+                    {/* امتیاز */}
                     <div className="flex items-center gap-1 text-xs font-bold text-gray-500 bg-gray-50 px-2 py-1 rounded-lg">
                         <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" />
                         <span>۵.۰</span>
@@ -131,7 +132,6 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                 <h1 className="text-2xl md:text-4xl font-black text-gray-900 mb-6 leading-snug">{product.title}</h1>
 
                 {/* 3. Price & Action Box (DESKTOP ONLY) */}
-                {/* این باکس در موبایل مخفی میشه چون پایین صفحه فیکسش میکنیم */}
                 <div className="hidden md:block bg-white p-6 rounded-2xl border border-blue-100 shadow-sm mb-8">
                     <div className="flex items-center justify-between mb-6">
                         <div>
@@ -150,38 +150,40 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                     <AddToCartButtons isMobile={false} />
                 </div>
 
-                {/* 4. Features (ویژگی‌ها) - حالا بالاتر از توضیحات */}
+                {/* 4. Features (ویژگی‌ها) - تک‌ستونه برای نظم بیشتر */}
                 {product.features && product.features.length > 0 && (
-                    <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="mb-8 grid grid-cols-1 gap-3"> {/* تغییر به تک ستونه */}
                         {product.features.map((feat, index) => (
-                            <div key={index} className="flex items-center gap-2 text-sm text-gray-700 bg-gray-50 p-3 rounded-xl border border-gray-100">
-                                <div className="bg-white p-1 rounded-full text-green-500 shadow-sm"><Check className="h-3 w-3" /></div>
-                                <span className="font-medium">{feat}</span>
+                            <div key={index} className="flex items-center gap-3 text-sm text-gray-700 bg-gray-50 p-3 rounded-xl border border-gray-100 hover:border-blue-100 transition-colors">
+                                <div className="bg-white p-1 rounded-full text-green-500 shadow-sm flex-shrink-0"><Check className="h-3 w-3" /></div>
+                                <span className="font-medium leading-6">{feat}</span>
                             </div>
                         ))}
                     </div>
                 )}
 
-                {/* 5. Description (توضیحات) */}
-                <div className="bg-white rounded-2xl p-1">
-                    <h3 className="font-bold text-gray-900 mb-4 text-lg flex items-center gap-2">
-                        <span className="w-1 h-6 bg-blue-600 rounded-full"></span>
-                        درباره این محصول
-                    </h3>
-                    <div className="text-sm md:text-base leading-8 text-gray-600">
-                        {renderDescription(product.description)}
-                    </div>
-                </div>
-
             </div>
         </div>
 
+        {/* --- بخش توضیحات (تمام عرض و جدا شده) --- */}
+        {product.description && (
+            <div className="mt-12 pt-10 border-t border-gray-200">
+                <h3 className="font-bold text-gray-900 mb-6 text-xl flex items-center gap-2">
+                    <span className="w-1.5 h-8 bg-blue-600 rounded-full"></span>
+                    <FileText className="h-6 w-6 text-gray-400" />
+                    توضیحات
+                </h3>
+                <div className="bg-white rounded-3xl p-6 md:p-10 border border-gray-100 shadow-sm">
+                    {renderDescription(product.description)}
+                </div>
+            </div>
+        )}
+
         {/* --- STICKY BOTTOM BAR (MOBILE ONLY) --- */}
-        {/* این بخش شاهکار موبایل است: همیشه پایین صفحه چسبیده */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 z-40 md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.05)] animate-in slide-in-from-bottom-full duration-300">
+        {/* z-index افزایش یافت تا روی چت‌باکس بیفتد */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 z-[100] md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.1)] animate-in slide-in-from-bottom-full duration-300">
             <div className="flex items-center gap-4 max-w-md mx-auto">
                 <div className="flex flex-col flex-1">
-                    {/* اگر تعداد 0 بود قیمت رو نشون بده، اگر رفت تو سبد، بنویس "در سبد خرید" */}
                     <span className="text-xs text-gray-400 mb-0.5">
                         {quantity > 0 ? 'مبلغ کل آیتم:' : 'قیمت نهایی:'}
                     </span>
@@ -197,7 +199,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
 
         {/* محصولات پیشنهادی */}
         {relatedProducts.length > 0 && (
-            <div className="mt-20 pt-10 border-t border-gray-100">
+            <div className="mt-20 pt-10 border-t border-gray-200">
                 <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                     <LayoutGrid className="h-5 w-5 text-blue-600" />
                     محصولات مشابه (شاید بپسندید)
