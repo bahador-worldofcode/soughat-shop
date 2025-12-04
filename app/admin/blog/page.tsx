@@ -1,7 +1,8 @@
 'use client';
-import { useEffect, useState } from 'react';
+
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Plus, Trash2, Edit2, Search, X, ImageIcon, Check, BookOpen, Loader2, Tag, Layers, FileText, List } from 'lucide-react';
+import { Plus, Trash2, Edit2, Search, X, ImageIcon, Check, BookOpen, Loader2, Tag, Layers, FileText } from 'lucide-react';
 
 // --- Types ---
 interface Post {
@@ -34,16 +35,22 @@ interface MediaFile {
   id: string;
 }
 
+const BATCH_SIZE = 20;
+
 export default function BlogPage() {
   // --- States ---
   const [activeTab, setActiveTab] = useState<'posts' | 'categories' | 'tags'>('posts');
-  const [loading, setLoading] = useState(true);
   
   // Data States
   const [posts, setPosts] = useState<Post[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [tags, setTags] = useState<TagItem[]>([]);
   
+  // Loading States for Posts
+  const [loadingPosts, setLoadingPosts] = useState(true);
+  const [loadingMorePosts, setLoadingMorePosts] = useState(false);
+  const [hasMorePosts, setHasMorePosts] = useState(true);
+
   // Search & Filter
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -56,29 +63,106 @@ export default function BlogPage() {
     summary: '', category: '', seo_title: '', seo_desc: '', tags: ''
   });
 
-  // Media Gallery States
+  // Media Gallery States (Smart Loading)
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [loadingMedia, setLoadingMedia] = useState(false);
+  const [mediaLoadingMore, setMediaLoadingMore] = useState(false);
+  const [mediaHasMore, setMediaHasMore] = useState(true);
 
   // Category/Tag Management States
   const [newItemName, setNewItemName] = useState('');
   const [addingItem, setAddingItem] = useState(false);
+
+  // --- Observers ---
+  const postObserver = useRef<IntersectionObserver | null>(null);
+  const mediaObserver = useRef<IntersectionObserver | null>(null);
+
+  // 1. Post Scroll Observer
+  const lastPostElementRef = useCallback((node: HTMLDivElement) => {
+    if (loadingPosts || loadingMorePosts) return;
+    if (postObserver.current) postObserver.current.disconnect();
+    
+    postObserver.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMorePosts && !searchTerm) {
+        fetchPosts(false);
+      }
+    });
+    
+    if (node) postObserver.current.observe(node);
+  }, [loadingPosts, loadingMorePosts, hasMorePosts, searchTerm]);
+
+  // 2. Media Scroll Observer
+  const lastMediaElementRef = useCallback((node: HTMLDivElement) => {
+    if (loadingMedia || mediaLoadingMore) return;
+    if (mediaObserver.current) mediaObserver.current.disconnect();
+    
+    mediaObserver.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && mediaHasMore) {
+        fetchMedia(false);
+      }
+    });
+    
+    if (node) mediaObserver.current.observe(node);
+  }, [loadingMedia, mediaLoadingMore, mediaHasMore]);
+
 
   // --- Initial Fetch ---
   useEffect(() => {
     fetchAllData();
   }, []);
 
+  // Search Effect
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+        fetchPosts(true);
+    }, 500);
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
+
   const fetchAllData = async () => {
-    setLoading(true);
-    await Promise.all([fetchPosts(), fetchCategories(), fetchTags()]);
-    setLoading(false);
+    setLoadingPosts(true);
+    await Promise.all([fetchPosts(true), fetchCategories(), fetchTags()]);
+    setLoadingPosts(false);
   };
 
-  const fetchPosts = async () => {
-    const { data } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
-    if (data) setPosts(data);
+  // --- Smart Fetch Posts ---
+  const fetchPosts = async (isInitial = true) => {
+    if (isInitial) {
+        if (!searchTerm) setLoadingPosts(true);
+        setHasMorePosts(true);
+    } else {
+        setLoadingMorePosts(true);
+    }
+
+    const currentOffset = isInitial ? 0 : posts.length;
+
+    let query = supabase
+      .from('posts')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (searchTerm) {
+        query = query.ilike('title', `%${searchTerm}%`);
+    } else {
+        query = query.range(currentOffset, currentOffset + BATCH_SIZE - 1);
+    }
+
+    const { data } = await query;
+
+    if (data) {
+        if (isInitial) {
+            setPosts(data);
+        } else {
+            setPosts(prev => [...prev, ...data]);
+        }
+
+        if (data.length < BATCH_SIZE) {
+            setHasMorePosts(false);
+        }
+    }
+    setLoadingPosts(false);
+    setLoadingMorePosts(false);
   };
 
   const fetchCategories = async () => {
@@ -91,9 +175,42 @@ export default function BlogPage() {
     if (data) setTags(data);
   };
 
+  // --- Smart Fetch Media ---
+  const fetchMedia = async (isInitial = true) => {
+    if (isInitial) {
+      setLoadingMedia(true);
+      setMediaFiles([]);
+      setMediaHasMore(true);
+    } else {
+      setMediaLoadingMore(true);
+    }
+
+    const currentOffset = isInitial ? 0 : mediaFiles.length;
+
+    const { data } = await supabase.storage.from('media').list('', {
+      limit: BATCH_SIZE,
+      offset: currentOffset,
+      sortBy: { column: 'created_at', order: 'desc' },
+    });
+
+    if (data) {
+      const files = data.map((file) => {
+        const { data: url } = supabase.storage.from('media').getPublicUrl(file.name);
+        return { name: file.name, id: file.id, url: url.publicUrl };
+      });
+
+      if (data.length < BATCH_SIZE) {
+        setMediaHasMore(false);
+      }
+
+      setMediaFiles(prev => isInitial ? files : [...prev, ...files]);
+    }
+    setLoadingMedia(false);
+    setMediaLoadingMore(false);
+  };
+
   // --- Post Logic ---
   const openModal = (post?: Post) => {
-    // اگر دسته‌ای وجود نداشت، اولین دسته را پیش‌فرض بگیر
     const defaultCat = categories.length > 0 ? categories[0].name : '';
     
     if (post) {
@@ -128,7 +245,6 @@ export default function BlogPage() {
         finalSlug = formData.title.trim().toLowerCase().replace(/\s+/g, '-');
       }
       const tagsArray = formData.tags.split(',').map(t => t.trim()).filter(t => t !== '');
-      
       const postData = { 
         title: formData.title,
         slug: finalSlug,
@@ -140,7 +256,6 @@ export default function BlogPage() {
         seo_desc: formData.seo_desc,
         tags: tagsArray
       };
-
       if (editingPost) {
         const { error } = await supabase.from('posts').update(postData).eq('id', editingPost.id);
         if (error) throw error;
@@ -148,7 +263,7 @@ export default function BlogPage() {
         const { error } = await supabase.from('posts').insert([postData]);
         if (error) throw error;
       }
-      await fetchPosts();
+      await fetchPosts(true);
       setIsModalOpen(false);
     } catch (error: any) {
       alert('خطا: ' + error.message);
@@ -163,16 +278,14 @@ export default function BlogPage() {
     if (!error) setPosts(posts.filter(p => p.id !== id));
   };
 
-  // --- Category & Tag Management Logic ---
+  // --- Category & Tag Logic (Standard) ---
   const handleAddItem = async (type: 'category' | 'tag') => {
     if (!newItemName.trim()) return;
     setAddingItem(true);
     const table = type === 'category' ? 'blog_categories' : 'blog_tags';
-    
     try {
       const { error } = await supabase.from(table).insert([{ name: newItemName }]);
       if (error) throw error;
-      
       setNewItemName('');
       if (type === 'category') await fetchCategories();
       else await fetchTags();
@@ -186,7 +299,6 @@ export default function BlogPage() {
   const handleDeleteItem = async (id: string, type: 'category' | 'tag') => {
     if (!confirm('حذف شود؟')) return;
     const table = type === 'category' ? 'blog_categories' : 'blog_tags';
-    
     const { error } = await supabase.from(table).delete().eq('id', id);
     if (!error) {
       if (type === 'category') setCategories(categories.filter(c => c.id !== id));
@@ -194,24 +306,10 @@ export default function BlogPage() {
     }
   };
 
-  // --- Gallery Logic ---
-  const fetchMedia = async () => {
-    setLoadingMedia(true);
-    const { data } = await supabase.storage.from('media').list('', { limit: 50, sortBy: { column: 'created_at', order: 'desc' } });
-    if (data) {
-      const files = data.map((file) => {
-        const { data: url } = supabase.storage.from('media').getPublicUrl(file.name);
-        return { name: file.name, id: file.id, url: url.publicUrl };
-      });
-      setMediaFiles(files);
-    }
-    setLoadingMedia(false);
-  };
-  const openGallery = () => { setIsGalleryOpen(true); fetchMedia(); };
+  const openGallery = () => { setIsGalleryOpen(true); fetchMedia(true); };
   const selectImage = (url: string) => { setFormData({ ...formData, image: url }); setIsGalleryOpen(false); };
 
-
-  if (loading) return <div className="p-10 text-center flex justify-center"><Loader2 className="animate-spin h-8 w-8 text-blue-600" /></div>;
+  if (loadingPosts && posts.length === 0) return <div className="p-10 text-center flex justify-center"><Loader2 className="animate-spin h-8 w-8 text-blue-600" /></div>;
 
   return (
     <div className="space-y-6">
@@ -248,7 +346,7 @@ export default function BlogPage() {
       {/* --- TAB 1: POSTS --- */}
       {activeTab === 'posts' && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-             <div className="flex gap-4">
+            <div className="flex gap-4">
                  <div className="relative flex-1">
                     <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input type="text" placeholder="جستجوی مقالات..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pr-9 pl-4 py-3 text-sm bg-white rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-100" />
@@ -260,27 +358,44 @@ export default function BlogPage() {
              </div>
 
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {posts.filter(p => p.title.includes(searchTerm)).map((post) => (
-                <div key={post.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-all">
-                    <div className="relative h-48 bg-gray-100 group">
-                        {post.image ? <img src={post.image} className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full text-gray-300"><BookOpen className="h-10 w-10"/></div>}
-                        <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => openModal(post)} className="p-2 bg-white/90 rounded-full text-blue-600 shadow-sm"><Edit2 className="h-4 w-4" /></button>
-                            <button onClick={() => handleDeletePost(post.id)} className="p-2 bg-white/90 rounded-full text-red-500 shadow-sm"><Trash2 className="h-4 w-4" /></button>
+                {posts.map((post, index) => {
+                    const isLast = index === posts.length - 1;
+                    return (
+                        <div 
+                            key={post.id} 
+                            ref={isLast ? lastPostElementRef : null}
+                            className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-all"
+                        >
+                            <div className="relative h-48 bg-gray-100 group">
+                                {post.image ? <img src={post.image} className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full text-gray-300"><BookOpen className="h-10 w-10"/></div>}
+                                <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onClick={() => openModal(post)} className="p-2 bg-white/90 rounded-full text-blue-600 shadow-sm"><Edit2 className="h-4 w-4" /></button>
+                                    <button onClick={() => handleDeletePost(post.id)} className="p-2 bg-white/90 rounded-full text-red-500 shadow-sm"><Trash2 className="h-4 w-4" /></button>
+                                </div>
+                                {post.category && (
+                                    <span className="absolute bottom-2 right-2 bg-black/50 text-white text-[10px] px-2 py-1 rounded backdrop-blur-sm">
+                                        {post.category}
+                                    </span>
+                                )}
+                            </div>
+                            <div className="p-4 flex-1 flex flex-col">
+                                <h3 className="font-bold text-gray-900 mb-2 line-clamp-1">{post.title}</h3>
+                                <p className="text-xs text-gray-400 font-mono mb-2">/{post.slug}</p>
+                            </div>
                         </div>
-                        {post.category && (
-                            <span className="absolute bottom-2 right-2 bg-black/50 text-white text-[10px] px-2 py-1 rounded backdrop-blur-sm">
-                                {post.category}
-                            </span>
-                        )}
-                    </div>
-                    <div className="p-4 flex-1 flex flex-col">
-                        <h3 className="font-bold text-gray-900 mb-2 line-clamp-1">{post.title}</h3>
-                        <p className="text-xs text-gray-400 font-mono mb-2">/{post.slug}</p>
-                    </div>
-                </div>
-                ))}
+                    );
+                })}
             </div>
+            
+            {loadingMorePosts && (
+                <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin text-blue-600"/></div>
+            )}
+            {!hasMorePosts && posts.length > 0 && !searchTerm && (
+                <p className="text-center text-gray-400 text-xs mt-4">تمام مقالات بارگذاری شدند.</p>
+            )}
+            {posts.length === 0 && !loadingPosts && (
+                <p className="text-center text-gray-400 text-sm py-10">مقاله‌ای یافت نشد.</p>
+            )}
         </div>
       )}
 
@@ -315,7 +430,7 @@ export default function BlogPage() {
              {/* List */}
              <div className="divide-y divide-gray-100 max-h-[60vh] overflow-y-auto">
                  {(activeTab === 'categories' ? categories : tags).map((item) => (
-                     <div key={item.id} className="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
+                      <div key={item.id} className="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
                          <span className="font-medium text-gray-700">{item.name}</span>
                          <button onClick={() => handleDeleteItem(item.id, activeTab === 'categories' ? 'category' : 'tag')} className="text-red-400 hover:text-red-600 p-2">
                              <Trash2 className="h-4 w-4" />
@@ -356,13 +471,12 @@ export default function BlogPage() {
                     </div>
                     <div>
                          <label className="block text-xs font-bold text-gray-700 mb-1">دسته‌بندی</label>
-                         {/* در اینجا لیست دسته‌بندی‌ها از دیتابیس خوانده می‌شود */}
                         <select 
                             className="w-full p-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500 bg-white"
                             value={formData.category}
                             onChange={(e) => setFormData({...formData, category: e.target.value})}
                         >
-                            {categories.map((cat) => (
+                             {categories.map((cat) => (
                                 <option key={cat.id} value={cat.name}>{cat.name}</option>
                             ))}
                         </select>
@@ -382,10 +496,10 @@ export default function BlogPage() {
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="md:col-span-2">
                         <label className="block text-xs font-bold text-gray-700 mb-1">متن مقاله</label>
-                         <textarea required className="w-full h-64 p-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500 resize-none" value={formData.content} onChange={(e) => setFormData({...formData, content: e.target.value})} placeholder="متن خود را اینجا بنویسید..." />
+                        <textarea required className="w-full h-64 p-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500 resize-none" value={formData.content} onChange={(e) => setFormData({...formData, content: e.target.value})} placeholder="متن خود را اینجا بنویسید..." />
                     </div>
                     <div>
-                       <label className="block text-xs font-bold text-gray-700 mb-1">تصویر شاخص</label>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">تصویر شاخص</label>
                         {formData.image ? (
                         <div className="relative h-40 w-full rounded-lg overflow-hidden border border-gray-200 group">
                             <img src={formData.image} className="w-full h-full object-cover" />
@@ -399,7 +513,7 @@ export default function BlogPage() {
                             <ImageIcon className="h-8 w-8 mb-2"/>
                             <span className="text-xs">انتخاب تصویر</span>
                         </button>
-                       )}
+                        )}
                     </div>
                  </div>
               </div>
@@ -412,7 +526,7 @@ export default function BlogPage() {
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
                         <label className="block text-xs font-bold text-gray-500 mb-1">عنوان سئو</label>
-                         <input type="text" className="w-full p-2 rounded border border-gray-300 text-sm" value={formData.seo_title} onChange={(e) => setFormData({...formData, seo_title: e.target.value})} placeholder="عنوان گوگل (۶۰ کاراکتر)" />
+                        <input type="text" className="w-full p-2 rounded border border-gray-300 text-sm" value={formData.seo_title} onChange={(e) => setFormData({...formData, seo_title: e.target.value})} placeholder="عنوان گوگل (۶۰ کاراکتر)" />
                     </div>
                    <div className="md:col-span-2">
                         <label className="block text-xs font-bold text-gray-500 mb-1">توضیحات متا</label>
@@ -445,7 +559,7 @@ export default function BlogPage() {
         </div>
       )}
 
-      {/* GALLERY MODAL */}
+      {/* GALLERY MODAL (SMART) */}
       {isGalleryOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in zoom-in duration-200">
            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl h-[80vh] flex flex-col overflow-hidden">
@@ -454,14 +568,27 @@ export default function BlogPage() {
                 <button onClick={() => setIsGalleryOpen(false)}><X className="h-6 w-6 text-gray-400" /></button>
              </div>
              <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50">
-               {loadingMedia ? <div className="flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div> : (
+               {loadingMedia && mediaFiles.length === 0 ? (
+                 <div className="flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
+               ) : (
                  <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
-                   {mediaFiles.map((file) => (
-                      <div key={file.id} onClick={() => selectImage(file.url)} className="aspect-square rounded-xl overflow-hidden cursor-pointer border hover:border-blue-500 relative group">
-                       <img src={file.url} className="w-full h-full object-cover" />
-                     </div>
-                   ))}
+                   {mediaFiles.map((file, index) => {
+                     const isLast = index === mediaFiles.length - 1;
+                     return (
+                        <div 
+                            key={file.id} 
+                            ref={isLast ? lastMediaElementRef : null}
+                            onClick={() => selectImage(file.url)} 
+                            className="aspect-square rounded-xl overflow-hidden cursor-pointer border hover:border-blue-500 relative group"
+                        >
+                            <img src={file.url} className="w-full h-full object-cover" />
+                        </div>
+                     );
+                   })}
                  </div>
+               )}
+               {mediaLoadingMore && (
+                  <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin text-blue-600"/></div>
                )}
             </div>
            </div>
