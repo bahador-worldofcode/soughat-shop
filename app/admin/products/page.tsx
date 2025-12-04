@@ -2,13 +2,13 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Plus, Trash2, Edit2, Search, X, Loader2, ImageIcon, Check, Search as SearchIcon, Calculator, LayoutGrid, List } from 'lucide-react';
+import { Plus, Trash2, Edit2, Search, X, Loader2, ImageIcon, Check, Search as SearchIcon, Calculator, LayoutGrid, List, Package, AlertCircle } from 'lucide-react';
 
 interface Product {
   id: string;
   title: string;
-  price: number;        // قیمت فروش (دلار)
-  price_toman: number;  // قیمت خرید (تومان)
+  price: number;
+  price_toman: number;
   image: string;
   slug: string;
   category: string;
@@ -31,13 +31,21 @@ interface MediaFile {
   id: string;
 }
 
-// تعداد عکس در هر بار لود گالری
+// تعداد آیتم در هر بار لود
 const BATCH_SIZE = 20;
 
 export default function ProductsPage() {
+  // --- استیت‌های محصولات ---
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  
+  const [loading, setLoading] = useState(true); // لودینگ اولیه صفحه
+  const [loadingMoreProducts, setLoadingMoreProducts] = useState(false); // لودینگ اسکرول محصولات
+  const [hasMoreProducts, setHasMoreProducts] = useState(true); // آیا محصول بیشتری هست؟
+
+  // --- استیت آمار (Stats) ---
+  const [stats, setStats] = useState({ total: 0, unavailable: 0 });
+
   const [searchTerm, setSearchTerm] = useState('');
   
   // --- حالت نمایش ---
@@ -65,51 +73,85 @@ export default function ProductsPage() {
     seo_desc: ''
   });
 
-  // --- استیت‌های جدید برای گالری هوشمند ---
+  // --- استیت‌های گالری هوشمند ---
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
-  const [loadingMedia, setLoadingMedia] = useState(false);       // لودینگ اولیه گالری
-  const [mediaLoadingMore, setMediaLoadingMore] = useState(false); // لودینگ اسکرول گالری
-  const [mediaHasMore, setMediaHasMore] = useState(true);          // آیا عکس بیشتری هست؟
+  const [loadingMedia, setLoadingMedia] = useState(false);
+  const [mediaLoadingMore, setMediaLoadingMore] = useState(false);
+  const [mediaHasMore, setMediaHasMore] = useState(true);
 
-  // رفرنس برای تشخیص اسکرول در گالری
-  const observer = useRef<IntersectionObserver | null>(null);
+  // --- رفرنس‌ها برای اسکرول ---
+  const productObserver = useRef<IntersectionObserver | null>(null);
+  const mediaObserver = useRef<IntersectionObserver | null>(null);
 
-  // تابعی که وقتی به آخرین عکس گالری میرسیم اجرا میشه
-  const lastMediaElementRef = useCallback((node: HTMLDivElement) => {
-    if (loadingMedia || mediaLoadingMore) return;
-    if (observer.current) observer.current.disconnect();
+  // 1. آبزرور برای لیست محصولات
+  const lastProductElementRef = useCallback((node: HTMLDivElement) => {
+    if (loading || loadingMoreProducts) return;
+    if (productObserver.current) productObserver.current.disconnect();
     
-    observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && mediaHasMore) {
-        fetchMedia(false); // لود کردن صفحه بعدی
+    productObserver.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMoreProducts && !searchTerm) {
+        fetchProducts(false);
       }
     });
     
-    if (node) observer.current.observe(node);
+    if (node) productObserver.current.observe(node);
+  }, [loading, loadingMoreProducts, hasMoreProducts, searchTerm]);
+
+  // 2. آبزرور برای گالری عکس
+  const lastMediaElementRef = useCallback((node: HTMLDivElement) => {
+    if (loadingMedia || mediaLoadingMore) return;
+    if (mediaObserver.current) mediaObserver.current.disconnect();
+    
+    mediaObserver.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && mediaHasMore) {
+        fetchMedia(false);
+      }
+    });
+    
+    if (node) mediaObserver.current.observe(node);
   }, [loadingMedia, mediaLoadingMore, mediaHasMore]);
 
 
   useEffect(() => {
-    fetchData();
+    initialLoad();
   }, []);
 
-  const fetchData = async () => {
-    // 1. دریافت محصولات
-    const { data: prodData } = await supabase
-      .from('products')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (prodData) setProducts(prodData);
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+        fetchProducts(true);
+    }, 500);
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
 
-    // 2. دریافت دسته‌بندی‌ها
-    const { data: catData } = await supabase
-      .from('categories')
-      .select('*')
-      .order('name');
+  const initialLoad = async () => {
+    setLoading(true);
+    await Promise.all([
+        fetchProducts(true),
+        fetchCategoriesAndSettings(),
+        fetchStats() // دریافت آمار در لود اولیه
+    ]);
+    setLoading(false);
+  };
+
+  // تابع جدید برای دریافت آمار
+  const fetchStats = async () => {
+    // تعداد کل
+    const { count: total } = await supabase.from('products').select('*', { count: 'exact', head: true });
+    
+    // تعداد ناموجود (فرض بر این است که قیمت ۰ یعنی ناموجود)
+    const { count: unavailable } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('price_toman', 0);
+
+    setStats({ total: total || 0, unavailable: unavailable || 0 });
+  };
+
+  const fetchCategoriesAndSettings = async () => {
+    const { data: catData } = await supabase.from('categories').select('*').order('name');
     if (catData) setCategories(catData);
     
-    // 3. دریافت تنظیمات
     const { data: settingsData } = await supabase.from('site_settings').select('*');
     if (settingsData) {
         settingsData.forEach(item => {
@@ -119,19 +161,48 @@ export default function ProductsPage() {
             if (item.key === 'admin_product_view_mode') setViewMode(item.value as 'grid' | 'list');
         });
     }
+  };
+
+  const fetchProducts = async (isInitial = true) => {
+    if (isInitial) {
+        if (!searchTerm) setLoading(true);
+        setHasMoreProducts(true);
+    } else {
+        setLoadingMoreProducts(true);
+    }
+
+    const currentOffset = isInitial ? 0 : products.length;
+
+    let query = supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (searchTerm) {
+        query = query.ilike('title', `%${searchTerm}%`);
+    } else {
+        query = query.range(currentOffset, currentOffset + BATCH_SIZE - 1);
+    }
+
+    const { data } = await query;
+
+    if (data) {
+        if (isInitial) {
+            setProducts(data);
+        } else {
+            setProducts(prev => [...prev, ...data]);
+        }
+
+        if (data.length < BATCH_SIZE) {
+            setHasMoreProducts(false);
+        }
+    }
 
     setLoading(false);
+    setLoadingMoreProducts(false);
   };
 
-  const handleViewModeChange = async (mode: 'grid' | 'list') => {
-    setViewMode(mode);
-    await supabase.from('site_settings').upsert({ 
-        key: 'admin_product_view_mode', 
-        value: mode 
-    }, { onConflict: 'key' });
-  };
-
-  // --- تابع جدید دریافت مدیا (هوشمند) ---
+  // --- مدیا ---
   const fetchMedia = async (isInitial = true) => {
     if (isInitial) {
       setLoadingMedia(true);
@@ -166,15 +237,18 @@ export default function ProductsPage() {
     setMediaLoadingMore(false);
   };
 
+  const handleViewModeChange = async (mode: 'grid' | 'list') => {
+    setViewMode(mode);
+    await supabase.from('site_settings').upsert({ key: 'admin_product_view_mode', value: mode }, { onConflict: 'key' });
+  };
+
   const calculateSuggestedUSD = (tomanStr: string) => {
     const toman = parseInt(tomanStr) || 0;
     if (toman === 0) return;
-    
     const cost = toman + shippingBase;
     const inUSD = cost / dollarRate;
     const withProfit = inUSD * (1 + profitMargin / 100);
     const final = Math.round(withProfit * 100) / 100;
-
     setFormData(prev => ({ ...prev, price: String(final), price_toman: tomanStr }));
   };
 
@@ -196,26 +270,14 @@ export default function ProductsPage() {
     } else {
       setEditingProduct(null);
       setFormData({ 
-        title: '', 
-        price: '', 
-        price_toman: '',
-        image: '', 
-        slug: '', 
-        category: categories[0]?.slug || '',
-        description: '', 
-        features: '', 
-        seo_title: '', 
-        seo_desc: '' 
+        title: '', price: '', price_toman: '', image: '', slug: '', 
+        category: categories[0]?.slug || '', description: '', features: '', seo_title: '', seo_desc: '' 
       });
     }
     setIsModalOpen(true);
   };
 
-  const openGallery = () => { 
-      setIsGalleryOpen(true); 
-      fetchMedia(true); // لود اولیه
-  };
-  
+  const openGallery = () => { setIsGalleryOpen(true); fetchMedia(true); };
   const selectImageFromGallery = (url: string) => { setFormData({ ...formData, image: url }); setIsGalleryOpen(false); };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -225,7 +287,6 @@ export default function ProductsPage() {
       const featuresArray = formData.features.split('\n').filter(line => line.trim() !== '');
       let finalSlug = formData.slug || formData.title;
       finalSlug = finalSlug.trim().toLowerCase().replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
-
       const finalCategory = formData.category || categories[0]?.slug || 'nuts';
 
       const productData = {
@@ -261,7 +322,8 @@ export default function ProductsPage() {
         throw new Error(errData.error || 'خطا در ذخیره‌سازی');
       }
 
-      await fetchData();
+      await fetchProducts(true); 
+      await fetchStats(); // آپدیت آمار بعد از ذخیره
       setIsModalOpen(false);
     } catch (error: any) {
       alert('خطا: ' + error.message);
@@ -276,21 +338,18 @@ export default function ProductsPage() {
       const response = await fetch(`/api/admin/products?id=${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('خطا در حذف');
       setProducts(products.filter(p => p.id !== id));
+      fetchStats(); // آپدیت آمار بعد از حذف
     } catch (error: any) {
       alert('خطا: ' + error.message);
     }
   };
-
-  const filteredProducts = products.filter(p => 
-    p.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const getCategoryName = (slug: string) => {
     const cat = categories.find(c => c.slug === slug);
     return cat ? cat.name : slug;
   };
 
-  if (loading) return <div className="p-10 text-center">در حال دریافت لیست...</div>;
+  if (loading && products.length === 0) return <div className="p-10 text-center">در حال دریافت لیست...</div>;
 
   return (
     <div className="space-y-6">
@@ -305,19 +364,16 @@ export default function ProductsPage() {
                 <button 
                     onClick={() => handleViewModeChange('grid')}
                     className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:bg-gray-200'}`}
-                    title="نمایش شبکه‌ای"
                 >
                     <LayoutGrid className="h-4 w-4" />
                 </button>
                 <button 
                     onClick={() => handleViewModeChange('list')}
                     className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:bg-gray-200'}`}
-                    title="نمایش لیستی"
                 >
                     <List className="h-4 w-4" />
                 </button>
             </div>
-
             <button onClick={() => openProductModal()} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 shadow-md h-[42px]">
             <Plus className="h-5 w-5" />
             محصول جدید
@@ -325,64 +381,118 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <div className="relative max-w-md">
-        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <input type="text" placeholder="جستجو..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pr-9 pl-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-100 outline-none" />
+      {/* --- بخش جدید: کارت‌های آمار --- */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white p-4 rounded-xl border border-blue-100 shadow-sm flex items-center gap-3">
+            <div className="bg-blue-50 p-3 rounded-lg text-blue-600">
+                <Package className="h-6 w-6" />
+            </div>
+            <div>
+                <span className="text-2xl font-bold text-gray-800">{stats.total}</span>
+                <p className="text-xs text-gray-500">تعداد کل محصولات</p>
+            </div>
+        </div>
+        <div className="bg-white p-4 rounded-xl border border-red-100 shadow-sm flex items-center gap-3">
+            <div className="bg-red-50 p-3 rounded-lg text-red-500">
+                <AlertCircle className="h-6 w-6" />
+            </div>
+            <div>
+                <span className="text-2xl font-bold text-gray-800">{stats.unavailable}</span>
+                <p className="text-xs text-gray-500">ناموجود (قیمت ۰)</p>
+            </div>
+        </div>
       </div>
 
-      {viewMode === 'grid' ? (
+      <div className="relative max-w-md">
+        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <input 
+            type="text" 
+            placeholder="جستجو در نام محصولات..." 
+            value={searchTerm} 
+            onChange={(e) => setSearchTerm(e.target.value)} 
+            className="w-full pr-9 pl-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-100 outline-none" 
+        />
+      </div>
+
+      {products.length === 0 && !loading ? (
+          <div className="p-8 text-center text-gray-400 text-sm bg-white rounded-xl border border-gray-200">محصولی یافت نشد.</div>
+      ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in duration-300">
-            {filteredProducts.map((product) => (
-                <div key={product.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden group flex flex-col">
-                    <div className="relative aspect-square bg-gray-100 overflow-hidden">
-                        <img src={product.image} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                        <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => openProductModal(product)} className="p-2 bg-white/90 rounded-full text-blue-600 shadow-sm"><Edit2 className="h-4 w-4" /></button>
-                            <button onClick={() => handleDelete(product.id)} className="p-2 bg-white/90 rounded-full text-red-500 shadow-sm"><Trash2 className="h-4 w-4" /></button>
+            {products.map((product, index) => {
+                const isLast = index === products.length - 1;
+                const isUnavailable = product.price_toman === 0;
+                return (
+                    <div 
+                        key={product.id} 
+                        ref={isLast ? lastProductElementRef : null}
+                        className={`bg-white rounded-2xl border shadow-sm hover:shadow-md transition-all overflow-hidden group flex flex-col ${isUnavailable ? 'border-red-200 bg-red-50/10' : 'border-gray-100'}`}
+                    >
+                        <div className="relative aspect-square bg-gray-100 overflow-hidden">
+                            <img src={product.image} alt={product.title} className={`w-full h-full object-cover group-hover:scale-105 transition-transform ${isUnavailable ? 'grayscale' : ''}`} />
+                            <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => openProductModal(product)} className="p-2 bg-white/90 rounded-full text-blue-600 shadow-sm"><Edit2 className="h-4 w-4" /></button>
+                                <button onClick={() => handleDelete(product.id)} className="p-2 bg-white/90 rounded-full text-red-500 shadow-sm"><Trash2 className="h-4 w-4" /></button>
+                            </div>
+                            <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded-full backdrop-blur-sm">
+                            {getCategoryName(product.category)}
+                            </span>
+                            {isUnavailable && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                    <span className="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md">ناموجود</span>
+                                </div>
+                            )}
                         </div>
-                        <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded-full backdrop-blur-sm">
-                          {getCategoryName(product.category)}
-                        </span>
-                    </div>
-                    <div className="p-4 flex flex-col flex-1">
-                        <h3 className="font-bold text-gray-900 line-clamp-1 mb-1">{product.title}</h3>
-                        <p className="text-xs text-gray-400 mb-2 truncate">/{product.slug}</p>
-                        <div className="mt-auto flex justify-between items-center">
-                            <div className="flex flex-col">
-                                <span className="text-[10px] text-gray-400">قیمت خرید: {(product.price_toman || 0).toLocaleString()} ت</span>
+                        <div className="p-4 flex flex-col flex-1">
+                            <h3 className="font-bold text-gray-900 line-clamp-1 mb-1">{product.title}</h3>
+                            <div className="mt-auto">
                                 <span className="text-lg font-bold text-blue-600">${product.price}</span>
                             </div>
                         </div>
                     </div>
-                </div>
-            ))}
+                );
+            })}
           </div>
       ) : (
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-in fade-in duration-300">
               <div className="divide-y divide-gray-100">
-                  {filteredProducts.map((product) => (
-                      <div key={product.id} className="p-3 hover:bg-gray-50 transition-colors flex items-center justify-between group">
-                          <div className="flex items-center gap-3">
-                              <span className="font-bold text-gray-800 text-sm select-all cursor-text">{product.title}</span>
-                              <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded hidden sm:inline-block">{getCategoryName(product.category)}</span>
-                          </div>
-                          <div className="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => openProductModal(product)} className="text-blue-600 hover:bg-blue-50 p-1.5 rounded" title="ویرایش">
-                                    <Edit2 className="h-4 w-4" />
-                                </button>
-                                <button onClick={() => handleDelete(product.id)} className="text-red-500 hover:bg-red-50 p-1.5 rounded" title="حذف">
-                                    <Trash2 className="h-4 w-4" />
-                                </button>
-                          </div>
-                      </div>
-                  ))}
-                  {filteredProducts.length === 0 && (
-                      <div className="p-8 text-center text-gray-400 text-sm">محصولی یافت نشد.</div>
-                  )}
+                  {products.map((product, index) => {
+                      const isLast = index === products.length - 1;
+                      const isUnavailable = product.price_toman === 0;
+                      return (
+                        <div 
+                            key={product.id} 
+                            ref={isLast ? lastProductElementRef : null}
+                            className={`p-3 hover:bg-gray-50 transition-colors flex items-center justify-between group ${isUnavailable ? 'bg-red-50/30' : ''}`}
+                        >
+                            <div className="flex items-center gap-3">
+                                <img src={product.image} className={`w-10 h-10 rounded object-cover border border-gray-100 ${isUnavailable ? 'grayscale' : ''}`} />
+                                <div>
+                                    <div className="font-bold text-gray-800 text-sm select-all cursor-text flex items-center gap-2">
+                                        {product.title}
+                                        {isUnavailable && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full">ناموجود</span>}
+                                    </div>
+                                    <div className="text-xs text-gray-500">${product.price}</div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                    <button onClick={() => openProductModal(product)} className="text-blue-600 hover:bg-blue-50 p-1.5 rounded"><Edit2 className="h-4 w-4" /></button>
+                                    <button onClick={() => handleDelete(product.id)} className="text-red-500 hover:bg-red-50 p-1.5 rounded"><Trash2 className="h-4 w-4" /></button>
+                            </div>
+                        </div>
+                      );
+                  })}
               </div>
           </div>
       )}
+      
+      {loadingMoreProducts && (
+         <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin text-blue-600"/></div>
+      )}
+      {!hasMoreProducts && products.length > 0 && !searchTerm && (
+         <p className="text-center text-gray-400 text-xs mt-4">تمام محصولات نمایش داده شدند.</p>
+      )}
 
+      {/* Modal & Gallery Code Remains The Same... */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[50] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -409,7 +519,6 @@ export default function ProductsPage() {
                                     required 
                                     min="0" 
                                     className="w-full p-2 pl-8 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm font-mono" 
-                                    placeholder="مثال: 500000"
                                     value={formData.price_toman} 
                                     onChange={(e) => {
                                         setFormData({...formData, price_toman: e.target.value});
@@ -418,7 +527,7 @@ export default function ProductsPage() {
                                 />
                                 <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-500">T</span>
                              </div>
-                             <p className="text-[10px] text-gray-500 mt-1">مبنای محاسبه قیمت دلاری</p>
+                             <p className="text-[10px] text-gray-500 mt-1">۰ = ناموجود</p>
                           </div>
                           <div>
                             <label className="block text-xs font-bold text-blue-700 mb-1">قیمت فروش (دلار)</label>
@@ -434,10 +543,6 @@ export default function ProductsPage() {
                                 />
                                 <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-blue-600">$</span>
                             </div>
-                            <p className="text-[10px] text-blue-400 mt-1 flex items-center gap-1">
-                                <Calculator className="h-3 w-3"/>
-                                محاسبه شده با سود {profitMargin}٪
-                            </p>
                           </div>
                       </div>
 
@@ -455,25 +560,25 @@ export default function ProductsPage() {
                             </select>
                         ) : (
                             <div className="text-xs text-red-500 flex items-center gap-1">
-                                <Loader2 className="h-3 w-3 animate-spin"/> در حال بارگذاری دسته‌ها...
+                                <Loader2 className="h-3 w-3 animate-spin"/> در حال بارگذاری...
                             </div>
                         )}
                       </div>
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">آدرس صفحه (Slug)</label>
-                        <input type="text" className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm dir-ltr text-left" placeholder="مثال: pistachio-akbari" value={formData.slug} onChange={(e) => setFormData({...formData, slug: e.target.value})} />
+                        <input type="text" className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm dir-ltr text-left" value={formData.slug} onChange={(e) => setFormData({...formData, slug: e.target.value})} />
                       </div>
                   </div>
               </div>
 
               <div className="space-y-4">
-                   <h4 className="font-bold text-blue-800 text-sm border-b pb-2">۲. جزئیات و محتوا</h4>
+                   <h4 className="font-bold text-blue-800 text-sm border-b pb-2">۲. جزئیات</h4>
                    <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">توضیحات کامل</label>
                         <textarea rows={4} className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} />
                    </div>
                    <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">ویژگی‌ها (هر خط یک ویژگی)</label>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">ویژگی‌ها</label>
                         <textarea rows={3} className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm" value={formData.features} onChange={(e) => setFormData({...formData, features: e.target.value})} />
                    </div>
               </div>
@@ -497,7 +602,7 @@ export default function ProductsPage() {
               </div>
 
               <div className="bg-gray-50 p-4 rounded-xl space-y-4 border border-gray-200">
-                   <h4 className="font-bold text-gray-700 text-sm flex items-center gap-1"><SearchIcon className="h-4 w-4"/> تنظیمات سئو</h4>
+                   <h4 className="font-bold text-gray-700 text-sm flex items-center gap-1"><SearchIcon className="h-4 w-4"/> سئو</h4>
                    <div>
                         <label className="block text-xs font-medium text-gray-500 mb-1">SEO Title</label>
                         <input type="text" className="w-full p-2 rounded border border-gray-300 text-sm" value={formData.seo_title} onChange={(e) => setFormData({...formData, seo_title: e.target.value})} />
@@ -527,14 +632,12 @@ export default function ProductsPage() {
                 <button onClick={() => setIsGalleryOpen(false)} className="bg-white p-1 rounded-full text-gray-500 hover:text-red-500 hover:bg-red-50"><X className="h-6 w-6" /></button>
              </div>
              
-             {/* این بخش رو هوشمند کردم */}
              <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50">
                {loadingMedia && mediaFiles.length === 0 ? (
                  <div className="flex items-center justify-center h-full"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
                ) : (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                    {mediaFiles.map((file, index) => {
-                     // تشخیص آخرین المان برای اسکرول
                      const isLast = index === mediaFiles.length - 1;
                      return (
                       <div 
