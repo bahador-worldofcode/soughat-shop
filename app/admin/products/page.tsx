@@ -1,5 +1,6 @@
 'use client';
-import { useEffect, useState } from 'react';
+
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Plus, Trash2, Edit2, Search, X, Loader2, ImageIcon, Check, Search as SearchIcon, Calculator, LayoutGrid, List } from 'lucide-react';
 
@@ -7,7 +8,7 @@ interface Product {
   id: string;
   title: string;
   price: number;        // قیمت فروش (دلار)
-  price_toman: number; // قیمت خرید (تومان)
+  price_toman: number;  // قیمت خرید (تومان)
   image: string;
   slug: string;
   category: string;
@@ -30,16 +31,19 @@ interface MediaFile {
   id: string;
 }
 
+// تعداد عکس در هر بار لود گالری
+const BATCH_SIZE = 20;
+
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
-  // --- حالت نمایش (جدید) ---
+  // --- حالت نمایش ---
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-
-  // تنظیمات سراسری (برای محاسبه هوشمند)
+  
+  // تنظیمات سراسری
   const [dollarRate, setDollarRate] = useState(100000);
   const [profitMargin, setProfitMargin] = useState(25);
   const [shippingBase, setShippingBase] = useState(300000);
@@ -50,8 +54,8 @@ export default function ProductsPage() {
   
   const [formData, setFormData] = useState({ 
     title: '', 
-    price: '',         // دلار
-    price_toman: '',   // تومان
+    price: '', 
+    price_toman: '',
     image: '',
     slug: '',
     category: '',
@@ -61,9 +65,30 @@ export default function ProductsPage() {
     seo_desc: ''
   });
 
+  // --- استیت‌های جدید برای گالری هوشمند ---
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
-  const [loadingMedia, setLoadingMedia] = useState(false);
+  const [loadingMedia, setLoadingMedia] = useState(false);       // لودینگ اولیه گالری
+  const [mediaLoadingMore, setMediaLoadingMore] = useState(false); // لودینگ اسکرول گالری
+  const [mediaHasMore, setMediaHasMore] = useState(true);          // آیا عکس بیشتری هست؟
+
+  // رفرنس برای تشخیص اسکرول در گالری
+  const observer = useRef<IntersectionObserver | null>(null);
+
+  // تابعی که وقتی به آخرین عکس گالری میرسیم اجرا میشه
+  const lastMediaElementRef = useCallback((node: HTMLDivElement) => {
+    if (loadingMedia || mediaLoadingMore) return;
+    if (observer.current) observer.current.disconnect();
+    
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && mediaHasMore) {
+        fetchMedia(false); // لود کردن صفحه بعدی
+      }
+    });
+    
+    if (node) observer.current.observe(node);
+  }, [loadingMedia, mediaLoadingMore, mediaHasMore]);
+
 
   useEffect(() => {
     fetchData();
@@ -84,14 +109,13 @@ export default function ProductsPage() {
       .order('name');
     if (catData) setCategories(catData);
     
-    // 3. دریافت تنظیمات (شامل نرخ دلار و حالت نمایش)
+    // 3. دریافت تنظیمات
     const { data: settingsData } = await supabase.from('site_settings').select('*');
     if (settingsData) {
         settingsData.forEach(item => {
             if (item.key === 'dollar_rate') setDollarRate(Number(item.value));
             if (item.key === 'profit_margin') setProfitMargin(Number(item.value));
             if (item.key === 'shipping_base') setShippingBase(Number(item.value));
-            // دریافت حالت نمایش ذخیره شده
             if (item.key === 'admin_product_view_mode') setViewMode(item.value as 'grid' | 'list');
         });
     }
@@ -99,33 +123,49 @@ export default function ProductsPage() {
     setLoading(false);
   };
 
-  // --- تابع تغییر حالت نمایش و ذخیره در دیتابیس (جدید) ---
   const handleViewModeChange = async (mode: 'grid' | 'list') => {
-    setViewMode(mode); // تغییر فوری در ظاهر
-    // ذخیره در دیتابیس
+    setViewMode(mode);
     await supabase.from('site_settings').upsert({ 
         key: 'admin_product_view_mode', 
         value: mode 
     }, { onConflict: 'key' });
   };
 
-  const fetchMedia = async () => {
-    setLoadingMedia(true);
+  // --- تابع جدید دریافت مدیا (هوشمند) ---
+  const fetchMedia = async (isInitial = true) => {
+    if (isInitial) {
+      setLoadingMedia(true);
+      setMediaFiles([]);
+      setMediaHasMore(true);
+    } else {
+      setMediaLoadingMore(true);
+    }
+
+    const currentOffset = isInitial ? 0 : mediaFiles.length;
+
     const { data } = await supabase.storage.from('media').list('', {
-      limit: 50,
+      limit: BATCH_SIZE,
+      offset: currentOffset,
       sortBy: { column: 'created_at', order: 'desc' },
     });
+
     if (data) {
       const files = data.map((file) => {
         const { data: url } = supabase.storage.from('media').getPublicUrl(file.name);
         return { name: file.name, id: file.id, url: url.publicUrl };
       });
-      setMediaFiles(files);
+
+      if (data.length < BATCH_SIZE) {
+        setMediaHasMore(false);
+      }
+
+      setMediaFiles(prev => isInitial ? files : [...prev, ...files]);
     }
+
     setLoadingMedia(false);
+    setMediaLoadingMore(false);
   };
 
-  // محاسبه قیمت پیشنهادی دلار بر اساس تومان
   const calculateSuggestedUSD = (tomanStr: string) => {
     const toman = parseInt(tomanStr) || 0;
     if (toman === 0) return;
@@ -134,7 +174,7 @@ export default function ProductsPage() {
     const inUSD = cost / dollarRate;
     const withProfit = inUSD * (1 + profitMargin / 100);
     const final = Math.round(withProfit * 100) / 100;
-    // پر کردن خودکار فیلد دلار
+
     setFormData(prev => ({ ...prev, price: String(final), price_toman: tomanStr }));
   };
 
@@ -171,7 +211,11 @@ export default function ProductsPage() {
     setIsModalOpen(true);
   };
 
-  const openGallery = () => { setIsGalleryOpen(true); fetchMedia(); };
+  const openGallery = () => { 
+      setIsGalleryOpen(true); 
+      fetchMedia(true); // لود اولیه
+  };
+  
   const selectImageFromGallery = (url: string) => { setFormData({ ...formData, image: url }); setIsGalleryOpen(false); };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -257,7 +301,6 @@ export default function ProductsPage() {
         </div>
         
         <div className="flex items-center gap-2">
-            {/* دکمه‌های تغییر ویو */}
             <div className="bg-gray-100 p-1 rounded-lg flex items-center border border-gray-200">
                 <button 
                     onClick={() => handleViewModeChange('grid')}
@@ -287,9 +330,7 @@ export default function ProductsPage() {
         <input type="text" placeholder="جستجو..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pr-9 pl-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-100 outline-none" />
       </div>
 
-      {/* --- View Mode Logic --- */}
       {viewMode === 'grid' ? (
-          /* GRID VIEW */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in duration-300">
             {filteredProducts.map((product) => (
                 <div key={product.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden group flex flex-col">
@@ -300,7 +341,7 @@ export default function ProductsPage() {
                             <button onClick={() => handleDelete(product.id)} className="p-2 bg-white/90 rounded-full text-red-500 shadow-sm"><Trash2 className="h-4 w-4" /></button>
                         </div>
                         <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded-full backdrop-blur-sm">
-                            {getCategoryName(product.category)}
+                          {getCategoryName(product.category)}
                         </span>
                     </div>
                     <div className="p-4 flex flex-col flex-1">
@@ -317,18 +358,14 @@ export default function ProductsPage() {
             ))}
           </div>
       ) : (
-          /* LIST VIEW (Compact) */
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-in fade-in duration-300">
               <div className="divide-y divide-gray-100">
                   {filteredProducts.map((product) => (
                       <div key={product.id} className="p-3 hover:bg-gray-50 transition-colors flex items-center justify-between group">
-                          {/* نام محصول (قابل کپی راحت) */}
                           <div className="flex items-center gap-3">
                               <span className="font-bold text-gray-800 text-sm select-all cursor-text">{product.title}</span>
                               <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded hidden sm:inline-block">{getCategoryName(product.category)}</span>
                           </div>
-                          
-                          {/* دکمه‌های عملیات (کوچک شده) */}
                           <div className="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                                 <button onClick={() => openProductModal(product)} className="text-blue-600 hover:bg-blue-50 p-1.5 rounded" title="ویرایش">
                                     <Edit2 className="h-4 w-4" />
@@ -363,7 +400,6 @@ export default function ProductsPage() {
                         <input type="text" required className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} />
                       </div>
                       
-                      {/* بخش قیمت‌گذاری */}
                       <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                              <label className="block text-xs font-bold text-gray-700 mb-1">قیمت خرید (تومان)</label>
@@ -377,7 +413,7 @@ export default function ProductsPage() {
                                     value={formData.price_toman} 
                                     onChange={(e) => {
                                         setFormData({...formData, price_toman: e.target.value});
-                                        calculateSuggestedUSD(e.target.value); // محاسبه خودکار
+                                        calculateSuggestedUSD(e.target.value);
                                     }} 
                                 />
                                 <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-500">T</span>
@@ -406,7 +442,7 @@ export default function ProductsPage() {
                       </div>
 
                       <div>
-                         <label className="block text-xs font-medium text-gray-700 mb-1">دسته‌بندی</label>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">دسته‌بندی</label>
                          {categories.length > 0 ? (
                             <select 
                                 value={formData.category} 
@@ -417,7 +453,7 @@ export default function ProductsPage() {
                                     <option key={cat.id} value={cat.slug}>{cat.name}</option>
                                 ))}
                             </select>
-                         ) : (
+                        ) : (
                             <div className="text-xs text-red-500 flex items-center gap-1">
                                 <Loader2 className="h-3 w-3 animate-spin"/> در حال بارگذاری دسته‌ها...
                             </div>
@@ -470,7 +506,7 @@ export default function ProductsPage() {
                         <label className="block text-xs font-medium text-gray-500 mb-1">Meta Description</label>
                         <textarea rows={2} className="w-full p-2 rounded border border-gray-300 text-sm" value={formData.seo_desc} onChange={(e) => setFormData({...formData, seo_desc: e.target.value})} />
                    </div>
-                </div>
+              </div>
 
               <div className="pt-4 flex gap-3">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">انصراف</button>
@@ -489,21 +525,36 @@ export default function ProductsPage() {
              <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                 <h3 className="font-bold text-gray-900 flex items-center gap-2"><ImageIcon className="h-5 w-5 text-blue-600" />انتخاب تصویر</h3>
                 <button onClick={() => setIsGalleryOpen(false)} className="bg-white p-1 rounded-full text-gray-500 hover:text-red-500 hover:bg-red-50"><X className="h-6 w-6" /></button>
-              </div>
+             </div>
+             
+             {/* این بخش رو هوشمند کردم */}
              <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50">
-               {loadingMedia ? (
+               {loadingMedia && mediaFiles.length === 0 ? (
                  <div className="flex items-center justify-center h-full"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
                ) : (
-                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                   {mediaFiles.map((file) => (
-                      <div key={file.id} onClick={() => selectImageFromGallery(file.url)} className={`group relative aspect-square rounded-xl overflow-hidden cursor-pointer border-2 transition-all ${formData.image === file.url ? 'border-blue-600 ring-2 ring-blue-100' : 'border-gray-200 hover:border-blue-400'}`}>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                   {mediaFiles.map((file, index) => {
+                     // تشخیص آخرین المان برای اسکرول
+                     const isLast = index === mediaFiles.length - 1;
+                     return (
+                      <div 
+                          key={file.id} 
+                          ref={isLast ? lastMediaElementRef : null}
+                          onClick={() => selectImageFromGallery(file.url)} 
+                          className={`group relative aspect-square rounded-xl overflow-hidden cursor-pointer border-2 transition-all ${formData.image === file.url ? 'border-blue-600 ring-2 ring-blue-100' : 'border-gray-200 hover:border-blue-400'}`}
+                      >
                        <img src={file.url} className="w-full h-full object-cover" />
                        {formData.image === file.url && <div className="absolute top-2 right-2 bg-blue-600 text-white p-1 rounded-full shadow-sm"><Check className="h-3 w-3" /></div>}
                       </div>
-                     ))}
+                     );
+                   })}
                  </div>
                )}
+               {mediaLoadingMore && (
+                  <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin text-blue-600"/></div>
+               )}
              </div>
+
            </div>
         </div>
       )}
