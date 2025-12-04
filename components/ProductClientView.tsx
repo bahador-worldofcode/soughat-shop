@@ -1,7 +1,8 @@
 'use client';
+
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
-import { ShoppingBag, Check, ShieldCheck, Truck, Star, Plus, Minus, Trash2, Tag, LayoutGrid } from 'lucide-react';
+import { ShoppingBag, Check, ShieldCheck, Truck, Star, Plus, Minus, Trash2, Tag, LayoutGrid, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import ProductCard from './ProductCard';
 
@@ -60,97 +61,138 @@ export default function ProductClientView({ product, categoryName, categorySlug,
     });
   };
 
+  // کامپوننت دکمه‌های خرید (برای استفاده مجدد در دسکتاپ و موبایل)
+  const AddToCartButtons = ({ isMobile = false }: { isMobile?: boolean }) => {
+      if (quantity > 0) {
+          return (
+            <div className={`flex items-center justify-between bg-white border border-blue-200 rounded-xl p-1 shadow-inner ${isMobile ? 'h-12 w-full' : 'h-14 w-full'}`}>
+                <button onClick={() => decreaseFromCart(product.id)} className="h-full aspect-square flex items-center justify-center bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-all active:scale-90">
+                    {quantity === 1 ? <Trash2 className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
+                </button>
+                <div className="flex flex-col items-center px-4">
+                    <span className="text-lg font-black text-blue-900 tabular-nums">{quantity}</span>
+                    {!isMobile && <span className="text-[9px] text-gray-400 font-medium">عدد در سبد</span>}
+                </div>
+                <button onClick={() => addToCart(product)} className="h-full aspect-square flex items-center justify-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-md shadow-blue-200 transition-all active:scale-90">
+                    <Plus className="h-6 w-6" />
+                </button>
+            </div>
+          );
+      }
+      return (
+        <button 
+            onClick={() => addToCart(product)} 
+            className={`w-full font-bold flex items-center justify-center gap-2 transition-all shadow-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-blue-200 hover:-translate-y-1 active:scale-95 ${isMobile ? 'h-12 text-base rounded-xl' : 'py-4 rounded-xl text-lg'}`}
+        >
+            <ShoppingBag className={isMobile ? "h-5 w-5" : "h-6 w-6"} /> 
+            {isMobile ? 'افزودن به سبد' : 'افزودن به سبد خرید'}
+        </button>
+      );
+  };
+
   return (
-    <>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="pb-24 md:pb-0 relative"> {/* پدینگ پایین برای موبایل که دکمه چسبان محتوا رو نپوشونه */}
         
-        {/* بخش تصویر */}
-        <div className="relative aspect-square bg-gray-100 rounded-3xl overflow-hidden border border-gray-200 shadow-sm group">
-            <img src={product.image} alt={product.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-            {quantity > 0 && (
-                <div className="absolute top-4 right-4 bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg border-2 border-white animate-in zoom-in">
-                    {quantity}
-                </div>
-            )}
-        </div>
-
-        {/* بخش اطلاعات */}
-        <div className="flex flex-col">
-            
-            {/* Breadcrumb */}
-            <div className="mb-4">
-                <Link 
-                    href={`/products?category=${categorySlug}`} 
-                    className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors"
-                >
-                    <Tag className="h-3 w-3" />
-                    {categoryName}
-                </Link>
-            </div>
-
-            <div className="mb-6">
-                <h1 className="text-2xl md:text-3xl font-black text-gray-900 mb-3 leading-snug">{product.title}</h1>
-                <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-3 py-1 rounded-full w-fit border border-gray-100">
-                    <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                    <span className="font-bold text-gray-700">۵.۰</span>
-                    <span className="text-xs">(تضمین اصالت و کیفیت)</span>
-                </div>
-            </div>
-
-            {/* قیمت */}
-            <div className="bg-gradient-to-r from-blue-50 to-white p-5 rounded-2xl border border-blue-100 flex items-center justify-between mb-8 shadow-sm">
-                <div><span className="text-gray-500 text-xs block mb-1">قیمت نهایی (شامل ارسال):</span></div>
-                <div className="text-3xl font-bold text-blue-700 font-mono tracking-tight">
-                    {symbol} {typeof finalPrice === 'number' ? finalPrice.toFixed(2) : finalPrice}
-                </div>
-            </div>
-
-            {/* ویژگی‌ها (اصلاح شده: بدون عنوان، تیک روی آیتم‌ها) */}
-            {product.features && product.features.length > 0 && (
-                <div className="mb-6 bg-gray-50 p-5 rounded-2xl border border-gray-100">
-                    <ul className="space-y-3">
-                        {product.features.map((feat, index) => (
-                            <li key={index} className="flex items-start gap-2 text-sm text-gray-700 leading-6 font-medium">
-                                <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-                                {feat}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-
-            {/* توضیحات */}
-            <div className="mb-8">
-                <h3 className="font-bold text-gray-900 mb-3 text-lg border-b pb-2">توضیحات</h3>
-                <div className="text-sm md:text-base">{renderDescription(product.description)}</div>
-            </div>
-
-            {/* کنترل‌های خرید */}
-            <div className="mt-8 space-y-4">
-                {quantity > 0 ? (
-                    <div className="flex items-center justify-between bg-white border border-gray-200 rounded-2xl p-2 shadow-xl shadow-blue-100/50 animate-in fade-in zoom-in duration-200">
-                        <button onClick={() => decreaseFromCart(product.id)} className="w-14 h-12 flex items-center justify-center bg-gray-50 text-red-500 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all border border-transparent hover:border-red-100 active:scale-95">
-                            {quantity === 1 ? <Trash2 className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
-                        </button>
-                        <div className="flex flex-col items-center px-4">
-                            <span className="text-xl font-black text-gray-800 tabular-nums">{quantity}</span>
-                            <span className="text-[10px] text-gray-400 font-medium">عدد در سبد</span>
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 animate-in fade-in slide-in-from-bottom-4 duration-500 items-start">
+        
+            {/* --- ستون تصویر (سمت راست در دسکتاپ - ۵ واحد) --- */}
+            <div className="md:col-span-5 relative">
+                <div className="relative aspect-square bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm group sticky top-24">
+                    <img src={product.image} alt={product.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                    {quantity > 0 && (
+                        <div className="absolute top-4 right-4 bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg border-2 border-white animate-in zoom-in">
+                            {quantity}
                         </div>
-                        <button onClick={() => addToCart(product)} className="w-14 h-12 flex items-center justify-center bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-md shadow-blue-200 transition-all active:scale-95">
-                            <Plus className="h-6 w-6" />
-                        </button>
-                    </div>
-                ) : (
-                    <button onClick={() => addToCart(product)} className="w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-blue-200 hover:-translate-y-1 active:scale-95">
-                        <ShoppingBag className="h-6 w-6" /> افزودن به سبد خرید
-                    </button>
-                )}
-                <div className="grid grid-cols-2 gap-4 text-xs text-gray-500 text-center bg-gray-50 py-3 rounded-xl border border-gray-100">
-                    <div className="flex items-center justify-center gap-1 font-medium"><ShieldCheck className="h-4 w-4 text-green-600"/> ضمانت بازگشت وجه</div>
-                    <div className="flex items-center justify-center gap-1 font-medium"><Truck className="h-4 w-4 text-blue-600"/> ارسال رایگان به ایران</div>
+                    )}
                 </div>
             </div>
+
+            {/* --- ستون اطلاعات (سمت چپ - ۷ واحد) --- */}
+            <div className="md:col-span-7 flex flex-col">
+                
+                {/* 1. Breadcrumb */}
+                <div className="mb-4 flex items-center justify-between">
+                    <Link 
+                        href={`/products?category=${categorySlug}`} 
+                        className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors"
+                    >
+                        <Tag className="h-3 w-3" />
+                        {categoryName}
+                    </Link>
+                    
+                    {/* امتیاز (فیک ولی خوشگل) */}
+                    <div className="flex items-center gap-1 text-xs font-bold text-gray-500 bg-gray-50 px-2 py-1 rounded-lg">
+                        <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" />
+                        <span>۵.۰</span>
+                    </div>
+                </div>
+
+                {/* 2. Title */}
+                <h1 className="text-2xl md:text-4xl font-black text-gray-900 mb-6 leading-snug">{product.title}</h1>
+
+                {/* 3. Price & Action Box (DESKTOP ONLY) */}
+                {/* این باکس در موبایل مخفی میشه چون پایین صفحه فیکسش میکنیم */}
+                <div className="hidden md:block bg-white p-6 rounded-2xl border border-blue-100 shadow-sm mb-8">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <span className="text-gray-400 text-xs block mb-1">قیمت نهایی برای شما</span>
+                            <div className="text-3xl font-black text-blue-700 font-mono tracking-tight">
+                                {symbol} {typeof finalPrice === 'number' ? finalPrice.toFixed(2) : finalPrice}
+                            </div>
+                        </div>
+                        <div className="text-right hidden lg:block">
+                            <div className="text-xs text-green-600 font-bold flex items-center gap-1 mb-1 justify-end"><ShieldCheck className="h-3 w-3"/> گارانتی سلامت</div>
+                            <div className="text-xs text-blue-600 font-bold flex items-center gap-1 justify-end"><Truck className="h-3 w-3"/> ارسال رایگان</div>
+                        </div>
+                    </div>
+                    
+                    {/* دکمه خرید دسکتاپ */}
+                    <AddToCartButtons isMobile={false} />
+                </div>
+
+                {/* 4. Features (ویژگی‌ها) - حالا بالاتر از توضیحات */}
+                {product.features && product.features.length > 0 && (
+                    <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {product.features.map((feat, index) => (
+                            <div key={index} className="flex items-center gap-2 text-sm text-gray-700 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                                <div className="bg-white p-1 rounded-full text-green-500 shadow-sm"><Check className="h-3 w-3" /></div>
+                                <span className="font-medium">{feat}</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* 5. Description (توضیحات) */}
+                <div className="bg-white rounded-2xl p-1">
+                    <h3 className="font-bold text-gray-900 mb-4 text-lg flex items-center gap-2">
+                        <span className="w-1 h-6 bg-blue-600 rounded-full"></span>
+                        درباره این محصول
+                    </h3>
+                    <div className="text-sm md:text-base leading-8 text-gray-600">
+                        {renderDescription(product.description)}
+                    </div>
+                </div>
+
+            </div>
         </div>
+
+        {/* --- STICKY BOTTOM BAR (MOBILE ONLY) --- */}
+        {/* این بخش شاهکار موبایل است: همیشه پایین صفحه چسبیده */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 z-40 md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.05)] animate-in slide-in-from-bottom-full duration-300">
+            <div className="flex items-center gap-4 max-w-md mx-auto">
+                <div className="flex flex-col flex-1">
+                    {/* اگر تعداد 0 بود قیمت رو نشون بده، اگر رفت تو سبد، بنویس "در سبد خرید" */}
+                    <span className="text-xs text-gray-400 mb-0.5">
+                        {quantity > 0 ? 'مبلغ کل آیتم:' : 'قیمت نهایی:'}
+                    </span>
+                    <span className="text-xl font-black text-blue-700 font-mono">
+                        {symbol} {typeof finalPrice === 'number' ? (finalPrice * (quantity || 1)).toFixed(2) : finalPrice}
+                    </span>
+                </div>
+                <div className="w-[55%]">
+                    <AddToCartButtons isMobile={true} />
+                </div>
+            </div>
         </div>
 
         {/* محصولات پیشنهادی */}
@@ -169,11 +211,11 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                             price={item.price}
                             image={item.image}
                             slug={item.slug}
-                        />
+                       />
                     ))}
                 </div>
             </div>
         )}
-    </>
+    </div>
   );
 }
