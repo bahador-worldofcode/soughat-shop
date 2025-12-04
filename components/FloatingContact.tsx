@@ -1,18 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation'; // اضافه شده برای تشخیص آدرس
 import { MessageCircle, X, Send, Phone, MessageSquare, ArrowLeft, Loader2, CheckCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 type ViewState = 'menu' | 'form' | 'success';
 
 export default function FloatingContact() {
+  const pathname = usePathname(); // دریافت آدرس فعلی
+  const [mounted, setMounted] = useState(false); // برای حل مشکل هیدریشن
+
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState<ViewState>('menu');
   
-  // فرم دیتا
   const [formData, setFormData] = useState({ contact: '', content: '' });
   const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,14 +27,12 @@ export default function FloatingContact() {
 
     setSending(true);
     try {
-      // 1. ذخیره در دیتابیس سوپابیس (برای پنل ادمین)
       const { error } = await supabase.from('messages').insert([{
         user_contact: formData.contact,
         content: formData.content
       }]);
       if (error) throw error;
 
-      // 2. ارسال فوری به گروه بله (کد جدید اضافه شده)
       await fetch('/api/bale', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -39,9 +44,9 @@ export default function FloatingContact() {
           }
         })
       });
-      
+
       setView('success');
-      setFormData({ contact: '', content: '' }); // پاک کردن فرم
+      setFormData({ contact: '', content: '' });
     } catch (error) {
       console.error(error);
       alert('خطا در ارسال پیام. لطفاً دوباره تلاش کنید.');
@@ -58,6 +63,10 @@ export default function FloatingContact() {
     }, 300);
   };
 
+  // --- شرط حیاتی: اگر هنوز لود نشده یا در پنل ادمین هستیم، هیچی نشون نده ---
+  if (!mounted) return null;
+  if (pathname?.startsWith('/admin')) return null;
+
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end font-[family-name:var(--font-vazir)]">
       
@@ -67,10 +76,9 @@ export default function FloatingContact() {
           
           {/* Header */}
           <div className="bg-blue-600 p-4 text-white flex justify-between items-center">
-            <div className="flex items-center gap-3">
+             <div className="flex items-center gap-3">
               <div className="relative">
                 <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                    {/* آواتار ادمین */}
                    <img src={`https://ui-avatars.com/api/?name=Admin&background=random`} className="rounded-full" alt="Admin" />
                 </div>
                 <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-blue-600 rounded-full"></span>
@@ -80,7 +88,6 @@ export default function FloatingContact() {
                 <p className="text-[10px] text-blue-100">پاسخگویی سریع</p>
               </div>
             </div>
-            {/* دکمه بازگشت (فقط در حالت فرم) */}
             {view === 'form' && (
                 <button onClick={() => setView('menu')} className="text-white/80 hover:text-white">
                   <ArrowLeft className="h-5 w-5" />
@@ -128,7 +135,7 @@ export default function FloatingContact() {
 
             {/* 2. FORM VIEW */}
             {view === 'form' && (
-              <form onSubmit={handleSend} className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
+               <form onSubmit={handleSend} className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
                     <div>
                         <label className="text-xs text-gray-500 mb-1 block">شماره تماس شما (واتساپ):</label>
                         <input 
@@ -149,7 +156,7 @@ export default function FloatingContact() {
                             value={formData.content}
                             onChange={(e) => setFormData({...formData, content: e.target.value})}
                             className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500 resize-none"
-                        />
+                       />
                     </div>
                     <button 
                         type="submit" 
@@ -176,21 +183,19 @@ export default function FloatingContact() {
                         onClick={() => setView('menu')}
                         className="text-blue-600 text-sm font-bold hover:underline"
                     >
-                       بازگشت به منو
+                      بازگشت به منو
                     </button>
                 </div>
             )}
 
           </div>
 
-          {/* Footer */}
           <div className="bg-gray-50 p-2 text-center border-t border-gray-100">
              <span className="text-[10px] text-gray-400">پشتیبانی توسط سوغات شاپ</span>
           </div>
         </div>
       )}
 
-      {/* Toggle Button */}
       <button 
         onClick={isOpen ? resetWidget : () => setIsOpen(true)}
         className="group relative flex items-center justify-center w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg hover:shadow-blue-500/50 transition-all active:scale-90"

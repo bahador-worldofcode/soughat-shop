@@ -129,17 +129,13 @@ export default function ProductsPage() {
     await Promise.all([
         fetchProducts(true),
         fetchCategoriesAndSettings(),
-        fetchStats() // دریافت آمار در لود اولیه
+        fetchStats()
     ]);
     setLoading(false);
   };
 
-  // تابع جدید برای دریافت آمار
   const fetchStats = async () => {
-    // تعداد کل
     const { count: total } = await supabase.from('products').select('*', { count: 'exact', head: true });
-    
-    // تعداد ناموجود (فرض بر این است که قیمت ۰ یعنی ناموجود)
     const { count: unavailable } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true })
@@ -202,7 +198,6 @@ export default function ProductsPage() {
     setLoadingMoreProducts(false);
   };
 
-  // --- مدیا ---
   const fetchMedia = async (isInitial = true) => {
     if (isInitial) {
       setLoadingMedia(true);
@@ -323,7 +318,7 @@ export default function ProductsPage() {
       }
 
       await fetchProducts(true); 
-      await fetchStats(); // آپدیت آمار بعد از ذخیره
+      await fetchStats();
       setIsModalOpen(false);
     } catch (error: any) {
       alert('خطا: ' + error.message);
@@ -338,7 +333,7 @@ export default function ProductsPage() {
       const response = await fetch(`/api/admin/products?id=${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('خطا در حذف');
       setProducts(products.filter(p => p.id !== id));
-      fetchStats(); // آپدیت آمار بعد از حذف
+      fetchStats();
     } catch (error: any) {
       alert('خطا: ' + error.message);
     }
@@ -381,7 +376,6 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      {/* --- بخش جدید: کارت‌های آمار --- */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-xl border border-blue-100 shadow-sm flex items-center gap-3">
             <div className="bg-blue-50 p-3 rounded-lg text-blue-600">
@@ -492,7 +486,7 @@ export default function ProductsPage() {
          <p className="text-center text-gray-400 text-xs mt-4">تمام محصولات نمایش داده شدند.</p>
       )}
 
-      {/* Modal & Gallery Code Remains The Same... */}
+      {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[50] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -527,7 +521,8 @@ export default function ProductsPage() {
                                 />
                                 <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-500">T</span>
                              </div>
-                             <p className="text-[10px] text-gray-500 mt-1">۰ = ناموجود</p>
+                             {/* متن قبلی برگشت داده شد */}
+                             <p className="text-[10px] text-gray-500 mt-1">مبنای محاسبه قیمت دلاری</p>
                           </div>
                           <div>
                             <label className="block text-xs font-bold text-blue-700 mb-1">قیمت فروش (دلار)</label>
@@ -543,6 +538,11 @@ export default function ProductsPage() {
                                 />
                                 <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-blue-600">$</span>
                             </div>
+                            {/* متن قبلی برگشت داده شد */}
+                            <p className="text-[10px] text-blue-400 mt-1 flex items-center gap-1">
+                                <Calculator className="h-3 w-3"/>
+                                محاسبه شده با سود {profitMargin}٪
+                            </p>
                           </div>
                       </div>
 
