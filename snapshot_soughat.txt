@@ -1,5 +1,5 @@
 ### Soughat-Shop Snapshot
-# Generated: 2025-12-04T21:32:02.356959
+# Generated: 2025-12-16T01:02:03.145082
 # Root: C:\projects\soughat-shop
 # Excluded dir names: .expo, .git, .next, .vscode, node_modules
 # Excluded files (by name/rel): collect_soughat_snapshot.bat, collect_soughat_snapshot.py, package-lock.json, snapshot_soughat.txt
@@ -145,11 +145,12 @@ export default function AboutPage() {
 }
 
 ===== File: app/admin/blog/page.tsx =====
-# Modified: 2025-12-01T02:54:23.063846 | Size: 25125 bytes | SHA1: fa8bb43640b490aa32d10c5f3c313f0d5c190249
+# Modified: 2025-12-04T22:00:12.810741 | Size: 29445 bytes | SHA1: 3f3877f18e930352312b73175a3b7605171b991c
 'use client';
-import { useEffect, useState } from 'react';
+
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Plus, Trash2, Edit2, Search, X, ImageIcon, Check, BookOpen, Loader2, Tag, Layers, FileText, List } from 'lucide-react';
+import { Plus, Trash2, Edit2, Search, X, ImageIcon, Check, BookOpen, Loader2, Tag, Layers, FileText } from 'lucide-react';
 
 // --- Types ---
 interface Post {
@@ -182,16 +183,22 @@ interface MediaFile {
   id: string;
 }
 
+const BATCH_SIZE = 20;
+
 export default function BlogPage() {
   // --- States ---
   const [activeTab, setActiveTab] = useState<'posts' | 'categories' | 'tags'>('posts');
-  const [loading, setLoading] = useState(true);
   
   // Data States
   const [posts, setPosts] = useState<Post[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [tags, setTags] = useState<TagItem[]>([]);
   
+  // Loading States for Posts
+  const [loadingPosts, setLoadingPosts] = useState(true);
+  const [loadingMorePosts, setLoadingMorePosts] = useState(false);
+  const [hasMorePosts, setHasMorePosts] = useState(true);
+
   // Search & Filter
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -204,29 +211,106 @@ export default function BlogPage() {
     summary: '', category: '', seo_title: '', seo_desc: '', tags: ''
   });
 
-  // Media Gallery States
+  // Media Gallery States (Smart Loading)
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [loadingMedia, setLoadingMedia] = useState(false);
+  const [mediaLoadingMore, setMediaLoadingMore] = useState(false);
+  const [mediaHasMore, setMediaHasMore] = useState(true);
 
   // Category/Tag Management States
   const [newItemName, setNewItemName] = useState('');
   const [addingItem, setAddingItem] = useState(false);
+
+  // --- Observers ---
+  const postObserver = useRef<IntersectionObserver | null>(null);
+  const mediaObserver = useRef<IntersectionObserver | null>(null);
+
+  // 1. Post Scroll Observer
+  const lastPostElementRef = useCallback((node: HTMLDivElement) => {
+    if (loadingPosts || loadingMorePosts) return;
+    if (postObserver.current) postObserver.current.disconnect();
+    
+    postObserver.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMorePosts && !searchTerm) {
+        fetchPosts(false);
+      }
+    });
+    
+    if (node) postObserver.current.observe(node);
+  }, [loadingPosts, loadingMorePosts, hasMorePosts, searchTerm]);
+
+  // 2. Media Scroll Observer
+  const lastMediaElementRef = useCallback((node: HTMLDivElement) => {
+    if (loadingMedia || mediaLoadingMore) return;
+    if (mediaObserver.current) mediaObserver.current.disconnect();
+    
+    mediaObserver.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && mediaHasMore) {
+        fetchMedia(false);
+      }
+    });
+    
+    if (node) mediaObserver.current.observe(node);
+  }, [loadingMedia, mediaLoadingMore, mediaHasMore]);
+
 
   // --- Initial Fetch ---
   useEffect(() => {
     fetchAllData();
   }, []);
 
+  // Search Effect
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+        fetchPosts(true);
+    }, 500);
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
+
   const fetchAllData = async () => {
-    setLoading(true);
-    await Promise.all([fetchPosts(), fetchCategories(), fetchTags()]);
-    setLoading(false);
+    setLoadingPosts(true);
+    await Promise.all([fetchPosts(true), fetchCategories(), fetchTags()]);
+    setLoadingPosts(false);
   };
 
-  const fetchPosts = async () => {
-    const { data } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
-    if (data) setPosts(data);
+  // --- Smart Fetch Posts ---
+  const fetchPosts = async (isInitial = true) => {
+    if (isInitial) {
+        if (!searchTerm) setLoadingPosts(true);
+        setHasMorePosts(true);
+    } else {
+        setLoadingMorePosts(true);
+    }
+
+    const currentOffset = isInitial ? 0 : posts.length;
+
+    let query = supabase
+      .from('posts')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (searchTerm) {
+        query = query.ilike('title', `%${searchTerm}%`);
+    } else {
+        query = query.range(currentOffset, currentOffset + BATCH_SIZE - 1);
+    }
+
+    const { data } = await query;
+
+    if (data) {
+        if (isInitial) {
+            setPosts(data);
+        } else {
+            setPosts(prev => [...prev, ...data]);
+        }
+
+        if (data.length < BATCH_SIZE) {
+            setHasMorePosts(false);
+        }
+    }
+    setLoadingPosts(false);
+    setLoadingMorePosts(false);
   };
 
   const fetchCategories = async () => {
@@ -239,9 +323,42 @@ export default function BlogPage() {
     if (data) setTags(data);
   };
 
+  // --- Smart Fetch Media ---
+  const fetchMedia = async (isInitial = true) => {
+    if (isInitial) {
+      setLoadingMedia(true);
+      setMediaFiles([]);
+      setMediaHasMore(true);
+    } else {
+      setMediaLoadingMore(true);
+    }
+
+    const currentOffset = isInitial ? 0 : mediaFiles.length;
+
+    const { data } = await supabase.storage.from('media').list('', {
+      limit: BATCH_SIZE,
+      offset: currentOffset,
+      sortBy: { column: 'created_at', order: 'desc' },
+    });
+
+    if (data) {
+      const files = data.map((file) => {
+        const { data: url } = supabase.storage.from('media').getPublicUrl(file.name);
+        return { name: file.name, id: file.id, url: url.publicUrl };
+      });
+
+      if (data.length < BATCH_SIZE) {
+        setMediaHasMore(false);
+      }
+
+      setMediaFiles(prev => isInitial ? files : [...prev, ...files]);
+    }
+    setLoadingMedia(false);
+    setMediaLoadingMore(false);
+  };
+
   // --- Post Logic ---
   const openModal = (post?: Post) => {
-    // اگر دسته‌ای وجود نداشت، اولین دسته را پیش‌فرض بگیر
     const defaultCat = categories.length > 0 ? categories[0].name : '';
     
     if (post) {
@@ -276,7 +393,6 @@ export default function BlogPage() {
         finalSlug = formData.title.trim().toLowerCase().replace(/\s+/g, '-');
       }
       const tagsArray = formData.tags.split(',').map(t => t.trim()).filter(t => t !== '');
-      
       const postData = { 
         title: formData.title,
         slug: finalSlug,
@@ -288,7 +404,6 @@ export default function BlogPage() {
         seo_desc: formData.seo_desc,
         tags: tagsArray
       };
-
       if (editingPost) {
         const { error } = await supabase.from('posts').update(postData).eq('id', editingPost.id);
         if (error) throw error;
@@ -296,7 +411,7 @@ export default function BlogPage() {
         const { error } = await supabase.from('posts').insert([postData]);
         if (error) throw error;
       }
-      await fetchPosts();
+      await fetchPosts(true);
       setIsModalOpen(false);
     } catch (error: any) {
       alert('خطا: ' + error.message);
@@ -311,16 +426,14 @@ export default function BlogPage() {
     if (!error) setPosts(posts.filter(p => p.id !== id));
   };
 
-  // --- Category & Tag Management Logic ---
+  // --- Category & Tag Logic (Standard) ---
   const handleAddItem = async (type: 'category' | 'tag') => {
     if (!newItemName.trim()) return;
     setAddingItem(true);
     const table = type === 'category' ? 'blog_categories' : 'blog_tags';
-    
     try {
       const { error } = await supabase.from(table).insert([{ name: newItemName }]);
       if (error) throw error;
-      
       setNewItemName('');
       if (type === 'category') await fetchCategories();
       else await fetchTags();
@@ -334,7 +447,6 @@ export default function BlogPage() {
   const handleDeleteItem = async (id: string, type: 'category' | 'tag') => {
     if (!confirm('حذف شود؟')) return;
     const table = type === 'category' ? 'blog_categories' : 'blog_tags';
-    
     const { error } = await supabase.from(table).delete().eq('id', id);
     if (!error) {
       if (type === 'category') setCategories(categories.filter(c => c.id !== id));
@@ -342,24 +454,10 @@ export default function BlogPage() {
     }
   };
 
-  // --- Gallery Logic ---
-  const fetchMedia = async () => {
-    setLoadingMedia(true);
-    const { data } = await supabase.storage.from('media').list('', { limit: 50, sortBy: { column: 'created_at', order: 'desc' } });
-    if (data) {
-      const files = data.map((file) => {
-        const { data: url } = supabase.storage.from('media').getPublicUrl(file.name);
-        return { name: file.name, id: file.id, url: url.publicUrl };
-      });
-      setMediaFiles(files);
-    }
-    setLoadingMedia(false);
-  };
-  const openGallery = () => { setIsGalleryOpen(true); fetchMedia(); };
+  const openGallery = () => { setIsGalleryOpen(true); fetchMedia(true); };
   const selectImage = (url: string) => { setFormData({ ...formData, image: url }); setIsGalleryOpen(false); };
 
-
-  if (loading) return <div className="p-10 text-center flex justify-center"><Loader2 className="animate-spin h-8 w-8 text-blue-600" /></div>;
+  if (loadingPosts && posts.length === 0) return <div className="p-10 text-center flex justify-center"><Loader2 className="animate-spin h-8 w-8 text-blue-600" /></div>;
 
   return (
     <div className="space-y-6">
@@ -396,7 +494,7 @@ export default function BlogPage() {
       {/* --- TAB 1: POSTS --- */}
       {activeTab === 'posts' && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-             <div className="flex gap-4">
+            <div className="flex gap-4">
                  <div className="relative flex-1">
                     <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input type="text" placeholder="جستجوی مقالات..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pr-9 pl-4 py-3 text-sm bg-white rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-100" />
@@ -408,27 +506,44 @@ export default function BlogPage() {
              </div>
 
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {posts.filter(p => p.title.includes(searchTerm)).map((post) => (
-                <div key={post.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-all">
-                    <div className="relative h-48 bg-gray-100 group">
-                        {post.image ? <img src={post.image} className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full text-gray-300"><BookOpen className="h-10 w-10"/></div>}
-                        <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => openModal(post)} className="p-2 bg-white/90 rounded-full text-blue-600 shadow-sm"><Edit2 className="h-4 w-4" /></button>
-                            <button onClick={() => handleDeletePost(post.id)} className="p-2 bg-white/90 rounded-full text-red-500 shadow-sm"><Trash2 className="h-4 w-4" /></button>
+                {posts.map((post, index) => {
+                    const isLast = index === posts.length - 1;
+                    return (
+                        <div 
+                            key={post.id} 
+                            ref={isLast ? lastPostElementRef : null}
+                            className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-all"
+                        >
+                            <div className="relative h-48 bg-gray-100 group">
+                                {post.image ? <img src={post.image} className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full text-gray-300"><BookOpen className="h-10 w-10"/></div>}
+                                <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onClick={() => openModal(post)} className="p-2 bg-white/90 rounded-full text-blue-600 shadow-sm"><Edit2 className="h-4 w-4" /></button>
+                                    <button onClick={() => handleDeletePost(post.id)} className="p-2 bg-white/90 rounded-full text-red-500 shadow-sm"><Trash2 className="h-4 w-4" /></button>
+                                </div>
+                                {post.category && (
+                                    <span className="absolute bottom-2 right-2 bg-black/50 text-white text-[10px] px-2 py-1 rounded backdrop-blur-sm">
+                                        {post.category}
+                                    </span>
+                                )}
+                            </div>
+                            <div className="p-4 flex-1 flex flex-col">
+                                <h3 className="font-bold text-gray-900 mb-2 line-clamp-1">{post.title}</h3>
+                                <p className="text-xs text-gray-400 font-mono mb-2">/{post.slug}</p>
+                            </div>
                         </div>
-                        {post.category && (
-                            <span className="absolute bottom-2 right-2 bg-black/50 text-white text-[10px] px-2 py-1 rounded backdrop-blur-sm">
-                                {post.category}
-                            </span>
-                        )}
-                    </div>
-                    <div className="p-4 flex-1 flex flex-col">
-                        <h3 className="font-bold text-gray-900 mb-2 line-clamp-1">{post.title}</h3>
-                        <p className="text-xs text-gray-400 font-mono mb-2">/{post.slug}</p>
-                    </div>
-                </div>
-                ))}
+                    );
+                })}
             </div>
+            
+            {loadingMorePosts && (
+                <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin text-blue-600"/></div>
+            )}
+            {!hasMorePosts && posts.length > 0 && !searchTerm && (
+                <p className="text-center text-gray-400 text-xs mt-4">تمام مقالات بارگذاری شدند.</p>
+            )}
+            {posts.length === 0 && !loadingPosts && (
+                <p className="text-center text-gray-400 text-sm py-10">مقاله‌ای یافت نشد.</p>
+            )}
         </div>
       )}
 
@@ -463,7 +578,7 @@ export default function BlogPage() {
              {/* List */}
              <div className="divide-y divide-gray-100 max-h-[60vh] overflow-y-auto">
                  {(activeTab === 'categories' ? categories : tags).map((item) => (
-                     <div key={item.id} className="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
+                      <div key={item.id} className="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
                          <span className="font-medium text-gray-700">{item.name}</span>
                          <button onClick={() => handleDeleteItem(item.id, activeTab === 'categories' ? 'category' : 'tag')} className="text-red-400 hover:text-red-600 p-2">
                              <Trash2 className="h-4 w-4" />
@@ -504,13 +619,12 @@ export default function BlogPage() {
                     </div>
                     <div>
                          <label className="block text-xs font-bold text-gray-700 mb-1">دسته‌بندی</label>
-                         {/* در اینجا لیست دسته‌بندی‌ها از دیتابیس خوانده می‌شود */}
                         <select 
                             className="w-full p-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500 bg-white"
                             value={formData.category}
                             onChange={(e) => setFormData({...formData, category: e.target.value})}
                         >
-                            {categories.map((cat) => (
+                             {categories.map((cat) => (
                                 <option key={cat.id} value={cat.name}>{cat.name}</option>
                             ))}
                         </select>
@@ -530,10 +644,10 @@ export default function BlogPage() {
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="md:col-span-2">
                         <label className="block text-xs font-bold text-gray-700 mb-1">متن مقاله</label>
-                         <textarea required className="w-full h-64 p-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500 resize-none" value={formData.content} onChange={(e) => setFormData({...formData, content: e.target.value})} placeholder="متن خود را اینجا بنویسید..." />
+                        <textarea required className="w-full h-64 p-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500 resize-none" value={formData.content} onChange={(e) => setFormData({...formData, content: e.target.value})} placeholder="متن خود را اینجا بنویسید..." />
                     </div>
                     <div>
-                       <label className="block text-xs font-bold text-gray-700 mb-1">تصویر شاخص</label>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">تصویر شاخص</label>
                         {formData.image ? (
                         <div className="relative h-40 w-full rounded-lg overflow-hidden border border-gray-200 group">
                             <img src={formData.image} className="w-full h-full object-cover" />
@@ -547,7 +661,7 @@ export default function BlogPage() {
                             <ImageIcon className="h-8 w-8 mb-2"/>
                             <span className="text-xs">انتخاب تصویر</span>
                         </button>
-                       )}
+                        )}
                     </div>
                  </div>
               </div>
@@ -560,7 +674,7 @@ export default function BlogPage() {
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
                         <label className="block text-xs font-bold text-gray-500 mb-1">عنوان سئو</label>
-                         <input type="text" className="w-full p-2 rounded border border-gray-300 text-sm" value={formData.seo_title} onChange={(e) => setFormData({...formData, seo_title: e.target.value})} placeholder="عنوان گوگل (۶۰ کاراکتر)" />
+                        <input type="text" className="w-full p-2 rounded border border-gray-300 text-sm" value={formData.seo_title} onChange={(e) => setFormData({...formData, seo_title: e.target.value})} placeholder="عنوان گوگل (۶۰ کاراکتر)" />
                     </div>
                    <div className="md:col-span-2">
                         <label className="block text-xs font-bold text-gray-500 mb-1">توضیحات متا</label>
@@ -593,7 +707,7 @@ export default function BlogPage() {
         </div>
       )}
 
-      {/* GALLERY MODAL */}
+      {/* GALLERY MODAL (SMART) */}
       {isGalleryOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in zoom-in duration-200">
            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl h-[80vh] flex flex-col overflow-hidden">
@@ -602,14 +716,27 @@ export default function BlogPage() {
                 <button onClick={() => setIsGalleryOpen(false)}><X className="h-6 w-6 text-gray-400" /></button>
              </div>
              <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50">
-               {loadingMedia ? <div className="flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div> : (
+               {loadingMedia && mediaFiles.length === 0 ? (
+                 <div className="flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
+               ) : (
                  <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
-                   {mediaFiles.map((file) => (
-                      <div key={file.id} onClick={() => selectImage(file.url)} className="aspect-square rounded-xl overflow-hidden cursor-pointer border hover:border-blue-500 relative group">
-                       <img src={file.url} className="w-full h-full object-cover" />
-                     </div>
-                   ))}
+                   {mediaFiles.map((file, index) => {
+                     const isLast = index === mediaFiles.length - 1;
+                     return (
+                        <div 
+                            key={file.id} 
+                            ref={isLast ? lastMediaElementRef : null}
+                            onClick={() => selectImage(file.url)} 
+                            className="aspect-square rounded-xl overflow-hidden cursor-pointer border hover:border-blue-500 relative group"
+                        >
+                            <img src={file.url} className="w-full h-full object-cover" />
+                        </div>
+                     );
+                   })}
                  </div>
+               )}
+               {mediaLoadingMore && (
+                  <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin text-blue-600"/></div>
                )}
             </div>
            </div>
@@ -1329,40 +1456,78 @@ export default function AdminLogin() {
 }
 
 ===== File: app/admin/media/page.tsx =====
-# Modified: 2025-11-27T15:21:56.532084 | Size: 5886 bytes | SHA1: d6756d2036eceb82b915c08f263d885b528d09fe
+# Modified: 2025-12-04T21:36:44.277456 | Size: 9552 bytes | SHA1: 17e56cff748f534da0d6e03e93a29683748f468b
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { UploadCloud, Trash2, Copy, Loader2, Check } from 'lucide-react';
 
 interface MediaFile {
   name: string;
   url: string;
-  id: string; 
+  id: string;
 }
+
+// تعداد عکس در هر بار لود
+const BATCH_SIZE = 20;
 
 export default function MediaPage() {
   const [files, setFiles] = useState<MediaFile[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // لودینگ اولیه صفحه
+  const [loadingMore, setLoadingMore] = useState(false); // لودینگ پایین صفحه (اسکرول)
   const [uploading, setUploading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  
+  // برای تشخیص اینکه آیا عکس دیگه‌ای مونده یا نه
+  const [hasMore, setHasMore] = useState(true);
 
+  // این متغیر برای اینه که بدونیم الان چند تا عکس لود کردیم (آفست)
+  const [loadedCount, setLoadedCount] = useState(0);
+
+  // رفرنس برای تشخیص اسکرول به پایین
+  const observer = useRef<IntersectionObserver | null>(null);
+
+  // تابعی که وقتی به آخرین عکس میرسیم اجرا میشه
+  const lastImageElementRef = useCallback((node: HTMLDivElement) => {
+    if (loading || loadingMore) return;
+    if (observer.current) observer.current.disconnect();
+    
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        // اگر کاربر رسید به ته لیست و هنوز عکس بود، لود کن
+        loadMoreImages();
+      }
+    });
+    
+    if (node) observer.current.observe(node);
+  }, [loading, loadingMore, hasMore]);
+
+  // لود اولیه
   useEffect(() => {
-    fetchImages();
+    fetchImages(true);
   }, []);
 
-  const fetchImages = async () => {
-    setLoading(true);
-    // 1. دریافت لیست فایل‌ها از باکت media
+  const fetchImages = async (isInitial = true) => {
+    if (isInitial) {
+      setLoading(true);
+      setFiles([]);
+      setLoadedCount(0);
+      setHasMore(true);
+    } else {
+      setLoadingMore(true);
+    }
+
+    // محاسبه آفست (از کجای لیست شروع کنیم)
+    const currentOffset = isInitial ? 0 : files.length;
+
     const { data, error } = await supabase.storage.from('media').list('', {
-      limit: 100,
-      offset: 0,
+      limit: BATCH_SIZE,
+      offset: currentOffset,
       sortBy: { column: 'created_at', order: 'desc' },
     });
 
     if (data) {
-      // 2. ساخت لینک نمایش برای هر فایل
       const fileList = data.map((file) => {
         const { data: publicUrlData } = supabase.storage.from('media').getPublicUrl(file.name);
         return {
@@ -1371,11 +1536,24 @@ export default function MediaPage() {
           url: publicUrlData.publicUrl,
         };
       });
-      setFiles(fileList);
+
+      // اگر تعداد عکس‌های برگشتی کمتر از حد مجاز بود، یعنی دیگه عکسی نیست
+      if (data.length < BATCH_SIZE) {
+        setHasMore(false);
+      }
+
+      setFiles(prev => isInitial ? fileList : [...prev, ...fileList]);
+      setLoadedCount(prev => prev + data.length);
     } else if (error) {
       console.error(error);
     }
+
     setLoading(false);
+    setLoadingMore(false);
+  };
+
+  const loadMoreImages = () => {
+    fetchImages(false);
   };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1385,15 +1563,13 @@ export default function MediaPage() {
       
       const file = e.target.files[0];
       const fileExt = file.name.split('.').pop();
-      // اسم فایل باید منحصر به فرد باشد (زمان + عدد شانسی)
       const fileName = `${Date.now()}-${Math.floor(Math.random() * 1000)}.${fileExt}`;
 
-      // آپلود به باکت 'media'
       const { error } = await supabase.storage.from('media').upload(fileName, file);
-
       if (error) throw error;
 
-      await fetchImages(); // رفرش کردن لیست
+      // بعد از آپلود، لیست رو رفرش میکنیم
+      await fetchImages(true); 
     } catch (error: any) {
       alert('خطا در آپلود: ' + error.message);
     } finally {
@@ -1401,15 +1577,16 @@ export default function MediaPage() {
     }
   };
 
-  const handleDelete = async (fileName: string) => {
-    if (!confirm('آیا از حذف این تصویر مطمئن هستید؟ اگر در محصولی استفاده شده باشد، عکس آن حذف می‌شود!')) return;
-
+  const handleDelete = async (fileName: string, id: string) => {
+    if (!confirm('آیا از حذف این تصویر مطمئن هستید؟')) return;
+    
     const { error } = await supabase.storage.from('media').remove([fileName]);
     
     if (error) {
       alert('خطا: ' + error.message);
     } else {
-      await fetchImages();
+      // حذف از استیت لوکال (بدون رفرش کل صفحه)
+      setFiles(files.filter(f => f.id !== id));
     }
   };
 
@@ -1429,7 +1606,6 @@ export default function MediaPage() {
            <p className="text-sm text-gray-500">مدیریت مرکزی تمام تصاویر سایت</p>
         </div>
         
-        {/* دکمه آپلود */}
         <label className={`cursor-pointer flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition-all shadow-md ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
           {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <UploadCloud className="h-5 w-5" />}
           <span>{uploading ? 'در حال آپلود...' : 'آپلود تصویر جدید'}</span>
@@ -1437,7 +1613,6 @@ export default function MediaPage() {
         </label>
       </div>
 
-      {/* لیست تصاویر */}
       {files.length === 0 ? (
         <div className="text-center py-20 bg-white border border-dashed border-gray-300 rounded-2xl">
             <div className="flex justify-center mb-4"><UploadCloud className="h-12 w-12 text-gray-300" /></div>
@@ -1445,31 +1620,51 @@ export default function MediaPage() {
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {files.map((file) => (
-            <div key={file.id} className="group relative aspect-square bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-all">
-              <img src={file.url} alt="media" className="w-full h-full object-cover" />
-              
-              {/* دکمه‌های روی عکس */}
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-2">
-                <button 
-                  onClick={() => copyToClipboard(file.url, file.id)}
-                  className="bg-white text-gray-800 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 hover:bg-gray-100 w-full justify-center"
-                >
-                  {copiedId === file.id ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
-                  {copiedId === file.id ? 'کپی شد' : 'لینک'}
-                </button>
-                
-                <button 
-                  onClick={() => handleDelete(file.name)}
-                  className="bg-red-500 text-white p-1.5 rounded-full hover:bg-red-600"
-                  title="حذف تصویر"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          ))}
+          {files.map((file, index) => {
+            // اگر آخرین عکس بود، رفرنس رو بهش وصل میکنیم
+            if (files.length === index + 1) {
+                return (
+                    <div ref={lastImageElementRef} key={file.id} className="group relative aspect-square bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-all">
+                        <img src={file.url} alt="media" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-2">
+                            <button onClick={() => copyToClipboard(file.url, file.id)} className="bg-white text-gray-800 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 hover:bg-gray-100 w-full justify-center">
+                                {copiedId === file.id ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
+                                {copiedId === file.id ? 'کپی شد' : 'لینک'}
+                            </button>
+                            <button onClick={() => handleDelete(file.name, file.id)} className="bg-red-500 text-white p-1.5 rounded-full hover:bg-red-600" title="حذف تصویر">
+                                <Trash2 className="h-4 w-4" />
+                            </button>
+                        </div>
+                    </div>
+                );
+            } else {
+                return (
+                    <div key={file.id} className="group relative aspect-square bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-all">
+                        <img src={file.url} alt="media" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-2">
+                            <button onClick={() => copyToClipboard(file.url, file.id)} className="bg-white text-gray-800 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 hover:bg-gray-100 w-full justify-center">
+                                {copiedId === file.id ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
+                                {copiedId === file.id ? 'کپی شد' : 'لینک'}
+                            </button>
+                            <button onClick={() => handleDelete(file.name, file.id)} className="bg-red-500 text-white p-1.5 rounded-full hover:bg-red-600" title="حذف تصویر">
+                                <Trash2 className="h-4 w-4" />
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+          })}
         </div>
+      )}
+      
+      {/* لودینگ پایین صفحه */}
+      {loadingMore && (
+        <div className="flex justify-center py-4">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        </div>
+      )}
+      {!hasMore && files.length > 0 && (
+         <p className="text-center text-gray-400 text-xs mt-4">تمام تصاویر لود شدند.</p>
       )}
     </div>
   );
@@ -2453,17 +2648,18 @@ export default function PricingPage() {
 }
 
 ===== File: app/admin/products/page.tsx =====
-# Modified: 2025-12-01T03:33:02.636690 | Size: 27090 bytes | SHA1: 2428eff20d27b6890e3404df63545520b64fe06a
+# Modified: 2025-12-04T21:54:45.157852 | Size: 32875 bytes | SHA1: cb82d63da47448780a90b775506e78dc35e9417c
 'use client';
-import { useEffect, useState } from 'react';
+
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Plus, Trash2, Edit2, Search, X, Loader2, ImageIcon, Check, Search as SearchIcon, Calculator, LayoutGrid, List } from 'lucide-react';
+import { Plus, Trash2, Edit2, Search, X, Loader2, ImageIcon, Check, Search as SearchIcon, Calculator, LayoutGrid, List, Package, AlertCircle } from 'lucide-react';
 
 interface Product {
   id: string;
   title: string;
-  price: number;        // قیمت فروش (دلار)
-  price_toman: number; // قیمت خرید (تومان)
+  price: number;
+  price_toman: number;
   image: string;
   slug: string;
   category: string;
@@ -2486,16 +2682,27 @@ interface MediaFile {
   id: string;
 }
 
+// تعداد آیتم در هر بار لود
+const BATCH_SIZE = 20;
+
 export default function ProductsPage() {
+  // --- استیت‌های محصولات ---
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  
+  const [loading, setLoading] = useState(true); // لودینگ اولیه صفحه
+  const [loadingMoreProducts, setLoadingMoreProducts] = useState(false); // لودینگ اسکرول محصولات
+  const [hasMoreProducts, setHasMoreProducts] = useState(true); // آیا محصول بیشتری هست؟
+
+  // --- استیت آمار (Stats) ---
+  const [stats, setStats] = useState({ total: 0, unavailable: 0 });
+
   const [searchTerm, setSearchTerm] = useState('');
   
-  // --- حالت نمایش (جدید) ---
+  // --- حالت نمایش ---
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-
-  // تنظیمات سراسری (برای محاسبه هوشمند)
+  
+  // تنظیمات سراسری
   const [dollarRate, setDollarRate] = useState(100000);
   const [profitMargin, setProfitMargin] = useState(25);
   const [shippingBase, setShippingBase] = useState(300000);
@@ -2506,8 +2713,8 @@ export default function ProductsPage() {
   
   const [formData, setFormData] = useState({ 
     title: '', 
-    price: '',         // دلار
-    price_toman: '',   // تومان
+    price: '', 
+    price_toman: '',
     image: '',
     slug: '',
     category: '',
@@ -2517,80 +2724,177 @@ export default function ProductsPage() {
     seo_desc: ''
   });
 
+  // --- استیت‌های گالری هوشمند ---
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [loadingMedia, setLoadingMedia] = useState(false);
+  const [mediaLoadingMore, setMediaLoadingMore] = useState(false);
+  const [mediaHasMore, setMediaHasMore] = useState(true);
+
+  // --- رفرنس‌ها برای اسکرول ---
+  const productObserver = useRef<IntersectionObserver | null>(null);
+  const mediaObserver = useRef<IntersectionObserver | null>(null);
+
+  // 1. آبزرور برای لیست محصولات
+  const lastProductElementRef = useCallback((node: HTMLDivElement) => {
+    if (loading || loadingMoreProducts) return;
+    if (productObserver.current) productObserver.current.disconnect();
+    
+    productObserver.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMoreProducts && !searchTerm) {
+        fetchProducts(false);
+      }
+    });
+    
+    if (node) productObserver.current.observe(node);
+  }, [loading, loadingMoreProducts, hasMoreProducts, searchTerm]);
+
+  // 2. آبزرور برای گالری عکس
+  const lastMediaElementRef = useCallback((node: HTMLDivElement) => {
+    if (loadingMedia || mediaLoadingMore) return;
+    if (mediaObserver.current) mediaObserver.current.disconnect();
+    
+    mediaObserver.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && mediaHasMore) {
+        fetchMedia(false);
+      }
+    });
+    
+    if (node) mediaObserver.current.observe(node);
+  }, [loadingMedia, mediaLoadingMore, mediaHasMore]);
+
 
   useEffect(() => {
-    fetchData();
+    initialLoad();
   }, []);
 
-  const fetchData = async () => {
-    // 1. دریافت محصولات
-    const { data: prodData } = await supabase
-      .from('products')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (prodData) setProducts(prodData);
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+        fetchProducts(true);
+    }, 500);
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
 
-    // 2. دریافت دسته‌بندی‌ها
-    const { data: catData } = await supabase
-      .from('categories')
-      .select('*')
-      .order('name');
+  const initialLoad = async () => {
+    setLoading(true);
+    await Promise.all([
+        fetchProducts(true),
+        fetchCategoriesAndSettings(),
+        fetchStats()
+    ]);
+    setLoading(false);
+  };
+
+  const fetchStats = async () => {
+    const { count: total } = await supabase.from('products').select('*', { count: 'exact', head: true });
+    const { count: unavailable } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('price_toman', 0);
+
+    setStats({ total: total || 0, unavailable: unavailable || 0 });
+  };
+
+  const fetchCategoriesAndSettings = async () => {
+    const { data: catData } = await supabase.from('categories').select('*').order('name');
     if (catData) setCategories(catData);
     
-    // 3. دریافت تنظیمات (شامل نرخ دلار و حالت نمایش)
     const { data: settingsData } = await supabase.from('site_settings').select('*');
     if (settingsData) {
         settingsData.forEach(item => {
             if (item.key === 'dollar_rate') setDollarRate(Number(item.value));
             if (item.key === 'profit_margin') setProfitMargin(Number(item.value));
             if (item.key === 'shipping_base') setShippingBase(Number(item.value));
-            // دریافت حالت نمایش ذخیره شده
             if (item.key === 'admin_product_view_mode') setViewMode(item.value as 'grid' | 'list');
         });
     }
+  };
+
+  const fetchProducts = async (isInitial = true) => {
+    if (isInitial) {
+        if (!searchTerm) setLoading(true);
+        setHasMoreProducts(true);
+    } else {
+        setLoadingMoreProducts(true);
+    }
+
+    const currentOffset = isInitial ? 0 : products.length;
+
+    let query = supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (searchTerm) {
+        query = query.ilike('title', `%${searchTerm}%`);
+    } else {
+        query = query.range(currentOffset, currentOffset + BATCH_SIZE - 1);
+    }
+
+    const { data } = await query;
+
+    if (data) {
+        if (isInitial) {
+            setProducts(data);
+        } else {
+            setProducts(prev => [...prev, ...data]);
+        }
+
+        if (data.length < BATCH_SIZE) {
+            setHasMoreProducts(false);
+        }
+    }
 
     setLoading(false);
+    setLoadingMoreProducts(false);
   };
 
-  // --- تابع تغییر حالت نمایش و ذخیره در دیتابیس (جدید) ---
-  const handleViewModeChange = async (mode: 'grid' | 'list') => {
-    setViewMode(mode); // تغییر فوری در ظاهر
-    // ذخیره در دیتابیس
-    await supabase.from('site_settings').upsert({ 
-        key: 'admin_product_view_mode', 
-        value: mode 
-    }, { onConflict: 'key' });
-  };
+  const fetchMedia = async (isInitial = true) => {
+    if (isInitial) {
+      setLoadingMedia(true);
+      setMediaFiles([]);
+      setMediaHasMore(true);
+    } else {
+      setMediaLoadingMore(true);
+    }
 
-  const fetchMedia = async () => {
-    setLoadingMedia(true);
+    const currentOffset = isInitial ? 0 : mediaFiles.length;
+
     const { data } = await supabase.storage.from('media').list('', {
-      limit: 50,
+      limit: BATCH_SIZE,
+      offset: currentOffset,
       sortBy: { column: 'created_at', order: 'desc' },
     });
+
     if (data) {
       const files = data.map((file) => {
         const { data: url } = supabase.storage.from('media').getPublicUrl(file.name);
         return { name: file.name, id: file.id, url: url.publicUrl };
       });
-      setMediaFiles(files);
+
+      if (data.length < BATCH_SIZE) {
+        setMediaHasMore(false);
+      }
+
+      setMediaFiles(prev => isInitial ? files : [...prev, ...files]);
     }
+
     setLoadingMedia(false);
+    setMediaLoadingMore(false);
   };
 
-  // محاسبه قیمت پیشنهادی دلار بر اساس تومان
+  const handleViewModeChange = async (mode: 'grid' | 'list') => {
+    setViewMode(mode);
+    await supabase.from('site_settings').upsert({ key: 'admin_product_view_mode', value: mode }, { onConflict: 'key' });
+  };
+
   const calculateSuggestedUSD = (tomanStr: string) => {
     const toman = parseInt(tomanStr) || 0;
     if (toman === 0) return;
-    
     const cost = toman + shippingBase;
     const inUSD = cost / dollarRate;
     const withProfit = inUSD * (1 + profitMargin / 100);
     const final = Math.round(withProfit * 100) / 100;
-    // پر کردن خودکار فیلد دلار
     setFormData(prev => ({ ...prev, price: String(final), price_toman: tomanStr }));
   };
 
@@ -2612,22 +2916,14 @@ export default function ProductsPage() {
     } else {
       setEditingProduct(null);
       setFormData({ 
-        title: '', 
-        price: '', 
-        price_toman: '',
-        image: '', 
-        slug: '', 
-        category: categories[0]?.slug || '',
-        description: '', 
-        features: '', 
-        seo_title: '', 
-        seo_desc: '' 
+        title: '', price: '', price_toman: '', image: '', slug: '', 
+        category: categories[0]?.slug || '', description: '', features: '', seo_title: '', seo_desc: '' 
       });
     }
     setIsModalOpen(true);
   };
 
-  const openGallery = () => { setIsGalleryOpen(true); fetchMedia(); };
+  const openGallery = () => { setIsGalleryOpen(true); fetchMedia(true); };
   const selectImageFromGallery = (url: string) => { setFormData({ ...formData, image: url }); setIsGalleryOpen(false); };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -2637,7 +2933,6 @@ export default function ProductsPage() {
       const featuresArray = formData.features.split('\n').filter(line => line.trim() !== '');
       let finalSlug = formData.slug || formData.title;
       finalSlug = finalSlug.trim().toLowerCase().replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
-
       const finalCategory = formData.category || categories[0]?.slug || 'nuts';
 
       const productData = {
@@ -2673,7 +2968,8 @@ export default function ProductsPage() {
         throw new Error(errData.error || 'خطا در ذخیره‌سازی');
       }
 
-      await fetchData();
+      await fetchProducts(true); 
+      await fetchStats();
       setIsModalOpen(false);
     } catch (error: any) {
       alert('خطا: ' + error.message);
@@ -2688,21 +2984,18 @@ export default function ProductsPage() {
       const response = await fetch(`/api/admin/products?id=${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('خطا در حذف');
       setProducts(products.filter(p => p.id !== id));
+      fetchStats();
     } catch (error: any) {
       alert('خطا: ' + error.message);
     }
   };
-
-  const filteredProducts = products.filter(p => 
-    p.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const getCategoryName = (slug: string) => {
     const cat = categories.find(c => c.slug === slug);
     return cat ? cat.name : slug;
   };
 
-  if (loading) return <div className="p-10 text-center">در حال دریافت لیست...</div>;
+  if (loading && products.length === 0) return <div className="p-10 text-center">در حال دریافت لیست...</div>;
 
   return (
     <div className="space-y-6">
@@ -2713,24 +3006,20 @@ export default function ProductsPage() {
         </div>
         
         <div className="flex items-center gap-2">
-            {/* دکمه‌های تغییر ویو */}
             <div className="bg-gray-100 p-1 rounded-lg flex items-center border border-gray-200">
                 <button 
                     onClick={() => handleViewModeChange('grid')}
                     className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:bg-gray-200'}`}
-                    title="نمایش شبکه‌ای"
                 >
                     <LayoutGrid className="h-4 w-4" />
                 </button>
                 <button 
                     onClick={() => handleViewModeChange('list')}
                     className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:bg-gray-200'}`}
-                    title="نمایش لیستی"
                 >
                     <List className="h-4 w-4" />
                 </button>
             </div>
-
             <button onClick={() => openProductModal()} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 shadow-md h-[42px]">
             <Plus className="h-5 w-5" />
             محصول جدید
@@ -2738,70 +3027,117 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <div className="relative max-w-md">
-        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <input type="text" placeholder="جستجو..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pr-9 pl-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-100 outline-none" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white p-4 rounded-xl border border-blue-100 shadow-sm flex items-center gap-3">
+            <div className="bg-blue-50 p-3 rounded-lg text-blue-600">
+                <Package className="h-6 w-6" />
+            </div>
+            <div>
+                <span className="text-2xl font-bold text-gray-800">{stats.total}</span>
+                <p className="text-xs text-gray-500">تعداد کل محصولات</p>
+            </div>
+        </div>
+        <div className="bg-white p-4 rounded-xl border border-red-100 shadow-sm flex items-center gap-3">
+            <div className="bg-red-50 p-3 rounded-lg text-red-500">
+                <AlertCircle className="h-6 w-6" />
+            </div>
+            <div>
+                <span className="text-2xl font-bold text-gray-800">{stats.unavailable}</span>
+                <p className="text-xs text-gray-500">ناموجود (قیمت ۰)</p>
+            </div>
+        </div>
       </div>
 
-      {/* --- View Mode Logic --- */}
-      {viewMode === 'grid' ? (
-          /* GRID VIEW */
+      <div className="relative max-w-md">
+        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <input 
+            type="text" 
+            placeholder="جستجو در نام محصولات..." 
+            value={searchTerm} 
+            onChange={(e) => setSearchTerm(e.target.value)} 
+            className="w-full pr-9 pl-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-100 outline-none" 
+        />
+      </div>
+
+      {products.length === 0 && !loading ? (
+          <div className="p-8 text-center text-gray-400 text-sm bg-white rounded-xl border border-gray-200">محصولی یافت نشد.</div>
+      ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in duration-300">
-            {filteredProducts.map((product) => (
-                <div key={product.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden group flex flex-col">
-                    <div className="relative aspect-square bg-gray-100 overflow-hidden">
-                        <img src={product.image} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                        <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => openProductModal(product)} className="p-2 bg-white/90 rounded-full text-blue-600 shadow-sm"><Edit2 className="h-4 w-4" /></button>
-                            <button onClick={() => handleDelete(product.id)} className="p-2 bg-white/90 rounded-full text-red-500 shadow-sm"><Trash2 className="h-4 w-4" /></button>
-                        </div>
-                        <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded-full backdrop-blur-sm">
+            {products.map((product, index) => {
+                const isLast = index === products.length - 1;
+                const isUnavailable = product.price_toman === 0;
+                return (
+                    <div 
+                        key={product.id} 
+                        ref={isLast ? lastProductElementRef : null}
+                        className={`bg-white rounded-2xl border shadow-sm hover:shadow-md transition-all overflow-hidden group flex flex-col ${isUnavailable ? 'border-red-200 bg-red-50/10' : 'border-gray-100'}`}
+                    >
+                        <div className="relative aspect-square bg-gray-100 overflow-hidden">
+                            <img src={product.image} alt={product.title} className={`w-full h-full object-cover group-hover:scale-105 transition-transform ${isUnavailable ? 'grayscale' : ''}`} />
+                            <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => openProductModal(product)} className="p-2 bg-white/90 rounded-full text-blue-600 shadow-sm"><Edit2 className="h-4 w-4" /></button>
+                                <button onClick={() => handleDelete(product.id)} className="p-2 bg-white/90 rounded-full text-red-500 shadow-sm"><Trash2 className="h-4 w-4" /></button>
+                            </div>
+                            <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded-full backdrop-blur-sm">
                             {getCategoryName(product.category)}
-                        </span>
-                    </div>
-                    <div className="p-4 flex flex-col flex-1">
-                        <h3 className="font-bold text-gray-900 line-clamp-1 mb-1">{product.title}</h3>
-                        <p className="text-xs text-gray-400 mb-2 truncate">/{product.slug}</p>
-                        <div className="mt-auto flex justify-between items-center">
-                            <div className="flex flex-col">
-                                <span className="text-[10px] text-gray-400">قیمت خرید: {(product.price_toman || 0).toLocaleString()} ت</span>
+                            </span>
+                            {isUnavailable && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                    <span className="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md">ناموجود</span>
+                                </div>
+                            )}
+                        </div>
+                        <div className="p-4 flex flex-col flex-1">
+                            <h3 className="font-bold text-gray-900 line-clamp-1 mb-1">{product.title}</h3>
+                            <div className="mt-auto">
                                 <span className="text-lg font-bold text-blue-600">${product.price}</span>
                             </div>
                         </div>
                     </div>
-                </div>
-            ))}
+                );
+            })}
           </div>
       ) : (
-          /* LIST VIEW (Compact) */
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-in fade-in duration-300">
               <div className="divide-y divide-gray-100">
-                  {filteredProducts.map((product) => (
-                      <div key={product.id} className="p-3 hover:bg-gray-50 transition-colors flex items-center justify-between group">
-                          {/* نام محصول (قابل کپی راحت) */}
-                          <div className="flex items-center gap-3">
-                              <span className="font-bold text-gray-800 text-sm select-all cursor-text">{product.title}</span>
-                              <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded hidden sm:inline-block">{getCategoryName(product.category)}</span>
-                          </div>
-                          
-                          {/* دکمه‌های عملیات (کوچک شده) */}
-                          <div className="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => openProductModal(product)} className="text-blue-600 hover:bg-blue-50 p-1.5 rounded" title="ویرایش">
-                                    <Edit2 className="h-4 w-4" />
-                                </button>
-                                <button onClick={() => handleDelete(product.id)} className="text-red-500 hover:bg-red-50 p-1.5 rounded" title="حذف">
-                                    <Trash2 className="h-4 w-4" />
-                                </button>
-                          </div>
-                      </div>
-                  ))}
-                  {filteredProducts.length === 0 && (
-                      <div className="p-8 text-center text-gray-400 text-sm">محصولی یافت نشد.</div>
-                  )}
+                  {products.map((product, index) => {
+                      const isLast = index === products.length - 1;
+                      const isUnavailable = product.price_toman === 0;
+                      return (
+                        <div 
+                            key={product.id} 
+                            ref={isLast ? lastProductElementRef : null}
+                            className={`p-3 hover:bg-gray-50 transition-colors flex items-center justify-between group ${isUnavailable ? 'bg-red-50/30' : ''}`}
+                        >
+                            <div className="flex items-center gap-3">
+                                <img src={product.image} className={`w-10 h-10 rounded object-cover border border-gray-100 ${isUnavailable ? 'grayscale' : ''}`} />
+                                <div>
+                                    <div className="font-bold text-gray-800 text-sm select-all cursor-text flex items-center gap-2">
+                                        {product.title}
+                                        {isUnavailable && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full">ناموجود</span>}
+                                    </div>
+                                    <div className="text-xs text-gray-500">${product.price}</div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                    <button onClick={() => openProductModal(product)} className="text-blue-600 hover:bg-blue-50 p-1.5 rounded"><Edit2 className="h-4 w-4" /></button>
+                                    <button onClick={() => handleDelete(product.id)} className="text-red-500 hover:bg-red-50 p-1.5 rounded"><Trash2 className="h-4 w-4" /></button>
+                            </div>
+                        </div>
+                      );
+                  })}
               </div>
           </div>
       )}
+      
+      {loadingMoreProducts && (
+         <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin text-blue-600"/></div>
+      )}
+      {!hasMoreProducts && products.length > 0 && !searchTerm && (
+         <p className="text-center text-gray-400 text-xs mt-4">تمام محصولات نمایش داده شدند.</p>
+      )}
 
+      {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[50] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -2819,7 +3155,6 @@ export default function ProductsPage() {
                         <input type="text" required className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} />
                       </div>
                       
-                      {/* بخش قیمت‌گذاری */}
                       <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                              <label className="block text-xs font-bold text-gray-700 mb-1">قیمت خرید (تومان)</label>
@@ -2829,15 +3164,15 @@ export default function ProductsPage() {
                                     required 
                                     min="0" 
                                     className="w-full p-2 pl-8 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm font-mono" 
-                                    placeholder="مثال: 500000"
                                     value={formData.price_toman} 
                                     onChange={(e) => {
                                         setFormData({...formData, price_toman: e.target.value});
-                                        calculateSuggestedUSD(e.target.value); // محاسبه خودکار
+                                        calculateSuggestedUSD(e.target.value);
                                     }} 
                                 />
                                 <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-500">T</span>
                              </div>
+                             {/* متن قبلی برگشت داده شد */}
                              <p className="text-[10px] text-gray-500 mt-1">مبنای محاسبه قیمت دلاری</p>
                           </div>
                           <div>
@@ -2854,6 +3189,7 @@ export default function ProductsPage() {
                                 />
                                 <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-blue-600">$</span>
                             </div>
+                            {/* متن قبلی برگشت داده شد */}
                             <p className="text-[10px] text-blue-400 mt-1 flex items-center gap-1">
                                 <Calculator className="h-3 w-3"/>
                                 محاسبه شده با سود {profitMargin}٪
@@ -2862,7 +3198,7 @@ export default function ProductsPage() {
                       </div>
 
                       <div>
-                         <label className="block text-xs font-medium text-gray-700 mb-1">دسته‌بندی</label>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">دسته‌بندی</label>
                          {categories.length > 0 ? (
                             <select 
                                 value={formData.category} 
@@ -2873,27 +3209,27 @@ export default function ProductsPage() {
                                     <option key={cat.id} value={cat.slug}>{cat.name}</option>
                                 ))}
                             </select>
-                         ) : (
+                        ) : (
                             <div className="text-xs text-red-500 flex items-center gap-1">
-                                <Loader2 className="h-3 w-3 animate-spin"/> در حال بارگذاری دسته‌ها...
+                                <Loader2 className="h-3 w-3 animate-spin"/> در حال بارگذاری...
                             </div>
                         )}
                       </div>
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">آدرس صفحه (Slug)</label>
-                        <input type="text" className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm dir-ltr text-left" placeholder="مثال: pistachio-akbari" value={formData.slug} onChange={(e) => setFormData({...formData, slug: e.target.value})} />
+                        <input type="text" className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm dir-ltr text-left" value={formData.slug} onChange={(e) => setFormData({...formData, slug: e.target.value})} />
                       </div>
                   </div>
               </div>
 
               <div className="space-y-4">
-                   <h4 className="font-bold text-blue-800 text-sm border-b pb-2">۲. جزئیات و محتوا</h4>
+                   <h4 className="font-bold text-blue-800 text-sm border-b pb-2">۲. جزئیات</h4>
                    <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">توضیحات کامل</label>
                         <textarea rows={4} className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} />
                    </div>
                    <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">ویژگی‌ها (هر خط یک ویژگی)</label>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">ویژگی‌ها</label>
                         <textarea rows={3} className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm" value={formData.features} onChange={(e) => setFormData({...formData, features: e.target.value})} />
                    </div>
               </div>
@@ -2917,7 +3253,7 @@ export default function ProductsPage() {
               </div>
 
               <div className="bg-gray-50 p-4 rounded-xl space-y-4 border border-gray-200">
-                   <h4 className="font-bold text-gray-700 text-sm flex items-center gap-1"><SearchIcon className="h-4 w-4"/> تنظیمات سئو</h4>
+                   <h4 className="font-bold text-gray-700 text-sm flex items-center gap-1"><SearchIcon className="h-4 w-4"/> سئو</h4>
                    <div>
                         <label className="block text-xs font-medium text-gray-500 mb-1">SEO Title</label>
                         <input type="text" className="w-full p-2 rounded border border-gray-300 text-sm" value={formData.seo_title} onChange={(e) => setFormData({...formData, seo_title: e.target.value})} />
@@ -2926,7 +3262,7 @@ export default function ProductsPage() {
                         <label className="block text-xs font-medium text-gray-500 mb-1">Meta Description</label>
                         <textarea rows={2} className="w-full p-2 rounded border border-gray-300 text-sm" value={formData.seo_desc} onChange={(e) => setFormData({...formData, seo_desc: e.target.value})} />
                    </div>
-                </div>
+              </div>
 
               <div className="pt-4 flex gap-3">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">انصراف</button>
@@ -2945,21 +3281,34 @@ export default function ProductsPage() {
              <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                 <h3 className="font-bold text-gray-900 flex items-center gap-2"><ImageIcon className="h-5 w-5 text-blue-600" />انتخاب تصویر</h3>
                 <button onClick={() => setIsGalleryOpen(false)} className="bg-white p-1 rounded-full text-gray-500 hover:text-red-500 hover:bg-red-50"><X className="h-6 w-6" /></button>
-              </div>
+             </div>
+             
              <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50">
-               {loadingMedia ? (
+               {loadingMedia && mediaFiles.length === 0 ? (
                  <div className="flex items-center justify-center h-full"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
                ) : (
-                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                   {mediaFiles.map((file) => (
-                      <div key={file.id} onClick={() => selectImageFromGallery(file.url)} className={`group relative aspect-square rounded-xl overflow-hidden cursor-pointer border-2 transition-all ${formData.image === file.url ? 'border-blue-600 ring-2 ring-blue-100' : 'border-gray-200 hover:border-blue-400'}`}>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                   {mediaFiles.map((file, index) => {
+                     const isLast = index === mediaFiles.length - 1;
+                     return (
+                      <div 
+                          key={file.id} 
+                          ref={isLast ? lastMediaElementRef : null}
+                          onClick={() => selectImageFromGallery(file.url)} 
+                          className={`group relative aspect-square rounded-xl overflow-hidden cursor-pointer border-2 transition-all ${formData.image === file.url ? 'border-blue-600 ring-2 ring-blue-100' : 'border-gray-200 hover:border-blue-400'}`}
+                      >
                        <img src={file.url} className="w-full h-full object-cover" />
                        {formData.image === file.url && <div className="absolute top-2 right-2 bg-blue-600 text-white p-1 rounded-full shadow-sm"><Check className="h-3 w-3" /></div>}
                       </div>
-                     ))}
+                     );
+                   })}
                  </div>
                )}
+               {mediaLoadingMore && (
+                  <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin text-blue-600"/></div>
+               )}
              </div>
+
            </div>
         </div>
       )}
@@ -6399,22 +6748,33 @@ export default function FAQ() {
 }
 
 ===== File: components/FloatingContact.tsx =====
-# Modified: 2025-12-02T15:24:16.355341 | Size: 10031 bytes | SHA1: 2b949ee28b1af1a72b65252a77d38b5fdec77e5f
+# Modified: 2025-12-04T22:26:02.750334 | Size: 10415 bytes | SHA1: b19db4b0397783e98028e5b185627e42999cad64
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { MessageCircle, X, Send, Phone, MessageSquare, ArrowLeft, Loader2, CheckCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 type ViewState = 'menu' | 'form' | 'success';
 
 export default function FloatingContact() {
+  const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState<ViewState>('menu');
   
-  // فرم دیتا
   const [formData, setFormData] = useState({ contact: '', content: '' });
   const [sending, setSending] = useState(false);
+
+  // تشخیص اینکه آیا در صفحه جزئیات محصول هستیم؟ (برای تنظیم ارتفاع آیکون)
+  // اگر آدرس با /products/ شروع شود (ولی خود /products نباشد) یعنی در صفحه محصولیم
+  const isProductPage = pathname?.startsWith('/products/') && pathname !== '/products';
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -6422,14 +6782,12 @@ export default function FloatingContact() {
 
     setSending(true);
     try {
-      // 1. ذخیره در دیتابیس سوپابیس (برای پنل ادمین)
       const { error } = await supabase.from('messages').insert([{
         user_contact: formData.contact,
         content: formData.content
       }]);
       if (error) throw error;
 
-      // 2. ارسال فوری به گروه بله (کد جدید اضافه شده)
       await fetch('/api/bale', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -6441,9 +6799,9 @@ export default function FloatingContact() {
           }
         })
       });
-      
+
       setView('success');
-      setFormData({ contact: '', content: '' }); // پاک کردن فرم
+      setFormData({ contact: '', content: '' });
     } catch (error) {
       console.error(error);
       alert('خطا در ارسال پیام. لطفاً دوباره تلاش کنید.');
@@ -6460,8 +6818,16 @@ export default function FloatingContact() {
     }, 300);
   };
 
+  if (!mounted) return null;
+  // مخفی کردن در پنل ادمین
+  if (pathname?.startsWith('/admin')) return null;
+
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end font-[family-name:var(--font-vazir)]">
+    <div 
+      className={`fixed right-6 z-50 flex flex-col items-end font-[family-name:var(--font-vazir)] transition-all duration-300 ${
+        isProductPage ? 'bottom-24 md:bottom-6' : 'bottom-6'
+      }`}
+    >
       
       {/* Chat Window */}
       {isOpen && (
@@ -6469,10 +6835,9 @@ export default function FloatingContact() {
           
           {/* Header */}
           <div className="bg-blue-600 p-4 text-white flex justify-between items-center">
-            <div className="flex items-center gap-3">
+             <div className="flex items-center gap-3">
               <div className="relative">
                 <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                    {/* آواتار ادمین */}
                    <img src={`https://ui-avatars.com/api/?name=Admin&background=random`} className="rounded-full" alt="Admin" />
                 </div>
                 <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-blue-600 rounded-full"></span>
@@ -6482,7 +6847,6 @@ export default function FloatingContact() {
                 <p className="text-[10px] text-blue-100">پاسخگویی سریع</p>
               </div>
             </div>
-            {/* دکمه بازگشت (فقط در حالت فرم) */}
             {view === 'form' && (
                 <button onClick={() => setView('menu')} className="text-white/80 hover:text-white">
                   <ArrowLeft className="h-5 w-5" />
@@ -6530,7 +6894,7 @@ export default function FloatingContact() {
 
             {/* 2. FORM VIEW */}
             {view === 'form' && (
-              <form onSubmit={handleSend} className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
+               <form onSubmit={handleSend} className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
                     <div>
                         <label className="text-xs text-gray-500 mb-1 block">شماره تماس شما (واتساپ):</label>
                         <input 
@@ -6551,7 +6915,7 @@ export default function FloatingContact() {
                             value={formData.content}
                             onChange={(e) => setFormData({...formData, content: e.target.value})}
                             className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500 resize-none"
-                        />
+                       />
                     </div>
                     <button 
                         type="submit" 
@@ -6578,21 +6942,19 @@ export default function FloatingContact() {
                         onClick={() => setView('menu')}
                         className="text-blue-600 text-sm font-bold hover:underline"
                     >
-                       بازگشت به منو
+                      بازگشت به منو
                     </button>
                 </div>
             )}
 
           </div>
 
-          {/* Footer */}
           <div className="bg-gray-50 p-2 text-center border-t border-gray-100">
              <span className="text-[10px] text-gray-400">پشتیبانی توسط سوغات شاپ</span>
           </div>
         </div>
       )}
 
-      {/* Toggle Button */}
       <button 
         onClick={isOpen ? resetWidget : () => setIsOpen(true)}
         className="group relative flex items-center justify-center w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg hover:shadow-blue-500/50 transition-all active:scale-90"
@@ -7168,11 +7530,12 @@ export default function ProductCard({ id, title, price, image, slug }: ProductCa
 }
 
 ===== File: components/ProductClientView.tsx =====
-# Modified: 2025-12-02T21:46:15.752662 | Size: 9006 bytes | SHA1: 94cd1dc904c3517c3fbe679112391003b2ab7670
+# Modified: 2025-12-04T22:14:01.028320 | Size: 11550 bytes | SHA1: d79ddc933f09555034a1d8fbff48876aefa7f7de
 'use client';
+
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
-import { ShoppingBag, Check, ShieldCheck, Truck, Star, Plus, Minus, Trash2, Tag, LayoutGrid } from 'lucide-react';
+import { ShoppingBag, Check, ShieldCheck, Truck, Star, Plus, Minus, Trash2, Tag, LayoutGrid, FileText } from 'lucide-react';
 import Link from 'next/link';
 import ProductCard from './ProductCard';
 
@@ -7219,7 +7582,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
       if (!line.trim()) return <div key={index} className="h-2"></div>;
       const parts = line.split(/(\*\*.*?\*\*)/g);
       return (
-        <p key={index} className="mb-2 leading-7 text-justify text-gray-600">
+        <p key={index} className="mb-2 leading-8 text-justify text-gray-600 text-sm md:text-base">
           {parts.map((part, i) => {
             if (part.startsWith('**') && part.endsWith('**')) {
               return <strong key={i} className="font-bold text-gray-900">{part.slice(2, -2)}</strong>;
@@ -7231,102 +7594,145 @@ export default function ProductClientView({ product, categoryName, categorySlug,
     });
   };
 
+  // کامپوننت دکمه‌های خرید (برای استفاده مجدد در دسکتاپ و موبایل)
+  const AddToCartButtons = ({ isMobile = false }: { isMobile?: boolean }) => {
+      if (quantity > 0) {
+          return (
+            <div className={`flex items-center justify-between bg-white border border-blue-200 rounded-xl p-1 shadow-inner ${isMobile ? 'h-12 w-full' : 'h-14 w-full'}`}>
+                <button onClick={() => decreaseFromCart(product.id)} className="h-full aspect-square flex items-center justify-center bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-all active:scale-90">
+                    {quantity === 1 ? <Trash2 className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
+                </button>
+                <div className="flex flex-col items-center px-4">
+                    <span className="text-lg font-black text-blue-900 tabular-nums">{quantity}</span>
+                    {!isMobile && <span className="text-[9px] text-gray-400 font-medium">عدد در سبد</span>}
+                </div>
+                <button onClick={() => addToCart(product)} className="h-full aspect-square flex items-center justify-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-md shadow-blue-200 transition-all active:scale-90">
+                    <Plus className="h-6 w-6" />
+                </button>
+            </div>
+          );
+      }
+      return (
+        <button 
+            onClick={() => addToCart(product)} 
+            className={`w-full font-bold flex items-center justify-center gap-2 transition-all shadow-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-blue-200 hover:-translate-y-1 active:scale-95 ${isMobile ? 'h-12 text-base rounded-xl' : 'py-4 rounded-xl text-lg'}`}
+        >
+            <ShoppingBag className={isMobile ? "h-5 w-5" : "h-6 w-6"} /> 
+            {isMobile ? 'افزودن به سبد' : 'افزودن به سبد خرید'}
+        </button>
+      );
+  };
+
   return (
-    <>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="pb-24 md:pb-0 relative"> {/* پدینگ پایین برای موبایل که دکمه چسبان محتوا رو نپوشونه */}
         
-        {/* بخش تصویر */}
-        <div className="relative aspect-square bg-gray-100 rounded-3xl overflow-hidden border border-gray-200 shadow-sm group">
-            <img src={product.image} alt={product.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-            {quantity > 0 && (
-                <div className="absolute top-4 right-4 bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg border-2 border-white animate-in zoom-in">
-                    {quantity}
-                </div>
-            )}
-        </div>
-
-        {/* بخش اطلاعات */}
-        <div className="flex flex-col">
-            
-            {/* Breadcrumb */}
-            <div className="mb-4">
-                <Link 
-                    href={`/products?category=${categorySlug}`} 
-                    className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors"
-                >
-                    <Tag className="h-3 w-3" />
-                    {categoryName}
-                </Link>
-            </div>
-
-            <div className="mb-6">
-                <h1 className="text-2xl md:text-3xl font-black text-gray-900 mb-3 leading-snug">{product.title}</h1>
-                <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-3 py-1 rounded-full w-fit border border-gray-100">
-                    <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                    <span className="font-bold text-gray-700">۵.۰</span>
-                    <span className="text-xs">(تضمین اصالت و کیفیت)</span>
-                </div>
-            </div>
-
-            {/* قیمت */}
-            <div className="bg-gradient-to-r from-blue-50 to-white p-5 rounded-2xl border border-blue-100 flex items-center justify-between mb-8 shadow-sm">
-                <div><span className="text-gray-500 text-xs block mb-1">قیمت نهایی (شامل ارسال):</span></div>
-                <div className="text-3xl font-bold text-blue-700 font-mono tracking-tight">
-                    {symbol} {typeof finalPrice === 'number' ? finalPrice.toFixed(2) : finalPrice}
-                </div>
-            </div>
-
-            {/* ویژگی‌ها (اصلاح شده: بدون عنوان، تیک روی آیتم‌ها) */}
-            {product.features && product.features.length > 0 && (
-                <div className="mb-6 bg-gray-50 p-5 rounded-2xl border border-gray-100">
-                    <ul className="space-y-3">
-                        {product.features.map((feat, index) => (
-                            <li key={index} className="flex items-start gap-2 text-sm text-gray-700 leading-6 font-medium">
-                                <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-                                {feat}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-
-            {/* توضیحات */}
-            <div className="mb-8">
-                <h3 className="font-bold text-gray-900 mb-3 text-lg border-b pb-2">توضیحات</h3>
-                <div className="text-sm md:text-base">{renderDescription(product.description)}</div>
-            </div>
-
-            {/* کنترل‌های خرید */}
-            <div className="mt-8 space-y-4">
-                {quantity > 0 ? (
-                    <div className="flex items-center justify-between bg-white border border-gray-200 rounded-2xl p-2 shadow-xl shadow-blue-100/50 animate-in fade-in zoom-in duration-200">
-                        <button onClick={() => decreaseFromCart(product.id)} className="w-14 h-12 flex items-center justify-center bg-gray-50 text-red-500 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all border border-transparent hover:border-red-100 active:scale-95">
-                            {quantity === 1 ? <Trash2 className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
-                        </button>
-                        <div className="flex flex-col items-center px-4">
-                            <span className="text-xl font-black text-gray-800 tabular-nums">{quantity}</span>
-                            <span className="text-[10px] text-gray-400 font-medium">عدد در سبد</span>
+        {/* بخش بالایی: عکس و اطلاعات اصلی */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 animate-in fade-in slide-in-from-bottom-4 duration-500 items-start">
+        
+            {/* --- ستون تصویر (سمت راست در دسکتاپ - ۵ واحد) --- */}
+            <div className="md:col-span-5 relative">
+                <div className="relative aspect-square bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm group sticky top-24">
+                    <img src={product.image} alt={product.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                    {quantity > 0 && (
+                        <div className="absolute top-4 right-4 bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg border-2 border-white animate-in zoom-in">
+                            {quantity}
                         </div>
-                        <button onClick={() => addToCart(product)} className="w-14 h-12 flex items-center justify-center bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-md shadow-blue-200 transition-all active:scale-95">
-                            <Plus className="h-6 w-6" />
-                        </button>
-                    </div>
-                ) : (
-                    <button onClick={() => addToCart(product)} className="w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-blue-200 hover:-translate-y-1 active:scale-95">
-                        <ShoppingBag className="h-6 w-6" /> افزودن به سبد خرید
-                    </button>
-                )}
-                <div className="grid grid-cols-2 gap-4 text-xs text-gray-500 text-center bg-gray-50 py-3 rounded-xl border border-gray-100">
-                    <div className="flex items-center justify-center gap-1 font-medium"><ShieldCheck className="h-4 w-4 text-green-600"/> ضمانت بازگشت وجه</div>
-                    <div className="flex items-center justify-center gap-1 font-medium"><Truck className="h-4 w-4 text-blue-600"/> ارسال رایگان به ایران</div>
+                    )}
                 </div>
             </div>
+
+            {/* --- ستون اطلاعات (سمت چپ - ۷ واحد) --- */}
+            <div className="md:col-span-7 flex flex-col">
+                
+                {/* 1. Breadcrumb */}
+                <div className="mb-4 flex items-center justify-between">
+                    <Link 
+                        href={`/products?category=${categorySlug}`} 
+                        className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors"
+                    >
+                        <Tag className="h-3 w-3" />
+                        {categoryName}
+                    </Link>
+                    
+                    {/* امتیاز */}
+                    <div className="flex items-center gap-1 text-xs font-bold text-gray-500 bg-gray-50 px-2 py-1 rounded-lg">
+                        <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" />
+                        <span>۵.۰</span>
+                    </div>
+                </div>
+
+                {/* 2. Title */}
+                <h1 className="text-2xl md:text-4xl font-black text-gray-900 mb-6 leading-snug">{product.title}</h1>
+
+                {/* 3. Price & Action Box (DESKTOP ONLY) */}
+                <div className="hidden md:block bg-white p-6 rounded-2xl border border-blue-100 shadow-sm mb-8">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <span className="text-gray-400 text-xs block mb-1">قیمت نهایی برای شما</span>
+                            <div className="text-3xl font-black text-blue-700 font-mono tracking-tight">
+                                {symbol} {typeof finalPrice === 'number' ? finalPrice.toFixed(2) : finalPrice}
+                            </div>
+                        </div>
+                        <div className="text-right hidden lg:block">
+                            <div className="text-xs text-green-600 font-bold flex items-center gap-1 mb-1 justify-end"><ShieldCheck className="h-3 w-3"/> گارانتی سلامت</div>
+                            <div className="text-xs text-blue-600 font-bold flex items-center gap-1 justify-end"><Truck className="h-3 w-3"/> ارسال رایگان</div>
+                        </div>
+                    </div>
+                    
+                    {/* دکمه خرید دسکتاپ */}
+                    <AddToCartButtons isMobile={false} />
+                </div>
+
+                {/* 4. Features (ویژگی‌ها) - تک‌ستونه برای نظم بیشتر */}
+                {product.features && product.features.length > 0 && (
+                    <div className="mb-8 grid grid-cols-1 gap-3"> {/* تغییر به تک ستونه */}
+                        {product.features.map((feat, index) => (
+                            <div key={index} className="flex items-center gap-3 text-sm text-gray-700 bg-gray-50 p-3 rounded-xl border border-gray-100 hover:border-blue-100 transition-colors">
+                                <div className="bg-white p-1 rounded-full text-green-500 shadow-sm flex-shrink-0"><Check className="h-3 w-3" /></div>
+                                <span className="font-medium leading-6">{feat}</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+            </div>
         </div>
+
+        {/* --- بخش توضیحات (تمام عرض و جدا شده) --- */}
+        {product.description && (
+            <div className="mt-12 pt-10 border-t border-gray-200">
+                <h3 className="font-bold text-gray-900 mb-6 text-xl flex items-center gap-2">
+                    <span className="w-1.5 h-8 bg-blue-600 rounded-full"></span>
+                    <FileText className="h-6 w-6 text-gray-400" />
+                    توضیحات
+                </h3>
+                <div className="bg-white rounded-3xl p-6 md:p-10 border border-gray-100 shadow-sm">
+                    {renderDescription(product.description)}
+                </div>
+            </div>
+        )}
+
+        {/* --- STICKY BOTTOM BAR (MOBILE ONLY) --- */}
+        {/* z-index افزایش یافت تا روی چت‌باکس بیفتد */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 z-[100] md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.1)] animate-in slide-in-from-bottom-full duration-300">
+            <div className="flex items-center gap-4 max-w-md mx-auto">
+                <div className="flex flex-col flex-1">
+                    <span className="text-xs text-gray-400 mb-0.5">
+                        {quantity > 0 ? 'مبلغ کل آیتم:' : 'قیمت نهایی:'}
+                    </span>
+                    <span className="text-xl font-black text-blue-700 font-mono">
+                        {symbol} {typeof finalPrice === 'number' ? (finalPrice * (quantity || 1)).toFixed(2) : finalPrice}
+                    </span>
+                </div>
+                <div className="w-[55%]">
+                    <AddToCartButtons isMobile={true} />
+                </div>
+            </div>
         </div>
 
         {/* محصولات پیشنهادی */}
         {relatedProducts.length > 0 && (
-            <div className="mt-20 pt-10 border-t border-gray-100">
+            <div className="mt-20 pt-10 border-t border-gray-200">
                 <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                     <LayoutGrid className="h-5 w-5 text-blue-600" />
                     محصولات مشابه (شاید بپسندید)
@@ -7340,12 +7746,12 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                             price={item.price}
                             image={item.image}
                             slug={item.slug}
-                        />
+                       />
                     ))}
                 </div>
             </div>
         )}
-    </>
+    </div>
   );
 }
 
@@ -7936,5 +8342,5 @@ UPDATE posts SET category = category WHERE slug = 'slug-name';
 
 
 ### Summary
-# Files considered: 65 | Written: 60 | Skipped: 5
-# Output size: 371907 bytes
+# Files considered: 64 | Written: 60 | Skipped: 4
+# Output size: 388201 bytes
