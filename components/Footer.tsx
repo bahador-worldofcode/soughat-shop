@@ -12,20 +12,20 @@ export default function Footer() {
             {/* لوگوتایپ فارسی و اختصاصی */}
             <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl overflow-hidden shadow-sm border border-blue-100">
-                     <img src="/icon" alt="Soughat Logo" className="w-full h-full object-cover" />
+                     {/* اصلاح شد: استفاده از فایل استاتیک لوگو */}
+                     <img src="/logo.png" alt="Soughat Logo" className="w-full h-full object-cover" />
                 </div>
                 <span className="text-2xl font-black text-blue-700 tracking-tighter" style={{ letterSpacing: '-1px' }}>
-                    سوغات شاپ
+                  سوغات شاپ
                 </span>
             </div>
             
             <p className="mt-4 text-sm text-gray-500 max-w-sm leading-7 text-justify">
-              اولین پلتفرم تخصصی ارسال هدیه به ایران. 
-              ما با حذف واسطه‌های بانکی و استفاده از شبکه امن بلاک‌چین، 
+              اولین پلتفرم تخصصی ارسال هدیه به ایران. ما با حذف واسطه‌های بانکی و استفاده از شبکه امن بلاک‌چین، 
               امکان پرداخت سریع و بدون تحریم را با تتر (USDT) و سولانا (Solana) فراهم کرده‌ایم.
             </p>
 
-            {/* نوار آیکون‌های کریپتو (اضافه شده) */}
+            {/* نوار آیکون‌های کریپتو */}
             <div className="flex items-center gap-3 mt-4 opacity-90">
                 <img src="https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/usdt.png" className="w-6 h-6 hover:scale-110 transition-transform cursor-help" alt="Tether" title="پشتیبانی از تتر" />
                 <img src="https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/sol.png" className="w-6 h-6 hover:scale-110 transition-transform cursor-help" alt="Solana" title="پشتیبانی از سولانا" />
@@ -96,7 +96,7 @@ export default function Footer() {
         <div className="mt-12 pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <p className="text-xs text-gray-400 dir-ltr font-mono">
-              © 2025 Soughat Shop. All rights reserved.
+             © 2025 Soughat Shop. All rights reserved.
             </p>
             {/* Admin Lock */}
             <Link href="/admin/login" className="text-gray-300 hover:text-blue-900 transition-colors p-1 opacity-50 hover:opacity-100" title="ورود مدیریت">

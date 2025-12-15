@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -9,7 +8,6 @@ import { useStore } from '@/lib/store';
 export default function Header() {
   const { currency, setCurrency, totalItems, fetchRates } = useStore();
   const cartCount = totalItems();
-  
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -33,14 +31,13 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 font-[family-name:var(--font-vazir)]">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 gap-4">
         
-        {/* Logo Section (اصلاح شده: لوگو + تگ‌لاین) */}
+        {/* Logo Section */}
         <Link href="/" className="flex items-center gap-3 flex-shrink-0 group">
-          {/* لوگو: استفاده از همون فایلی که ساختی */}
           <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-sm border border-blue-100 group-hover:scale-105 transition-transform">
-             <img src="/icon" alt="Soughat Logo" className="w-full h-full object-cover" />
+             {/* اصلاح شد: استفاده از فایل استاتیک لوگو */}
+             <img src="/logo.png" alt="Soughat Logo" className="w-full h-full object-cover" />
           </div>
 
-          {/* متن: اسم + تگ‌لاین */}
           <div className="flex flex-col justify-center">
             <span className="text-xl font-extrabold text-blue-600 tracking-tighter leading-none">
               Soughat Shop
@@ -116,7 +113,7 @@ export default function Header() {
 
       </div>
       
-      {/* Mobile Search Bar (Always Visible on Mobile) */}
+      {/* Mobile Search Bar */}
       <div className="md:hidden px-4 pb-3">
         <form onSubmit={handleSearch} className="flex items-center bg-gray-100 rounded-lg px-3 py-2 border border-transparent focus-within:border-blue-400 focus-within:bg-white transition-all">
             <Search className="h-4 w-4 text-gray-400" />
@@ -130,7 +127,7 @@ export default function Header() {
         </form>
       </div>
 
-      {/* Mobile Dropdown Menu (Overlay) */}
+      {/* Mobile Dropdown Menu */}
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-full left-0 w-full bg-white border-t border-gray-100 shadow-lg animate-in fade-in slide-in-from-top-2 z-40">
             <div className="flex flex-col p-4 gap-4">
