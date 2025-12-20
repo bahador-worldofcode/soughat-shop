@@ -2,7 +2,7 @@ import Hero from "@/components/Hero";
 import ProductCard from "@/components/ProductCard";
 import CurrencyRatesBanner from "@/components/CurrencyRatesBanner";
 import FAQ from "@/components/FAQ"; 
-import HomeSEOContent from "@/components/HomeSEOContent"; // <--- اضافه شد
+import HomeSEOContent from "@/components/HomeSEOContent";
 import { supabase } from '@/lib/supabase';
 import { ArrowLeft, Layers } from 'lucide-react';
 import Link from 'next/link';
@@ -19,7 +19,7 @@ export default async function Home() {
     .order('created_at', { ascending: false })
     .limit(8);
 
-  // 2. دریافت دسته‌بندی‌ها
+  // 2. دریافت دسته‌بندی‌ها (فیلد icon_url حالا در خروجی هست)
   const { data: categories } = await supabase
     .from('categories')
     .select('*')
@@ -42,30 +42,38 @@ export default async function Home() {
         subtitle={settings.hero_subtitle}
       />
       
-      {/* 2. Categories Section (Improved UI) */}
+      {/* 2. Categories Section (Updated with Icons) */}
       <section className="container mx-auto px-4 -mt-10 relative z-30 mb-20">
-         <div className="bg-white rounded-3xl p-8 shadow-xl shadow-gray-200/50 border border-gray-100 text-center">
-           <h3 className="font-bold text-gray-800 mb-6 flex items-center justify-center gap-2">
-              <Layers className="h-5 w-5 text-blue-600" />
-              دسترسی سریع به محصولات
-           </h3>
-           
-           {!categories || categories.length === 0 ? (
-             <p className="text-sm text-gray-400">هنوز دسته‌بندی تعریف نشده است.</p>
-           ) : (
-             <div className="flex flex-wrap justify-center gap-4">
-               {categories.map((cat) => (
-                 <Link 
-                    key={cat.id} 
-                    href={`/products?category=${cat.slug}`} 
-                    className="group flex items-center gap-3 bg-gray-50 hover:bg-blue-600 hover:text-white border border-gray-200 hover:border-blue-600 text-gray-700 px-6 py-4 rounded-2xl transition-all duration-300"
-                 >
-                  <span className="font-bold text-sm">{cat.name}</span>
-                 </Link>
-               ))}
-             </div>
-           )}
-        </div>
+          <div className="bg-white rounded-3xl p-8 shadow-xl shadow-gray-200/50 border border-gray-100 text-center">
+            <h3 className="font-bold text-gray-800 mb-6 flex items-center justify-center gap-2">
+               <Layers className="h-5 w-5 text-blue-600" />
+               دسترسی سریع به محصولات
+            </h3>
+            
+            {!categories || categories.length === 0 ? (
+              <p className="text-sm text-gray-400">هنوز دسته‌بندی تعریف نشده است.</p>
+            ) : (
+              <div className="flex flex-wrap justify-center gap-4">
+                {categories.map((cat) => (
+                  <Link 
+                     key={cat.id} 
+                     href={`/products?category=${cat.slug}`} 
+                     className="group flex items-center gap-3 bg-gray-50 hover:bg-blue-600 hover:text-white border border-gray-200 hover:border-blue-600 text-gray-700 px-6 py-4 rounded-2xl transition-all duration-300"
+                  >
+                   {/* نمایش آیکون دسته بندی */}
+                   {cat.icon_url && (
+                     <img 
+                        src={cat.icon_url} 
+                        alt={cat.name} 
+                        className="w-6 h-6 object-contain group-hover:invert transition-all" 
+                     />
+                   )}
+                   <span className="font-bold text-sm">{cat.name}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+         </div>
       </section>
 
       {/* 3. Products Showcase */}
@@ -130,8 +138,8 @@ export default async function Home() {
       {/* 5. FAQ Section */}
       <FAQ />
 
-      {/* 6. SEO Content (New) */}
-      <HomeSEOContent /> {/* <--- اضافه شد */}
+      {/* 6. SEO Content */}
+      <HomeSEOContent />
 
     </main>
   );

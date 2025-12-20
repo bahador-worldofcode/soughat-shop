@@ -1,12 +1,13 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Plus, Trash2, Layers, Loader2, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Layers, Loader2, AlertCircle, Image as ImageIcon } from 'lucide-react';
 
 interface Category {
   id: string;
   name: string;
   slug: string;
+  icon_url: string; // فیلد جدید اضافه شد
   created_at: string;
 }
 
@@ -18,6 +19,7 @@ export default function CategoriesPage() {
   // فرم افزودن
   const [newName, setNewName] = useState('');
   const [newSlug, setNewSlug] = useState('');
+  const [newIconUrl, setNewIconUrl] = useState(''); // استیت جدید برای آیکون
 
   useEffect(() => {
     fetchCategories();
@@ -53,13 +55,18 @@ export default function CategoriesPage() {
 
       const { error } = await supabase
         .from('categories')
-        .insert([{ name: newName, slug: newSlug }]);
+        .insert([{ 
+          name: newName, 
+          slug: newSlug, 
+          icon_url: newIconUrl // ارسال آیکون به دیتابیس
+        }]);
 
       if (error) throw error;
 
       await fetchCategories();
       setNewName('');
       setNewSlug('');
+      setNewIconUrl(''); // ریست کردن فیلد
     } catch (error: any) {
       alert('خطا: ' + error.message);
     } finally {
@@ -78,11 +85,8 @@ export default function CategoriesPage() {
     }
   };
 
-  // ساخت خودکار اسلاگ از روی نام
   const handleNameChange = (val: string) => {
     setNewName(val);
-    // تبدیل ساده فارسی به انگلیش یا خط تیره (اختیاری، اینجا فقط کپی می‌کنیم که دست‌کاری کنن)
-    // بهتره ادمین خودش اسلاگ انگلیسی تمیز بنویسه
   };
 
   if (loading) return <div className="p-10 text-center">در حال بارگذاری...</div>;
@@ -100,37 +104,51 @@ export default function CategoriesPage() {
       {/* فرم افزودن */}
       <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
         <h3 className="font-bold text-gray-700 mb-4 text-sm">افزودن دسته جدید</h3>
-        <form onSubmit={handleAdd} className="flex flex-col md:flex-row gap-4 items-end">
-          <div className="flex-1 w-full">
-            <label className="text-xs text-gray-500 mb-1 block">عنوان فارسی (مثال: زعفران)</label>
-            <input 
-              type="text" 
-              required
-              value={newName}
-              onChange={(e) => handleNameChange(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:border-blue-500 outline-none"
-              placeholder="نام دسته..."
-            />
+        <form onSubmit={handleAdd} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="w-full">
+              <label className="text-xs text-gray-500 mb-1 block">عنوان فارسی (مثال: زعفران)</label>
+              <input 
+                type="text" 
+                required
+                value={newName}
+                onChange={(e) => handleNameChange(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:border-blue-500 outline-none"
+                placeholder="نام دسته..."
+              />
+            </div>
+            <div className="w-full">
+              <label className="text-xs text-gray-500 mb-1 block">نامک انگلیسی (Slug)</label>
+              <input 
+                type="text" 
+                required
+                value={newSlug}
+                onChange={(e) => setNewSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:border-blue-500 outline-none dir-ltr text-left font-mono"
+                placeholder="e.g: saffron-premium"
+              />
+            </div>
+            <div className="w-full">
+              <label className="text-xs text-gray-500 mb-1 block">لینک آیکون (PNG یا SVG)</label>
+              <input 
+                type="text" 
+                value={newIconUrl}
+                onChange={(e) => setNewIconUrl(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:border-blue-500 outline-none dir-ltr text-left"
+                placeholder="https://example.com/icon.png"
+              />
+            </div>
           </div>
-          <div className="flex-1 w-full">
-            <label className="text-xs text-gray-500 mb-1 block">نامک انگلیسی (Slug) - برای آدرس‌دهی</label>
-            <input 
-              type="text" 
-              required
-              value={newSlug}
-              onChange={(e) => setNewSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
-              className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:border-blue-500 outline-none dir-ltr text-left font-mono"
-              placeholder="e.g: saffron-premium"
-            />
+          <div className="flex justify-end">
+            <button 
+              type="submit" 
+              disabled={adding}
+              className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-bold text-sm flex justify-center gap-2 items-center"
+            >
+              {adding ? <Loader2 className="animate-spin h-5 w-5" /> : <Plus className="h-5 w-5" />}
+              افزودن دسته
+            </button>
           </div>
-          <button 
-            type="submit" 
-            disabled={adding}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-bold text-sm w-full md:w-auto flex justify-center gap-2"
-          >
-            {adding ? <Loader2 className="animate-spin h-5 w-5" /> : <Plus className="h-5 w-5" />}
-            افزودن
-          </button>
         </form>
       </div>
 
@@ -139,6 +157,7 @@ export default function CategoriesPage() {
         <table className="w-full text-right">
           <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
             <tr>
+              <th className="px-6 py-4">آیکون</th>
               <th className="px-6 py-4">نام دسته</th>
               <th className="px-6 py-4">نامک (Slug)</th>
               <th className="px-6 py-4 text-center">عملیات</th>
@@ -147,6 +166,15 @@ export default function CategoriesPage() {
           <tbody className="divide-y divide-gray-100">
             {categories.map((cat) => (
               <tr key={cat.id} className="hover:bg-gray-50/50">
+                <td className="px-6 py-4">
+                  {cat.icon_url ? (
+                    <img src={cat.icon_url} alt={cat.name} className="h-10 w-10 object-contain bg-gray-50 rounded-lg p-1" />
+                  ) : (
+                    <div className="h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <ImageIcon className="h-5 w-5 text-gray-400" />
+                    </div>
+                  )}
+                </td>
                 <td className="px-6 py-4 font-bold text-gray-800">{cat.name}</td>
                 <td className="px-6 py-4 font-mono text-gray-500 text-sm dir-ltr text-right">{cat.slug}</td>
                 <td className="px-6 py-4 text-center">
@@ -162,9 +190,11 @@ export default function CategoriesPage() {
             ))}
             {categories.length === 0 && (
                 <tr>
-                    <td colSpan={3} className="px-6 py-10 text-center text-gray-400 flex flex-col items-center gap-2">
-                        <AlertCircle className="h-8 w-8 opacity-50" />
-                        هنوز دسته‌بندی نساخته‌اید.
+                    <td colSpan={4} className="px-6 py-10 text-center text-gray-400">
+                        <div className="flex flex-col items-center gap-2">
+                           <AlertCircle className="h-8 w-8 opacity-50" />
+                           هنوز دسته‌بندی نساخته‌اید.
+                        </div>
                     </td>
                 </tr>
             )}

@@ -1,5 +1,5 @@
 ### Soughat-Shop Snapshot
-# Generated: 2025-12-16T01:02:03.145082
+# Generated: 2025-12-20T20:36:51.192409
 # Root: C:\projects\soughat-shop
 # Excluded dir names: .expo, .git, .next, .vscode, node_modules
 # Excluded files (by name/rel): collect_soughat_snapshot.bat, collect_soughat_snapshot.py, package-lock.json, snapshot_soughat.txt
@@ -5110,47 +5110,8 @@ export default function HowItWorksPage() {
   );
 }
 
-===== File: app/icon.tsx =====
-# Modified: 2025-11-29T14:13:23.270873 | Size: 901 bytes | SHA1: ce7874b798836249dc722a1a096cdd6b548f33a0
-import { ImageResponse } from 'next/og'
-
-// تنظیمات سایز تصویر (استاندارد گوگل و موبایل)
-export const size = {
-  width: 192,
-  height: 192,
-}
-export const contentType = 'image/png'
-
-// تولید آیکون HD
-export default function Icon() {
-  return new ImageResponse(
-    (
-      <div
-        style={{
-          fontSize: 120, // فونت بزرگتر برای سایز جدید
-          background: '#2563eb', // آبی برند
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'white',
-          borderRadius: '40px', // گردی متناسب با سایز بزرگ
-          fontWeight: 800,
-          fontFamily: 'sans-serif',
-        }}
-      >
-        S
-      </div>
-    ),
-    {
-      ...size,
-    }
-  )
-}
-
 ===== File: app/layout.tsx =====
-# Modified: 2025-12-01T23:55:37.800521 | Size: 2886 bytes | SHA1: ab5f611118cd4815f995e3d2ff21bfa22bf82c0f
+# Modified: 2025-12-16T01:19:48.603644 | Size: 2595 bytes | SHA1: 83a8449e62f72ab5ec93f6a1223bd9cff47a7c88
 import type { Metadata } from "next";
 import { Vazirmatn } from "next/font/google";
 import "./globals.css";
@@ -5165,22 +5126,27 @@ const vazir = Vazirmatn({
 });
 
 export const metadata: Metadata = {
-  // آدرس اصلی سایت (بسیار مهم برای سئو)
+  // آدرس اصلی سایت
   metadataBase: new URL('https://soughat-shop.vercel.app'),
   
-  // تایتل هوشمند: اگر در صفحه‌ای تایتل نداشتیم، این رو نشون میده
   title: {
     default: "سوغات شاپ | ارسال هدیه به ایران با ارز دیجیتال",
     template: "%s | سوغات شاپ"
   },
   
-  // توضیحات جذاب و کامل (بین ۱۵۰ تا ۱۶۰ کاراکتر عالیه)
   description: "اولین پلتفرم تخصصی ارسال هدیه، سوغات و پول به ایران برای ایرانیان خارج از کشور. خرید پسته، زعفران و کادو با پرداخت امن تتر (USDT) و سولانا. تحویل فوری در سراسر ایران.",
   
-  // کلمات کلیدی برای گوگل
+  // --- بخش جدید: اتصال به فایل‌های پوشه Public ---
+  manifest: '/site.webmanifest',
+  icons: {
+    icon: '/logo.png',
+    apple: '/logo.png',
+    shortcut: '/logo.png',
+  },
+  // ---------------------------------------------
+
   keywords: ["ارسال هدیه به ایران", "خرید سوغات ایران", "ارسال پول با تتر", "سوغات شاپ", "Soughat Shop", "خرید پسته صادراتی", "گیفت شاپ ایران", "پرداخت با کریپتو"],
   
-  // اطلاعات نویسنده و ربات‌ها
   authors: [{ name: "تیم سوغات شاپ" }],
   creator: "Soughat Shop",
   publisher: "Soughat Shop",
@@ -5189,7 +5155,6 @@ export const metadata: Metadata = {
     follow: true,
   },
 
-  // تنظیمات شبکه اجتماعی (وقتی لینک رو شیر میکنی این شکلی میشه)
   openGraph: {
     title: "سوغات شاپ | پل ارتباطی با ایران",
     description: "عزیزانتان در ایران را خوشحال کنید. ارسال آنی هدیه و سوغات با پرداخت ارزی و کریپتو.",
@@ -5199,7 +5164,6 @@ export const metadata: Metadata = {
     type: 'website',
   },
   
-  // کد تایید گوگل که داشتی (دست‌نخورده باقی ماند)
   verification: {
     google: "889fIOlZo4jHk-UB3Sv_X-vuaJQa-YPzZKLPMqpcYEo",
   },
@@ -6977,7 +6941,7 @@ export default function FloatingContact() {
 }
 
 ===== File: components/Footer.tsx =====
-# Modified: 2025-11-29T14:29:25.323502 | Size: 6961 bytes | SHA1: 53000910eb769e4dbc802ba94479242ed8d5d29d
+# Modified: 2025-12-16T01:24:11.106114 | Size: 7026 bytes | SHA1: 50cf806e4cc6eed78c1bf13f1b6c12ace8b8c178
 import Link from 'next/link';
 import { Instagram, Twitter, Mail, Heart, Lock, ShieldCheck, HelpCircle, ShoppingBag, BookOpen, Package, Info, Phone } from 'lucide-react';
 
@@ -6992,20 +6956,20 @@ export default function Footer() {
             {/* لوگوتایپ فارسی و اختصاصی */}
             <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl overflow-hidden shadow-sm border border-blue-100">
-                     <img src="/icon" alt="Soughat Logo" className="w-full h-full object-cover" />
+                     {/* اصلاح شد: استفاده از فایل استاتیک لوگو */}
+                     <img src="/logo.png" alt="Soughat Logo" className="w-full h-full object-cover" />
                 </div>
                 <span className="text-2xl font-black text-blue-700 tracking-tighter" style={{ letterSpacing: '-1px' }}>
-                    سوغات شاپ
+                  سوغات شاپ
                 </span>
             </div>
             
             <p className="mt-4 text-sm text-gray-500 max-w-sm leading-7 text-justify">
-              اولین پلتفرم تخصصی ارسال هدیه به ایران. 
-              ما با حذف واسطه‌های بانکی و استفاده از شبکه امن بلاک‌چین، 
+              اولین پلتفرم تخصصی ارسال هدیه به ایران. ما با حذف واسطه‌های بانکی و استفاده از شبکه امن بلاک‌چین، 
               امکان پرداخت سریع و بدون تحریم را با تتر (USDT) و سولانا (Solana) فراهم کرده‌ایم.
             </p>
 
-            {/* نوار آیکون‌های کریپتو (اضافه شده) */}
+            {/* نوار آیکون‌های کریپتو */}
             <div className="flex items-center gap-3 mt-4 opacity-90">
                 <img src="https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/usdt.png" className="w-6 h-6 hover:scale-110 transition-transform cursor-help" alt="Tether" title="پشتیبانی از تتر" />
                 <img src="https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/sol.png" className="w-6 h-6 hover:scale-110 transition-transform cursor-help" alt="Solana" title="پشتیبانی از سولانا" />
@@ -7076,7 +7040,7 @@ export default function Footer() {
         <div className="mt-12 pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <p className="text-xs text-gray-400 dir-ltr font-mono">
-              © 2025 Soughat Shop. All rights reserved.
+             © 2025 Soughat Shop. All rights reserved.
             </p>
             {/* Admin Lock */}
             <Link href="/admin/login" className="text-gray-300 hover:text-blue-900 transition-colors p-1 opacity-50 hover:opacity-100" title="ورود مدیریت">
@@ -7096,9 +7060,8 @@ export default function Footer() {
 }
 
 ===== File: components/Header.tsx =====
-# Modified: 2025-11-29T14:20:42.091497 | Size: 8556 bytes | SHA1: 649139a14522b322c9c99585325a5ee6b84913bb
+# Modified: 2025-12-16T01:23:19.238703 | Size: 8424 bytes | SHA1: 12528fc0b4982acce52a01e0c0cad68b665ad702
 'use client';
-
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -7108,7 +7071,6 @@ import { useStore } from '@/lib/store';
 export default function Header() {
   const { currency, setCurrency, totalItems, fetchRates } = useStore();
   const cartCount = totalItems();
-  
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -7132,14 +7094,13 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 font-[family-name:var(--font-vazir)]">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 gap-4">
         
-        {/* Logo Section (اصلاح شده: لوگو + تگ‌لاین) */}
+        {/* Logo Section */}
         <Link href="/" className="flex items-center gap-3 flex-shrink-0 group">
-          {/* لوگو: استفاده از همون فایلی که ساختی */}
           <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-sm border border-blue-100 group-hover:scale-105 transition-transform">
-             <img src="/icon" alt="Soughat Logo" className="w-full h-full object-cover" />
+             {/* اصلاح شد: استفاده از فایل استاتیک لوگو */}
+             <img src="/logo.png" alt="Soughat Logo" className="w-full h-full object-cover" />
           </div>
 
-          {/* متن: اسم + تگ‌لاین */}
           <div className="flex flex-col justify-center">
             <span className="text-xl font-extrabold text-blue-600 tracking-tighter leading-none">
               Soughat Shop
@@ -7215,7 +7176,7 @@ export default function Header() {
 
       </div>
       
-      {/* Mobile Search Bar (Always Visible on Mobile) */}
+      {/* Mobile Search Bar */}
       <div className="md:hidden px-4 pb-3">
         <form onSubmit={handleSearch} className="flex items-center bg-gray-100 rounded-lg px-3 py-2 border border-transparent focus-within:border-blue-400 focus-within:bg-white transition-all">
             <Search className="h-4 w-4 text-gray-400" />
@@ -7229,7 +7190,7 @@ export default function Header() {
         </form>
       </div>
 
-      {/* Mobile Dropdown Menu (Overlay) */}
+      {/* Mobile Dropdown Menu */}
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-full left-0 w-full bg-white border-t border-gray-100 shadow-lg animate-in fade-in slide-in-from-top-2 z-40">
             <div className="flex flex-col p-4 gap-4">
@@ -8044,6 +8005,28 @@ const config = {
 
 export default config;
 
+===== File: public/site.webmanifest =====
+# Modified: 2025-12-16T01:17:08.392804 | Size: 426 bytes | SHA1: 564bfe4941f72f2d6535911895f22bd976853ef1
+{
+    "name": "Soughat Shop",
+    "short_name": "Soughat",
+    "icons": [
+        {
+            "src": "/logo.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/logo.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "theme_color": "#2563eb",
+    "background_color": "#ffffff",
+    "display": "standalone"
+}
+
 ===== File: README.md =====
 # Modified: 2025-11-26T16:29:44.017145 | Size: 1450 bytes | SHA1: 7ba16f1bf099196063e5d413cf00a5aa850b043d
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
@@ -8340,7 +8323,135 @@ UPDATE posts SET category = category WHERE slug = 'slug-name';
   "exclude": ["node_modules"]
 }
 
+===== File: update_image.py =====
+# Modified: 2025-12-20T01:22:06.467302 | Size: 2388 bytes | SHA1: 2141b4653ed97bec947e1a04a29bd43eefd33891
+import os
+import uuid
+import mimetypes
+from supabase import create_client, Client
+
+# --- تنظیمات اتصال ---
+url: str = "https://hwzowjniahrqdzpnlpas.supabase.co"
+key: str = "sb_secret_hBTPTJiTIj4EBr2LmBCWUA_tHG5QLQ6"
+
+supabase: Client = create_client(url, key)
+bucket_name = "media"
+
+# --- اطلاعات محصول و فایل جدید ---
+file_path = r"C:\Users\Bahador\Desktop\nafis-negin-pack-open-new.webp"
+product_slug = "mojtahedi-exquisite-saffron-pack-40g" # اسلاگ محصول اول که ساختیم
+
+print(f"--- شروع عملیات تعویض عکس برای محصول: {product_slug} ---\n")
+
+if os.path.exists(file_path):
+    # 1. آماده‌سازی نام فایل جدید
+    original_name = os.path.basename(file_path)
+    _, ext = os.path.splitext(original_name)
+    random_name = f"img_HQ_{uuid.uuid4().hex[:8]}{ext}" # اسم با پیشوند HQ (High Quality)
+    mime_type, _ = mimetypes.guess_type(file_path)
+    
+    try:
+        # 2. آپلود عکس جدید
+        print(f"🔄 در حال آپلود عکس باکیفیت: {original_name} ...")
+        with open(file_path, 'rb') as f:
+            supabase.storage.from_(bucket_name).upload(
+                path=random_name, 
+                file=f, 
+                file_options={"content-type": mime_type if mime_type else "image/webp", "upsert": "true"}
+            )
+        
+        # گرفتن لینک عمومی
+        new_public_url = supabase.storage.from_(bucket_name).get_public_url(random_name)
+        print(f"✅ آپلود شد. لینک جدید: {new_public_url}")
+        
+        # 3. آپدیت کردن دیتابیس (جایگزینی لینک)
+        print("🔄 در حال آپدیت دیتابیس...")
+        data, count = supabase.table("products").update({"image": new_public_url}).eq("slug", product_slug).execute()
+        
+        print("\n🎉 تبریک! عملیات با موفقیت انجام شد.")
+        print(f"✅ عکس محصول '{product_slug}' در دیتابیس تغییر کرد.")
+        
+    except Exception as e:
+        print(f"\n❌ خطا در اجرا: {e}")
+
+else:
+    print(f"❌ فایل پیدا نشد: {file_path}")
+    print("لطفا مطمئن شو که فایل عکس دقیقا در آدرس بالا موجود است.")
+
+print("\n--- پایان ---")
+
+===== File: upload_fixed.py =====
+# Modified: 2025-12-20T20:14:24.820948 | Size: 2787 bytes | SHA1: c3e8785f1adff6da58d3600b148ee545a7ea095b
+import os
+import uuid
+import mimetypes
+from supabase import create_client, Client
+
+# --- تنظیمات اتصال ---
+url: str = "https://hwzowjniahrqdzpnlpas.supabase.co"
+key: str = "sb_secret_hBTPTJiTIj4EBr2LmBCWUA_tHG5QLQ6"
+
+supabase: Client = create_client(url, key)
+bucket_name = "media"
+
+# --- لیست فایل‌های گل و گیاه شما ---
+files_to_upload = [
+    r"C:\Users\Bahador\Desktop\سبد گل K87.webp",
+    r"C:\Users\Bahador\Desktop\سبد گل K153.jpg",
+    r"C:\Users\Bahador\Desktop\تاج گل T48.webp",
+    r"C:\Users\Bahador\Desktop\گلدان آپارتمانی ارکیده سفید.webp",
+    r"C:\Users\Bahador\Desktop\گلدان آپارتمانی زاموفیلیا.webp",
+    r"C:\Users\Bahador\Desktop\گلدان آپارتمانی ارکیده بنفش.webp",
+    r"C:\Users\Bahador\Desktop\گلدان آپارتمانی دیفن باخیا.webp",
+    r"C:\Users\Bahador\Desktop\گل ‌ترحیم F72.webp",
+    r"C:\Users\Bahador\Desktop\گل ترحیم F43.webp",
+    r"C:\Users\Bahador\Desktop\سبد گل K151.jpg"
+]
+
+print("--- شروع آپلود محصولات گل و گیاه با تغییر نام خودکار ---\n")
+
+for file_path in files_to_upload:
+    if os.path.exists(file_path):
+        original_name = os.path.basename(file_path)
+        _, ext = os.path.splitext(original_name)
+        
+        # ساخت نام انگلیسی رندوم با پیشوند flower برای نظم بیشتر
+        random_name = f"flower_{uuid.uuid4().hex[:8]}{ext}"
+        
+        # تشخیص نوع فایل
+        mime_type, _ = mimetypes.guess_type(file_path)
+        if mime_type is None:
+            if ext.lower() == '.webp':
+                mime_type = "image/webp"
+            else:
+                mime_type = "image/jpeg"
+
+        print(f"🔄 در حال آپلود: {original_name} ...")
+        
+        try:
+            with open(file_path, 'rb') as f:
+                supabase.storage.from_(bucket_name).upload(
+                    path=random_name, 
+                    file=f, 
+                    file_options={"content-type": mime_type, "upsert": "true"}
+                )
+            
+            # دریافت لینک عمومی
+            public_url = supabase.storage.from_(bucket_name).get_public_url(random_name)
+            
+            print(f"✅ محصول: {original_name}")
+            print(f"🔗 لینک جدید: {public_url}")
+            print("-" * 30)
+            
+        except Exception as e:
+            print(f"❌ خطا در آپلود {original_name}: {e}")
+            print("-" * 30)
+    else:
+        print(f"⚠️ فایل پیدا نشد: {file_path}")
+
+print("\n--- پایان عملیات آپلود ---")
+
 
 ### Summary
-# Files considered: 64 | Written: 60 | Skipped: 4
-# Output size: 388201 bytes
+# Files considered: 67 | Written: 62 | Skipped: 5
+# Output size: 392740 bytes

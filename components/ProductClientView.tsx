@@ -28,10 +28,11 @@ interface Props {
     product: Product;
     categoryName: string;
     categorySlug: string;
+    categoryIcon?: string; // فیلد جدید برای آیکون اختصاصی
     relatedProducts: RelatedItem[];
 }
 
-export default function ProductClientView({ product, categoryName, categorySlug, relatedProducts }: Props) {
+export default function ProductClientView({ product, categoryName, categorySlug, categoryIcon, relatedProducts }: Props) {
   const { convertPrice, getSymbol, addToCart, decreaseFromCart, cart } = useStore();
   const [mounted, setMounted] = useState(false);
 
@@ -61,7 +62,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
     });
   };
 
-  // کامپوننت دکمه‌های خرید (برای استفاده مجدد در دسکتاپ و موبایل)
+  // کامپوننت دکمه‌های خرید
   const AddToCartButtons = ({ isMobile = false }: { isMobile?: boolean }) => {
       if (quantity > 0) {
           return (
@@ -91,12 +92,12 @@ export default function ProductClientView({ product, categoryName, categorySlug,
   };
 
   return (
-    <div className="pb-24 md:pb-0 relative"> {/* پدینگ پایین برای موبایل که دکمه چسبان محتوا رو نپوشونه */}
+    <div className="pb-24 md:pb-0 relative font-[family-name:var(--font-vazir)]">
         
         {/* بخش بالایی: عکس و اطلاعات اصلی */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 animate-in fade-in slide-in-from-bottom-4 duration-500 items-start">
         
-            {/* --- ستون تصویر (سمت راست در دسکتاپ - ۵ واحد) --- */}
+            {/* --- ستون تصویر --- */}
             <div className="md:col-span-5 relative">
                 <div className="relative aspect-square bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm group sticky top-24">
                     <img src={product.image} alt={product.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
@@ -108,16 +109,20 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                 </div>
             </div>
 
-            {/* --- ستون اطلاعات (سمت چپ - ۷ واحد) --- */}
+            {/* --- ستون اطلاعات --- */}
             <div className="md:col-span-7 flex flex-col">
                 
-                {/* 1. Breadcrumb */}
+                {/* 1. Breadcrumb - بروزرسانی شده با آیکون داینامیک */}
                 <div className="mb-4 flex items-center justify-between">
                     <Link 
                         href={`/products?category=${categorySlug}`} 
-                        className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors"
+                        className="inline-flex items-center gap-2 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors"
                     >
-                        <Tag className="h-3 w-3" />
+                        {categoryIcon ? (
+                          <img src={categoryIcon} className="h-4 w-4 object-contain" alt="" />
+                        ) : (
+                          <Tag className="h-3 w-3" />
+                        )}
                         {categoryName}
                     </Link>
                     
@@ -146,13 +151,12 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                         </div>
                     </div>
                     
-                    {/* دکمه خرید دسکتاپ */}
                     <AddToCartButtons isMobile={false} />
                 </div>
 
-                {/* 4. Features (ویژگی‌ها) - تک‌ستونه برای نظم بیشتر */}
+                {/* 4. Features */}
                 {product.features && product.features.length > 0 && (
-                    <div className="mb-8 grid grid-cols-1 gap-3"> {/* تغییر به تک ستونه */}
+                    <div className="mb-8 grid grid-cols-1 gap-3">
                         {product.features.map((feat, index) => (
                             <div key={index} className="flex items-center gap-3 text-sm text-gray-700 bg-gray-50 p-3 rounded-xl border border-gray-100 hover:border-blue-100 transition-colors">
                                 <div className="bg-white p-1 rounded-full text-green-500 shadow-sm flex-shrink-0"><Check className="h-3 w-3" /></div>
@@ -165,7 +169,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
             </div>
         </div>
 
-        {/* --- بخش توضیحات (تمام عرض و جدا شده) --- */}
+        {/* --- بخش توضیحات --- */}
         {product.description && (
             <div className="mt-12 pt-10 border-t border-gray-200">
                 <h3 className="font-bold text-gray-900 mb-6 text-xl flex items-center gap-2">
@@ -180,7 +184,6 @@ export default function ProductClientView({ product, categoryName, categorySlug,
         )}
 
         {/* --- STICKY BOTTOM BAR (MOBILE ONLY) --- */}
-        {/* z-index افزایش یافت تا روی چت‌باکس بیفتد */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 z-[100] md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.1)] animate-in slide-in-from-bottom-full duration-300">
             <div className="flex items-center gap-4 max-w-md mx-auto">
                 <div className="flex flex-col flex-1">

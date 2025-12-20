@@ -23,6 +23,7 @@ interface Category {
   id: string;
   name: string;
   slug: string;
+  icon_url?: string; // اضافه شد برای پشتیبانی از آیکون
 }
 
 interface MediaFile {
@@ -339,15 +340,15 @@ export default function ProductsPage() {
     }
   };
 
-  const getCategoryName = (slug: string) => {
-    const cat = categories.find(c => c.slug === slug);
-    return cat ? cat.name : slug;
+  // تابع اصلاح شد تا آبجکت کامل دسته را برگرداند
+  const getCategoryObj = (slug: string) => {
+    return categories.find(c => c.slug === slug);
   };
 
   if (loading && products.length === 0) return <div className="p-10 text-center">در حال دریافت لیست...</div>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-[family-name:var(--font-vazir)]">
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
            <h2 className="text-2xl font-bold text-gray-800">مدیریت محصولات</h2>
@@ -415,6 +416,7 @@ export default function ProductsPage() {
             {products.map((product, index) => {
                 const isLast = index === products.length - 1;
                 const isUnavailable = product.price_toman === 0;
+                const catObj = getCategoryObj(product.category); // دریافت آبجکت دسته برای آیکون
                 return (
                     <div 
                         key={product.id} 
@@ -427,8 +429,10 @@ export default function ProductsPage() {
                                 <button onClick={() => openProductModal(product)} className="p-2 bg-white/90 rounded-full text-blue-600 shadow-sm"><Edit2 className="h-4 w-4" /></button>
                                 <button onClick={() => handleDelete(product.id)} className="p-2 bg-white/90 rounded-full text-red-500 shadow-sm"><Trash2 className="h-4 w-4" /></button>
                             </div>
-                            <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded-full backdrop-blur-sm">
-                            {getCategoryName(product.category)}
+                            {/* نمایش آیکون در بج دسته بندی */}
+                            <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded-full backdrop-blur-sm flex items-center gap-1.5">
+                              {catObj?.icon_url && <img src={catObj.icon_url} className="w-3 h-3 object-contain invert" alt="" />}
+                              {catObj ? catObj.name : product.category}
                             </span>
                             {isUnavailable && (
                                 <div className="absolute inset-0 flex items-center justify-center bg-black/20">
@@ -480,10 +484,10 @@ export default function ProductsPage() {
       )}
       
       {loadingMoreProducts && (
-         <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin text-blue-600"/></div>
+          <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin text-blue-600"/></div>
       )}
       {!hasMoreProducts && products.length > 0 && !searchTerm && (
-         <p className="text-center text-gray-400 text-xs mt-4">تمام محصولات نمایش داده شدند.</p>
+          <p className="text-center text-gray-400 text-xs mt-4">تمام محصولات نمایش داده شدند.</p>
       )}
 
       {/* Modal */}
@@ -521,7 +525,6 @@ export default function ProductsPage() {
                                 />
                                 <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-500">T</span>
                              </div>
-                             {/* متن قبلی برگشت داده شد */}
                              <p className="text-[10px] text-gray-500 mt-1">مبنای محاسبه قیمت دلاری</p>
                           </div>
                           <div>
@@ -538,7 +541,6 @@ export default function ProductsPage() {
                                 />
                                 <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-blue-600">$</span>
                             </div>
-                            {/* متن قبلی برگشت داده شد */}
                             <p className="text-[10px] text-blue-400 mt-1 flex items-center gap-1">
                                 <Calculator className="h-3 w-3"/>
                                 محاسبه شده با سود {profitMargin}٪
@@ -624,6 +626,7 @@ export default function ProductsPage() {
         </div>
       )}
 
+      {/* Gallery Modal */}
       {isGalleryOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in zoom-in duration-200">
            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl h-[80vh] flex flex-col overflow-hidden">
@@ -657,7 +660,6 @@ export default function ProductsPage() {
                   <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin text-blue-600"/></div>
                )}
              </div>
-
            </div>
         </div>
       )}

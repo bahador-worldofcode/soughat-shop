@@ -5,7 +5,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import ProductCard from '@/components/ProductCard';
-import { Search, ShoppingBag, ArrowDownUp, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, ShoppingBag, ArrowDownUp, Loader2, ChevronLeft, ChevronRight, Layers } from 'lucide-react';
 // اضافه شدن هوک‌های ضروری برای مدیریت URL
 import { useSearchParams, useRouter } from 'next/navigation';
 
@@ -23,6 +23,7 @@ interface Category {
   id: string;
   name: string;
   slug: string;
+  icon_url?: string; // فیلد آیکون اضافه شد
 }
 
 // تعداد محصول در هر صفحه
@@ -189,12 +190,24 @@ function ProductList() {
                         <button
                             key={cat.id}
                             onClick={() => handleCategoryChange(cat.slug)}
-                            className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold border transition-all ${
+                            className={`whitespace-nowrap px-5 py-2.5 rounded-full text-sm font-bold border transition-all flex items-center gap-2 ${
                                 currentCategory === cat.slug 
                                 ? 'bg-blue-600 text-white border-blue-600 shadow-md' 
-                                : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-gray-50'
                             }`}
                         >
+                            {/* نمایش آیکون دسته بندی */}
+                            {cat.slug === 'all' ? (
+                              <Layers className={`h-4 w-4 ${currentCategory === 'all' ? 'text-white' : 'text-blue-600'}`} />
+                            ) : (
+                              cat.icon_url && (
+                                <img 
+                                  src={cat.icon_url} 
+                                  alt="" 
+                                  className={`w-4 h-4 object-contain ${currentCategory === cat.slug ? 'invert' : ''}`} 
+                                />
+                              )
+                            )}
                             {cat.name}
                         </button>
                     ))
