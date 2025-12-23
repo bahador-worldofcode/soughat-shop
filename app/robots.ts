@@ -1,8 +1,8 @@
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  // آدرس سایت را از متغیر محیطی می‌گیریم، اگر نبود آدرس اصلی را می‌گذاریم
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat-shop.vercel.app';
+  // آدرس سایت را از متغیر محیطی می‌گیریم، اگر نبود آدرس اصلی جدید را می‌گذاریم
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat.shop';
 
   return {
     rules: {

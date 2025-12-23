@@ -5,14 +5,15 @@ export const revalidate = 3600;
 // آپدیت ساعتی (کش تا یک ساعت می‌مونه)
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  // تغییر فال‌بک به دامنه جدید برای اطمینان از ساخت لینک‌های صحیح
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat.shop';
 
   // 1. دریافت لیست مقالات وبلاگ
   const { data: posts } = await supabase
     .from('posts')
     .select('slug, created_at');
 
-  // 2. دریافت لیست محصولات (بخش جدید)
+  // 2. دریافت لیست محصولات
   const { data: products } = await supabase
     .from('products')
     .select('slug, created_at');
@@ -27,7 +28,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/products',
     '/blog',
     '/track',
-    '/how-it-works', // اضافه شد
+    '/how-it-works',
   ].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date().toISOString(),
@@ -43,12 +44,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   })) || [];
 
-  // 5. مپ کردن محصولات (بخش جدید)
+  // 5. مپ کردن محصولات
   const productRoutes = products?.map((product) => ({
     url: `${baseUrl}/products/${product.slug}`,
     lastModified: product.created_at || new Date().toISOString(),
-    changeFrequency: 'daily' as const, // محصولات چون قیمت و موجودی دارن روزانه چک بشن بهتره
-    priority: 0.9, // اولویت بالا برای محصولات (چون پولساز هستن)
+    changeFrequency: 'daily' as const,
+    priority: 0.9,
   })) || [];
 
   // ترکیب همه مسیرها

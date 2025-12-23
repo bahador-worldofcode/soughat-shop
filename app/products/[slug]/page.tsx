@@ -25,7 +25,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const pageTitle = product.seo_title || `${product.title} | ارسال هدیه به ایران`;
   const pageDesc = product.seo_desc || product.description?.substring(0, 160);
-  const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat-shop.vercel.app';
+  // اصلاح آدرس سایت برای متاتگ‌ها
+  const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat.shop';
 
   return {
     title: pageTitle,
@@ -92,7 +93,8 @@ export default async function ProductPage({ params }: Props) {
       priceCurrency: 'USD',
       price: product.price,
       availability: 'https://schema.org/InStock',
-      url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat-shop.vercel.app'}/products/${product.slug}`,
+      // اصلاح آدرس در اسکیما مارک‌آپ (برای گوگل)
+      url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat.shop'}/products/${product.slug}`,
       seller: { '@type': 'Organization', name: 'Soughat Shop' }
     },
   };

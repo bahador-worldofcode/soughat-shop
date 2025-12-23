@@ -12,8 +12,8 @@ const vazir = Vazirmatn({
 });
 
 export const metadata: Metadata = {
-  // آدرس اصلی سایت
-  metadataBase: new URL('https://soughat-shop.vercel.app'),
+  // آدرس اصلی سایت (تغییر یافته به دامنه جدید)
+  metadataBase: new URL('https://soughat.shop'),
   
   title: {
     default: "سوغات شاپ | ارسال هدیه به ایران با ارز دیجیتال",
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "سوغات شاپ | پل ارتباطی با ایران",
     description: "عزیزانتان در ایران را خوشحال کنید. ارسال آنی هدیه و سوغات با پرداخت ارزی و کریپتو.",
-    url: 'https://soughat-shop.vercel.app',
+    url: 'https://soughat.shop',
     siteName: 'Soughat Shop',
     locale: 'fa_IR',
     type: 'website',
