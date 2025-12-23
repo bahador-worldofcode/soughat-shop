@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Instagram, Twitter, Mail, Heart, Lock, ShieldCheck, HelpCircle, ShoppingBag, BookOpen, Package, Info, Phone } from 'lucide-react';
+import { Instagram, Twitter, Mail, Heart, Lock, ShieldCheck, HelpCircle, ShoppingBag, BookOpen, Package, Info, Phone, Code2 } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -12,8 +12,7 @@ export default function Footer() {
             {/* لوگوتایپ فارسی و اختصاصی */}
             <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl overflow-hidden shadow-sm border border-blue-100">
-                     {/* اصلاح شد: استفاده از فایل استاتیک لوگو */}
-                     <img src="/logo.png" alt="Soughat Logo" className="w-full h-full object-cover" />
+                      <img src="/logo.png" alt="Soughat Logo" className="w-full h-full object-cover" />
                 </div>
                 <span className="text-2xl font-black text-blue-700 tracking-tighter" style={{ letterSpacing: '-1px' }}>
                   سوغات شاپ
@@ -93,22 +92,49 @@ export default function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-2">
-            <p className="text-xs text-gray-400 dir-ltr font-mono">
-             © 2025 Soughat Shop. All rights reserved.
-            </p>
-            {/* Admin Lock */}
-            <Link href="/admin/login" className="text-gray-300 hover:text-blue-900 transition-colors p-1 opacity-50 hover:opacity-100" title="ورود مدیریت">
-              <Lock className="h-3 w-3" />
-            </Link>
+        <div className="mt-12 pt-8 border-t border-gray-100 flex flex-col lg:flex-row justify-between items-center gap-6">
+          
+          {/* کپی‌رایت و ادمین */}
+          <div className="flex flex-col md:flex-row items-center gap-4 text-center">
+            <div className="flex items-center gap-2">
+                <p className="text-xs text-gray-400 dir-ltr font-mono">
+                © 2025 Soughat Shop. All rights reserved.
+                </p>
+                <Link href="/admin/login" className="text-gray-300 hover:text-blue-900 transition-colors p-1 opacity-50 hover:opacity-100" title="ورود مدیریت">
+                <Lock className="h-3 w-3" />
+                </Link>
+            </div>
+            <div className="hidden md:block w-1 h-1 bg-gray-300 rounded-full"></div>
+            <div className="flex items-center gap-1 text-xs text-gray-400">
+                <span>ساخته شده با</span>
+                <Heart className="h-3 w-3 text-red-500 fill-red-500 animate-pulse" />
+                <span>برای ایران</span>
+            </div>
           </div>
           
-          <div className="flex items-center gap-1 text-xs text-gray-400 bg-gray-50 px-3 py-1 rounded-full">
-            <span>ساخته شده با</span>
-            <Heart className="h-3 w-3 text-red-500 fill-red-500 animate-pulse" />
-            <span>برای ایران</span>
-          </div>
+          {/* --- امضای کیا دِو (KiyaDev Signature) --- */}
+          <a 
+            href="https://kiyadev.ir" 
+            target="_blank"
+            className="group flex items-center gap-3 bg-gray-50 hover:bg-slate-900 border border-gray-100 px-4 py-2 rounded-xl transition-all duration-300"
+          >
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] text-gray-400 font-medium group-hover:text-gray-400/80">
+                Design & Engineering by
+              </span>
+              <span className="text-xs font-bold text-gray-700 group-hover:text-white flex items-center gap-1">
+                KiyaDev Team
+                <Code2 className="h-3 w-3 text-blue-600 group-hover:text-blue-400" />
+              </span>
+            </div>
+            
+            <div className="h-8 w-8 bg-white group-hover:bg-white/10 rounded-lg flex items-center justify-center shadow-sm transition-colors">
+               {/* اگر لوگوی کیادو رو داری اینجا بذار، وگرنه آیکون کد میمونه */}
+               <Code2 className="h-4 w-4 text-gray-600 group-hover:text-white" />
+            </div>
+          </a>
+          {/* -------------------------------------- */}
+
         </div>
       </div>
     </footer>
