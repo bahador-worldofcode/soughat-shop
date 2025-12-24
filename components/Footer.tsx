@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Instagram, Twitter, Mail, Heart, Lock, ShieldCheck, HelpCircle, ShoppingBag, BookOpen, Package, Info, Phone, Code2 } from 'lucide-react';
+import { Instagram, Twitter, Mail, Heart, Lock, ShieldCheck, HelpCircle, ShoppingBag, BookOpen, Package, Info, Phone, Code2, Library } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -38,6 +38,15 @@ export default function Footer() {
                 <a href="#" className="bg-gray-50 p-2 rounded-lg text-gray-400 hover:text-pink-600 hover:bg-pink-50 transition-all"><Instagram className="h-5 w-5" /></a>
                 <a href="#" className="bg-gray-50 p-2 rounded-lg text-gray-400 hover:text-blue-400 hover:bg-blue-50 transition-all"><Twitter className="h-5 w-5" /></a>
                 <Link href="/contact" className="bg-gray-50 p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"><Mail className="h-5 w-5" /></Link>
+                
+                {/* لینک همکاران (Partners) دقیقا مثل تیوان اکس */}
+                <Link 
+                    href="/partners" 
+                    title="Partners & Projects"
+                    className="bg-gray-50 p-2 rounded-lg text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all"
+                >
+                    <Library className="h-5 w-5" />
+                </Link>
             </div>
           </div>
 
@@ -129,7 +138,6 @@ export default function Footer() {
             </div>
             
             <div className="h-8 w-8 bg-white group-hover:bg-white/10 rounded-lg flex items-center justify-center shadow-sm transition-colors">
-               {/* اگر لوگوی کیادو رو داری اینجا بذار، وگرنه آیکون کد میمونه */}
                <Code2 className="h-4 w-4 text-gray-600 group-hover:text-white" />
             </div>
           </a>
