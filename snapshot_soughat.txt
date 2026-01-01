@@ -1,5 +1,5 @@
 ### Soughat-Shop Snapshot
-# Generated: 2026-01-01T21:11:56.262210
+# Generated: 2026-01-02T00:07:58.773938
 # Root: C:\projects\soughat-shop
 # Excluded dir names: .expo, .git, .next, .vscode, node_modules
 # Excluded files (by name/rel): collect_soughat_snapshot.bat, collect_soughat_snapshot.py, package-lock.json, snapshot_soughat.txt
@@ -1472,7 +1472,7 @@ export default async function HowItWorksPage({ params }: { params: Promise<{ loc
 }
 
 ===== File: app/[locale]/layout.tsx =====
-# Modified: 2026-01-01T03:17:44.764457 | Size: 3276 bytes | SHA1: 12805f14cab4c055d42626cc5490adfd0ab27309
+# Modified: 2026-01-01T21:29:22.179411 | Size: 3429 bytes | SHA1: 6b2a8e484046a45222bb5189cf7f71360c51f27a
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -1495,11 +1495,9 @@ export const metadata: Metadata = {
   description: "اولین پلتفرم تخصصی ارسال هدیه، سوغات و پول به ایران برای ایرانیان خارج از کشور. خرید پسته، زعفران و کادو با پرداخت امن تتر (USDT) و سولانا. تحویل فوری در سراسر ایران.",
   
   manifest: '/site.webmanifest',
-  icons: {
-    icon: '/logo.png',
-    apple: '/logo.png',
-    shortcut: '/logo.png',
-  },
+  
+  // ❌ بخش icons حذف شد چون فایل icon.png در پوشه app به صورت خودکار شناسایی می‌شود.
+  // این روش استاندارد Next.js برای نمایش صحیح لوگو در گوگل است.
 
   keywords: ["ارسال هدیه به ایران", "خرید سوغات ایران", "ارسال پول با تتر", "سوغات شاپ", "Soughat Shop", "خرید پسته صادراتی", "گیفت شاپ ایران", "پرداخت با کریپتو"],
   
@@ -2717,6 +2715,117 @@ export default function TrackPage() {
         </div>
 
       </div>
+    </div>
+  );
+}
+
+===== File: app/[locale]/trust/page.tsx =====
+# Modified: 2026-01-01T22:00:26.519756 | Size: 4375 bytes | SHA1: a4babea378b1b71a7d9721856111be7e04f23a8a
+import { ShieldCheck, Heart, Lock, Headphones, RefreshCcw, Wallet, CheckCircle, ArrowLeft } from 'lucide-react';
+import { Link } from '@/i18n/navigation';
+import { getTranslations } from 'next-intl/server';
+import type { Metadata } from 'next';
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({locale, namespace: 'Trust'});
+  return {
+    title: t('title'),
+  };
+}
+
+export default async function TrustPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const t = await getTranslations({locale, namespace: 'Trust'});
+  const isEn = locale === 'en';
+
+  const features = [
+    {
+      icon: RefreshCcw,
+      color: "text-green-600 bg-green-50",
+      title: t('guarantee_title'),
+      desc: t('guarantee_desc')
+    },
+    {
+      icon: CheckCircle,
+      color: "text-blue-600 bg-blue-50",
+      title: t('quality_title'),
+      desc: t('quality_desc')
+    },
+    {
+      icon: Lock,
+      color: "text-purple-600 bg-purple-50",
+      title: t('privacy_title'),
+      desc: t('privacy_desc')
+    },
+    {
+      icon: Headphones,
+      color: "text-orange-600 bg-orange-50",
+      title: t('support_title'),
+      desc: t('support_desc')
+    },
+    {
+      icon: Wallet,
+      color: "text-indigo-600 bg-indigo-50",
+      title: t('secure_title'),
+      desc: t('secure_desc')
+    }
+  ];
+
+  return (
+    <div className="bg-white min-h-screen pb-20 font-[family-name:var(--font-vazir)]">
+      
+      {/* Hero Section */}
+      <div className="bg-gradient-to-b from-blue-50 to-white py-20 text-center border-b border-gray-100">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <div className="inline-flex items-center justify-center p-4 bg-white rounded-full shadow-md mb-6 animate-in zoom-in duration-500">
+            <ShieldCheck className="h-12 w-12 text-blue-600" />
+          </div>
+          <h1 className="text-3xl md:text-5xl font-black text-gray-900 mb-6 leading-tight">
+            {t('hero_title')}
+          </h1>
+          <p className="text-lg text-gray-500 max-w-2xl mx-auto leading-8">
+            {t('hero_desc')}
+          </p>
+        </div>
+      </div>
+
+      {/* Trust Grid */}
+      <div className="container mx-auto px-4 -mt-10 relative z-10 max-w-6xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          
+          {features.map((item, idx) => (
+            <div key={idx} className="bg-white p-8 rounded-3xl border border-gray-100 shadow-lg hover:shadow-xl transition-shadow duration-300 group">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110 ${item.color}`}>
+                <item.icon className="h-7 w-7" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-700 transition-colors">
+                {item.title}
+              </h3>
+              <p className="text-gray-500 leading-7 text-sm text-justify">
+                {item.desc}
+              </p>
+            </div>
+          ))}
+
+          {/* Card 6: Call to Action (FIXED) */}
+          <div className="bg-blue-600 p-8 rounded-3xl shadow-lg flex flex-col justify-center items-center text-center text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
+            <Heart className="h-12 w-12 mb-4 animate-pulse text-red-300 fill-red-300" />
+            
+            {/* استفاده از ترجمه به جای متن ثابت */}
+            <h3 className="text-xl font-bold mb-2">{t('cta_card_title')}</h3>
+            <p className="text-blue-100 text-sm mb-6">{t('cta_card_desc')}</p>
+            
+            <Link href="/products" className="bg-white text-blue-700 font-bold py-3 px-6 rounded-xl hover:bg-gray-100 transition-all w-full flex items-center justify-center gap-2">
+               {t('cta_card_btn')}
+               <ArrowLeft className={`h-4 w-4 ${isEn ? 'rotate-180' : ''}`} />
+            </Link>
+          </div>
+
+        </div>
+      </div>
+
     </div>
   );
 }
@@ -7137,13 +7246,14 @@ export default function FloatingContact() {
 }
 
 ===== File: components/Footer.tsx =====
-# Modified: 2026-01-01T03:25:41.883837 | Size: 8479 bytes | SHA1: bc4fa28e2736d2f7f24c3865572051a3e2f0513a
+# Modified: 2026-01-01T22:06:00.708566 | Size: 8518 bytes | SHA1: f2196fa0a1ab05419be73ac30cf34828a919c7b5
 import { Instagram, Twitter, Mail, Heart, Lock, ShieldCheck, HelpCircle, ShoppingBag, BookOpen, Package, Info, Phone, Code2, Library } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Link } from '@/i18n/navigation'; // لینک هوشمند
+import { Link } from '@/i18n/navigation';
 
 export default function Footer() {
   const t = useTranslations('Footer');
+  const currentYear = new Date().getFullYear(); // دریافت سال جاری (مثلاً 2026)
 
   return (
     <footer className="bg-white border-t border-gray-200 mt-auto font-[family-name:var(--font-vazir)]">
@@ -7249,9 +7359,10 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row items-center gap-4 text-center">
             <div className="flex items-center gap-2">
                 <p className="text-xs text-gray-400 dir-ltr font-mono">
-                {t('rights')}
+                {/* محاسبه خودکار سال و افزودن کپی‌رایت */}
+                © {currentYear} {t('rights')}
                 </p>
-                {/* لینک ادمین چون خارجی محسوب می‌شود و در میدلور استثنا شده، از لینک معمولی استفاده می‌کنیم */}
+                {/* لینک ادمین */}
                 <a href="/admin/login" className="text-gray-300 hover:text-blue-900 transition-colors p-1 opacity-50 hover:opacity-100" title={t('admin_login')}>
                 <Lock className="h-3 w-3" />
                 </a>
@@ -7293,10 +7404,10 @@ export default function Footer() {
 }
 
 ===== File: components/Header.tsx =====
-# Modified: 2026-01-01T03:25:26.595300 | Size: 9507 bytes | SHA1: e4fb1715d9cf53cf4d8c109033c566f3051dd86e
+# Modified: 2026-01-01T21:37:43.294719 | Size: 11429 bytes | SHA1: 15de982a83d49b8a11f40cdf2de28678ffc973f9
 'use client';
 import { useState, useEffect } from 'react';
-import { ShoppingBag, Menu, X, Globe, Search } from 'lucide-react';
+import { ShoppingBag, Menu, X, Globe, Search, ChevronDown } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useTranslations } from 'next-intl';
 import { Link, useRouter, usePathname } from '@/i18n/navigation';
@@ -7325,17 +7436,17 @@ export default function Header() {
     }
   };
 
-  // تابع تغییر زبان (FA <-> EN)
   const toggleLanguage = () => {
-    // اگر آدرس فعلی انگلیسی است، به فارسی سوییچ کن و برعکس
     const currentLocale = window.location.pathname.startsWith('/en') ? 'en' : 'fa';
     const newLocale = currentLocale === 'en' ? 'fa' : 'en';
-    
-    // ریدایرکت به همان صفحه با زبان جدید
     router.replace(pathname, { locale: newLocale });
   };
 
   const currentLocale = typeof window !== 'undefined' && window.location.pathname.startsWith('/en') ? 'en' : 'fa';
+
+  // لینک‌های CDN برای پرچم‌ها
+  const flagIR = "https://flagcdn.com/w40/ir.png";
+  const flagUS = "https://flagcdn.com/w40/us.png";
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 font-[family-name:var(--font-vazir)]">
@@ -7358,49 +7469,59 @@ export default function Header() {
         </Link>
 
         {/* Desktop Search Bar */}
-        <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md items-center bg-gray-100 rounded-lg px-3 py-1.5 mx-4 border border-transparent focus-within:border-blue-400 focus-within:bg-white transition-all">
+        <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md items-center bg-gray-100 rounded-xl px-4 py-2 mx-4 border border-transparent focus-within:border-blue-400 focus-within:bg-white focus-within:shadow-sm transition-all">
             <Search className="h-4 w-4 text-gray-400" />
             <input 
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('searchPlaceholder')}
-                className={`bg-transparent border-none outline-none text-sm w-full text-gray-700 placeholder-gray-400 ${currentLocale === 'fa' ? 'mr-2' : 'ml-2'}`}
+                className={`bg-transparent border-none outline-none text-sm w-full text-gray-700 placeholder-gray-400 ${currentLocale === 'fa' ? 'mr-3' : 'ml-3'}`}
             />
         </form>
 
         {/* Desktop Navigation */}
         <nav className="hidden lg:flex items-center gap-6 flex-shrink-0">
-          <Link href="/" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">
+          <Link href="/" className="text-sm font-bold text-gray-600 hover:text-blue-600 transition-colors">
             {t('home')}
           </Link>
-          <Link href="/products" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">
+          <Link href="/products" className="text-sm font-bold text-gray-600 hover:text-blue-600 transition-colors">
             {t('products')}
           </Link>
-          <Link href="/track" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">
+          <Link href="/track" className="text-sm font-bold text-gray-600 hover:text-blue-600 transition-colors">
             {t('track')}
           </Link>
         </nav>
 
         {/* Actions */}
-        <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
+        <div className="flex items-center gap-3 flex-shrink-0">
           
-          {/* Language Switcher Button */}
+          {/* Language Switcher Button (Desktop) - FIXED FLAGS */}
           <button 
             onClick={toggleLanguage}
-            className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold text-xs transition-colors border border-blue-100"
-            title="تغییر زبان / Change Language"
+            className="hidden sm:flex items-center gap-2 bg-gray-50 hover:bg-white border border-gray-200 hover:border-blue-200 px-3 py-1.5 rounded-xl transition-all shadow-sm hover:shadow group"
+            title={currentLocale === 'fa' ? 'Switch to English' : 'تغییر به فارسی'}
           >
-            {currentLocale === 'fa' ? 'EN' : 'FA'}
+            {/* استفاده از تگ img استاندارد برای پرچم‌ها */}
+            <div className="w-5 h-3.5 relative rounded-sm overflow-hidden shadow-sm">
+                <img 
+                    src={currentLocale === 'fa' ? flagUS : flagIR} 
+                    alt="Language Flag" 
+                    className="w-full h-full object-cover"
+                />
+            </div>
+            <span className="text-xs font-bold text-gray-600 group-hover:text-blue-700 uppercase">
+                {currentLocale === 'fa' ? 'EN' : 'FA'}
+            </span>
           </button>
 
           {/* Currency Switcher (Desktop) */}
-          <div className="hidden sm:flex items-center gap-1 border rounded-lg px-2 py-1 bg-gray-50 hover:bg-gray-100 transition-colors">
-            <Globe className="h-4 w-4 text-gray-500" />
+          <div className="hidden sm:flex items-center gap-1 border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50 hover:bg-white transition-all shadow-sm hover:shadow cursor-pointer">
+            <Globe className="h-4 w-4 text-gray-400" />
             <select 
               value={currency}
               onChange={(e) => setCurrency(e.target.value as any)}
-              className="bg-transparent text-sm font-medium outline-none cursor-pointer uppercase text-gray-700"
+              className="bg-transparent text-xs font-bold outline-none cursor-pointer uppercase text-gray-700"
             >
               <option value="USD">USD ($)</option>
               <option value="EUR">EUR (€)</option>
@@ -7409,11 +7530,12 @@ export default function Header() {
             </select>
           </div>
 
+          {/* Cart Button */}
           <Link href="/cart">
-            <button className="relative p-2 hover:bg-gray-100 rounded-full transition-colors group">
+            <button className="relative p-2.5 hover:bg-blue-50 rounded-xl transition-colors group border border-transparent hover:border-blue-100">
               <ShoppingBag className="h-5 w-5 text-gray-600 group-hover:text-blue-600" />
               {mounted && cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-blue-600 text-[10px] font-bold text-white flex items-center justify-center animate-bounce">
+                <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center shadow-sm transform scale-100 group-hover:scale-110 transition-transform">
                   {cartCount}
                 </span>
               )}
@@ -7422,56 +7544,84 @@ export default function Header() {
           
           {/* Mobile Menu Trigger */}
           <button 
-            className="md:hidden p-2 hover:bg-gray-100 rounded-md transition-colors"
+            className="md:hidden p-2 hover:bg-gray-100 rounded-xl transition-colors border border-transparent hover:border-gray-200"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
-            {isMobileMenuOpen ? <X className="h-5 w-5 text-gray-600" /> : <Menu className="h-5 w-5 text-gray-600" />}
+            {isMobileMenuOpen ? <X className="h-6 w-6 text-gray-800" /> : <Menu className="h-6 w-6 text-gray-800" />}
           </button>
         </div>
 
       </div>
       
       {/* Mobile Search Bar */}
-      <div className="md:hidden px-4 pb-3">
-        <form onSubmit={handleSearch} className="flex items-center bg-gray-100 rounded-lg px-3 py-2 border border-transparent focus-within:border-blue-400 focus-within:bg-white transition-all">
+      <div className="md:hidden px-4 pb-3 border-b border-gray-50">
+        <form onSubmit={handleSearch} className="flex items-center bg-gray-100 rounded-xl px-3 py-2.5 border border-transparent focus-within:border-blue-400 focus-within:bg-white focus-within:shadow-sm transition-all">
             <Search className="h-4 w-4 text-gray-400" />
             <input 
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('searchPlaceholder')}
-                className={`bg-transparent border-none outline-none text-sm w-full text-gray-700 ${currentLocale === 'fa' ? 'mr-2' : 'ml-2'}`}
+                className={`bg-transparent border-none outline-none text-sm w-full text-gray-700 ${currentLocale === 'fa' ? 'mr-3' : 'ml-3'}`}
             />
         </form>
       </div>
 
       {/* Mobile Dropdown Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-white border-t border-gray-100 shadow-lg animate-in fade-in slide-in-from-top-2 z-40">
-            <div className="flex flex-col p-4 gap-4">
-                <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-700 font-medium hover:text-blue-600 flex items-center justify-between border-b border-gray-50 pb-2">
-                    {t('home')}
-                </Link>
-                <Link href="/products" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-700 font-medium hover:text-blue-600 flex items-center justify-between border-b border-gray-50 pb-2">
-                    {t('products')}
-                </Link>
-                <Link href="/blog" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-700 font-medium hover:text-blue-600 flex items-center justify-between border-b border-gray-50 pb-2">
-                    {t('blog')}
-                </Link>
-                <Link href="/track" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-700 font-medium hover:text-blue-600 flex items-center justify-between border-b border-gray-50 pb-2">
-                    {t('track')}
-                </Link>
-                <Link href="/how-it-works" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-700 font-medium hover:text-blue-600 flex items-center justify-between border-b border-gray-50 pb-2">
-                    {t('guide')}
-                </Link>
+        <div className="md:hidden absolute top-full left-0 w-full bg-white border-t border-gray-100 shadow-xl animate-in fade-in slide-in-from-top-2 z-40 h-screen">
+            <div className="flex flex-col p-4 gap-2">
+                
+                {/* Mobile Links */}
+                {[
+                  { href: '/', label: t('home') },
+                  { href: '/products', label: t('products') },
+                  { href: '/blog', label: t('blog') },
+                  { href: '/track', label: t('track') },
+                  { href: '/how-it-works', label: t('guide') },
+                ].map((link) => (
+                  <Link 
+                    key={link.href}
+                    href={link.href} 
+                    onClick={() => setIsMobileMenuOpen(false)} 
+                    className="text-gray-700 font-bold hover:text-blue-600 hover:bg-blue-50 px-4 py-3 rounded-xl flex items-center justify-between transition-colors"
+                  >
+                      {link.label}
+                      <ChevronDown className={`h-4 w-4 text-gray-400 ${currentLocale === 'fa' ? 'rotate-90' : '-rotate-90'}`} />
+                  </Link>
+                ))}
 
-                {/* Currency Switcher for Mobile */}
-                <div className="flex items-center justify-between pt-2">
-                    <span className="text-sm text-gray-500 flex items-center gap-2"><Globe className="h-4 w-4"/> {t('currency')}:</span>
+                <hr className="my-2 border-gray-100" />
+
+                {/* Mobile Language Switcher */}
+                <button 
+                  onClick={() => { toggleLanguage(); setIsMobileMenuOpen(false); }}
+                  className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-700 active:bg-gray-100"
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="text-lg">🌍</span> 
+                    {t('language') || 'Language'}
+                  </span>
+                  <div className="flex items-center gap-2 bg-white px-2 py-1 rounded-lg border border-gray-200 shadow-sm">
+                     <div className="w-5 h-3.5 relative rounded-sm overflow-hidden shadow-sm">
+                        {/* نمایش پرچم زبان فعلی */}
+                        <img 
+                            src={currentLocale === 'fa' ? flagIR : flagUS} 
+                            alt="Current Language Flag" 
+                            className="w-full h-full object-cover"
+                        />
+                     </div>
+                     <span className="uppercase text-xs">{currentLocale === 'fa' ? 'FA' : 'EN'}</span>
+                  </div>
+                </button>
+
+                {/* Mobile Currency Switcher */}
+                <div className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-700">
+                    <span className="flex items-center gap-2"><Globe className="h-4 w-4"/> {t('currency')}:</span>
                     <select 
                         value={currency}
                         onChange={(e) => setCurrency(e.target.value as any)}
-                        className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1 text-sm outline-none"
+                        className="bg-transparent text-sm font-bold outline-none text-blue-700 dir-ltr"
                     >
                         <option value="USD">USD ($)</option>
                         <option value="EUR">EUR (€)</option>
@@ -7487,10 +7637,10 @@ export default function Header() {
 }
 
 ===== File: components/Hero.tsx =====
-# Modified: 2026-01-01T03:31:04.129255 | Size: 4571 bytes | SHA1: df7c48a443cac4071eb518c027f550ae90c3fa3b
-import { Link } from '@/i18n/navigation'; // استفاده از لینک هوشمند
+# Modified: 2026-01-01T21:54:00.738164 | Size: 4047 bytes | SHA1: 85920c03d750cc041f99b7025abc07edd4c69495
+import { Link } from '@/i18n/navigation';
 import { ArrowLeft, Gift, ShieldCheck } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface HeroProps {
   banner?: string;
@@ -7499,55 +7649,54 @@ interface HeroProps {
 }
 
 export default function Hero({ banner, title, subtitle }: HeroProps) {
-  const t = useTranslations('Home'); // فراخوانی دیکشنری صفحه اصلی
+  const t = useTranslations('Home');
+  const locale = useLocale();
+  const isEn = locale === 'en';
 
-  // مقادیر پیش‌فرض اگر دیتابیس خالی بود (به زبان انگلیسی یا فارسی توسط والد کنترل می‌شود)
   const displayTitle = title || t('hero_start'); 
   const displaySubtitle = subtitle || '';
   const hasBanner = !!banner;
 
   return (
-    <section className="relative overflow-hidden font-[family-name:var(--font-vazir)] bg-gradient-to-br from-indigo-950 via-blue-900 to-blue-950 min-h-[auto] md:min-h-[600px] py-12 md:py-0" dir="ltr">
-      {/* نکته: dir="ltr" در سکشن بالا موقتی است تا دیزاین بنر بهم نریزد، 
-          اما محتوا بر اساس زبان جهت‌دهی می‌شود */}
+    <section className="relative overflow-hidden font-[family-name:var(--font-vazir)] bg-gradient-to-br from-indigo-950 via-blue-900 to-blue-950 min-h-[auto] md:min-h-[600px] py-12 md:py-0">
       
       {/* کانتینر اصلی */}
       <div className="container mx-auto px-4 relative z-10">
         <div className="flex flex-col-reverse md:flex-row items-center justify-between gap-8 md:gap-12">
           
           {/* --- ستون ۱: متن‌ها --- */}
-          <div className="flex-1 text-center md:text-right w-full z-20" dir="rtl"> 
-             {/* اینجا dir را کنترل می‌کنیم یا بر اساس زبان تنظیم می‌شود */}
+          <div className="flex-1 text-center md:text-start w-full z-20"> 
             
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-800/50 border border-blue-700 text-blue-200 text-xs md:text-sm mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-800/50 border border-blue-700 text-blue-200 text-xs md:text-sm mb-6 mx-auto md:mx-0">
               <Gift className="h-4 w-4 text-yellow-400" />
               <span>Soughat Shop</span>
             </div>
 
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-white leading-tight mb-6 drop-shadow-lg text-center md:text-start">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-white leading-tight mb-6 drop-shadow-lg">
               {displayTitle}
             </h1>
 
-            <p className="text-xs sm:text-base md:text-lg text-blue-100 leading-8 mb-8 max-w-full md:max-w-none mx-auto md:mx-0 md:whitespace-nowrap text-center md:text-start">
+            <p className="text-xs sm:text-base md:text-lg text-blue-100 leading-8 mb-8 max-w-full md:max-w-none mx-auto md:mx-0">
               {displaySubtitle}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
               <Link 
                 href="/products" 
-                className="inline-flex items-center justify-center rounded-xl bg-yellow-500 hover:bg-yellow-400 text-blue-900 px-8 py-4 text-base font-bold shadow-lg transition-all hover:-translate-y-1"
+                className="inline-flex items-center justify-center rounded-xl bg-yellow-500 hover:bg-yellow-400 text-blue-900 px-8 py-4 text-base font-bold shadow-lg transition-all hover:-translate-y-1 gap-2"
               >
-                {t('hero_start')}
-                <ArrowLeft className="ml-2 h-5 w-5 rotate-180 md:rotate-0" /> 
-                {/* روتیشن آیکون در زبان‌های مختلف هندل می‌شود */}
+                <span>{t('hero_start')}</span>
+                {/* چرخش فلش بر اساس زبان */}
+                <ArrowLeft className={`h-5 w-5 ${isEn ? 'rotate-180' : ''}`} /> 
               </Link>
               
+              {/* لینک اصلاح شده به صفحه جدید Trust */}
               <Link 
-                href="/how-it-works" 
-                className="inline-flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white px-8 py-4 text-base font-medium backdrop-blur-sm transition-all"
+                href="/trust" 
+                className="inline-flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white px-8 py-4 text-base font-medium backdrop-blur-sm transition-all gap-2"
               >
-                <ShieldCheck className="mr-2 h-5 w-5" />
-                {t('hero_trust')}
+                <ShieldCheck className="h-5 w-5" />
+                <span>{t('hero_trust')}</span>
               </Link>
             </div>
           </div>
@@ -8211,7 +8360,7 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 ===== File: messages/en.json =====
-# Modified: 2026-01-01T04:23:52.004993 | Size: 19870 bytes | SHA1: 64b83e3ebd99640bffa4bb4dd8421581c3488ff7
+# Modified: 2026-01-01T22:04:17.323990 | Size: 21107 bytes | SHA1: cb431a976d22d470e6b1fe727c4ad51b3209c648
 {
   "Header": {
     "home": "Home",
@@ -8234,7 +8383,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
     "terms": "Terms & Guarantee",
     "about": "About Us",
     "contact": "Contact Us",
-    "rights": "© 2025 Soughat Shop. All rights reserved.",
+    "rights": "Soughat Shop. All rights reserved.",
     "made_with": "Made with",
     "for_iran": "for Iran",
     "admin_login": "Admin Login",
@@ -8591,11 +8740,29 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
     "cities_tehran": "Tehran (Express)",
     "cities_other": "and all other cities...",
     "keywords": "Keywords: Send money to Iran, Online shopping for family in Iran, Send birthday gift to Iran, Gift exchange, Buy Persian pistachio."
+  },
+  "Trust": {
+    "title": "Why Trust Soughat Shop?",
+    "hero_title": "Your Peace of Mind is Our Priority",
+    "hero_desc": "We understand the anxiety of sending gifts remotely to Iran. Here is how we guarantee a perfect experience.",
+    "guarantee_title": "100% Money-Back Guarantee",
+    "guarantee_desc": "No questions asked. If the package doesn't arrive or is damaged, you get a full refund instantly.",
+    "quality_title": "Freshness Guaranteed",
+    "quality_desc": "We source from top-tier suppliers in Tehran. If your family isn't happy with the quality, we take it back.",
+    "privacy_title": "Absolute Privacy",
+    "privacy_desc": "No price invoice is sent to the recipient. Your data and the recipient's details remain strictly confidential.",
+    "support_title": "Real Human Support",
+    "support_desc": "We are not bots! Our support team is ready on WhatsApp to answer any concern you might have.",
+    "secure_title": "Secure Payment",
+    "secure_desc": "Blockchain is the most secure payment method globally. Your transaction is transparent and traceable.",
+    "cta_card_title": "Feeling Reassured?",
+    "cta_card_desc": "Place your first order right now.",
+    "cta_card_btn": "Start Shopping"
   }
 }
 
 ===== File: messages/fa.json =====
-# Modified: 2026-01-01T04:23:34.956712 | Size: 30156 bytes | SHA1: ecafd74dc4a1abcc65d34aff19bfe57fb795f3c5
+# Modified: 2026-01-01T22:03:42.141318 | Size: 32009 bytes | SHA1: 6b59a9ee88f438e5ef6439d59de9e977ce6c14aa
 {
   "Header": {
     "home": "خانه",
@@ -8618,7 +8785,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
     "terms": "قوانین و ضمانت‌ها",
     "about": "درباره ما",
     "contact": "تماس با ما",
-    "rights": "© 2025 سوغات شاپ. تمامی حقوق محفوظ است.",
+    "rights": "سوغات شاپ. تمامی حقوق محفوظ است.",
     "made_with": "ساخته شده با",
     "for_iran": "برای ایران",
     "admin_login": "ورود مدیریت",
@@ -8975,12 +9142,30 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
     "cities_tehran": "تهران (تحویل فوری)",
     "cities_other": "و سایر شهرهای ایران...",
     "keywords": "کلیدواژه‌های مرتبط: ارسال پول به ایران، خرید اینترنتی برای خانواده در ایران، ارسال کادو تولد به ایران، صرافی آنلاین هدایا، خرید پسته صادراتی برای ایران."
+  },
+  "Trust": {
+    "title": "چرا به سوغات شاپ اعتماد کنیم؟",
+    "hero_title": "اعتماد شما، سرمایه ماست",
+    "hero_desc": "ما می‌دانیم خرید از راه دور برای خانواده در ایران چقدر حساس است. این‌ها دلایلی هستند که خیال شما را راحت می‌کنند.",
+    "guarantee_title": "ضمانت بازگشت ۱۰۰٪ وجه",
+    "guarantee_desc": "بدون هیچ قید و شرطی. اگر بسته به هر دلیلی نرسید یا آسیب دید، پول شما در همان لحظه عودت داده می‌شود.",
+    "quality_title": "تضمین تازگی و کیفیت",
+    "quality_desc": "ما با بهترین تامین‌کنندگان تهران قرارداد داریم. اگر خانواده از طعم پسته یا آجیل راضی نبودند، بسته را پس می‌گیریم.",
+    "privacy_title": "محرمانگی مطلق",
+    "privacy_desc": "هیچ فاکتور یا قیمتی برای گیرنده ارسال نمی‌شود. اطلاعات شما و گیرنده کاملاً محرمانه باقی می‌ماند.",
+    "support_title": "پشتیبانی واقعی انسان",
+    "support_desc": "ربات نیستیم! تیم پشتیبانی ما در واتساپ آماده پاسخگویی به هر نگرانی شماست.",
+    "secure_title": "پرداخت امن و قانونی",
+    "secure_desc": "استفاده از بلاک‌چین امن‌ترین روش انتقال وجه در دنیاست. تراکنش شما شفاف و قابل پیگیری است.",
+    "cta_card_title": "خیالتان راحت شد؟",
+    "cta_card_desc": "همین حالا اولین سفارش خود را ثبت کنید.",
+    "cta_card_btn": "شروع خرید"
   }
 }
 
 
 ===== File: middleware.ts =====
-# Modified: 2026-01-01T03:09:42.638542 | Size: 362 bytes | SHA1: 3ebba073a003b6d354bd58ea6496dca0e49d68f7
+# Modified: 2026-01-01T21:20:16.648748 | Size: 590 bytes | SHA1: 3e869676b26b2e2d31e8e3b4ba34de5e41f1cea6
 import createMiddleware from 'next-intl/middleware';
  
 export default createMiddleware({
@@ -8990,8 +9175,9 @@ export default createMiddleware({
 });
  
 export const config = {
-  // تغییر مهم: کلمه admin به لیست استثناها اضافه شد
-  matcher: ['/((?!api|admin|_next/static|_next/image|favicon.ico).*)']
+  // تغییر مهم: اضافه کردن پترن برای نادیده گرفتن فایل‌های دارای پسوند (مثل png, jpg, ...)
+  // عبارت |.*\\..* باعث می‌شود هر درخواستی که نقطه (.) دارد (یعنی فایل است) نادیده گرفته شود.
+  matcher: ['/((?!api|admin|_next/static|_next/image|favicon.ico|.*\\..*).*)']
 };
 
 ===== File: next-env.d.ts =====
@@ -9602,5 +9788,5 @@ print("\n✨ تمام آیکون‌ها با موفقیت آپدیت شدند. �
 
 
 ### Summary
-# Files considered: 76 | Written: 71 | Skipped: 5
-# Output size: 442150 bytes
+# Files considered: 78 | Written: 72 | Skipped: 6
+# Output size: 451405 bytes

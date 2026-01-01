@@ -296,7 +296,9 @@
     "copy_success": "Address Copied!",
     "btn_confirm": "I have paid",
     "btn_checking": "Registering transaction...",
-    "refresh_rate": "Refresh Rate"
+    "refresh_rate": "Refresh Rate",
+    "warning_title": "IMPORTANT: Network Selection",
+    "warning_desc": "Please ONLY select Solana (SPL) network for USDT. Sending via TRC20 or ERC20 will result in fund loss."
   },
   "Track": {
     "title": "Track Your Order",

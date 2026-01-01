@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useStore } from '@/lib/store';
-import { Loader2, Copy, CheckCircle, Wallet, Info, RefreshCw, ScanLine } from 'lucide-react';
+import { Loader2, Copy, CheckCircle, Wallet, Info, RefreshCw, ScanLine, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
@@ -224,6 +224,18 @@ export default function CryptoPayment({ orderId }: Props) {
                            {t('network')} {selectedMethod.network}
                         </span>
                     </div>
+
+                    {selectedMethod.symbol === 'USDT' && selectedMethod.network === 'Solana' && (
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3 text-center animate-pulse">
+                            <div className="text-sm text-amber-800 font-bold flex items-center justify-center gap-2 mb-1">
+                                <AlertTriangle className="h-5 w-5" />
+                                <span>{t('warning_title')}</span>
+                            </div>
+                            <p className="text-[11px] text-amber-700 leading-4">
+                                {t('warning_desc')}
+                            </p>
+                        </div>
+                    )}
 
                     <button 
                         onClick={() => handleCopy(selectedMethod.address)}
