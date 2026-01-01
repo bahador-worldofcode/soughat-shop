@@ -29,17 +29,17 @@ export default function Header() {
     }
   };
 
-  // تابع تغییر زبان (FA <-> EN)
   const toggleLanguage = () => {
-    // اگر آدرس فعلی انگلیسی است، به فارسی سوییچ کن و برعکس
     const currentLocale = window.location.pathname.startsWith('/en') ? 'en' : 'fa';
     const newLocale = currentLocale === 'en' ? 'fa' : 'en';
-    
-    // ریدایرکت به همان صفحه با زبان جدید
     router.replace(pathname, { locale: newLocale });
   };
 
   const currentLocale = typeof window !== 'undefined' && window.location.pathname.startsWith('/en') ? 'en' : 'fa';
+
+  // لینک‌های CDN برای پرچم‌ها
+  const flagIR = "https://flagcdn.com/w40/ir.png";
+  const flagUS = "https://flagcdn.com/w40/us.png";
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 font-[family-name:var(--font-vazir)]">
@@ -89,16 +89,20 @@ export default function Header() {
         {/* Actions */}
         <div className="flex items-center gap-3 flex-shrink-0">
           
-          {/* Language Switcher Button (Desktop) - NEW DESIGN */}
+          {/* Language Switcher Button (Desktop) - FIXED FLAGS */}
           <button 
             onClick={toggleLanguage}
             className="hidden sm:flex items-center gap-2 bg-gray-50 hover:bg-white border border-gray-200 hover:border-blue-200 px-3 py-1.5 rounded-xl transition-all shadow-sm hover:shadow group"
             title={currentLocale === 'fa' ? 'Switch to English' : 'تغییر به فارسی'}
           >
-            {/* اگر فارسی هستیم، پرچم انگلیس/آمریکا را برای سوییچ نشان بده و برعکس */}
-            <span className="text-lg leading-none drop-shadow-sm filter grayscale-[20%] group-hover:grayscale-0 transition-all">
-                {currentLocale === 'fa' ? '🇺🇸' : '🇮🇷'}
-            </span>
+            {/* استفاده از تگ img استاندارد برای پرچم‌ها */}
+            <div className="w-5 h-3.5 relative rounded-sm overflow-hidden shadow-sm">
+                <img 
+                    src={currentLocale === 'fa' ? flagUS : flagIR} 
+                    alt="Language Flag" 
+                    className="w-full h-full object-cover"
+                />
+            </div>
             <span className="text-xs font-bold text-gray-600 group-hover:text-blue-700 uppercase">
                 {currentLocale === 'fa' ? 'EN' : 'FA'}
             </span>
@@ -142,7 +146,7 @@ export default function Header() {
 
       </div>
       
-      {/* Mobile Search Bar (Only visible on small screens) */}
+      {/* Mobile Search Bar */}
       <div className="md:hidden px-4 pb-3 border-b border-gray-50">
         <form onSubmit={handleSearch} className="flex items-center bg-gray-100 rounded-xl px-3 py-2.5 border border-transparent focus-within:border-blue-400 focus-within:bg-white focus-within:shadow-sm transition-all">
             <Search className="h-4 w-4 text-gray-400" />
@@ -192,7 +196,14 @@ export default function Header() {
                     {t('language') || 'Language'}
                   </span>
                   <div className="flex items-center gap-2 bg-white px-2 py-1 rounded-lg border border-gray-200 shadow-sm">
-                     <span className="text-lg">{currentLocale === 'fa' ? '🇮🇷' : '🇺🇸'}</span>
+                     <div className="w-5 h-3.5 relative rounded-sm overflow-hidden shadow-sm">
+                        {/* نمایش پرچم زبان فعلی */}
+                        <img 
+                            src={currentLocale === 'fa' ? flagIR : flagUS} 
+                            alt="Current Language Flag" 
+                            className="w-full h-full object-cover"
+                        />
+                     </div>
                      <span className="uppercase text-xs">{currentLocale === 'fa' ? 'FA' : 'EN'}</span>
                   </div>
                 </button>
