@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { ShoppingBag, Menu, X, Globe, Search } from 'lucide-react';
+import { ShoppingBag, Menu, X, Globe, Search, ChevronDown } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useTranslations } from 'next-intl';
 import { Link, useRouter, usePathname } from '@/i18n/navigation';
@@ -62,49 +62,55 @@ export default function Header() {
         </Link>
 
         {/* Desktop Search Bar */}
-        <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md items-center bg-gray-100 rounded-lg px-3 py-1.5 mx-4 border border-transparent focus-within:border-blue-400 focus-within:bg-white transition-all">
+        <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md items-center bg-gray-100 rounded-xl px-4 py-2 mx-4 border border-transparent focus-within:border-blue-400 focus-within:bg-white focus-within:shadow-sm transition-all">
             <Search className="h-4 w-4 text-gray-400" />
             <input 
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('searchPlaceholder')}
-                className={`bg-transparent border-none outline-none text-sm w-full text-gray-700 placeholder-gray-400 ${currentLocale === 'fa' ? 'mr-2' : 'ml-2'}`}
+                className={`bg-transparent border-none outline-none text-sm w-full text-gray-700 placeholder-gray-400 ${currentLocale === 'fa' ? 'mr-3' : 'ml-3'}`}
             />
         </form>
 
         {/* Desktop Navigation */}
         <nav className="hidden lg:flex items-center gap-6 flex-shrink-0">
-          <Link href="/" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">
+          <Link href="/" className="text-sm font-bold text-gray-600 hover:text-blue-600 transition-colors">
             {t('home')}
           </Link>
-          <Link href="/products" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">
+          <Link href="/products" className="text-sm font-bold text-gray-600 hover:text-blue-600 transition-colors">
             {t('products')}
           </Link>
-          <Link href="/track" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">
+          <Link href="/track" className="text-sm font-bold text-gray-600 hover:text-blue-600 transition-colors">
             {t('track')}
           </Link>
         </nav>
 
         {/* Actions */}
-        <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
+        <div className="flex items-center gap-3 flex-shrink-0">
           
-          {/* Language Switcher Button */}
+          {/* Language Switcher Button (Desktop) - NEW DESIGN */}
           <button 
             onClick={toggleLanguage}
-            className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold text-xs transition-colors border border-blue-100"
-            title="تغییر زبان / Change Language"
+            className="hidden sm:flex items-center gap-2 bg-gray-50 hover:bg-white border border-gray-200 hover:border-blue-200 px-3 py-1.5 rounded-xl transition-all shadow-sm hover:shadow group"
+            title={currentLocale === 'fa' ? 'Switch to English' : 'تغییر به فارسی'}
           >
-            {currentLocale === 'fa' ? 'EN' : 'FA'}
+            {/* اگر فارسی هستیم، پرچم انگلیس/آمریکا را برای سوییچ نشان بده و برعکس */}
+            <span className="text-lg leading-none drop-shadow-sm filter grayscale-[20%] group-hover:grayscale-0 transition-all">
+                {currentLocale === 'fa' ? '🇺🇸' : '🇮🇷'}
+            </span>
+            <span className="text-xs font-bold text-gray-600 group-hover:text-blue-700 uppercase">
+                {currentLocale === 'fa' ? 'EN' : 'FA'}
+            </span>
           </button>
 
           {/* Currency Switcher (Desktop) */}
-          <div className="hidden sm:flex items-center gap-1 border rounded-lg px-2 py-1 bg-gray-50 hover:bg-gray-100 transition-colors">
-            <Globe className="h-4 w-4 text-gray-500" />
+          <div className="hidden sm:flex items-center gap-1 border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50 hover:bg-white transition-all shadow-sm hover:shadow cursor-pointer">
+            <Globe className="h-4 w-4 text-gray-400" />
             <select 
               value={currency}
               onChange={(e) => setCurrency(e.target.value as any)}
-              className="bg-transparent text-sm font-medium outline-none cursor-pointer uppercase text-gray-700"
+              className="bg-transparent text-xs font-bold outline-none cursor-pointer uppercase text-gray-700"
             >
               <option value="USD">USD ($)</option>
               <option value="EUR">EUR (€)</option>
@@ -113,11 +119,12 @@ export default function Header() {
             </select>
           </div>
 
+          {/* Cart Button */}
           <Link href="/cart">
-            <button className="relative p-2 hover:bg-gray-100 rounded-full transition-colors group">
+            <button className="relative p-2.5 hover:bg-blue-50 rounded-xl transition-colors group border border-transparent hover:border-blue-100">
               <ShoppingBag className="h-5 w-5 text-gray-600 group-hover:text-blue-600" />
               {mounted && cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-blue-600 text-[10px] font-bold text-white flex items-center justify-center animate-bounce">
+                <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center shadow-sm transform scale-100 group-hover:scale-110 transition-transform">
                   {cartCount}
                 </span>
               )}
@@ -126,56 +133,77 @@ export default function Header() {
           
           {/* Mobile Menu Trigger */}
           <button 
-            className="md:hidden p-2 hover:bg-gray-100 rounded-md transition-colors"
+            className="md:hidden p-2 hover:bg-gray-100 rounded-xl transition-colors border border-transparent hover:border-gray-200"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
-            {isMobileMenuOpen ? <X className="h-5 w-5 text-gray-600" /> : <Menu className="h-5 w-5 text-gray-600" />}
+            {isMobileMenuOpen ? <X className="h-6 w-6 text-gray-800" /> : <Menu className="h-6 w-6 text-gray-800" />}
           </button>
         </div>
 
       </div>
       
-      {/* Mobile Search Bar */}
-      <div className="md:hidden px-4 pb-3">
-        <form onSubmit={handleSearch} className="flex items-center bg-gray-100 rounded-lg px-3 py-2 border border-transparent focus-within:border-blue-400 focus-within:bg-white transition-all">
+      {/* Mobile Search Bar (Only visible on small screens) */}
+      <div className="md:hidden px-4 pb-3 border-b border-gray-50">
+        <form onSubmit={handleSearch} className="flex items-center bg-gray-100 rounded-xl px-3 py-2.5 border border-transparent focus-within:border-blue-400 focus-within:bg-white focus-within:shadow-sm transition-all">
             <Search className="h-4 w-4 text-gray-400" />
             <input 
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('searchPlaceholder')}
-                className={`bg-transparent border-none outline-none text-sm w-full text-gray-700 ${currentLocale === 'fa' ? 'mr-2' : 'ml-2'}`}
+                className={`bg-transparent border-none outline-none text-sm w-full text-gray-700 ${currentLocale === 'fa' ? 'mr-3' : 'ml-3'}`}
             />
         </form>
       </div>
 
       {/* Mobile Dropdown Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-white border-t border-gray-100 shadow-lg animate-in fade-in slide-in-from-top-2 z-40">
-            <div className="flex flex-col p-4 gap-4">
-                <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-700 font-medium hover:text-blue-600 flex items-center justify-between border-b border-gray-50 pb-2">
-                    {t('home')}
-                </Link>
-                <Link href="/products" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-700 font-medium hover:text-blue-600 flex items-center justify-between border-b border-gray-50 pb-2">
-                    {t('products')}
-                </Link>
-                <Link href="/blog" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-700 font-medium hover:text-blue-600 flex items-center justify-between border-b border-gray-50 pb-2">
-                    {t('blog')}
-                </Link>
-                <Link href="/track" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-700 font-medium hover:text-blue-600 flex items-center justify-between border-b border-gray-50 pb-2">
-                    {t('track')}
-                </Link>
-                <Link href="/how-it-works" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-700 font-medium hover:text-blue-600 flex items-center justify-between border-b border-gray-50 pb-2">
-                    {t('guide')}
-                </Link>
+        <div className="md:hidden absolute top-full left-0 w-full bg-white border-t border-gray-100 shadow-xl animate-in fade-in slide-in-from-top-2 z-40 h-screen">
+            <div className="flex flex-col p-4 gap-2">
+                
+                {/* Mobile Links */}
+                {[
+                  { href: '/', label: t('home') },
+                  { href: '/products', label: t('products') },
+                  { href: '/blog', label: t('blog') },
+                  { href: '/track', label: t('track') },
+                  { href: '/how-it-works', label: t('guide') },
+                ].map((link) => (
+                  <Link 
+                    key={link.href}
+                    href={link.href} 
+                    onClick={() => setIsMobileMenuOpen(false)} 
+                    className="text-gray-700 font-bold hover:text-blue-600 hover:bg-blue-50 px-4 py-3 rounded-xl flex items-center justify-between transition-colors"
+                  >
+                      {link.label}
+                      <ChevronDown className={`h-4 w-4 text-gray-400 ${currentLocale === 'fa' ? 'rotate-90' : '-rotate-90'}`} />
+                  </Link>
+                ))}
 
-                {/* Currency Switcher for Mobile */}
-                <div className="flex items-center justify-between pt-2">
-                    <span className="text-sm text-gray-500 flex items-center gap-2"><Globe className="h-4 w-4"/> {t('currency')}:</span>
+                <hr className="my-2 border-gray-100" />
+
+                {/* Mobile Language Switcher */}
+                <button 
+                  onClick={() => { toggleLanguage(); setIsMobileMenuOpen(false); }}
+                  className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-700 active:bg-gray-100"
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="text-lg">🌍</span> 
+                    {t('language') || 'Language'}
+                  </span>
+                  <div className="flex items-center gap-2 bg-white px-2 py-1 rounded-lg border border-gray-200 shadow-sm">
+                     <span className="text-lg">{currentLocale === 'fa' ? '🇮🇷' : '🇺🇸'}</span>
+                     <span className="uppercase text-xs">{currentLocale === 'fa' ? 'FA' : 'EN'}</span>
+                  </div>
+                </button>
+
+                {/* Mobile Currency Switcher */}
+                <div className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-700">
+                    <span className="flex items-center gap-2"><Globe className="h-4 w-4"/> {t('currency')}:</span>
                     <select 
                         value={currency}
                         onChange={(e) => setCurrency(e.target.value as any)}
-                        className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1 text-sm outline-none"
+                        className="bg-transparent text-sm font-bold outline-none text-blue-700 dir-ltr"
                     >
                         <option value="USD">USD ($)</option>
                         <option value="EUR">EUR (€)</option>
