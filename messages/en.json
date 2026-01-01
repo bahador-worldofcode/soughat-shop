@@ -377,5 +377,20 @@
     "cities_tehran": "Tehran (Express)",
     "cities_other": "and all other cities...",
     "keywords": "Keywords: Send money to Iran, Online shopping for family in Iran, Send birthday gift to Iran, Gift exchange, Buy Persian pistachio."
+  },
+  "Trust": {
+    "title": "Why Trust Soughat Shop?",
+    "hero_title": "Your Peace of Mind is Our Priority",
+    "hero_desc": "We understand the anxiety of sending gifts remotely to Iran. Here is how we guarantee a perfect experience.",
+    "guarantee_title": "100% Money-Back Guarantee",
+    "guarantee_desc": "No questions asked. If the package doesn't arrive or is damaged, you get a full refund instantly.",
+    "quality_title": "Freshness Guaranteed",
+    "quality_desc": "We source from top-tier suppliers in Tehran. If your family isn't happy with the quality, we take it back.",
+    "privacy_title": "Absolute Privacy",
+    "privacy_desc": "No price invoice is sent to the recipient. Your data and the recipient's details remain strictly confidential.",
+    "support_title": "Real Human Support",
+    "support_desc": "We are not bots! Our support team is ready on WhatsApp to answer any concern you might have.",
+    "secure_title": "Secure Payment",
+    "secure_desc": "Blockchain is the most secure payment method globally. Your transaction is transparent and traceable."
   }
 }
