@@ -1,4 +1,8 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from 'next-intl/plugin';
+
+// ایجاد پلاگین i18n
+const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
 const nextConfig: NextConfig = {
   images: {
@@ -13,13 +17,14 @@ const nextConfig: NextConfig = {
       }
     ],
   },
-  // این بخش اضافه شد تا خطای ESLint مانع بالا آمدن سایت نشود
+  // این بخش برای جلوگیری از خطاهای بیلد ESLint
   eslint: {
     ignoreDuringBuilds: true,
   },
   typescript: {
-    ignoreBuildErrors: true, // برای اطمینان از اینکه هیچ خطای تایپی مانع نمیشود
+    ignoreBuildErrors: true, 
   }
 };
 
-export default nextConfig;
+// کانفیگ اصلی را داخل پلاگین رپ (Wrap) می‌کنیم
+export default withNextIntl(nextConfig);

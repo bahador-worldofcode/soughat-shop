@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { ShoppingBag, Check, ShieldCheck, Truck, Star, Plus, Minus, Trash2, Tag, LayoutGrid, FileText } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation'; // تغییر مهم: لینک هوشمند
 import ProductCard from './ProductCard';
+import { useTranslations } from 'next-intl';
 
 interface Product {
   id: string;
@@ -28,11 +29,12 @@ interface Props {
     product: Product;
     categoryName: string;
     categorySlug: string;
-    categoryIcon?: string; // فیلد جدید برای آیکون اختصاصی
+    categoryIcon?: string;
     relatedProducts: RelatedItem[];
 }
 
 export default function ProductClientView({ product, categoryName, categorySlug, categoryIcon, relatedProducts }: Props) {
+  const t = useTranslations('Product'); // اتصال به دیکشنری
   const { convertPrice, getSymbol, addToCart, decreaseFromCart, cart } = useStore();
   const [mounted, setMounted] = useState(false);
 
@@ -62,7 +64,6 @@ export default function ProductClientView({ product, categoryName, categorySlug,
     });
   };
 
-  // کامپوننت دکمه‌های خرید
   const AddToCartButtons = ({ isMobile = false }: { isMobile?: boolean }) => {
       if (quantity > 0) {
           return (
@@ -72,7 +73,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                 </button>
                 <div className="flex flex-col items-center px-4">
                     <span className="text-lg font-black text-blue-900 tabular-nums">{quantity}</span>
-                    {!isMobile && <span className="text-[9px] text-gray-400 font-medium">عدد در سبد</span>}
+                    {!isMobile && <span className="text-[9px] text-gray-400 font-medium">{t('in_cart')}</span>}
                 </div>
                 <button onClick={() => addToCart(product)} className="h-full aspect-square flex items-center justify-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-md shadow-blue-200 transition-all active:scale-90">
                     <Plus className="h-6 w-6" />
@@ -86,7 +87,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
             className={`w-full font-bold flex items-center justify-center gap-2 transition-all shadow-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-blue-200 hover:-translate-y-1 active:scale-95 ${isMobile ? 'h-12 text-base rounded-xl' : 'py-4 rounded-xl text-lg'}`}
         >
             <ShoppingBag className={isMobile ? "h-5 w-5" : "h-6 w-6"} /> 
-            {isMobile ? 'افزودن به سبد' : 'افزودن به سبد خرید'}
+            {isMobile ? t('add_to_cart_short') : t('add_to_cart')}
         </button>
       );
   };
@@ -94,10 +95,8 @@ export default function ProductClientView({ product, categoryName, categorySlug,
   return (
     <div className="pb-24 md:pb-0 relative font-[family-name:var(--font-vazir)]">
         
-        {/* بخش بالایی: عکس و اطلاعات اصلی */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 animate-in fade-in slide-in-from-bottom-4 duration-500 items-start">
         
-            {/* --- ستون تصویر --- */}
             <div className="md:col-span-5 relative">
                 <div className="relative aspect-square bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm group sticky top-24">
                     <img src={product.image} alt={product.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
@@ -109,10 +108,8 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                 </div>
             </div>
 
-            {/* --- ستون اطلاعات --- */}
             <div className="md:col-span-7 flex flex-col">
                 
-                {/* 1. Breadcrumb - بروزرسانی شده با آیکون داینامیک */}
                 <div className="mb-4 flex items-center justify-between">
                     <Link 
                         href={`/products?category=${categorySlug}`} 
@@ -126,35 +123,31 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                         {categoryName}
                     </Link>
                     
-                    {/* امتیاز */}
                     <div className="flex items-center gap-1 text-xs font-bold text-gray-500 bg-gray-50 px-2 py-1 rounded-lg">
                         <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" />
-                        <span>۵.۰</span>
+                        <span>{t('rating')}</span>
                     </div>
                 </div>
 
-                {/* 2. Title */}
                 <h1 className="text-2xl md:text-4xl font-black text-gray-900 mb-6 leading-snug">{product.title}</h1>
 
-                {/* 3. Price & Action Box (DESKTOP ONLY) */}
                 <div className="hidden md:block bg-white p-6 rounded-2xl border border-blue-100 shadow-sm mb-8">
                     <div className="flex items-center justify-between mb-6">
                         <div>
-                            <span className="text-gray-400 text-xs block mb-1">قیمت نهایی برای شما</span>
+                            <span className="text-gray-400 text-xs block mb-1">{t('final_price_label')}</span>
                             <div className="text-3xl font-black text-blue-700 font-mono tracking-tight">
                                 {symbol} {typeof finalPrice === 'number' ? finalPrice.toFixed(2) : finalPrice}
                             </div>
                         </div>
                         <div className="text-right hidden lg:block">
-                            <div className="text-xs text-green-600 font-bold flex items-center gap-1 mb-1 justify-end"><ShieldCheck className="h-3 w-3"/> گارانتی سلامت</div>
-                            <div className="text-xs text-blue-600 font-bold flex items-center gap-1 justify-end"><Truck className="h-3 w-3"/> ارسال رایگان</div>
+                            <div className="text-xs text-green-600 font-bold flex items-center gap-1 mb-1 justify-end"><ShieldCheck className="h-3 w-3"/> {t('health_guarantee')}</div>
+                            <div className="text-xs text-blue-600 font-bold flex items-center gap-1 justify-end"><Truck className="h-3 w-3"/> {t('free_shipping')}</div>
                         </div>
                     </div>
                     
                     <AddToCartButtons isMobile={false} />
                 </div>
 
-                {/* 4. Features */}
                 {product.features && product.features.length > 0 && (
                     <div className="mb-8 grid grid-cols-1 gap-3">
                         {product.features.map((feat, index) => (
@@ -169,13 +162,12 @@ export default function ProductClientView({ product, categoryName, categorySlug,
             </div>
         </div>
 
-        {/* --- بخش توضیحات --- */}
         {product.description && (
             <div className="mt-12 pt-10 border-t border-gray-200">
                 <h3 className="font-bold text-gray-900 mb-6 text-xl flex items-center gap-2">
                     <span className="w-1.5 h-8 bg-blue-600 rounded-full"></span>
                     <FileText className="h-6 w-6 text-gray-400" />
-                    توضیحات
+                    {t('description')}
                 </h3>
                 <div className="bg-white rounded-3xl p-6 md:p-10 border border-gray-100 shadow-sm">
                     {renderDescription(product.description)}
@@ -183,12 +175,11 @@ export default function ProductClientView({ product, categoryName, categorySlug,
             </div>
         )}
 
-        {/* --- STICKY BOTTOM BAR (MOBILE ONLY) --- */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 z-[100] md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.1)] animate-in slide-in-from-bottom-full duration-300">
             <div className="flex items-center gap-4 max-w-md mx-auto">
                 <div className="flex flex-col flex-1">
                     <span className="text-xs text-gray-400 mb-0.5">
-                        {quantity > 0 ? 'مبلغ کل آیتم:' : 'قیمت نهایی:'}
+                        {quantity > 0 ? t('final_price_label') : t('final_price_label')}
                     </span>
                     <span className="text-xl font-black text-blue-700 font-mono">
                         {symbol} {typeof finalPrice === 'number' ? (finalPrice * (quantity || 1)).toFixed(2) : finalPrice}
@@ -200,12 +191,11 @@ export default function ProductClientView({ product, categoryName, categorySlug,
             </div>
         </div>
 
-        {/* محصولات پیشنهادی */}
         {relatedProducts.length > 0 && (
             <div className="mt-20 pt-10 border-t border-gray-200">
                 <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                     <LayoutGrid className="h-5 w-5 text-blue-600" />
-                    محصولات مشابه (شاید بپسندید)
+                    {t('similar_products')}
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     {relatedProducts.map((item) => (

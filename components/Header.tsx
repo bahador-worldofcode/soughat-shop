@@ -1,11 +1,12 @@
 'use client';
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { ShoppingBag, Menu, X, Globe, Search } from 'lucide-react';
 import { useStore } from '@/lib/store';
+import { useTranslations } from 'next-intl';
+import { Link, useRouter, usePathname } from '@/i18n/navigation';
 
 export default function Header() {
+  const t = useTranslations('Header');
   const { currency, setCurrency, totalItems, fetchRates } = useStore();
   const cartCount = totalItems();
   const [mounted, setMounted] = useState(false);
@@ -13,6 +14,7 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     setMounted(true);
@@ -27,6 +29,18 @@ export default function Header() {
     }
   };
 
+  // تابع تغییر زبان (FA <-> EN)
+  const toggleLanguage = () => {
+    // اگر آدرس فعلی انگلیسی است، به فارسی سوییچ کن و برعکس
+    const currentLocale = window.location.pathname.startsWith('/en') ? 'en' : 'fa';
+    const newLocale = currentLocale === 'en' ? 'fa' : 'en';
+    
+    // ریدایرکت به همان صفحه با زبان جدید
+    router.replace(pathname, { locale: newLocale });
+  };
+
+  const currentLocale = typeof window !== 'undefined' && window.location.pathname.startsWith('/en') ? 'en' : 'fa';
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 font-[family-name:var(--font-vazir)]">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 gap-4">
@@ -34,7 +48,6 @@ export default function Header() {
         {/* Logo Section */}
         <Link href="/" className="flex items-center gap-3 flex-shrink-0 group">
           <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-sm border border-blue-100 group-hover:scale-105 transition-transform">
-             {/* اصلاح شد: استفاده از فایل استاتیک لوگو */}
              <img src="/logo.png" alt="Soughat Logo" className="w-full h-full object-cover" />
           </div>
 
@@ -43,7 +56,7 @@ export default function Header() {
               Soughat Shop
             </span>
             <span className="text-[10px] md:text-xs text-gray-500 font-bold mt-1 tracking-wide">
-              ارسال هدیه به ایران
+              {t('subtitle')}
             </span>
           </div>
         </Link>
@@ -55,27 +68,36 @@ export default function Header() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="جستجو در بین محصولات..."
-                className="bg-transparent border-none outline-none text-sm w-full mr-2 text-gray-700 placeholder-gray-400"
+                placeholder={t('searchPlaceholder')}
+                className={`bg-transparent border-none outline-none text-sm w-full text-gray-700 placeholder-gray-400 ${currentLocale === 'fa' ? 'mr-2' : 'ml-2'}`}
             />
         </form>
 
         {/* Desktop Navigation */}
         <nav className="hidden lg:flex items-center gap-6 flex-shrink-0">
           <Link href="/" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">
-            خانه
+            {t('home')}
           </Link>
           <Link href="/products" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">
-            محصولات
+            {t('products')}
           </Link>
           <Link href="/track" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">
-            پیگیری
+            {t('track')}
           </Link>
         </nav>
 
         {/* Actions */}
-        <div className="flex items-center gap-3 flex-shrink-0">
+        <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
           
+          {/* Language Switcher Button */}
+          <button 
+            onClick={toggleLanguage}
+            className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold text-xs transition-colors border border-blue-100"
+            title="تغییر زبان / Change Language"
+          >
+            {currentLocale === 'fa' ? 'EN' : 'FA'}
+          </button>
+
           {/* Currency Switcher (Desktop) */}
           <div className="hidden sm:flex items-center gap-1 border rounded-lg px-2 py-1 bg-gray-50 hover:bg-gray-100 transition-colors">
             <Globe className="h-4 w-4 text-gray-500" />
@@ -121,8 +143,8 @@ export default function Header() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="جستجو..."
-                className="bg-transparent border-none outline-none text-sm w-full mr-2 text-gray-700"
+                placeholder={t('searchPlaceholder')}
+                className={`bg-transparent border-none outline-none text-sm w-full text-gray-700 ${currentLocale === 'fa' ? 'mr-2' : 'ml-2'}`}
             />
         </form>
       </div>
@@ -132,24 +154,24 @@ export default function Header() {
         <div className="md:hidden absolute top-full left-0 w-full bg-white border-t border-gray-100 shadow-lg animate-in fade-in slide-in-from-top-2 z-40">
             <div className="flex flex-col p-4 gap-4">
                 <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-700 font-medium hover:text-blue-600 flex items-center justify-between border-b border-gray-50 pb-2">
-                    خانه
+                    {t('home')}
                 </Link>
                 <Link href="/products" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-700 font-medium hover:text-blue-600 flex items-center justify-between border-b border-gray-50 pb-2">
-                    محصولات
+                    {t('products')}
                 </Link>
                 <Link href="/blog" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-700 font-medium hover:text-blue-600 flex items-center justify-between border-b border-gray-50 pb-2">
-                    وبلاگ
+                    {t('blog')}
                 </Link>
                 <Link href="/track" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-700 font-medium hover:text-blue-600 flex items-center justify-between border-b border-gray-50 pb-2">
-                    پیگیری سفارش
+                    {t('track')}
                 </Link>
                 <Link href="/how-it-works" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-700 font-medium hover:text-blue-600 flex items-center justify-between border-b border-gray-50 pb-2">
-                    راهنمای خرید
+                    {t('guide')}
                 </Link>
 
                 {/* Currency Switcher for Mobile */}
                 <div className="flex items-center justify-between pt-2">
-                    <span className="text-sm text-gray-500 flex items-center gap-2"><Globe className="h-4 w-4"/> واحد پول:</span>
+                    <span className="text-sm text-gray-500 flex items-center gap-2"><Globe className="h-4 w-4"/> {t('currency')}:</span>
                     <select 
                         value={currency}
                         onChange={(e) => setCurrency(e.target.value as any)}

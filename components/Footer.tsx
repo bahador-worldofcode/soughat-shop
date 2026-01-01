@@ -1,7 +1,10 @@
-import Link from 'next/link';
 import { Instagram, Twitter, Mail, Heart, Lock, ShieldCheck, HelpCircle, ShoppingBag, BookOpen, Package, Info, Phone, Code2, Library } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation'; // لینک هوشمند
 
 export default function Footer() {
+  const t = useTranslations('Footer');
+
   return (
     <footer className="bg-white border-t border-gray-200 mt-auto font-[family-name:var(--font-vazir)]">
       <div className="container mx-auto px-4 py-12">
@@ -9,28 +12,27 @@ export default function Footer() {
           
           {/* Brand Section */}
           <div className="col-span-1 md:col-span-2">
-            {/* لوگوتایپ فارسی و اختصاصی */}
+            {/* لوگوتایپ */}
             <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl overflow-hidden shadow-sm border border-blue-100">
                       <img src="/logo.png" alt="Soughat Logo" className="w-full h-full object-cover" />
                 </div>
                 <span className="text-2xl font-black text-blue-700 tracking-tighter" style={{ letterSpacing: '-1px' }}>
-                  سوغات شاپ
+                  Soughat Shop
                 </span>
             </div>
             
             <p className="mt-4 text-sm text-gray-500 max-w-sm leading-7 text-justify">
-              اولین پلتفرم تخصصی ارسال هدیه به ایران. ما با حذف واسطه‌های بانکی و استفاده از شبکه امن بلاک‌چین، 
-              امکان پرداخت سریع و بدون تحریم را با تتر (USDT) و سولانا (Solana) فراهم کرده‌ایم.
+              {t('brand_desc')}
             </p>
 
             {/* نوار آیکون‌های کریپتو */}
             <div className="flex items-center gap-3 mt-4 opacity-90">
-                <img src="https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/usdt.png" className="w-6 h-6 hover:scale-110 transition-transform cursor-help" alt="Tether" title="پشتیبانی از تتر" />
-                <img src="https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/sol.png" className="w-6 h-6 hover:scale-110 transition-transform cursor-help" alt="Solana" title="پشتیبانی از سولانا" />
-                <img src="https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/btc.png" className="w-6 h-6 hover:scale-110 transition-transform cursor-help grayscale hover:grayscale-0" alt="Bitcoin" title="پشتیبانی از بیت‌کوین" />
-                <img src="https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/eth.png" className="w-6 h-6 hover:scale-110 transition-transform cursor-help grayscale hover:grayscale-0" alt="Ethereum" title="پشتیبانی از اتریوم" />
-                <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-1 rounded-md">Crypto Friendly</span>
+                <img src="https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/usdt.png" className="w-6 h-6 hover:scale-110 transition-transform cursor-help" alt="Tether" title="USDT" />
+                <img src="https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/sol.png" className="w-6 h-6 hover:scale-110 transition-transform cursor-help" alt="Solana" title="Solana" />
+                <img src="https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/btc.png" className="w-6 h-6 hover:scale-110 transition-transform cursor-help grayscale hover:grayscale-0" alt="Bitcoin" title="Bitcoin" />
+                <img src="https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/eth.png" className="w-6 h-6 hover:scale-110 transition-transform cursor-help grayscale hover:grayscale-0" alt="Ethereum" title="Ethereum" />
+                <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-1 rounded-md">{t('crypto_friendly')}</span>
             </div>
             
             {/* Socials */}
@@ -39,10 +41,10 @@ export default function Footer() {
                 <a href="#" className="bg-gray-50 p-2 rounded-lg text-gray-400 hover:text-blue-400 hover:bg-blue-50 transition-all"><Twitter className="h-5 w-5" /></a>
                 <Link href="/contact" className="bg-gray-50 p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"><Mail className="h-5 w-5" /></Link>
                 
-                {/* لینک همکاران (Partners) دقیقا مثل تیوان اکس */}
+                {/* لینک همکاران (Partners) */}
                 <Link 
                     href="/partners" 
-                    title="Partners & Projects"
+                    title={t('partners')}
                     className="bg-gray-50 p-2 rounded-lg text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all"
                 >
                     <Library className="h-5 w-5" />
@@ -52,21 +54,21 @@ export default function Footer() {
 
           {/* Links 1: Store */}
           <div>
-            <h3 className="font-bold text-gray-900 mb-4 text-lg">فروشگاه</h3>
+            <h3 className="font-bold text-gray-900 mb-4 text-lg">{t('links_store')}</h3>
             <ul className="space-y-3 text-sm text-gray-500 font-medium">
               <li>
                 <Link href="/products" className="hover:text-blue-600 hover:pr-2 transition-all flex items-center gap-2">
-                    <ShoppingBag className="h-4 w-4" /> لیست محصولات
+                    <ShoppingBag className="h-4 w-4" /> {t('products')}
                 </Link>
               </li>
               <li>
                 <Link href="/blog" className="hover:text-blue-600 hover:pr-2 transition-all flex items-center gap-2">
-                    <BookOpen className="h-4 w-4" /> مجله آموزشی
+                    <BookOpen className="h-4 w-4" /> {t('blog')}
                 </Link>
               </li>
               <li>
                 <Link href="/track" className="hover:text-blue-600 hover:pr-2 transition-all flex items-center gap-2">
-                    <Package className="h-4 w-4" /> پیگیری سفارش
+                    <Package className="h-4 w-4" /> {t('track')}
                 </Link>
               </li>
             </ul>
@@ -74,26 +76,26 @@ export default function Footer() {
 
           {/* Links 2: Trust & Guide */}
           <div>
-            <h3 className="font-bold text-gray-900 mb-4 text-lg">دسترسی سریع</h3>
+            <h3 className="font-bold text-gray-900 mb-4 text-lg">{t('links_access')}</h3>
             <ul className="space-y-3 text-sm text-gray-500 font-medium">
               <li>
                 <Link href="/how-it-works" className="hover:text-blue-600 hover:pr-2 transition-all flex items-center gap-2">
-                    <HelpCircle className="h-4 w-4" /> راهنمای خرید
+                    <HelpCircle className="h-4 w-4" /> {t('guide')}
                 </Link>
               </li>
               <li>
                 <Link href="/terms" className="hover:text-blue-600 hover:pr-2 transition-all flex items-center gap-2">
-                    <ShieldCheck className="h-4 w-4" /> قوانین و ضمانت‌ها
+                    <ShieldCheck className="h-4 w-4" /> {t('terms')}
                 </Link>
               </li>
               <li>
                 <Link href="/about" className="hover:text-blue-600 hover:pr-2 transition-all flex items-center gap-2">
-                    <Info className="h-4 w-4" /> درباره ما
+                    <Info className="h-4 w-4" /> {t('about')}
                 </Link>
               </li>
               <li>
                 <Link href="/contact" className="hover:text-blue-600 hover:pr-2 transition-all flex items-center gap-2">
-                    <Phone className="h-4 w-4" /> تماس با ما
+                    <Phone className="h-4 w-4" /> {t('contact')}
                 </Link>
               </li>
             </ul>
@@ -107,17 +109,18 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row items-center gap-4 text-center">
             <div className="flex items-center gap-2">
                 <p className="text-xs text-gray-400 dir-ltr font-mono">
-                © 2025 Soughat Shop. All rights reserved.
+                {t('rights')}
                 </p>
-                <Link href="/admin/login" className="text-gray-300 hover:text-blue-900 transition-colors p-1 opacity-50 hover:opacity-100" title="ورود مدیریت">
+                {/* لینک ادمین چون خارجی محسوب می‌شود و در میدلور استثنا شده، از لینک معمولی استفاده می‌کنیم */}
+                <a href="/admin/login" className="text-gray-300 hover:text-blue-900 transition-colors p-1 opacity-50 hover:opacity-100" title={t('admin_login')}>
                 <Lock className="h-3 w-3" />
-                </Link>
+                </a>
             </div>
             <div className="hidden md:block w-1 h-1 bg-gray-300 rounded-full"></div>
             <div className="flex items-center gap-1 text-xs text-gray-400">
-                <span>ساخته شده با</span>
+                <span>{t('made_with')}</span>
                 <Heart className="h-3 w-3 text-red-500 fill-red-500 animate-pulse" />
-                <span>برای ایران</span>
+                <span>{t('for_iran')}</span>
             </div>
           </div>
           
@@ -129,7 +132,7 @@ export default function Footer() {
           >
             <div className="flex flex-col items-end">
               <span className="text-[10px] text-gray-400 font-medium group-hover:text-gray-400/80">
-                Design & Engineering by
+                {t('design_by')}
               </span>
               <span className="text-xs font-bold text-gray-700 group-hover:text-white flex items-center gap-1">
                 KiyaDev Team

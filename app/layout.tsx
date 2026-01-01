@@ -1,60 +1,15 @@
-import type { Metadata } from "next";
-import { Vazirmatn } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import FloatingContact from "@/components/FloatingContact";
+import { Vazirmatn } from "next/font/google";
 
+// تنظیم فونت وزیرمتن برای کل پروژه
 const vazir = Vazirmatn({
   subsets: ["arabic", "latin"],
   display: "swap",
   variable: "--font-vazir",
 });
 
-export const metadata: Metadata = {
-  // آدرس اصلی سایت (تغییر یافته به دامنه جدید)
-  metadataBase: new URL('https://soughat.shop'),
-  
-  title: {
-    default: "سوغات شاپ | ارسال هدیه به ایران با ارز دیجیتال",
-    template: "%s | سوغات شاپ"
-  },
-  
-  description: "اولین پلتفرم تخصصی ارسال هدیه، سوغات و پول به ایران برای ایرانیان خارج از کشور. خرید پسته، زعفران و کادو با پرداخت امن تتر (USDT) و سولانا. تحویل فوری در سراسر ایران.",
-  
-  // --- بخش جدید: اتصال به فایل‌های پوشه Public ---
-  manifest: '/site.webmanifest',
-  icons: {
-    icon: '/logo.png',
-    apple: '/logo.png',
-    shortcut: '/logo.png',
-  },
-  // ---------------------------------------------
-
-  keywords: ["ارسال هدیه به ایران", "خرید سوغات ایران", "ارسال پول با تتر", "سوغات شاپ", "Soughat Shop", "خرید پسته صادراتی", "گیفت شاپ ایران", "پرداخت با کریپتو"],
-  
-  authors: [{ name: "تیم سوغات شاپ" }],
-  creator: "Soughat Shop",
-  publisher: "Soughat Shop",
-  robots: {
-    index: true,
-    follow: true,
-  },
-
-  openGraph: {
-    title: "سوغات شاپ | پل ارتباطی با ایران",
-    description: "عزیزانتان در ایران را خوشحال کنید. ارسال آنی هدیه و سوغات با پرداخت ارزی و کریپتو.",
-    url: 'https://soughat.shop',
-    siteName: 'Soughat Shop',
-    locale: 'fa_IR',
-    type: 'website',
-  },
-  
-  verification: {
-    google: "889fIOlZo4jHk-UB3Sv_X-vuaJQa-YPzZKLPMqpcYEo",
-  },
-};
-
+// این لی‌اوت، ریشه کل سایت (هم ادمین و هم سایت اصلی) است.
+// وظیفه آن فقط ساختن تگ‌های html و body است.
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -62,17 +17,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fa" dir="rtl">
-      <body
-        className={`${vazir.className} antialiased bg-gray-50 min-h-screen flex flex-col`}
-      >
-        <Header />
-        <main className="flex-1">
-            {children}
-        </main>
-        <Footer />
-        
-        {/* ویجت شناور در تمام صفحات */}
-        <FloatingContact />
+      <body className={`${vazir.className} antialiased bg-gray-50 min-h-screen flex flex-col`}>
+        {children}
       </body>
     </html>
   );

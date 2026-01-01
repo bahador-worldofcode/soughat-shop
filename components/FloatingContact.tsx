@@ -1,13 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname } from '@/i18n/navigation'; // استفاده از نویگیشن هوشمند
 import { MessageCircle, X, Send, Phone, MessageSquare, ArrowLeft, Loader2, CheckCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useTranslations, useLocale } from 'next-intl';
 
 type ViewState = 'menu' | 'form' | 'success';
 
 export default function FloatingContact() {
+  const t = useTranslations('FloatingContact');
+  const locale = useLocale();
+  const isEn = locale === 'en';
+  
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
 
@@ -17,8 +22,6 @@ export default function FloatingContact() {
   const [formData, setFormData] = useState({ contact: '', content: '' });
   const [sending, setSending] = useState(false);
 
-  // تشخیص اینکه آیا در صفحه جزئیات محصول هستیم؟ (برای تنظیم ارتفاع آیکون)
-  // اگر آدرس با /products/ شروع شود (ولی خود /products نباشد) یعنی در صفحه محصولیم
   const isProductPage = pathname?.startsWith('/products/') && pathname !== '/products';
 
   useEffect(() => {
@@ -53,7 +56,7 @@ export default function FloatingContact() {
       setFormData({ contact: '', content: '' });
     } catch (error) {
       console.error(error);
-      alert('خطا در ارسال پیام. لطفاً دوباره تلاش کنید.');
+      alert('Error sending message.');
     } finally {
       setSending(false);
     }
@@ -76,13 +79,12 @@ export default function FloatingContact() {
       className={`fixed right-6 z-50 flex flex-col items-end font-[family-name:var(--font-vazir)] transition-all duration-300 ${
         isProductPage ? 'bottom-24 md:bottom-6' : 'bottom-6'
       }`}
+      dir={isEn ? 'ltr' : 'rtl'}
     >
       
-      {/* Chat Window */}
       {isOpen && (
         <div className="mb-4 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-10 duration-300">
           
-          {/* Header */}
           <div className="bg-blue-600 p-4 text-white flex justify-between items-center">
              <div className="flex items-center gap-3">
               <div className="relative">
@@ -91,25 +93,23 @@ export default function FloatingContact() {
                 </div>
                 <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-blue-600 rounded-full"></span>
               </div>
-              <div>
-                <h4 className="font-bold text-sm">پشتیبانی آنلاین</h4>
-                <p className="text-[10px] text-blue-100">پاسخگویی سریع</p>
+              <div className="text-start">
+                <h4 className="font-bold text-sm">{t('title')}</h4>
+                <p className="text-[10px] text-blue-100">{t('subtitle')}</p>
               </div>
             </div>
             {view === 'form' && (
                 <button onClick={() => setView('menu')} className="text-white/80 hover:text-white">
-                  <ArrowLeft className="h-5 w-5" />
+                  <ArrowLeft className={`h-5 w-5 ${isEn ? 'rotate-180' : ''}`} />
                 </button>
             )}
           </div>
 
-          {/* Body Content */}
           <div className="p-4 min-h-[200px]">
             
-            {/* 1. MENU VIEW */}
             {view === 'menu' && (
                 <div className="space-y-3">
-                    <p className="text-gray-600 text-xs mb-2">سلام! چطور می‌توانیم کمکتان کنیم؟</p>
+                    <p className="text-gray-600 text-xs mb-2 text-start">{t('greeting')}</p>
                     
                     <a 
                     href="https://wa.me/989168038017" 
@@ -120,32 +120,31 @@ export default function FloatingContact() {
                     <div className="bg-green-500 text-white p-2 rounded-full group-hover:scale-110 transition-transform">
                         <Phone className="h-4 w-4" />
                     </div>
-                    <div className="text-right">
-                        <span className="block font-bold text-sm">واتساپ (سریع‌ترین)</span>
-                        <span className="block text-[10px] opacity-70">چت مستقیم با مدیریت</span>
+                    <div className="text-start">
+                        <span className="block font-bold text-sm">{t('whatsapp_title')}</span>
+                        <span className="block text-[10px] opacity-70">{t('whatsapp_desc')}</span>
                     </div>
                     </a>
 
                     <button 
                     onClick={() => setView('form')}
-                    className="flex items-center gap-3 w-full p-3 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl transition-colors group text-right"
+                    className="flex items-center gap-3 w-full p-3 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl transition-colors group text-start"
                     >
                     <div className="bg-gray-500 text-white p-2 rounded-full group-hover:scale-110 transition-transform">
                         <MessageSquare className="h-4 w-4" />
                     </div>
-                    <div className="flex-1">
-                        <span className="block font-bold text-sm">ارسال پیام (تیکت)</span>
-                        <span className="block text-[10px] opacity-70">اگر واتساپ ندارید، اینجا بنویسید</span>
+                    <div className="flex-1 text-start">
+                        <span className="block font-bold text-sm">{t('ticket_title')}</span>
+                        <span className="block text-[10px] opacity-70">{t('ticket_desc')}</span>
                     </div>
                     </button>
                 </div>
             )}
 
-            {/* 2. FORM VIEW */}
             {view === 'form' && (
                <form onSubmit={handleSend} className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
                     <div>
-                        <label className="text-xs text-gray-500 mb-1 block">شماره تماس شما (واتساپ):</label>
+                        <label className="text-xs text-gray-500 mb-1 block text-start">{t('form_phone')}</label>
                         <input 
                             required
                             type="tel" 
@@ -156,11 +155,11 @@ export default function FloatingContact() {
                         />
                     </div>
                     <div>
-                        <label className="text-xs text-gray-500 mb-1 block">متن پیام:</label>
+                        <label className="text-xs text-gray-500 mb-1 block text-start">{t('form_msg')}</label>
                         <textarea 
                             required
                             rows={3}
-                            placeholder="سوالی دارید؟ بنویسید..." 
+                            placeholder={t('form_ph')}
                             value={formData.content}
                             onChange={(e) => setFormData({...formData, content: e.target.value})}
                             className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500 resize-none"
@@ -171,27 +170,26 @@ export default function FloatingContact() {
                         disabled={sending}
                         className="w-full py-2 bg-blue-600 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2 hover:bg-blue-700 disabled:opacity-70"
                     >
-                        {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                        {sending ? 'در حال ارسال...' : 'ارسال پیام'}
+                        {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className={`h-4 w-4 ${isEn ? 'rotate-180' : ''}`} />}
+                        {sending ? t('btn_sending') : t('btn_send')}
                     </button>
                 </form>
             )}
 
-            {/* 3. SUCCESS VIEW */}
             {view === 'success' && (
                 <div className="flex flex-col items-center justify-center h-full py-6 animate-in zoom-in duration-300">
                     <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
                         <CheckCircle className="h-8 w-8 text-green-600" />
                     </div>
-                    <h4 className="font-bold text-gray-800 mb-2">پیام شما دریافت شد!</h4>
+                    <h4 className="font-bold text-gray-800 mb-2">{t('success_title')}</h4>
                     <p className="text-xs text-gray-500 text-center mb-6">
-                        همکاران ما به زودی در واتساپ یا از طریق همین شماره با شما تماس می‌گیرند.
+                        {t('success_desc')}
                     </p>
                     <button 
                         onClick={() => setView('menu')}
                         className="text-blue-600 text-sm font-bold hover:underline"
                     >
-                      بازگشت به منو
+                      {t('btn_back')}
                     </button>
                 </div>
             )}
@@ -199,7 +197,7 @@ export default function FloatingContact() {
           </div>
 
           <div className="bg-gray-50 p-2 text-center border-t border-gray-100">
-             <span className="text-[10px] text-gray-400">پشتیبانی توسط سوغات شاپ</span>
+             <span className="text-[10px] text-gray-400">{t('footer')}</span>
           </div>
         </div>
       )}

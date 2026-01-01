@@ -3,7 +3,8 @@
 import { Plus } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation'; // لینک هوشمند
+import { useTranslations } from 'next-intl'; // هوک ترجمه
 
 interface ProductCardProps {
   id: string;
@@ -14,6 +15,7 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ id, title, price, image, slug }: ProductCardProps) {
+  const t = useTranslations('ProductCard'); // اتصال به دیکشنری
   const { convertPrice, getSymbol, addToCart } = useStore();
   const [mounted, setMounted] = useState(false);
 
@@ -25,14 +27,13 @@ export default function ProductCard({ id, title, price, image, slug }: ProductCa
   const symbol = getSymbol();
 
   const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault(); // جلوگیری از باز شدن لینک وقتی روی دکمه خرید کلیک میشه
+    e.preventDefault();
     addToCart({ id, title, price, image });
   };
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md">
       
-      {/* لینک دور عکس */}
       <Link href={`/products/${slug}`} className="relative aspect-square overflow-hidden bg-gray-100 block">
         <img
           src={image}
@@ -41,27 +42,24 @@ export default function ProductCard({ id, title, price, image, slug }: ProductCa
         />
       </Link>
 
-      {/* Content */}
       <div className="flex flex-1 flex-col p-4">
-        {/* لینک روی تیتر */}
         <Link href={`/products/${slug}`}>
             <h3 className="mb-2 text-lg font-bold text-gray-900 line-clamp-1 hover:text-blue-600 transition-colors">{title}</h3>
         </Link>
         
-        <p className="text-sm text-gray-500 mb-4">ارسال فوری به تهران و شهرستان‌ها</p>
+        {/* متن ترجمه شده */}
+        <p className="text-sm text-gray-500 mb-4">{t('instant_delivery')}</p>
        
         <div className="mt-auto flex items-center justify-between">
           <div className="flex flex-col">
-            <span className="text-xs text-gray-400">قیمت نهایی</span>
+            <span className="text-xs text-gray-400">{t('final_price')}</span>
             <span className="text-xl font-bold text-blue-600 font-mono">
               {mounted ? (
                 <>
-                  {/* قیمت تبدیل شده با ۲ رقم اعشار */}
                   {symbol} {finalPrice.toFixed(2)}
                 </>
               ) : (
                 <>
-                  {/* قیمت پایه دلاری با ۲ رقم اعشار */}
                   $ {price.toFixed(2)}
                 </>
               )}
