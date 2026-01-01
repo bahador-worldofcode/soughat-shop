@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { Calendar, ArrowLeft, ArrowRight } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 
 // کش کردن دیتا برای سرعت بالا (ISR) - هر ۶۰ ثانیه
 export const revalidate = 60;
@@ -10,12 +11,17 @@ const POSTS_PER_PAGE = 9;
 
 interface BlogPageProps {
   searchParams: Promise<{ page?: string }>;
+  params: Promise<{ locale: string }>;
 }
 
-export default async function BlogIndex({ searchParams }: BlogPageProps) {
+export default async function BlogIndex({ searchParams, params }: BlogPageProps) {
+  const { locale } = await params;
+  const isEn = locale === 'en';
+  const t = await getTranslations({locale, namespace: 'Blog'});
+
   // 1. دریافت شماره صفحه از URL
-  const params = await searchParams;
-  const currentPage = Number(params?.page) || 1;
+  const sp = await searchParams;
+  const currentPage = Number(sp?.page) || 1;
 
   // 2. محاسبه بازه دریافت اطلاعات (از کجا تا کجا)
   const from = (currentPage - 1) * POSTS_PER_PAGE;
@@ -37,64 +43,78 @@ export default async function BlogIndex({ searchParams }: BlogPageProps) {
       <div className="container mx-auto px-4">
         
         <div className="text-center mb-16">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">وبلاگ سوغات شاپ</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">{t('title')}</h1>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            جدیدترین مقالات درباره ارسال پول، خرید سوغات و راهنمای مهاجران
+            {t('subtitle')}
           </p>
         </div>
 
         {!posts || posts.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-gray-500">هنوز مقاله‌ای منتشر نشده است (یا صفحه‌ای وجود ندارد).</p>
+            <p className="text-gray-500">{t('empty')}</p>
           </div>
         ) : (
           <>
             {/* لیست پست‌ها */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-              {posts.map((post) => (
-                <article key={post.id} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col group">
-                  <Link href={`/blog/${post.slug}`} className="block relative h-56 bg-gray-200 overflow-hidden">
-                    {post.image ? (
-                      <img 
-                        src={post.image} 
-                        alt={post.title} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-blue-50 text-blue-200 text-4xl font-bold">Blog</div>
-                    )}
-                  </Link>
-                  
-                  <div className="p-6 flex flex-col flex-1">
-                    <div className="flex items-center gap-2 text-xs text-gray-400 mb-3">
-                      <Calendar className="h-3 w-3" />
-                      <time>{new Date(post.created_at).toLocaleDateString('fa-IR')}</time>
-                    </div>
-                    
-                    <Link href={`/blog/${post.slug}`}>
-                      <h2 className="text-xl font-bold text-gray-900 mb-3 hover:text-blue-600 transition-colors line-clamp-2">
-                        {post.title}
-                      </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12" dir={isEn ? 'ltr' : 'rtl'}>
+              {posts.map((post) => {
+                // انتخاب هوشمند زبان (اگر انگلیسی نبود، فارسی را نشان بده)
+                const displayTitle = isEn ? (post.title_en || post.title) : post.title;
+                const displaySummary = isEn ? (post.summary_en || post.summary || post.content.substring(0, 150)) : (post.summary || post.content.substring(0, 150));
+
+                return (
+                  <article key={post.id} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col group">
+                    <Link href={`/blog/${post.slug}`} className="block relative h-56 bg-gray-200 overflow-hidden">
+                      {post.image ? (
+                        <img 
+                          src={post.image} 
+                          alt={displayTitle} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-blue-50 text-blue-200 text-4xl font-bold">Blog</div>
+                      )}
                     </Link>
                     
-                    <p className="text-gray-500 text-sm line-clamp-3 mb-6 leading-7">
-                      {post.summary || post.content.substring(0, 150)}...
-                    </p>
-                    
-                    <div className="mt-auto pt-4 border-t border-gray-50">
-                      <Link href={`/blog/${post.slug}`} className="inline-flex items-center text-blue-600 font-medium text-sm hover:gap-2 transition-all">
-                        ادامه مطلب <ArrowLeft className="mr-1 h-4 w-4" />
+                    <div className="p-6 flex flex-col flex-1">
+                      <div className="flex items-center gap-2 text-xs text-gray-400 mb-3">
+                        <Calendar className="h-3 w-3" />
+                        <time>{new Date(post.created_at).toLocaleDateString(isEn ? 'en-US' : 'fa-IR')}</time>
+                      </div>
+                      
+                      <Link href={`/blog/${post.slug}`}>
+                        <h2 className="text-xl font-bold text-gray-900 mb-3 hover:text-blue-600 transition-colors line-clamp-2 leading-tight">
+                          {displayTitle}
+                        </h2>
                       </Link>
+                      
+                      <p className="text-gray-500 text-sm line-clamp-3 mb-6 leading-7 text-justify">
+                        {displaySummary}...
+                      </p>
+                      
+                      <div className="mt-auto pt-4 border-t border-gray-50">
+                        <Link href={`/blog/${post.slug}`} className="inline-flex items-center text-blue-600 font-medium text-sm hover:gap-2 transition-all group">
+                          {isEn ? (
+                             <>
+                               {t('read_more')} <ArrowRight className="ml-1 h-4 w-4 group-hover:ml-2 transition-all" />
+                             </>
+                          ) : (
+                             <>
+                               {t('read_more')} <ArrowLeft className="mr-1 h-4 w-4 group-hover:mr-2 transition-all" />
+                             </>
+                          )}
+                        </Link>
+                      </div>
                     </div>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
 
             {/* کنترل‌های Pagination */}
             {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-4 border-t border-gray-200 pt-8">
-                {/* دکمه قبلی */}
+              <div className="flex justify-center items-center gap-4 border-t border-gray-200 pt-8" dir="ltr">
+                {/* دکمه قبلی (در انگلیسی چپ، در فارسی راست) */}
                 <Link
                   href={currentPage > 1 ? `/blog?page=${currentPage - 1}` : '#'}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
@@ -104,11 +124,12 @@ export default async function BlogIndex({ searchParams }: BlogPageProps) {
                   }`}
                   aria-disabled={currentPage <= 1}
                 >
-                  <ArrowRight className="h-4 w-4" /> صفحه قبل
+                  {isEn ? <ArrowLeft className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
+                  {t('prev')}
                 </Link>
 
                 <span className="text-sm text-gray-600 font-bold">
-                  صفحه {currentPage} از {totalPages}
+                  {t('page')} {currentPage} {t('of')} {totalPages}
                 </span>
 
                 {/* دکمه بعدی */}
@@ -121,7 +142,8 @@ export default async function BlogIndex({ searchParams }: BlogPageProps) {
                   }`}
                   aria-disabled={currentPage >= totalPages}
                 >
-                  صفحه بعد <ArrowLeft className="h-4 w-4" />
+                  {t('next')}
+                  {isEn ? <ArrowRight className="h-4 w-4" /> : <ArrowLeft className="h-4 w-4" />}
                 </Link>
               </div>
             )}

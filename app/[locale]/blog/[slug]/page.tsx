@@ -7,20 +7,27 @@ import type { Metadata } from 'next';
 // --- تنظیمات کش ---
 export const revalidate = 60;
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  const { slug } = await params;
+export async function generateMetadata({ params }: { params: Promise<{ slug: string; locale: string }> }): Promise<Metadata> {
+  const { slug, locale } = await params;
   const decodedSlug = decodeURIComponent(slug);
+  const isEn = locale === 'en';
   
   const { data: post } = await supabase
     .from('posts')
-    .select('title, content, seo_title, seo_desc, summary, image')
+    .select('*') // همه فیلدها را می‌گیریم
     .eq('slug', decodedSlug)
     .single();
 
-  if (!post) return { title: 'مقاله یافت نشد' };
+  if (!post) return { title: 'Post Not Found' };
 
-  const pageTitle = post.seo_title || `${post.title} | وبلاگ سوغات شاپ`;
-  const pageDesc = post.seo_desc || post.summary || post.content.substring(0, 160);
+  // انتخاب هوشمند متا تگ‌ها
+  const pageTitle = isEn 
+    ? (post.seo_title_en || post.title_en || post.title) 
+    : (post.seo_title || post.title);
+
+  const pageDesc = isEn
+    ? (post.seo_desc_en || post.summary_en || post.content_en?.substring(0, 160))
+    : (post.seo_desc || post.summary || post.content.substring(0, 160));
 
   return {
     title: pageTitle,
@@ -30,6 +37,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       description: pageDesc,
       type: 'article',
       images: post.image ? [{ url: post.image }] : [],
+      locale: isEn ? 'en_US' : 'fa_IR',
     },
     twitter: {
       card: 'summary_large_image',
@@ -40,8 +48,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-// --- موتور پردازش متن (نسخه ۳: اضافه شدن H4) ---
+// --- موتور پردازش متن ---
 const parseInlineStyles = (text: string) => {
+  if (!text) return null;
   const parts = text.split(/(\[.*?\]\(.*?\)|https?:\/\/[^\s]+|\*\*.*?\*\*)/g);
 
   return parts.map((part, index) => {
@@ -137,9 +146,10 @@ const renderContent = (text: string) => {
   });
 };
 
-export default async function BlogPost({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+export default async function BlogPost({ params }: { params: Promise<{ slug: string; locale: string }> }) {
+  const { slug, locale } = await params;
   const decodedSlug = decodeURIComponent(slug);
+  const isEn = locale === 'en';
 
   const { data: post } = await supabase
     .from('posts')
@@ -151,18 +161,25 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
     notFound();
   }
 
+  // --- انتخاب محتوای مناسب بر اساس زبان ---
+  const displayTitle = isEn ? (post.title_en || post.title) : post.title;
+  // برای محتوا، اگر متن انگلیسی نبود، متن فارسی را نشان بده (Fallback)
+  const displayContent = isEn ? (post.content_en || post.content) : post.content;
+  const displaySummary = isEn ? (post.summary_en || post.summary) : post.summary;
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
-    headline: post.seo_title || post.title,
+    headline: displayTitle,
     image: post.image ? [post.image] : [],
     datePublished: post.created_at,
     author: {
       '@type': 'Organization',
       name: 'Soughat Shop Team'
     },
-    description: post.seo_desc || post.summary,
-    articleBody: post.content
+    description: displaySummary,
+    articleBody: displayContent,
+    inLanguage: isEn ? 'en-US' : 'fa-IR'
   };
 
   return (
@@ -178,7 +195,7 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
         {post.image ? (
           <img 
             src={post.image} 
-            alt={post.title} 
+            alt={displayTitle} 
             className="w-full h-full object-cover opacity-60"
           />
         ) : (
@@ -194,8 +211,8 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
                      <Folder className="h-3 w-3" /> {post.category}
                 </span>
             )}
-            <h1 className="text-3xl md:text-5xl font-extrabold text-white leading-tight drop-shadow-lg max-w-4xl">
-                {post.title}
+            <h1 className="text-3xl md:text-5xl font-extrabold text-white leading-tight drop-shadow-lg max-w-4xl" dir={isEn ? 'ltr' : 'rtl'}>
+                {displayTitle}
             </h1>
         </div>
       </div>
@@ -204,29 +221,28 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
       <div className="container mx-auto px-4 relative z-10 -mt-10">
         <div className="bg-white rounded-3xl shadow-xl p-6 md:p-12 max-w-4xl mx-auto border border-gray-100">
           
-          <div className="flex flex-wrap items-center gap-6 text-gray-500 text-sm font-medium mb-10 pb-6 border-b border-gray-100">
+          <div className="flex flex-wrap items-center gap-6 text-gray-500 text-sm font-medium mb-10 pb-6 border-b border-gray-100" dir={isEn ? 'ltr' : 'rtl'}>
             <span className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-blue-500" />
-              {new Date(post.created_at).toLocaleDateString('fa-IR', { dateStyle: 'long' })}
+              {new Date(post.created_at).toLocaleDateString(isEn ? 'en-US' : 'fa-IR', { dateStyle: 'long' })}
             </span>
             <span className="flex items-center gap-2">
               <User className="h-4 w-4 text-blue-500" />
-              نویسنده: تیم محتوای سوغات شاپ
+              {isEn ? 'Author: Soughat Shop Team' : 'نویسنده: تیم محتوای سوغات شاپ'}
             </span>
           </div>
           
-          <article className="max-w-none">
-             {renderContent(post.content)}
+          <article className="max-w-none" dir={isEn ? 'ltr' : 'rtl'}>
+             {renderContent(displayContent)}
           </article>
 
           {post.tags && post.tags.length > 0 && (
-            <div className="mt-12 pt-8 border-t border-gray-100">
+            <div className="mt-12 pt-8 border-t border-gray-100" dir={isEn ? 'ltr' : 'rtl'}>
                 <div className="flex items-center gap-2 mb-4 text-gray-700 font-bold text-sm">
-                   <Tag className="h-4 w-4" /> برچسب‌ها:
+                   <Tag className="h-4 w-4" /> {isEn ? 'Tags:' : 'برچسب‌ها:'}
                 </div>
                 <div className="flex flex-wrap gap-2">
                     {post.tags.map((tag: string, idx: number) => (
-                        // FIX: لینک‌ها الان به صفحه وبلاگ میرن نه محصولات
                         <Link key={idx} href={`/blog`} className="bg-gray-100 hover:bg-blue-50 hover:text-blue-600 transition-colors text-gray-600 px-3 py-1.5 rounded-lg text-xs">
                             #{tag}
                         </Link>
@@ -235,9 +251,17 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
             </div>
           )}
 
-          <div className="mt-10">
+          <div className="mt-10" dir={isEn ? 'ltr' : 'rtl'}>
              <Link href="/blog" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-bold transition-colors group">
-                 <ArrowRight className="ml-2 h-4 w-4 group-hover:mr-1 transition-all" /> بازگشت به لیست مقالات
+                 {isEn ? (
+                    <>
+                       <ArrowRight className="mr-2 h-4 w-4 rotate-180 group-hover:mr-3 transition-all" /> Back to Blog
+                    </>
+                 ) : (
+                    <>
+                       <ArrowRight className="ml-2 h-4 w-4 group-hover:mr-1 transition-all" /> بازگشت به لیست مقالات
+                    </>
+                 )}
             </Link>
           </div>
 

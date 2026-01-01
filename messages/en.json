@@ -398,4 +398,19 @@
     "cta_card_desc": "Place your first order right now.",
     "cta_card_btn": "Start Shopping"
   }
+  ,
+  "Blog": {
+    "title": "Soughat Shop Blog",
+    "subtitle": "Latest guides on sending gifts, money transfer, and diaspora lifestyle",
+    "read_more": "Read More",
+    "published_on": "Published on",
+    "author": "Author: Soughat Shop Team",
+    "back_to_blog": "Back to Blog List",
+    "tags": "Tags:",
+    "empty": "No articles found.",
+    "prev": "Previous",
+    "next": "Next",
+    "page": "Page",
+    "of": "of"
+  }
 }
