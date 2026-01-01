@@ -1,9 +1,10 @@
 import { Instagram, Twitter, Mail, Heart, Lock, ShieldCheck, HelpCircle, ShoppingBag, BookOpen, Package, Info, Phone, Code2, Library } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Link } from '@/i18n/navigation'; // لینک هوشمند
+import { Link } from '@/i18n/navigation';
 
 export default function Footer() {
   const t = useTranslations('Footer');
+  const currentYear = new Date().getFullYear(); // دریافت سال جاری (مثلاً 2026)
 
   return (
     <footer className="bg-white border-t border-gray-200 mt-auto font-[family-name:var(--font-vazir)]">
@@ -109,9 +110,10 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row items-center gap-4 text-center">
             <div className="flex items-center gap-2">
                 <p className="text-xs text-gray-400 dir-ltr font-mono">
-                {t('rights')}
+                {/* محاسبه خودکار سال و افزودن کپی‌رایت */}
+                © {currentYear} {t('rights')}
                 </p>
-                {/* لینک ادمین چون خارجی محسوب می‌شود و در میدلور استثنا شده، از لینک معمولی استفاده می‌کنیم */}
+                {/* لینک ادمین */}
                 <a href="/admin/login" className="text-gray-300 hover:text-blue-900 transition-colors p-1 opacity-50 hover:opacity-100" title={t('admin_login')}>
                 <Lock className="h-3 w-3" />
                 </a>
