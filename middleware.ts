@@ -7,6 +7,7 @@ export default createMiddleware({
 });
  
 export const config = {
-  // تغییر مهم: کلمه admin به لیست استثناها اضافه شد
-  matcher: ['/((?!api|admin|_next/static|_next/image|favicon.ico).*)']
+  // تغییر مهم: اضافه کردن پترن برای نادیده گرفتن فایل‌های دارای پسوند (مثل png, jpg, ...)
+  // عبارت |.*\\..* باعث می‌شود هر درخواستی که نقطه (.) دارد (یعنی فایل است) نادیده گرفته شود.
+  matcher: ['/((?!api|admin|_next/static|_next/image|favicon.ico|.*\\..*).*)']
 };
