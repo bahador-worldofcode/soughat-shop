@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   
   const { data: post } = await supabase
     .from('posts')
-    .select('*') // همه فیلدها را می‌گیریم
+    .select('*')
     .eq('slug', decodedSlug)
     .single();
 
@@ -165,7 +165,10 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
   const displayTitle = isEn ? (post.title_en || post.title) : post.title;
   // برای محتوا، اگر متن انگلیسی نبود، متن فارسی را نشان بده (Fallback)
   const displayContent = isEn ? (post.content_en || post.content) : post.content;
-  const displaySummary = isEn ? (post.summary_en || post.summary) : post.summary;
+  
+  // انتخاب دسته‌بندی و تگ‌ها (اضافه شده)
+  const displayCategory = isEn ? (post.category_en || post.category) : post.category;
+  const displayTags = isEn ? (post.tags_en || post.tags) : post.tags;
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -177,7 +180,6 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
       '@type': 'Organization',
       name: 'Soughat Shop Team'
     },
-    description: displaySummary,
     articleBody: displayContent,
     inLanguage: isEn ? 'en-US' : 'fa-IR'
   };
@@ -206,9 +208,9 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
         <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent" />
         
         <div className="absolute bottom-0 left-0 right-0 p-6 md:p-12 container mx-auto">
-            {post.category && (
+            {displayCategory && (
                 <span className="inline-flex items-center gap-1 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold mb-4">
-                     <Folder className="h-3 w-3" /> {post.category}
+                     <Folder className="h-3 w-3" /> {displayCategory}
                 </span>
             )}
             <h1 className="text-3xl md:text-5xl font-extrabold text-white leading-tight drop-shadow-lg max-w-4xl" dir={isEn ? 'ltr' : 'rtl'}>
@@ -236,13 +238,13 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
              {renderContent(displayContent)}
           </article>
 
-          {post.tags && post.tags.length > 0 && (
+          {displayTags && displayTags.length > 0 && (
             <div className="mt-12 pt-8 border-t border-gray-100" dir={isEn ? 'ltr' : 'rtl'}>
                 <div className="flex items-center gap-2 mb-4 text-gray-700 font-bold text-sm">
                    <Tag className="h-4 w-4" /> {isEn ? 'Tags:' : 'برچسب‌ها:'}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    {post.tags.map((tag: string, idx: number) => (
+                    {displayTags.map((tag: string, idx: number) => (
                         <Link key={idx} href={`/blog`} className="bg-gray-100 hover:bg-blue-50 hover:text-blue-600 transition-colors text-gray-600 px-3 py-1.5 rounded-lg text-xs">
                             #{tag}
                         </Link>
