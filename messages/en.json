@@ -391,6 +391,9 @@
     "support_title": "Real Human Support",
     "support_desc": "We are not bots! Our support team is ready on WhatsApp to answer any concern you might have.",
     "secure_title": "Secure Payment",
-    "secure_desc": "Blockchain is the most secure payment method globally. Your transaction is transparent and traceable."
+    "secure_desc": "Blockchain is the most secure payment method globally. Your transaction is transparent and traceable.",
+    "cta_card_title": "Feeling Reassured?",
+    "cta_card_desc": "Place your first order right now.",
+    "cta_card_btn": "Start Shopping"
   }
 }

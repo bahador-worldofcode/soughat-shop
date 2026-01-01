@@ -85,14 +85,17 @@ export default async function TrustPage({ params }: { params: Promise<{ locale: 
             </div>
           ))}
 
-          {/* Card 6: Call to Action (داخل گرید) */}
+          {/* Card 6: Call to Action (FIXED) */}
           <div className="bg-blue-600 p-8 rounded-3xl shadow-lg flex flex-col justify-center items-center text-center text-white relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
             <Heart className="h-12 w-12 mb-4 animate-pulse text-red-300 fill-red-300" />
-            <h3 className="text-xl font-bold mb-2">خیالتان راحت شد؟</h3>
-            <p className="text-blue-100 text-sm mb-6">همین حالا اولین سفارش خود را ثبت کنید.</p>
+            
+            {/* استفاده از ترجمه به جای متن ثابت */}
+            <h3 className="text-xl font-bold mb-2">{t('cta_card_title')}</h3>
+            <p className="text-blue-100 text-sm mb-6">{t('cta_card_desc')}</p>
+            
             <Link href="/products" className="bg-white text-blue-700 font-bold py-3 px-6 rounded-xl hover:bg-gray-100 transition-all w-full flex items-center justify-center gap-2">
-               شروع خرید
+               {t('cta_card_btn')}
                <ArrowLeft className={`h-4 w-4 ${isEn ? 'rotate-180' : ''}`} />
             </Link>
           </div>
