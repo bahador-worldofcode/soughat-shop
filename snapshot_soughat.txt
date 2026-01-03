@@ -1,5 +1,5 @@
 ### Soughat-Shop Snapshot
-# Generated: 2026-01-02T00:07:58.773938
+# Generated: 2026-01-03T17:49:59.899525
 # Root: C:\projects\soughat-shop
 # Excluded dir names: .expo, .git, .next, .vscode, node_modules
 # Excluded files (by name/rel): collect_soughat_snapshot.bat, collect_soughat_snapshot.py, package-lock.json, snapshot_soughat.txt
@@ -150,7 +150,7 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
 }
 
 ===== File: app/[locale]/blog/[slug]/page.tsx =====
-# Modified: 2025-12-02T23:42:45.934646 | Size: 8590 bytes | SHA1: 64b4dd4f70967db9ab26e64ece9cf3bb3bf60bdc
+# Modified: 2026-01-02T01:54:45.156990 | Size: 9845 bytes | SHA1: 4ce0847cf40f1235cb27e7591de713dc8aeeb3ea
 import { notFound } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Calendar, ArrowRight, User, Tag, Folder } from 'lucide-react';
@@ -160,20 +160,27 @@ import type { Metadata } from 'next';
 // --- تنظیمات کش ---
 export const revalidate = 60;
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  const { slug } = await params;
+export async function generateMetadata({ params }: { params: Promise<{ slug: string; locale: string }> }): Promise<Metadata> {
+  const { slug, locale } = await params;
   const decodedSlug = decodeURIComponent(slug);
+  const isEn = locale === 'en';
   
   const { data: post } = await supabase
     .from('posts')
-    .select('title, content, seo_title, seo_desc, summary, image')
+    .select('*')
     .eq('slug', decodedSlug)
     .single();
 
-  if (!post) return { title: 'مقاله یافت نشد' };
+  if (!post) return { title: 'Post Not Found' };
 
-  const pageTitle = post.seo_title || `${post.title} | وبلاگ سوغات شاپ`;
-  const pageDesc = post.seo_desc || post.summary || post.content.substring(0, 160);
+  // انتخاب هوشمند متا تگ‌ها
+  const pageTitle = isEn 
+    ? (post.seo_title_en || post.title_en || post.title) 
+    : (post.seo_title || post.title);
+
+  const pageDesc = isEn
+    ? (post.seo_desc_en || post.summary_en || post.content_en?.substring(0, 160))
+    : (post.seo_desc || post.summary || post.content.substring(0, 160));
 
   return {
     title: pageTitle,
@@ -183,6 +190,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       description: pageDesc,
       type: 'article',
       images: post.image ? [{ url: post.image }] : [],
+      locale: isEn ? 'en_US' : 'fa_IR',
     },
     twitter: {
       card: 'summary_large_image',
@@ -193,8 +201,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-// --- موتور پردازش متن (نسخه ۳: اضافه شدن H4) ---
+// --- موتور پردازش متن ---
 const parseInlineStyles = (text: string) => {
+  if (!text) return null;
   const parts = text.split(/(\[.*?\]\(.*?\)|https?:\/\/[^\s]+|\*\*.*?\*\*)/g);
 
   return parts.map((part, index) => {
@@ -290,9 +299,10 @@ const renderContent = (text: string) => {
   });
 };
 
-export default async function BlogPost({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+export default async function BlogPost({ params }: { params: Promise<{ slug: string; locale: string }> }) {
+  const { slug, locale } = await params;
   const decodedSlug = decodeURIComponent(slug);
+  const isEn = locale === 'en';
 
   const { data: post } = await supabase
     .from('posts')
@@ -304,18 +314,27 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
     notFound();
   }
 
+  // --- انتخاب محتوای مناسب بر اساس زبان ---
+  const displayTitle = isEn ? (post.title_en || post.title) : post.title;
+  // برای محتوا، اگر متن انگلیسی نبود، متن فارسی را نشان بده (Fallback)
+  const displayContent = isEn ? (post.content_en || post.content) : post.content;
+  
+  // انتخاب دسته‌بندی و تگ‌ها (اضافه شده)
+  const displayCategory = isEn ? (post.category_en || post.category) : post.category;
+  const displayTags = isEn ? (post.tags_en || post.tags) : post.tags;
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
-    headline: post.seo_title || post.title,
+    headline: displayTitle,
     image: post.image ? [post.image] : [],
     datePublished: post.created_at,
     author: {
       '@type': 'Organization',
       name: 'Soughat Shop Team'
     },
-    description: post.seo_desc || post.summary,
-    articleBody: post.content
+    articleBody: displayContent,
+    inLanguage: isEn ? 'en-US' : 'fa-IR'
   };
 
   return (
@@ -331,7 +350,7 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
         {post.image ? (
           <img 
             src={post.image} 
-            alt={post.title} 
+            alt={displayTitle} 
             className="w-full h-full object-cover opacity-60"
           />
         ) : (
@@ -342,13 +361,13 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
         <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent" />
         
         <div className="absolute bottom-0 left-0 right-0 p-6 md:p-12 container mx-auto">
-            {post.category && (
+            {displayCategory && (
                 <span className="inline-flex items-center gap-1 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold mb-4">
-                     <Folder className="h-3 w-3" /> {post.category}
+                     <Folder className="h-3 w-3" /> {displayCategory}
                 </span>
             )}
-            <h1 className="text-3xl md:text-5xl font-extrabold text-white leading-tight drop-shadow-lg max-w-4xl">
-                {post.title}
+            <h1 className="text-3xl md:text-5xl font-extrabold text-white leading-tight drop-shadow-lg max-w-4xl" dir={isEn ? 'ltr' : 'rtl'}>
+                {displayTitle}
             </h1>
         </div>
       </div>
@@ -357,29 +376,28 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
       <div className="container mx-auto px-4 relative z-10 -mt-10">
         <div className="bg-white rounded-3xl shadow-xl p-6 md:p-12 max-w-4xl mx-auto border border-gray-100">
           
-          <div className="flex flex-wrap items-center gap-6 text-gray-500 text-sm font-medium mb-10 pb-6 border-b border-gray-100">
+          <div className="flex flex-wrap items-center gap-6 text-gray-500 text-sm font-medium mb-10 pb-6 border-b border-gray-100" dir={isEn ? 'ltr' : 'rtl'}>
             <span className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-blue-500" />
-              {new Date(post.created_at).toLocaleDateString('fa-IR', { dateStyle: 'long' })}
+              {new Date(post.created_at).toLocaleDateString(isEn ? 'en-US' : 'fa-IR', { dateStyle: 'long' })}
             </span>
             <span className="flex items-center gap-2">
               <User className="h-4 w-4 text-blue-500" />
-              نویسنده: تیم محتوای سوغات شاپ
+              {isEn ? 'Author: Soughat Shop Team' : 'نویسنده: تیم محتوای سوغات شاپ'}
             </span>
           </div>
           
-          <article className="max-w-none">
-             {renderContent(post.content)}
+          <article className="max-w-none" dir={isEn ? 'ltr' : 'rtl'}>
+             {renderContent(displayContent)}
           </article>
 
-          {post.tags && post.tags.length > 0 && (
-            <div className="mt-12 pt-8 border-t border-gray-100">
+          {displayTags && displayTags.length > 0 && (
+            <div className="mt-12 pt-8 border-t border-gray-100" dir={isEn ? 'ltr' : 'rtl'}>
                 <div className="flex items-center gap-2 mb-4 text-gray-700 font-bold text-sm">
-                   <Tag className="h-4 w-4" /> برچسب‌ها:
+                   <Tag className="h-4 w-4" /> {isEn ? 'Tags:' : 'برچسب‌ها:'}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    {post.tags.map((tag: string, idx: number) => (
-                        // FIX: لینک‌ها الان به صفحه وبلاگ میرن نه محصولات
+                    {displayTags.map((tag: string, idx: number) => (
                         <Link key={idx} href={`/blog`} className="bg-gray-100 hover:bg-blue-50 hover:text-blue-600 transition-colors text-gray-600 px-3 py-1.5 rounded-lg text-xs">
                             #{tag}
                         </Link>
@@ -388,9 +406,17 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
             </div>
           )}
 
-          <div className="mt-10">
+          <div className="mt-10" dir={isEn ? 'ltr' : 'rtl'}>
              <Link href="/blog" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-bold transition-colors group">
-                 <ArrowRight className="ml-2 h-4 w-4 group-hover:mr-1 transition-all" /> بازگشت به لیست مقالات
+                 {isEn ? (
+                    <>
+                       <ArrowRight className="mr-2 h-4 w-4 rotate-180 group-hover:mr-3 transition-all" /> Back to Blog
+                    </>
+                 ) : (
+                    <>
+                       <ArrowRight className="ml-2 h-4 w-4 group-hover:mr-1 transition-all" /> بازگشت به لیست مقالات
+                    </>
+                 )}
             </Link>
           </div>
 
@@ -401,10 +427,11 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
 }
 
 ===== File: app/[locale]/blog/page.tsx =====
-# Modified: 2025-12-02T20:36:42.645523 | Size: 6119 bytes | SHA1: 610fc94a8ad0d54b0a5cb215b86a083b2f8641a7
+# Modified: 2026-01-02T01:11:35.213109 | Size: 7276 bytes | SHA1: 38742f0542a5437a63d735cb269a38686a2a1343
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { Calendar, ArrowLeft, ArrowRight } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 
 // کش کردن دیتا برای سرعت بالا (ISR) - هر ۶۰ ثانیه
 export const revalidate = 60;
@@ -414,12 +441,17 @@ const POSTS_PER_PAGE = 9;
 
 interface BlogPageProps {
   searchParams: Promise<{ page?: string }>;
+  params: Promise<{ locale: string }>;
 }
 
-export default async function BlogIndex({ searchParams }: BlogPageProps) {
+export default async function BlogIndex({ searchParams, params }: BlogPageProps) {
+  const { locale } = await params;
+  const isEn = locale === 'en';
+  const t = await getTranslations({locale, namespace: 'Blog'});
+
   // 1. دریافت شماره صفحه از URL
-  const params = await searchParams;
-  const currentPage = Number(params?.page) || 1;
+  const sp = await searchParams;
+  const currentPage = Number(sp?.page) || 1;
 
   // 2. محاسبه بازه دریافت اطلاعات (از کجا تا کجا)
   const from = (currentPage - 1) * POSTS_PER_PAGE;
@@ -441,64 +473,78 @@ export default async function BlogIndex({ searchParams }: BlogPageProps) {
       <div className="container mx-auto px-4">
         
         <div className="text-center mb-16">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">وبلاگ سوغات شاپ</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">{t('title')}</h1>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            جدیدترین مقالات درباره ارسال پول، خرید سوغات و راهنمای مهاجران
+            {t('subtitle')}
           </p>
         </div>
 
         {!posts || posts.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-gray-500">هنوز مقاله‌ای منتشر نشده است (یا صفحه‌ای وجود ندارد).</p>
+            <p className="text-gray-500">{t('empty')}</p>
           </div>
         ) : (
           <>
             {/* لیست پست‌ها */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-              {posts.map((post) => (
-                <article key={post.id} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col group">
-                  <Link href={`/blog/${post.slug}`} className="block relative h-56 bg-gray-200 overflow-hidden">
-                    {post.image ? (
-                      <img 
-                        src={post.image} 
-                        alt={post.title} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-blue-50 text-blue-200 text-4xl font-bold">Blog</div>
-                    )}
-                  </Link>
-                  
-                  <div className="p-6 flex flex-col flex-1">
-                    <div className="flex items-center gap-2 text-xs text-gray-400 mb-3">
-                      <Calendar className="h-3 w-3" />
-                      <time>{new Date(post.created_at).toLocaleDateString('fa-IR')}</time>
-                    </div>
-                    
-                    <Link href={`/blog/${post.slug}`}>
-                      <h2 className="text-xl font-bold text-gray-900 mb-3 hover:text-blue-600 transition-colors line-clamp-2">
-                        {post.title}
-                      </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12" dir={isEn ? 'ltr' : 'rtl'}>
+              {posts.map((post) => {
+                // انتخاب هوشمند زبان (اگر انگلیسی نبود، فارسی را نشان بده)
+                const displayTitle = isEn ? (post.title_en || post.title) : post.title;
+                const displaySummary = isEn ? (post.summary_en || post.summary || post.content.substring(0, 150)) : (post.summary || post.content.substring(0, 150));
+
+                return (
+                  <article key={post.id} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col group">
+                    <Link href={`/blog/${post.slug}`} className="block relative h-56 bg-gray-200 overflow-hidden">
+                      {post.image ? (
+                        <img 
+                          src={post.image} 
+                          alt={displayTitle} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-blue-50 text-blue-200 text-4xl font-bold">Blog</div>
+                      )}
                     </Link>
                     
-                    <p className="text-gray-500 text-sm line-clamp-3 mb-6 leading-7">
-                      {post.summary || post.content.substring(0, 150)}...
-                    </p>
-                    
-                    <div className="mt-auto pt-4 border-t border-gray-50">
-                      <Link href={`/blog/${post.slug}`} className="inline-flex items-center text-blue-600 font-medium text-sm hover:gap-2 transition-all">
-                        ادامه مطلب <ArrowLeft className="mr-1 h-4 w-4" />
+                    <div className="p-6 flex flex-col flex-1">
+                      <div className="flex items-center gap-2 text-xs text-gray-400 mb-3">
+                        <Calendar className="h-3 w-3" />
+                        <time>{new Date(post.created_at).toLocaleDateString(isEn ? 'en-US' : 'fa-IR')}</time>
+                      </div>
+                      
+                      <Link href={`/blog/${post.slug}`}>
+                        <h2 className="text-xl font-bold text-gray-900 mb-3 hover:text-blue-600 transition-colors line-clamp-2 leading-tight">
+                          {displayTitle}
+                        </h2>
                       </Link>
+                      
+                      <p className="text-gray-500 text-sm line-clamp-3 mb-6 leading-7 text-justify">
+                        {displaySummary}...
+                      </p>
+                      
+                      <div className="mt-auto pt-4 border-t border-gray-50">
+                        <Link href={`/blog/${post.slug}`} className="inline-flex items-center text-blue-600 font-medium text-sm hover:gap-2 transition-all group">
+                          {isEn ? (
+                             <>
+                               {t('read_more')} <ArrowRight className="ml-1 h-4 w-4 group-hover:ml-2 transition-all" />
+                             </>
+                          ) : (
+                             <>
+                               {t('read_more')} <ArrowLeft className="mr-1 h-4 w-4 group-hover:mr-2 transition-all" />
+                             </>
+                          )}
+                        </Link>
+                      </div>
                     </div>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
 
             {/* کنترل‌های Pagination */}
             {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-4 border-t border-gray-200 pt-8">
-                {/* دکمه قبلی */}
+              <div className="flex justify-center items-center gap-4 border-t border-gray-200 pt-8" dir="ltr">
+                {/* دکمه قبلی (در انگلیسی چپ، در فارسی راست) */}
                 <Link
                   href={currentPage > 1 ? `/blog?page=${currentPage - 1}` : '#'}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
@@ -508,11 +554,12 @@ export default async function BlogIndex({ searchParams }: BlogPageProps) {
                   }`}
                   aria-disabled={currentPage <= 1}
                 >
-                  <ArrowRight className="h-4 w-4" /> صفحه قبل
+                  {isEn ? <ArrowLeft className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
+                  {t('prev')}
                 </Link>
 
                 <span className="text-sm text-gray-600 font-bold">
-                  صفحه {currentPage} از {totalPages}
+                  {t('page')} {currentPage} {t('of')} {totalPages}
                 </span>
 
                 {/* دکمه بعدی */}
@@ -525,7 +572,8 @@ export default async function BlogIndex({ searchParams }: BlogPageProps) {
                   }`}
                   aria-disabled={currentPage >= totalPages}
                 >
-                  صفحه بعد <ArrowLeft className="h-4 w-4" />
+                  {t('next')}
+                  {isEn ? <ArrowRight className="h-4 w-4" /> : <ArrowLeft className="h-4 w-4" />}
                 </Link>
               </div>
             )}
@@ -6600,12 +6648,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 }
 
 ===== File: components/CryptoPayment.tsx =====
-# Modified: 2026-01-01T04:10:29.082918 | Size: 11125 bytes | SHA1: f6085b9c54fc6c0e5fcf1809c918b00644d537ff
+# Modified: 2026-01-02T00:52:26.913277 | Size: 11889 bytes | SHA1: cdcf5fe60a68ffe8eb685392313fd1813582c852
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useStore } from '@/lib/store';
-import { Loader2, Copy, CheckCircle, Wallet, Info, RefreshCw, ScanLine } from 'lucide-react';
+import { Loader2, Copy, CheckCircle, Wallet, Info, RefreshCw, ScanLine, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
@@ -6827,6 +6875,18 @@ export default function CryptoPayment({ orderId }: Props) {
                            {t('network')} {selectedMethod.network}
                         </span>
                     </div>
+
+                    {selectedMethod.symbol === 'USDT' && selectedMethod.network === 'Solana' && (
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3 text-center animate-pulse">
+                            <div className="text-sm text-amber-800 font-bold flex items-center justify-center gap-2 mb-1">
+                                <AlertTriangle className="h-5 w-5" />
+                                <span>{t('warning_title')}</span>
+                            </div>
+                            <p className="text-[11px] text-amber-700 leading-4">
+                                {t('warning_desc')}
+                            </p>
+                        </div>
+                    )}
 
                     <button 
                         onClick={() => handleCopy(selectedMethod.address)}
@@ -8360,7 +8420,7 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 ===== File: messages/en.json =====
-# Modified: 2026-01-01T22:04:17.323990 | Size: 21107 bytes | SHA1: cb431a976d22d470e6b1fe727c4ad51b3209c648
+# Modified: 2026-01-02T01:10:35.045735 | Size: 21732 bytes | SHA1: 90ced2ecf1d5b63bd12af48befb28c5b50cb44c1
 {
   "Header": {
     "home": "Home",
@@ -8659,7 +8719,9 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
     "copy_success": "Address Copied!",
     "btn_confirm": "I have paid",
     "btn_checking": "Registering transaction...",
-    "refresh_rate": "Refresh Rate"
+    "refresh_rate": "Refresh Rate",
+    "warning_title": "IMPORTANT: Network Selection",
+    "warning_desc": "Please ONLY select Solana (SPL) network for USDT. Sending via TRC20 or ERC20 will result in fund loss."
   },
   "Track": {
     "title": "Track Your Order",
@@ -8759,10 +8821,25 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
     "cta_card_desc": "Place your first order right now.",
     "cta_card_btn": "Start Shopping"
   }
+  ,
+  "Blog": {
+    "title": "Soughat Shop Blog",
+    "subtitle": "Latest guides on sending gifts, money transfer, and diaspora lifestyle",
+    "read_more": "Read More",
+    "published_on": "Published on",
+    "author": "Author: Soughat Shop Team",
+    "back_to_blog": "Back to Blog List",
+    "tags": "Tags:",
+    "empty": "No articles found.",
+    "prev": "Previous",
+    "next": "Next",
+    "page": "Page",
+    "of": "of"
+  }
 }
 
 ===== File: messages/fa.json =====
-# Modified: 2026-01-01T22:03:42.141318 | Size: 32009 bytes | SHA1: 6b59a9ee88f438e5ef6439d59de9e977ce6c14aa
+# Modified: 2026-01-02T01:11:00.014488 | Size: 32908 bytes | SHA1: 9577e0f5479e9953a0e06c6f051605bcda1f22fe
 {
   "Header": {
     "home": "خانه",
@@ -9061,7 +9138,9 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
     "copy_success": "آدرس کپی شد!",
     "btn_confirm": "پرداخت را انجام دادم",
     "btn_checking": "در حال ثبت تراکنش...",
-    "refresh_rate": "بروزرسانی نرخ (استعلام مجدد)"
+    "refresh_rate": "بروزرسانی نرخ (استعلام مجدد)",
+    "warning_title": "هشدار مهم: انتخاب شبکه",
+    "warning_desc": "ارز USDT را فقط تحت شبکه Solana (SPL) واریز کنید. ارسال روی شبکه TRC20 یا ERC20 باعث از بین رفتن پول می‌شود."
   },
   "Track": {
     "title": "پیگیری وضعیت سفارش",
@@ -9160,6 +9239,20 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
     "cta_card_title": "خیالتان راحت شد؟",
     "cta_card_desc": "همین حالا اولین سفارش خود را ثبت کنید.",
     "cta_card_btn": "شروع خرید"
+  },
+  "Blog": {
+    "title": "وبلاگ سوغات شاپ",
+    "subtitle": "جدیدترین مقالات درباره ارسال پول، خرید سوغات و راهنمای مهاجران",
+    "read_more": "ادامه مطلب",
+    "published_on": "منتشر شده در",
+    "author": "نویسنده: تیم محتوای سوغات شاپ",
+    "back_to_blog": "بازگشت به لیست مقالات",
+    "tags": "برچسب‌ها:",
+    "empty": "هنوز مقاله‌ای منتشر نشده است.",
+    "prev": "صفحه قبل",
+    "next": "صفحه بعد",
+    "page": "صفحه",
+    "of": "از"
   }
 }
 
@@ -9789,4 +9882,4 @@ print("\n✨ تمام آیکون‌ها با موفقیت آپدیت شدند. �
 
 ### Summary
 # Files considered: 78 | Written: 72 | Skipped: 6
-# Output size: 451405 bytes
+# Output size: 456012 bytes

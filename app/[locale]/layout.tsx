@@ -21,9 +21,6 @@ export const metadata: Metadata = {
   
   manifest: '/site.webmanifest',
   
-  // ❌ بخش icons حذف شد چون فایل icon.png در پوشه app به صورت خودکار شناسایی می‌شود.
-  // این روش استاندارد Next.js برای نمایش صحیح لوگو در گوگل است.
-
   keywords: ["ارسال هدیه به ایران", "خرید سوغات ایران", "ارسال پول با تتر", "سوغات شاپ", "Soughat Shop", "خرید پسته صادراتی", "گیفت شاپ ایران", "پرداخت با کریپتو"],
   
   authors: [{ name: "تیم سوغات شاپ" }],
@@ -70,11 +67,41 @@ export default async function LocaleLayout({
   // 4. تنظیم جهت صفحه (RTL برای فارسی، LTR برای انگلیسی)
   const direction = locale === 'fa' ? 'rtl' : 'ltr';
 
+  // 5. تعریف اسکیمای سازمان (Organization Schema) برای گوگل
+  // این همان کدی است که باعث می‌شود لوگوی شما در نتایج گوگل شناسایی شود
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    'name': 'Soughat Shop',
+    'alternateName': 'سوغات شاپ',
+    'url': 'https://soughat.shop',
+    'logo': 'https://soughat.shop/logo.png',
+    'description': 'اولین پلتفرم تخصصی ارسال هدیه و سوغات به ایران با پرداخت ارزی و کریپتو',
+    'contactPoint': {
+      '@type': 'ContactPoint',
+      'telephone': '+98-916-803-8017',
+      'contactType': 'customer service',
+      'areaServed': ['IR', 'US', 'CA', 'DE', 'GB', 'SE'],
+      'availableLanguage': ['en', 'fa']
+    },
+    'sameAs': [
+      // اگر شبکه‌های اجتماعی دارید لینک‌های واقعی را اینجا بگذارید
+      'https://www.instagram.com/soughatshop',
+      'https://twitter.com/soughatshop'
+    ]
+  };
+
   return (
     <NextIntlClientProvider messages={messages}>
       {/* دیو اصلی که جهت صفحه را کنترل می‌کند */}
       <div dir={direction} className="flex flex-col min-h-screen w-full">
         
+        {/* تزریق اسکریپت جیسون برای گوگل */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+
         {/* هدر سایت */}
         <Header />
         
