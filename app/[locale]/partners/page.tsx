@@ -24,7 +24,7 @@ const partners = [
     title: "تیوان اکس | TivanEx",
     description: "در تیوان اکس، سرعت نور و امنیت سایبری در کلاس جهانی را تجربه کنید. پلتفرمی برای حرفه‌ای‌ها، با زیرساخت غیرمتمرکز و شفاف.",
     features: ["امنیت سایبری نظامی", "موتور مچینگ فراصوت", "احراز هویت هوشمند"],
-    url: "https://tivan-ex.vercel.app/", 
+    url: "https://tivan-ex.vercel.app", 
     icon: Bitcoin, 
     color: "text-emerald-400",
     borderColor: "group-hover:border-emerald-500/50",
