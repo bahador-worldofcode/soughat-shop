@@ -2,11 +2,14 @@
 import { useState, useEffect } from 'react';
 import { ShoppingBag, Menu, X, Globe, Search, ChevronDown } from 'lucide-react';
 import { useStore } from '@/lib/store';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { Link, useRouter, usePathname } from '@/i18n/navigation';
 
 export default function Header() {
   const t = useTranslations('Header');
+  const locale = useLocale(); // دریافت زبان فعلی از هوک استاندارد
+  const isEn = locale === 'en';
+  
   const { currency, setCurrency, totalItems, fetchRates } = useStore();
   const cartCount = totalItems();
   const [mounted, setMounted] = useState(false);
@@ -30,16 +33,9 @@ export default function Header() {
   };
 
   const toggleLanguage = () => {
-    const currentLocale = window.location.pathname.startsWith('/en') ? 'en' : 'fa';
-    const newLocale = currentLocale === 'en' ? 'fa' : 'en';
+    const newLocale = isEn ? 'fa' : 'en';
     router.replace(pathname, { locale: newLocale });
   };
-
-  const currentLocale = typeof window !== 'undefined' && window.location.pathname.startsWith('/en') ? 'en' : 'fa';
-
-  // لینک‌های CDN برای پرچم‌ها
-  const flagIR = "https://flagcdn.com/w40/ir.png";
-  const flagUS = "https://flagcdn.com/w40/us.png";
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 font-[family-name:var(--font-vazir)]">
@@ -69,7 +65,7 @@ export default function Header() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('searchPlaceholder')}
-                className={`bg-transparent border-none outline-none text-sm w-full text-gray-700 placeholder-gray-400 ${currentLocale === 'fa' ? 'mr-3' : 'ml-3'}`}
+                className={`bg-transparent border-none outline-none text-sm w-full text-gray-700 placeholder-gray-400 ${!isEn ? 'mr-3' : 'ml-3'}`}
             />
         </form>
 
@@ -89,28 +85,26 @@ export default function Header() {
         {/* Actions */}
         <div className="flex items-center gap-3 flex-shrink-0">
           
-          {/* Language Switcher Button (Desktop) - FIXED FLAGS */}
+          {/* Language Switcher Button (Desktop) - اصلاح شده: نمایش متن مقصد */}
           <button 
             onClick={toggleLanguage}
-            className="hidden sm:flex items-center gap-2 bg-gray-50 hover:bg-white border border-gray-200 hover:border-blue-200 px-3 py-1.5 rounded-xl transition-all shadow-sm hover:shadow group"
-            title={currentLocale === 'fa' ? 'Switch to English' : 'تغییر به فارسی'}
+            className="hidden sm:flex items-center gap-2 bg-gray-50 hover:bg-white border border-gray-200 hover:border-blue-200 px-4 py-1.5 rounded-xl transition-all shadow-sm hover:shadow group min-w-[80px] justify-center"
+            title={!isEn ? 'Switch to English' : 'تغییر به فارسی'}
           >
-            {/* استفاده از تگ img استاندارد برای پرچم‌ها */}
-            <div className="w-5 h-3.5 relative rounded-sm overflow-hidden shadow-sm">
-                <img 
-                    src={currentLocale === 'fa' ? flagUS : flagIR} 
-                    alt="Language Flag" 
-                    className="w-full h-full object-cover"
-                />
-            </div>
-            <span className="text-xs font-bold text-gray-600 group-hover:text-blue-700 uppercase">
-                {currentLocale === 'fa' ? 'EN' : 'FA'}
+            <Globe className="h-4 w-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
+            {/* 
+                منطق اصلاح شده: 
+                اگر زبان فعلی فارسی است -> دکمه "English" را نشان بده (تا کاربر بداند با کلیک به انگلیسی می‌رود)
+                اگر زبان فعلی انگلیسی است -> دکمه "فارسی" را نشان بده
+            */}
+            <span className="text-sm font-bold text-gray-600 group-hover:text-blue-700 pt-0.5">
+                {isEn ? 'فارسی' : 'English'}
             </span>
           </button>
 
           {/* Currency Switcher (Desktop) */}
           <div className="hidden sm:flex items-center gap-1 border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50 hover:bg-white transition-all shadow-sm hover:shadow cursor-pointer">
-            <Globe className="h-4 w-4 text-gray-400" />
+            <span className="text-xs font-bold text-gray-500">$</span>
             <select 
               value={currency}
               onChange={(e) => setCurrency(e.target.value as any)}
@@ -155,7 +149,7 @@ export default function Header() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('searchPlaceholder')}
-                className={`bg-transparent border-none outline-none text-sm w-full text-gray-700 ${currentLocale === 'fa' ? 'mr-3' : 'ml-3'}`}
+                className={`bg-transparent border-none outline-none text-sm w-full text-gray-700 ${!isEn ? 'mr-3' : 'ml-3'}`}
             />
         </form>
       </div>
@@ -180,37 +174,35 @@ export default function Header() {
                     className="text-gray-700 font-bold hover:text-blue-600 hover:bg-blue-50 px-4 py-3 rounded-xl flex items-center justify-between transition-colors"
                   >
                       {link.label}
-                      <ChevronDown className={`h-4 w-4 text-gray-400 ${currentLocale === 'fa' ? 'rotate-90' : '-rotate-90'}`} />
+                      <ChevronDown className={`h-4 w-4 text-gray-400 ${!isEn ? 'rotate-90' : '-rotate-90'}`} />
                   </Link>
                 ))}
 
                 <hr className="my-2 border-gray-100" />
 
-                {/* Mobile Language Switcher */}
+                {/* Mobile Language Switcher (Fix header.language issue) */}
                 <button 
                   onClick={() => { toggleLanguage(); setIsMobileMenuOpen(false); }}
                   className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-700 active:bg-gray-100"
                 >
                   <span className="flex items-center gap-2">
-                    <span className="text-lg">🌍</span> 
-                    {t('language') || 'Language'}
+                    <Globe className="h-4 w-4 text-blue-600" /> 
+                    {/* حل مشکل نمایش کلید ترجمه با نوشتن مستقیم شرط */}
+                    {isEn ? 'Language' : 'تغییر زبان'}
                   </span>
-                  <div className="flex items-center gap-2 bg-white px-2 py-1 rounded-lg border border-gray-200 shadow-sm">
-                     <div className="w-5 h-3.5 relative rounded-sm overflow-hidden shadow-sm">
-                        {/* نمایش پرچم زبان فعلی */}
-                        <img 
-                            src={currentLocale === 'fa' ? flagIR : flagUS} 
-                            alt="Current Language Flag" 
-                            className="w-full h-full object-cover"
-                        />
-                     </div>
-                     <span className="uppercase text-xs">{currentLocale === 'fa' ? 'FA' : 'EN'}</span>
+                  
+                  {/* نمایش زبان مقصد در باکس سفید */}
+                  <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm text-blue-600">
+                     <span>{isEn ? 'فارسی' : 'English'}</span>
                   </div>
                 </button>
 
                 {/* Mobile Currency Switcher */}
                 <div className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-700">
-                    <span className="flex items-center gap-2"><Globe className="h-4 w-4"/> {t('currency')}:</span>
+                    <span className="flex items-center gap-2">
+                        <span className="text-gray-500 text-xs">$</span> 
+                        {isEn ? 'Currency' : 'واحد پول'}
+                    </span>
                     <select 
                         value={currency}
                         onChange={(e) => setCurrency(e.target.value as any)}
