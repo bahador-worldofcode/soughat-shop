@@ -7,7 +7,7 @@ import { Link, useRouter, usePathname } from '@/i18n/navigation';
 
 export default function Header() {
   const t = useTranslations('Header');
-  const locale = useLocale(); // دریافت زبان فعلی از هوک استاندارد
+  const locale = useLocale(); // دریافت زبان فعلی
   const isEn = locale === 'en';
   
   const { currency, setCurrency, totalItems, fetchRates } = useStore();
@@ -85,18 +85,14 @@ export default function Header() {
         {/* Actions */}
         <div className="flex items-center gap-3 flex-shrink-0">
           
-          {/* Language Switcher Button (Desktop) - اصلاح شده: نمایش متن مقصد */}
+          {/* Language Switcher Button (Desktop) - Text Based */}
           <button 
             onClick={toggleLanguage}
             className="hidden sm:flex items-center gap-2 bg-gray-50 hover:bg-white border border-gray-200 hover:border-blue-200 px-4 py-1.5 rounded-xl transition-all shadow-sm hover:shadow group min-w-[80px] justify-center"
             title={!isEn ? 'Switch to English' : 'تغییر به فارسی'}
           >
             <Globe className="h-4 w-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
-            {/* 
-                منطق اصلاح شده: 
-                اگر زبان فعلی فارسی است -> دکمه "English" را نشان بده (تا کاربر بداند با کلیک به انگلیسی می‌رود)
-                اگر زبان فعلی انگلیسی است -> دکمه "فارسی" را نشان بده
-            */}
+            {/* نمایش زبان مقصد: اگر انگلیسی هستیم دکمه فارسی را نشان بده و برعکس */}
             <span className="text-sm font-bold text-gray-600 group-hover:text-blue-700 pt-0.5">
                 {isEn ? 'فارسی' : 'English'}
             </span>
@@ -180,19 +176,19 @@ export default function Header() {
 
                 <hr className="my-2 border-gray-100" />
 
-                {/* Mobile Language Switcher (Fix header.language issue) */}
+                {/* Mobile Language Switcher */}
                 <button 
                   onClick={() => { toggleLanguage(); setIsMobileMenuOpen(false); }}
                   className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-700 active:bg-gray-100"
                 >
                   <span className="flex items-center gap-2">
                     <Globe className="h-4 w-4 text-blue-600" /> 
-                    {/* حل مشکل نمایش کلید ترجمه با نوشتن مستقیم شرط */}
+                    {/* حل مشکل هدر لنگویج با نوشتن شرط دستی */}
                     {isEn ? 'Language' : 'تغییر زبان'}
                   </span>
                   
-                  {/* نمایش زبان مقصد در باکس سفید */}
                   <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm text-blue-600">
+                     {/* نمایش زبان مقصد برای سوییچ */}
                      <span>{isEn ? 'فارسی' : 'English'}</span>
                   </div>
                 </button>
@@ -205,7 +201,10 @@ export default function Header() {
                     </span>
                     <select 
                         value={currency}
-                        onChange={(e) => setCurrency(e.target.value as any)}
+                        onChange={(e) => {
+                            setCurrency(e.target.value as any);
+                            setIsMobileMenuOpen(false); // بستن منو پس از تغییر ارز
+                        }}
                         className="bg-transparent text-sm font-bold outline-none text-blue-700 dir-ltr"
                     >
                         <option value="USD">USD ($)</option>
