@@ -1,5 +1,5 @@
 ### Soughat-Shop Snapshot
-# Generated: 2026-01-30T06:41:46.750058
+# Generated: 2026-02-03T20:25:56.576556
 # Root: C:\projects\soughat-shop
 # Excluded dir names: .expo, .git, .next, .vscode, node_modules
 # Excluded files (by name/rel): collect_soughat_snapshot.bat, collect_soughat_snapshot.py, package-lock.json, snapshot_soughat.txt
@@ -7555,16 +7555,19 @@ export default function Footer() {
 }
 
 ===== File: components/Header.tsx =====
-# Modified: 2026-01-01T21:37:43.294719 | Size: 11429 bytes | SHA1: 15de982a83d49b8a11f40cdf2de28678ffc973f9
+# Modified: 2026-01-30T07:02:33.395913 | Size: 10970 bytes | SHA1: 8f03a46498f1e8255848d27994055df48a69c674
 'use client';
 import { useState, useEffect } from 'react';
 import { ShoppingBag, Menu, X, Globe, Search, ChevronDown } from 'lucide-react';
 import { useStore } from '@/lib/store';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { Link, useRouter, usePathname } from '@/i18n/navigation';
 
 export default function Header() {
   const t = useTranslations('Header');
+  const locale = useLocale(); // دریافت زبان فعلی
+  const isEn = locale === 'en';
+  
   const { currency, setCurrency, totalItems, fetchRates } = useStore();
   const cartCount = totalItems();
   const [mounted, setMounted] = useState(false);
@@ -7588,16 +7591,9 @@ export default function Header() {
   };
 
   const toggleLanguage = () => {
-    const currentLocale = window.location.pathname.startsWith('/en') ? 'en' : 'fa';
-    const newLocale = currentLocale === 'en' ? 'fa' : 'en';
+    const newLocale = isEn ? 'fa' : 'en';
     router.replace(pathname, { locale: newLocale });
   };
-
-  const currentLocale = typeof window !== 'undefined' && window.location.pathname.startsWith('/en') ? 'en' : 'fa';
-
-  // لینک‌های CDN برای پرچم‌ها
-  const flagIR = "https://flagcdn.com/w40/ir.png";
-  const flagUS = "https://flagcdn.com/w40/us.png";
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 font-[family-name:var(--font-vazir)]">
@@ -7627,7 +7623,7 @@ export default function Header() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('searchPlaceholder')}
-                className={`bg-transparent border-none outline-none text-sm w-full text-gray-700 placeholder-gray-400 ${currentLocale === 'fa' ? 'mr-3' : 'ml-3'}`}
+                className={`bg-transparent border-none outline-none text-sm w-full text-gray-700 placeholder-gray-400 ${!isEn ? 'mr-3' : 'ml-3'}`}
             />
         </form>
 
@@ -7647,28 +7643,22 @@ export default function Header() {
         {/* Actions */}
         <div className="flex items-center gap-3 flex-shrink-0">
           
-          {/* Language Switcher Button (Desktop) - FIXED FLAGS */}
+          {/* Language Switcher Button (Desktop) - Text Based */}
           <button 
             onClick={toggleLanguage}
-            className="hidden sm:flex items-center gap-2 bg-gray-50 hover:bg-white border border-gray-200 hover:border-blue-200 px-3 py-1.5 rounded-xl transition-all shadow-sm hover:shadow group"
-            title={currentLocale === 'fa' ? 'Switch to English' : 'تغییر به فارسی'}
+            className="hidden sm:flex items-center gap-2 bg-gray-50 hover:bg-white border border-gray-200 hover:border-blue-200 px-4 py-1.5 rounded-xl transition-all shadow-sm hover:shadow group min-w-[80px] justify-center"
+            title={!isEn ? 'Switch to English' : 'تغییر به فارسی'}
           >
-            {/* استفاده از تگ img استاندارد برای پرچم‌ها */}
-            <div className="w-5 h-3.5 relative rounded-sm overflow-hidden shadow-sm">
-                <img 
-                    src={currentLocale === 'fa' ? flagUS : flagIR} 
-                    alt="Language Flag" 
-                    className="w-full h-full object-cover"
-                />
-            </div>
-            <span className="text-xs font-bold text-gray-600 group-hover:text-blue-700 uppercase">
-                {currentLocale === 'fa' ? 'EN' : 'FA'}
+            <Globe className="h-4 w-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
+            {/* نمایش زبان مقصد: اگر انگلیسی هستیم دکمه فارسی را نشان بده و برعکس */}
+            <span className="text-sm font-bold text-gray-600 group-hover:text-blue-700 pt-0.5">
+                {isEn ? 'فارسی' : 'English'}
             </span>
           </button>
 
           {/* Currency Switcher (Desktop) */}
           <div className="hidden sm:flex items-center gap-1 border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50 hover:bg-white transition-all shadow-sm hover:shadow cursor-pointer">
-            <Globe className="h-4 w-4 text-gray-400" />
+            <span className="text-xs font-bold text-gray-500">$</span>
             <select 
               value={currency}
               onChange={(e) => setCurrency(e.target.value as any)}
@@ -7713,7 +7703,7 @@ export default function Header() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('searchPlaceholder')}
-                className={`bg-transparent border-none outline-none text-sm w-full text-gray-700 ${currentLocale === 'fa' ? 'mr-3' : 'ml-3'}`}
+                className={`bg-transparent border-none outline-none text-sm w-full text-gray-700 ${!isEn ? 'mr-3' : 'ml-3'}`}
             />
         </form>
       </div>
@@ -7738,7 +7728,7 @@ export default function Header() {
                     className="text-gray-700 font-bold hover:text-blue-600 hover:bg-blue-50 px-4 py-3 rounded-xl flex items-center justify-between transition-colors"
                   >
                       {link.label}
-                      <ChevronDown className={`h-4 w-4 text-gray-400 ${currentLocale === 'fa' ? 'rotate-90' : '-rotate-90'}`} />
+                      <ChevronDown className={`h-4 w-4 text-gray-400 ${!isEn ? 'rotate-90' : '-rotate-90'}`} />
                   </Link>
                 ))}
 
@@ -7750,28 +7740,29 @@ export default function Header() {
                   className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-700 active:bg-gray-100"
                 >
                   <span className="flex items-center gap-2">
-                    <span className="text-lg">🌍</span> 
-                    {t('language') || 'Language'}
+                    <Globe className="h-4 w-4 text-blue-600" /> 
+                    {/* حل مشکل هدر لنگویج با نوشتن شرط دستی */}
+                    {isEn ? 'Language' : 'تغییر زبان'}
                   </span>
-                  <div className="flex items-center gap-2 bg-white px-2 py-1 rounded-lg border border-gray-200 shadow-sm">
-                     <div className="w-5 h-3.5 relative rounded-sm overflow-hidden shadow-sm">
-                        {/* نمایش پرچم زبان فعلی */}
-                        <img 
-                            src={currentLocale === 'fa' ? flagIR : flagUS} 
-                            alt="Current Language Flag" 
-                            className="w-full h-full object-cover"
-                        />
-                     </div>
-                     <span className="uppercase text-xs">{currentLocale === 'fa' ? 'FA' : 'EN'}</span>
+                  
+                  <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm text-blue-600">
+                     {/* نمایش زبان مقصد برای سوییچ */}
+                     <span>{isEn ? 'فارسی' : 'English'}</span>
                   </div>
                 </button>
 
                 {/* Mobile Currency Switcher */}
                 <div className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-700">
-                    <span className="flex items-center gap-2"><Globe className="h-4 w-4"/> {t('currency')}:</span>
+                    <span className="flex items-center gap-2">
+                        <span className="text-gray-500 text-xs">$</span> 
+                        {isEn ? 'Currency' : 'واحد پول'}
+                    </span>
                     <select 
                         value={currency}
-                        onChange={(e) => setCurrency(e.target.value as any)}
+                        onChange={(e) => {
+                            setCurrency(e.target.value as any);
+                            setIsMobileMenuOpen(false); // بستن منو پس از تغییر ارز
+                        }}
                         className="bg-transparent text-sm font-bold outline-none text-blue-700 dir-ltr"
                     >
                         <option value="USD">USD ($)</option>
@@ -8511,7 +8502,7 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 ===== File: messages/en.json =====
-# Modified: 2026-01-02T01:10:35.045735 | Size: 21732 bytes | SHA1: 90ced2ecf1d5b63bd12af48befb28c5b50cb44c1
+# Modified: 2026-01-30T06:52:56.640293 | Size: 21768 bytes | SHA1: cc1c3fec5c0fd99b6cfb5f09224c0b70df712d91
 {
   "Header": {
     "home": "Home",
@@ -8521,7 +8512,8 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
     "guide": "How it Works",
     "searchPlaceholder": "Search products...",
     "subtitle": "Send Gifts to Iran",
-    "currency": "Currency"
+    "currency": "Currency",
+    "language": "Change Language"
   },
   "Footer": {
     "brand_desc": "The first specialized platform for sending gifts to Iran. By eliminating banking intermediaries and using secure blockchain networks, we enable fast, sanction-free payments via Tether (USDT) and Solana.",
@@ -8930,7 +8922,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 }
 
 ===== File: messages/fa.json =====
-# Modified: 2026-01-02T01:11:00.014488 | Size: 32908 bytes | SHA1: 9577e0f5479e9953a0e06c6f051605bcda1f22fe
+# Modified: 2026-01-30T06:52:15.873393 | Size: 32950 bytes | SHA1: d1bbe377eec246e73aefc3682665a5244011197a
 {
   "Header": {
     "home": "خانه",
@@ -8940,7 +8932,8 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
     "guide": "راهنمای خرید",
     "searchPlaceholder": "جستجو در بین محصولات...",
     "subtitle": "ارسال هدیه به ایران",
-    "currency": "واحد پول"
+    "currency": "واحد پول",
+    "language": "تغییر زبان"  
   },
   "Footer": {
     "brand_desc": "اولین پلتفرم تخصصی ارسال هدیه به ایران. ما با حذف واسطه‌های بانکی و استفاده از شبکه امن بلاک‌چین، امکان پرداخت سریع و بدون تحریم را با تتر (USDT) و سولانا (Solana) فراهم کرده‌ایم.",
@@ -9973,4 +9966,4 @@ print("\n✨ تمام آیکون‌ها با موفقیت آپدیت شدند. �
 
 ### Summary
 # Files considered: 78 | Written: 72 | Skipped: 6
-# Output size: 459830 bytes
+# Output size: 459456 bytes
