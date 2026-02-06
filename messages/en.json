@@ -414,4 +414,30 @@
     "page": "Page",
     "of": "of"
   }
+  ,
+  "MarketRates": {
+    "title": "Live Market Rates",
+    "live_badge": "Live Market",
+    "loading": "...",
+    "unit_toman": "T",
+    "items": {
+      "gold_18k": "Gold 18K",
+      "silver": "Silver 999",
+      "usd": "US Dollar",
+      "eur": "Euro",
+      "gbp": "Pound",
+      "aed": "Dirham",
+      "btc": "Bitcoin",
+      "eth": "Ethereum",
+      "sol": "Solana",
+      "usdt": "Tether"
+    },
+    "sub": {
+      "gram": "Gram",
+      "free": "Free Market",
+      "eu": "Europe",
+      "uk": "UK",
+      "uae": "UAE"
+    }
+  }
 }

@@ -1,4 +1,5 @@
 import Hero from "@/components/Hero";
+import MarketRates from "@/components/MarketRates"; // کامپوننت جدید اضافه شد
 import ProductCard from "@/components/ProductCard";
 import CurrencyRatesBanner from "@/components/CurrencyRatesBanner";
 import FAQ from "@/components/FAQ"; 
@@ -33,8 +34,6 @@ export default async function Home({
     .order('name');
 
   // 3. دریافت تنظیمات سایت (بنر و متن‌ها)
-  // در جدول site_settings ما کلیدهای hero_title و hero_subtitle داریم.
-  // برای انگلیسی باید دنبال hero_title_en و hero_subtitle_en بگردیم.
   const { data: settingsData } = await supabase.from('site_settings').select('*');
   const settings: any = {};
   if (settingsData) {
@@ -54,9 +53,13 @@ export default async function Home({
         title={heroTitle}
         subtitle={heroSubtitle}
       />
+
+      {/* 1.5. Market Rates Section (NEW) */}
+      {/* اضافه شدن بخش نرخ‌های لحظه‌ای زیر هیرو */}
+      <MarketRates />
       
       {/* 2. Categories Section */}
-      <section className="container mx-auto px-4 -mt-10 relative z-30 mb-20">
+      <section className="container mx-auto px-4 -mt-4 relative z-10 mb-20">
           <div className="bg-white rounded-3xl p-8 shadow-xl shadow-gray-200/50 border border-gray-100 text-center">
             <h3 className="font-bold text-gray-800 mb-6 flex items-center justify-center gap-2">
                <Layers className="h-5 w-5 text-blue-600" />
