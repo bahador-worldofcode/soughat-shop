@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Plus, Trash2, Edit2, Search, X, Loader2, ImageIcon, Check, Search as SearchIcon, Calculator, LayoutGrid, List, Package, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Edit2, Search, X, Loader2, ImageIcon, Check, Search as SearchIcon, Calculator, LayoutGrid, List, Package, AlertCircle, Gem, Scale } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -17,13 +17,15 @@ interface Product {
   seo_title: string;
   seo_desc: string;
   created_at?: string;
+  weight?: number; // اضافه شد
+  pricing_type?: 'fixed' | 'gold'; // اضافه شد
 }
 
 interface Category {
   id: string;
   name: string;
   slug: string;
-  icon_url?: string; // اضافه شد برای پشتیبانی از آیکون
+  icon_url?: string;
 }
 
 interface MediaFile {
@@ -40,9 +42,9 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   
-  const [loading, setLoading] = useState(true); // لودینگ اولیه صفحه
-  const [loadingMoreProducts, setLoadingMoreProducts] = useState(false); // لودینگ اسکرول محصولات
-  const [hasMoreProducts, setHasMoreProducts] = useState(true); // آیا محصول بیشتری هست؟
+  const [loading, setLoading] = useState(true);
+  const [loadingMoreProducts, setLoadingMoreProducts] = useState(false);
+  const [hasMoreProducts, setHasMoreProducts] = useState(true);
 
   // --- استیت آمار (Stats) ---
   const [stats, setStats] = useState({ total: 0, unavailable: 0 });
@@ -56,6 +58,7 @@ export default function ProductsPage() {
   const [dollarRate, setDollarRate] = useState(100000);
   const [profitMargin, setProfitMargin] = useState(25);
   const [shippingBase, setShippingBase] = useState(300000);
+  const [goldMarkupPercent, setGoldMarkupPercent] = useState(40); // اضافه شد
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -71,7 +74,9 @@ export default function ProductsPage() {
     description: '',
     features: '', 
     seo_title: '',
-    seo_desc: ''
+    seo_desc: '',
+    weight: '', // اضافه شد
+    pricing_type: 'fixed' // اضافه شد (fixed یا gold)
   });
 
   // --- استیت‌های گالری هوشمند ---
@@ -156,6 +161,7 @@ export default function ProductsPage() {
             if (item.key === 'profit_margin') setProfitMargin(Number(item.value));
             if (item.key === 'shipping_base') setShippingBase(Number(item.value));
             if (item.key === 'admin_product_view_mode') setViewMode(item.value as 'grid' | 'list');
+            if (item.key === 'gold_markup_percent') setGoldMarkupPercent(Number(item.value));
         });
     }
   };
@@ -184,10 +190,17 @@ export default function ProductsPage() {
     const { data } = await query;
 
     if (data) {
+        // برای تایپ‌اسکریپت، data رو کست می‌کنیم چون weight و pricing_type ممکنه در دیتای قدیمی نباشن
+        const typedData = data.map(item => ({
+            ...item,
+            weight: item.weight || 0,
+            pricing_type: item.pricing_type || 'fixed'
+        })) as Product[];
+
         if (isInitial) {
-            setProducts(data);
+            setProducts(typedData);
         } else {
-            setProducts(prev => [...prev, ...data]);
+            setProducts(prev => [...prev, ...typedData]);
         }
 
         if (data.length < BATCH_SIZE) {
@@ -239,6 +252,9 @@ export default function ProductsPage() {
   };
 
   const calculateSuggestedUSD = (tomanStr: string) => {
+    // فقط برای محصولات معمولی محاسبه انجام میشه
+    if (formData.pricing_type === 'gold') return;
+
     const toman = parseInt(tomanStr) || 0;
     if (toman === 0) return;
     const cost = toman + shippingBase;
@@ -261,13 +277,16 @@ export default function ProductsPage() {
         description: product.description || '',
         features: product.features ? product.features.join('\n') : '',
         seo_title: product.seo_title || '',
-        seo_desc: product.seo_desc || ''
+        seo_desc: product.seo_desc || '',
+        weight: product.weight ? product.weight.toString() : '', // مقداردهی وزن
+        pricing_type: product.pricing_type === 'gold' ? 'gold' : 'fixed' // مقداردهی نوع قیمت
       });
     } else {
       setEditingProduct(null);
       setFormData({ 
         title: '', price: '', price_toman: '', image: '', slug: '', 
-        category: categories[0]?.slug || '', description: '', features: '', seo_title: '', seo_desc: '' 
+        category: categories[0]?.slug || '', description: '', features: '', seo_title: '', seo_desc: '',
+        weight: '', pricing_type: 'fixed'
       });
     }
     setIsModalOpen(true);
@@ -285,6 +304,7 @@ export default function ProductsPage() {
       finalSlug = finalSlug.trim().toLowerCase().replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
       const finalCategory = formData.category || categories[0]?.slug || 'nuts';
 
+      // آماده‌سازی داده‌ها
       const productData = {
         title: formData.title,
         price: Number(formData.price),
@@ -295,8 +315,17 @@ export default function ProductsPage() {
         description: formData.description,
         features: featuresArray,
         seo_title: formData.seo_title,
-        seo_desc: formData.seo_desc
+        seo_desc: formData.seo_desc,
+        weight: Number(formData.weight) || 0, // ذخیره وزن
+        pricing_type: formData.pricing_type // ذخیره نوع قیمت
       };
+
+      // اگر طلا باشد، قیمت‌ها را موقتاً 0 یا مقدار فعلی رد می‌کنیم، چون کرون‌جاب مسئول آپدیت است
+      // اما برای اینکه ارور ندهد، اگر خالی بود 0 می‌گذاریم
+      if (formData.pricing_type === 'gold') {
+        productData.price = productData.price || 0;
+        productData.price_toman = productData.price_toman || 0;
+      }
 
       let response;
       if (editingProduct) {
@@ -340,7 +369,6 @@ export default function ProductsPage() {
     }
   };
 
-  // تابع اصلاح شد تا آبجکت کامل دسته را برگرداند
   const getCategoryObj = (slug: string) => {
     return categories.find(c => c.slug === slug);
   };
@@ -415,13 +443,14 @@ export default function ProductsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in duration-300">
             {products.map((product, index) => {
                 const isLast = index === products.length - 1;
-                const isUnavailable = product.price_toman === 0;
-                const catObj = getCategoryObj(product.category); // دریافت آبجکت دسته برای آیکون
+                const isUnavailable = product.price_toman === 0 && product.pricing_type !== 'gold'; // طلا ممکن است 0 باشد تا آپدیت شود
+                const isGold = product.pricing_type === 'gold';
+                const catObj = getCategoryObj(product.category); 
                 return (
                     <div 
                         key={product.id} 
                         ref={isLast ? lastProductElementRef : null}
-                        className={`bg-white rounded-2xl border shadow-sm hover:shadow-md transition-all overflow-hidden group flex flex-col ${isUnavailable ? 'border-red-200 bg-red-50/10' : 'border-gray-100'}`}
+                        className={`bg-white rounded-2xl border shadow-sm hover:shadow-md transition-all overflow-hidden group flex flex-col ${isUnavailable ? 'border-red-200 bg-red-50/10' : 'border-gray-100'} ${isGold ? 'border-yellow-200' : ''}`}
                     >
                         <div className="relative aspect-square bg-gray-100 overflow-hidden">
                             <img src={product.image} alt={product.title} className={`w-full h-full object-cover group-hover:scale-105 transition-transform ${isUnavailable ? 'grayscale' : ''}`} />
@@ -429,11 +458,20 @@ export default function ProductsPage() {
                                 <button onClick={() => openProductModal(product)} className="p-2 bg-white/90 rounded-full text-blue-600 shadow-sm"><Edit2 className="h-4 w-4" /></button>
                                 <button onClick={() => handleDelete(product.id)} className="p-2 bg-white/90 rounded-full text-red-500 shadow-sm"><Trash2 className="h-4 w-4" /></button>
                             </div>
-                            {/* نمایش آیکون در بج دسته بندی */}
+                            
+                            {/* بج دسته‌بندی */}
                             <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded-full backdrop-blur-sm flex items-center gap-1.5">
                               {catObj?.icon_url && <img src={catObj.icon_url} className="w-3 h-3 object-contain invert" alt="" />}
                               {catObj ? catObj.name : product.category}
                             </span>
+                            
+                            {/* نشانگر طلا */}
+                            {isGold && (
+                                <span className="absolute top-2 left-2 bg-yellow-400 text-blue-900 text-[10px] px-2 py-1 rounded-full shadow-md flex items-center gap-1 font-bold">
+                                    <Gem className="w-3 h-3" /> طلا
+                                </span>
+                            )}
+
                             {isUnavailable && (
                                 <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                                     <span className="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md">ناموجود</span>
@@ -442,8 +480,9 @@ export default function ProductsPage() {
                         </div>
                         <div className="p-4 flex flex-col flex-1">
                             <h3 className="font-bold text-gray-900 line-clamp-1 mb-1">{product.title}</h3>
-                            <div className="mt-auto">
+                            <div className="mt-auto flex justify-between items-end">
                                 <span className="text-lg font-bold text-blue-600">${product.price}</span>
+                                {isGold && <span className="text-[10px] text-gray-400 font-mono">{product.weight}g</span>}
                             </div>
                         </div>
                     </div>
@@ -455,21 +494,26 @@ export default function ProductsPage() {
               <div className="divide-y divide-gray-100">
                   {products.map((product, index) => {
                       const isLast = index === products.length - 1;
-                      const isUnavailable = product.price_toman === 0;
+                      const isUnavailable = product.price_toman === 0 && product.pricing_type !== 'gold';
+                      const isGold = product.pricing_type === 'gold';
                       return (
                         <div 
                             key={product.id} 
                             ref={isLast ? lastProductElementRef : null}
-                            className={`p-3 hover:bg-gray-50 transition-colors flex items-center justify-between group ${isUnavailable ? 'bg-red-50/30' : ''}`}
+                            className={`p-3 hover:bg-gray-50 transition-colors flex items-center justify-between group ${isUnavailable ? 'bg-red-50/30' : ''} ${isGold ? 'bg-yellow-50/20' : ''}`}
                         >
                             <div className="flex items-center gap-3">
                                 <img src={product.image} className={`w-10 h-10 rounded object-cover border border-gray-100 ${isUnavailable ? 'grayscale' : ''}`} />
                                 <div>
                                     <div className="font-bold text-gray-800 text-sm select-all cursor-text flex items-center gap-2">
                                         {product.title}
+                                        {isGold && <span className="text-[9px] bg-yellow-200 text-yellow-800 px-1.5 rounded flex items-center gap-0.5"><Gem className="h-3 w-3"/> طلا</span>}
                                         {isUnavailable && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full">ناموجود</span>}
                                     </div>
-                                    <div className="text-xs text-gray-500">${product.price}</div>
+                                    <div className="text-xs text-gray-500 flex gap-2">
+                                        <span>${product.price}</span>
+                                        {isGold && <span className="border-r pr-2 border-gray-300">{product.weight} گرم</span>}
+                                    </div>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
@@ -502,51 +546,102 @@ export default function ProductsPage() {
             <form onSubmit={handleSave} className="p-6 space-y-6 overflow-y-auto">
               <div className="space-y-4">
                   <h4 className="font-bold text-blue-800 text-sm border-b pb-2">۱. اطلاعات پایه</h4>
+                  
+                  {/* Toggle Pricing Type - NEW */}
+                  <div className="flex gap-2 p-1 bg-gray-100 rounded-lg w-fit">
+                        <button 
+                            type="button"
+                            onClick={() => setFormData({...formData, pricing_type: 'fixed'})}
+                            className={`px-4 py-2 rounded-md text-xs font-bold transition-all flex items-center gap-2 ${formData.pricing_type === 'fixed' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                        >
+                            <Package className="h-4 w-4" /> محصول عادی
+                        </button>
+                        <button 
+                            type="button"
+                            onClick={() => setFormData({...formData, pricing_type: 'gold'})}
+                            className={`px-4 py-2 rounded-md text-xs font-bold transition-all flex items-center gap-2 ${formData.pricing_type === 'gold' ? 'bg-yellow-400 text-blue-900 shadow' : 'text-gray-500 hover:text-gray-700'}`}
+                        >
+                            <Gem className="h-4 w-4" /> طلا و جواهر (وزنی)
+                        </button>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="md:col-span-2">
                         <label className="block text-xs font-medium text-gray-700 mb-1">نام محصول</label>
                         <input type="text" required className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} />
                       </div>
                       
-                      <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                             <label className="block text-xs font-bold text-gray-700 mb-1">قیمت خرید (تومان)</label>
-                             <div className="relative">
-                                <input 
-                                    type="number" 
-                                    required 
-                                    min="0" 
-                                    className="w-full p-2 pl-8 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm font-mono" 
-                                    value={formData.price_toman} 
-                                    onChange={(e) => {
-                                        setFormData({...formData, price_toman: e.target.value});
-                                        calculateSuggestedUSD(e.target.value);
-                                    }} 
-                                />
-                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-500">T</span>
+                      {/* Conditional Inputs based on Pricing Type */}
+                      {formData.pricing_type === 'fixed' ? (
+                          <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in zoom-in duration-200">
+                              <div>
+                                 <label className="block text-xs font-bold text-gray-700 mb-1">قیمت خرید (تومان)</label>
+                                 <div className="relative">
+                                    <input 
+                                        type="number" 
+                                        required 
+                                        min="0" 
+                                        className="w-full p-2 pl-8 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm font-mono" 
+                                        value={formData.price_toman} 
+                                        onChange={(e) => {
+                                            setFormData({...formData, price_toman: e.target.value});
+                                            calculateSuggestedUSD(e.target.value);
+                                        }} 
+                                    />
+                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-500">T</span>
+                                 </div>
+                                 <p className="text-[10px] text-gray-500 mt-1">مبنای محاسبه قیمت دلاری</p>
+                              </div>
+                              <div>
+                                <label className="block text-xs font-bold text-blue-700 mb-1">قیمت فروش (دلار)</label>
+                                <div className="relative">
+                                    <input 
+                                        type="number" 
+                                        required 
+                                        min="0" 
+                                        step="0.01" 
+                                        className="w-full p-2 pl-6 rounded-lg border border-blue-300 outline-none focus:border-blue-600 text-sm font-bold text-blue-800 dir-ltr" 
+                                        value={formData.price} 
+                                        onChange={(e) => setFormData({...formData, price: e.target.value})} 
+                                    />
+                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-blue-600">$</span>
+                                </div>
+                                <p className="text-[10px] text-blue-400 mt-1 flex items-center gap-1">
+                                    <Calculator className="h-3 w-3"/>
+                                    محاسبه شده با سود {profitMargin}٪
+                                </p>
+                              </div>
+                          </div>
+                      ) : (
+                          <div className="bg-yellow-50 p-3 rounded-xl border border-yellow-200 md:col-span-2 animate-in fade-in zoom-in duration-200">
+                             <div className="flex items-start gap-3">
+                                <div className="p-2 bg-yellow-200 rounded-lg text-yellow-700">
+                                    <Scale className="h-6 w-6" />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block text-xs font-bold text-gray-800 mb-1">وزن خالص (گرم)</label>
+                                    <div className="relative max-w-xs">
+                                        <input 
+                                            type="number" 
+                                            required 
+                                            min="0.01" 
+                                            step="0.01"
+                                            placeholder="مثال: 1.05"
+                                            className="w-full p-2 pl-8 rounded-lg border border-yellow-400 outline-none focus:ring-2 focus:ring-yellow-400 text-sm font-mono font-bold" 
+                                            value={formData.weight} 
+                                            onChange={(e) => setFormData({...formData, weight: e.target.value})} 
+                                        />
+                                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-600 font-bold">gr</span>
+                                    </div>
+                                    <div className="mt-2 text-[10px] text-gray-600 flex items-center gap-1">
+                                        <AlertCircle className="h-3 w-3" />
+                                        <span>قیمت به صورت خودکار محاسبه می‌شود: </span>
+                                        <span className="font-bold text-blue-800">(نرخ طلا × وزن) + {goldMarkupPercent}٪ سود</span>
+                                    </div>
+                                </div>
                              </div>
-                             <p className="text-[10px] text-gray-500 mt-1">مبنای محاسبه قیمت دلاری</p>
                           </div>
-                          <div>
-                            <label className="block text-xs font-bold text-blue-700 mb-1">قیمت فروش (دلار)</label>
-                            <div className="relative">
-                                <input 
-                                    type="number" 
-                                    required 
-                                    min="0" 
-                                    step="0.01" 
-                                    className="w-full p-2 pl-6 rounded-lg border border-blue-300 outline-none focus:border-blue-600 text-sm font-bold text-blue-800 dir-ltr" 
-                                    value={formData.price} 
-                                    onChange={(e) => setFormData({...formData, price: e.target.value})} 
-                                />
-                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-blue-600">$</span>
-                            </div>
-                            <p className="text-[10px] text-blue-400 mt-1 flex items-center gap-1">
-                                <Calculator className="h-3 w-3"/>
-                                محاسبه شده با سود {profitMargin}٪
-                            </p>
-                          </div>
-                      </div>
+                      )}
 
                       <div>
                           <label className="block text-xs font-medium text-gray-700 mb-1">دسته‌بندی</label>
@@ -576,12 +671,12 @@ export default function ProductsPage() {
               <div className="space-y-4">
                    <h4 className="font-bold text-blue-800 text-sm border-b pb-2">۲. جزئیات</h4>
                    <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">توضیحات کامل</label>
-                        <textarea rows={4} className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} />
+                       <label className="block text-xs font-medium text-gray-700 mb-1">توضیحات کامل</label>
+                       <textarea rows={4} className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} />
                    </div>
                    <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">ویژگی‌ها</label>
-                        <textarea rows={3} className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm" value={formData.features} onChange={(e) => setFormData({...formData, features: e.target.value})} />
+                       <label className="block text-xs font-medium text-gray-700 mb-1">ویژگی‌ها</label>
+                       <textarea rows={3} className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm" value={formData.features} onChange={(e) => setFormData({...formData, features: e.target.value})} />
                    </div>
               </div>
 
@@ -606,12 +701,12 @@ export default function ProductsPage() {
               <div className="bg-gray-50 p-4 rounded-xl space-y-4 border border-gray-200">
                    <h4 className="font-bold text-gray-700 text-sm flex items-center gap-1"><SearchIcon className="h-4 w-4"/> سئو</h4>
                    <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">SEO Title</label>
-                        <input type="text" className="w-full p-2 rounded border border-gray-300 text-sm" value={formData.seo_title} onChange={(e) => setFormData({...formData, seo_title: e.target.value})} />
+                       <label className="block text-xs font-medium text-gray-500 mb-1">SEO Title</label>
+                       <input type="text" className="w-full p-2 rounded border border-gray-300 text-sm" value={formData.seo_title} onChange={(e) => setFormData({...formData, seo_title: e.target.value})} />
                    </div>
                    <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">Meta Description</label>
-                        <textarea rows={2} className="w-full p-2 rounded border border-gray-300 text-sm" value={formData.seo_desc} onChange={(e) => setFormData({...formData, seo_desc: e.target.value})} />
+                       <label className="block text-xs font-medium text-gray-500 mb-1">Meta Description</label>
+                       <textarea rows={2} className="w-full p-2 rounded border border-gray-300 text-sm" value={formData.seo_desc} onChange={(e) => setFormData({...formData, seo_desc: e.target.value})} />
                    </div>
               </div>
 
@@ -654,7 +749,7 @@ export default function ProductsPage() {
                       </div>
                      );
                    })}
-                 </div>
+                  </div>
                )}
                {mediaLoadingMore && (
                   <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin text-blue-600"/></div>

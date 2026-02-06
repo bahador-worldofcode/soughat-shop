@@ -1,5 +1,5 @@
 ### Soughat-Shop Snapshot
-# Generated: 2026-02-07T00:05:50.070244
+# Generated: 2026-02-07T00:56:00.870819
 # Root: C:\projects\soughat-shop
 # Excluded dir names: .expo, .git, .next, .vscode, node_modules
 # Excluded files (by name/rel): collect_soughat_snapshot.bat, collect_soughat_snapshot.py, package-lock.json, snapshot_soughat.txt
@@ -1646,8 +1646,9 @@ export default async function LocaleLayout({
 }
 
 ===== File: app/[locale]/page.tsx =====
-# Modified: 2026-01-01T03:31:46.454269 | Size: 6635 bytes | SHA1: 6fd280eecd07a06e414404f6617632cc8b4667e7
+# Modified: 2026-02-07T00:32:06.880602 | Size: 6697 bytes | SHA1: d7aeac9a9df9352d3b18adc7d3b7bcd01e26ac4a
 import Hero from "@/components/Hero";
+import MarketRates from "@/components/MarketRates"; // کامپوننت جدید اضافه شد
 import ProductCard from "@/components/ProductCard";
 import CurrencyRatesBanner from "@/components/CurrencyRatesBanner";
 import FAQ from "@/components/FAQ"; 
@@ -1682,8 +1683,6 @@ export default async function Home({
     .order('name');
 
   // 3. دریافت تنظیمات سایت (بنر و متن‌ها)
-  // در جدول site_settings ما کلیدهای hero_title و hero_subtitle داریم.
-  // برای انگلیسی باید دنبال hero_title_en و hero_subtitle_en بگردیم.
   const { data: settingsData } = await supabase.from('site_settings').select('*');
   const settings: any = {};
   if (settingsData) {
@@ -1703,9 +1702,13 @@ export default async function Home({
         title={heroTitle}
         subtitle={heroSubtitle}
       />
+
+      {/* 1.5. Market Rates Section (NEW) */}
+      {/* اضافه شدن بخش نرخ‌های لحظه‌ای زیر هیرو */}
+      <MarketRates />
       
       {/* 2. Categories Section */}
-      <section className="container mx-auto px-4 -mt-10 relative z-30 mb-20">
+      <section className="container mx-auto px-4 -mt-4 relative z-10 mb-20">
           <div className="bg-white rounded-3xl p-8 shadow-xl shadow-gray-200/50 border border-gray-100 text-center">
             <h3 className="font-bold text-gray-800 mb-6 flex items-center justify-center gap-2">
                <Layers className="h-5 w-5 text-blue-600" />
@@ -6584,7 +6587,7 @@ ${data.content}
 }
 
 ===== File: app/api/cron/update-rates/route.ts =====
-# Modified: 2026-02-07T00:04:54.197748 | Size: 2333 bytes | SHA1: 0e3a1884761664eeb9f2650417c2c9282daf9b35
+# Modified: 2026-02-07T00:34:57.508492 | Size: 2333 bytes | SHA1: 0e3a1884761664eeb9f2650417c2c9282daf9b35
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
@@ -8190,50 +8193,56 @@ export default function HomeSEOContent() {
 }
 
 ===== File: components/MarketRates.tsx =====
-# Modified: 2026-02-06T23:54:28.676045 | Size: 4775 bytes | SHA1: 2121de586d4342126825b7430c9a4bd558370be3
+# Modified: 2026-02-07T00:29:08.255257 | Size: 5349 bytes | SHA1: 5646255d4d4bcd92d776bd8d842a95125216f9c3
 import { supabase } from '@/lib/supabase';
 import { Coins, TrendingUp, DollarSign, Gem, Bitcoin } from 'lucide-react';
-
-// تنظیمات نمایشی هر آیتم
-const RATE_CONFIG: any = {
-  // طلا و فلزات (تومان)
-  'gold_18k': { label: 'طلای ۱۸ عیار', icon: Gem, color: 'text-yellow-600', type: 'toman', sub: 'گرم' },
-  'silver':   { label: 'نقره ۹۹۹', icon: Gem, color: 'text-gray-500', type: 'toman', sub: 'گرم' },
-  
-  // ارزها (تومان)
-  'usd': { label: 'دلار آمریکا', icon: DollarSign, color: 'text-green-600', type: 'toman', sub: 'آزاد' },
-  'eur': { label: 'یورو', icon: DollarSign, color: 'text-blue-600', type: 'toman', sub: 'اروپا' },
-  'gbp': { label: 'پوند', icon: DollarSign, color: 'text-indigo-700', type: 'toman', sub: 'انگلیس' },
-  'aed': { label: 'درهم', icon: DollarSign, color: 'text-emerald-600', type: 'toman', sub: 'امارات' },
-
-  // کریپتو (دلار)
-  'btc':  { label: 'بیت‌کوین', icon: Bitcoin, color: 'text-orange-500', type: 'usd', sub: 'BTC' },
-  'eth':  { label: 'اتریوم', icon: Coins, color: 'text-purple-600', type: 'usd', sub: 'ETH' },
-  'sol':  { label: 'سولانا', icon: Coins, color: 'text-cyan-600', type: 'usd', sub: 'SOL' },
-  'usdt': { label: 'تتر', icon: DollarSign, color: 'text-green-500', type: 'usd', sub: 'USDT' },
-};
-
-// تابع فرمت کردن قیمت‌ها
-const formatPrice = (amount: number, type: 'toman' | 'usd') => {
-  if (type === 'toman') {
-    // تبدیل به فرمت فارسی ۳ رقم ۳ رقم (مثلا ۱۰۰,۰۰۰)
-    return new Intl.NumberFormat('fa-IR').format(Math.round(amount));
-  } else {
-    // تبدیل به دلار (مثلا $65,000.20)
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
-  }
-};
+import { getTranslations, getLocale } from 'next-intl/server';
 
 export default async function MarketRates() {
-  // دریافت داده‌ها از دیتابیس Supabase
+  // 1. دریافت ابزارهای ترجمه و زبان
+  const t = await getTranslations('MarketRates');
+  const locale = await getLocale();
+  const isEn = locale === 'en';
+
+  // 2. دریافت داده‌ها از دیتابیس Supabase
   const { data: rates } = await supabase.from('market_rates').select('*');
 
   // تبدیل آرایه دیتابیس به یک آبجکت برای دسترسی راحت‌تر
   const ratesMap: any = {};
   rates?.forEach(r => { ratesMap[r.key] = r.rate; });
 
+  // 3. تنظیمات نمایشی هر آیتم (داینامیک شده با ترجمه)
+  const rateConfig: any = {
+    // طلا و فلزات (تومان)
+    'gold_18k': { label: t('items.gold_18k'), icon: Gem, color: 'text-yellow-600', type: 'toman', sub: t('sub.gram') },
+    'silver':   { label: t('items.silver'), icon: Gem, color: 'text-gray-500', type: 'toman', sub: t('sub.gram') },
+    
+    // ارزها (تومان)
+    'usd': { label: t('items.usd'), icon: DollarSign, color: 'text-green-600', type: 'toman', sub: t('sub.free') },
+    'eur': { label: t('items.eur'), icon: DollarSign, color: 'text-blue-600', type: 'toman', sub: t('sub.eu') },
+    'gbp': { label: t('items.gbp'), icon: DollarSign, color: 'text-indigo-700', type: 'toman', sub: t('sub.uk') },
+    'aed': { label: t('items.aed'), icon: DollarSign, color: 'text-emerald-600', type: 'toman', sub: t('sub.uae') },
+
+    // کریپتو (دلار)
+    'btc':  { label: t('items.btc'), icon: Bitcoin, color: 'text-orange-500', type: 'usd', sub: 'BTC' },
+    'eth':  { label: t('items.eth'), icon: Coins, color: 'text-purple-600', type: 'usd', sub: 'ETH' },
+    'sol':  { label: t('items.sol'), icon: Coins, color: 'text-cyan-600', type: 'usd', sub: 'SOL' },
+    'usdt': { label: t('items.usdt'), icon: DollarSign, color: 'text-green-500', type: 'usd', sub: 'USDT' },
+  };
+
   // ترتیب نمایش آیتم‌ها
   const displayOrder = ['gold_18k', 'usd', 'eur', 'aed', 'btc', 'usdt', 'sol', 'eth'];
+
+  // تابع فرمت کردن قیمت‌ها بر اساس زبان
+  const formatPrice = (amount: number, type: 'toman' | 'usd') => {
+    if (type === 'toman') {
+      // فرمت عدد بر اساس زبان کاربر (فارسی یا انگلیسی)
+      return new Intl.NumberFormat(locale === 'fa' ? 'fa-IR' : 'en-US').format(Math.round(amount));
+    } else {
+      // دلار همیشه با فرمت استاندارد انگلیسی نمایش داده شود
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+    }
+  };
 
   return (
     <section className="container mx-auto px-4 -mt-6 relative z-20 mb-12 font-[family-name:var(--font-vazir)]">
@@ -8243,18 +8252,18 @@ export default async function MarketRates() {
         <div className="bg-slate-900 text-white p-3 flex justify-between items-center px-6">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-yellow-400" />
-            <span className="font-bold text-sm md:text-base">تابلوی نرخ‌های لحظه‌ای</span>
+            <span className="font-bold text-sm md:text-base">{t('title')}</span>
           </div>
           <div className="flex items-center gap-2">
              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-             <span className="text-[10px] text-slate-300">Live Market</span>
+             <span className="text-[10px] text-slate-300 uppercase">{t('live_badge')}</span>
           </div>
         </div>
 
         {/* Grid Items */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 divide-x divide-x-reverse divide-y md:divide-y-0 divide-gray-100">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 divide-x divide-x-reverse divide-y md:divide-y-0 divide-gray-100" dir={isEn ? 'ltr' : 'rtl'}>
           {displayOrder.map((key) => {
-            const config = RATE_CONFIG[key];
+            const config = rateConfig[key];
             const price = ratesMap[key];
 
             if (!config) return null;
@@ -8263,16 +8272,18 @@ export default async function MarketRates() {
               <div key={key} className="p-4 flex flex-col items-center justify-center text-center group hover:bg-blue-50/50 transition-colors">
                 <div className="flex items-center gap-1 mb-2 opacity-70 group-hover:opacity-100 transition-opacity">
                   <config.icon className={`h-4 w-4 ${config.color}`} />
-                  <span className="text-xs font-bold text-gray-500">{config.label}</span>
+                  <span className="text-xs font-bold text-gray-500 whitespace-nowrap">{config.label}</span>
                 </div>
                 
-                <div className="text-sm font-black text-slate-800 tracking-tight flex items-center gap-1">
+                <div className="text-sm font-black text-slate-800 tracking-tight flex items-center gap-1" dir="ltr">
                    {price ? (
                      <span>{formatPrice(price, config.type)}</span>
                    ) : (
-                     <span className="text-gray-300 text-xs">...</span>
+                     <span className="text-gray-300 text-xs">{t('loading')}</span>
                    )}
-                   {config.type === 'toman' && <span className="text-[9px] text-gray-400 font-normal">ت</span>}
+                   {config.type === 'toman' && (
+                     <span className="text-[10px] text-gray-400 font-normal ml-1">{t('unit_toman')}</span>
+                   )}
                 </div>
                 
                 <span className="text-[9px] text-gray-400 mt-1">{config.sub}</span>
@@ -8838,7 +8849,7 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 ===== File: messages/en.json =====
-# Modified: 2026-01-30T06:52:56.640293 | Size: 21768 bytes | SHA1: cc1c3fec5c0fd99b6cfb5f09224c0b70df712d91
+# Modified: 2026-02-07T00:26:36.587536 | Size: 22331 bytes | SHA1: 9a44ea99e9ccdd39b697a28f54b7a97be8bb7aed
 {
   "Header": {
     "home": "Home",
@@ -9255,10 +9266,36 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
     "page": "Page",
     "of": "of"
   }
+  ,
+  "MarketRates": {
+    "title": "Live Market Rates",
+    "live_badge": "Live Market",
+    "loading": "...",
+    "unit_toman": "T",
+    "items": {
+      "gold_18k": "Gold 18K",
+      "silver": "Silver 999",
+      "usd": "US Dollar",
+      "eur": "Euro",
+      "gbp": "Pound",
+      "aed": "Dirham",
+      "btc": "Bitcoin",
+      "eth": "Ethereum",
+      "sol": "Solana",
+      "usdt": "Tether"
+    },
+    "sub": {
+      "gram": "Gram",
+      "free": "Free Market",
+      "eu": "Europe",
+      "uk": "UK",
+      "uae": "UAE"
+    }
+  }
 }
 
 ===== File: messages/fa.json =====
-# Modified: 2026-01-30T06:52:15.873393 | Size: 32950 bytes | SHA1: d1bbe377eec246e73aefc3682665a5244011197a
+# Modified: 2026-02-07T00:25:41.904163 | Size: 33627 bytes | SHA1: efcb35bd4bd614cc47fae5e208f4eb7ba4c30921
 {
   "Header": {
     "home": "خانه",
@@ -9673,6 +9710,31 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
     "next": "صفحه بعد",
     "page": "صفحه",
     "of": "از"
+  },
+  "MarketRates": {
+    "title": "تابلوی نرخ‌های لحظه‌ای",
+    "live_badge": "بازار زنده",
+    "loading": "...",
+    "unit_toman": "ت",
+    "items": {
+      "gold_18k": "طلای ۱۸ عیار",
+      "silver": "نقره ۹۹۹",
+      "usd": "دلار آمریکا",
+      "eur": "یورو",
+      "gbp": "پوند",
+      "aed": "درهم",
+      "btc": "بیت‌کوین",
+      "eth": "اتریوم",
+      "sol": "سولانا",
+      "usdt": "تتر"
+    },
+    "sub": {
+      "gram": "گرم",
+      "free": "آزاد",
+      "eu": "اروپا",
+      "uk": "انگلیس",
+      "uae": "امارات"
+    }
   }
 }
 
@@ -10300,17 +10362,11 @@ for file_name, category_slug in icon_mapping.items():
 print("\n✨ تمام آیکون‌ها با موفقیت آپدیت شدند. سایت رو چک کن!")
 
 ===== File: vercel.json =====
-# Modified: 2026-02-06T23:52:37.125323 | Size: 112 bytes | SHA1: 56d6bf8511fe8aad7299b0c87d934d38a4eaf4aa
+# Modified: 2026-02-07T00:44:23.662058 | Size: 4 bytes | SHA1: 3dbd0a28528cc971d576c7a6dd2bda7edda4042f
 {
-  "crons": [
-    {
-      "path": "/api/cron/update-rates",
-      "schedule": "*/30 * * * *"
-    }
-  ]
 }
 
 
 ### Summary
 # Files considered: 81 | Written: 75 | Skipped: 6
-# Output size: 477712 bytes
+# Output size: 479425 bytes
