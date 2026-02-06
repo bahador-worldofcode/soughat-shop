@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { ShoppingBag, Check, ShieldCheck, Truck, Star, Plus, Minus, Trash2, Tag, LayoutGrid, FileText } from 'lucide-react';
-import { Link } from '@/i18n/navigation'; // تغییر مهم: لینک هوشمند
+import { Link } from '@/i18n/navigation';
 import ProductCard from './ProductCard';
 import { useTranslations } from 'next-intl';
 
@@ -34,7 +34,7 @@ interface Props {
 }
 
 export default function ProductClientView({ product, categoryName, categorySlug, categoryIcon, relatedProducts }: Props) {
-  const t = useTranslations('Product'); // اتصال به دیکشنری
+  const t = useTranslations('Product');
   const { convertPrice, getSymbol, addToCart, decreaseFromCart, cart } = useStore();
   const [mounted, setMounted] = useState(false);
 
@@ -46,24 +46,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
   const cartItem = cart.find(item => item.id === product.id);
   const quantity = cartItem ? cartItem.quantity : 0;
 
-  const renderDescription = (text: string) => {
-    if (!text) return null;
-    return text.split('\n').map((line, index) => {
-      if (!line.trim()) return <div key={index} className="h-2"></div>;
-      const parts = line.split(/(\*\*.*?\*\*)/g);
-      return (
-        <p key={index} className="mb-2 leading-8 text-justify text-gray-600 text-sm md:text-base">
-          {parts.map((part, i) => {
-            if (part.startsWith('**') && part.endsWith('**')) {
-              return <strong key={i} className="font-bold text-gray-900">{part.slice(2, -2)}</strong>;
-            }
-            return part;
-          })}
-        </p>
-      );
-    });
-  };
-
+  // --- بخش تغییر یافته: دکمه افزودن به سبد خرید ---
   const AddToCartButtons = ({ isMobile = false }: { isMobile?: boolean }) => {
       if (quantity > 0) {
           return (
@@ -97,6 +80,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
         
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 animate-in fade-in slide-in-from-bottom-4 duration-500 items-start">
         
+            {/* تصویر محصول */}
             <div className="md:col-span-5 relative">
                 <div className="relative aspect-square bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm group sticky top-24">
                     <img src={product.image} alt={product.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
@@ -108,6 +92,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                 </div>
             </div>
 
+            {/* اطلاعات محصول */}
             <div className="md:col-span-7 flex flex-col">
                 
                 <div className="mb-4 flex items-center justify-between">
@@ -131,6 +116,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
 
                 <h1 className="text-2xl md:text-4xl font-black text-gray-900 mb-6 leading-snug">{product.title}</h1>
 
+                {/* باکس قیمت و خرید دسکتاپ */}
                 <div className="hidden md:block bg-white p-6 rounded-2xl border border-blue-100 shadow-sm mb-8">
                     <div className="flex items-center justify-between mb-6">
                         <div>
@@ -148,6 +134,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                     <AddToCartButtons isMobile={false} />
                 </div>
 
+                {/* ویژگی‌ها */}
                 {product.features && product.features.length > 0 && (
                     <div className="mb-8 grid grid-cols-1 gap-3">
                         {product.features.map((feat, index) => (
@@ -162,6 +149,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
             </div>
         </div>
 
+        {/* --- بخش توضیحات (اصلاح شده برای HTML) --- */}
         {product.description && (
             <div className="mt-12 pt-10 border-t border-gray-200">
                 <h3 className="font-bold text-gray-900 mb-6 text-xl flex items-center gap-2">
@@ -169,12 +157,28 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                     <FileText className="h-6 w-6 text-gray-400" />
                     {t('description')}
                 </h3>
+                
+                {/* در اینجا از dangerouslySetInnerHTML استفاده می‌کنیم.
+                   همچنین استایل‌های Tailwind دلخواه برای تگ‌های h2, h3, p اضافه شده تا متن زیبا شود.
+                */}
                 <div className="bg-white rounded-3xl p-6 md:p-10 border border-gray-100 shadow-sm">
-                    {renderDescription(product.description)}
+                   <div 
+                     className="
+                        text-gray-600 leading-8 text-justify
+                        [&>h2]:text-xl [&>h2]:font-black [&>h2]:text-gray-800 [&>h2]:mb-4 [&>h2]:mt-8 [&>h2]:border-b [&>h2]:pb-2 [&>h2]:border-gray-100
+                        [&>h3]:text-lg [&>h3]:font-bold [&>h3]:text-gray-700 [&>h3]:mb-3 [&>h3]:mt-6
+                        [&>p]:mb-4 [&>p]:text-sm md:[&>p]:text-base
+                        [&>strong]:text-gray-900 [&>strong]:font-bold
+                        [&>ul]:list-disc [&>ul]:pr-5 [&>ul]:mb-4
+                        [&>li]:mb-1
+                     "
+                     dangerouslySetInnerHTML={{ __html: product.description }}
+                   />
                 </div>
             </div>
         )}
 
+        {/* منوی موبایل پایین صفحه */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 z-[100] md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.1)] animate-in slide-in-from-bottom-full duration-300">
             <div className="flex items-center gap-4 max-w-md mx-auto">
                 <div className="flex flex-col flex-1">
@@ -191,6 +195,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
             </div>
         </div>
 
+        {/* محصولات مرتبط */}
         {relatedProducts.length > 0 && (
             <div className="mt-20 pt-10 border-t border-gray-200">
                 <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
