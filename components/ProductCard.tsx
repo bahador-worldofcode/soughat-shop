@@ -3,20 +3,21 @@
 import { Plus } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useEffect, useState } from 'react';
-import { Link } from '@/i18n/navigation'; // لینک هوشمند
-import { useTranslations } from 'next-intl'; // هوک ترجمه
+import { Link } from '@/i18n/navigation'; 
+import { useTranslations } from 'next-intl'; 
 
 interface ProductCardProps {
   id: string;
   title: string;
+  title_en?: string; // ✅ اضافه شد
   price: number;
   image: string;
   slug: string;
-  pricing_type?: string; // فیلد جدید: برای انتقال نوع محصول به سبد خرید
+  pricing_type?: string; 
 }
 
-export default function ProductCard({ id, title, price, image, slug, pricing_type }: ProductCardProps) {
-  const t = useTranslations('ProductCard'); // اتصال به دیکشنری
+export default function ProductCard({ id, title, title_en, price, image, slug, pricing_type }: ProductCardProps) {
+  const t = useTranslations('ProductCard'); 
   const { convertPrice, getSymbol, addToCart } = useStore();
   const [mounted, setMounted] = useState(false);
 
@@ -29,8 +30,8 @@ export default function ProductCard({ id, title, price, image, slug, pricing_typ
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    // ارسال pricing_type به استور برای تشخیص اینکه محصول حواله است یا خیر
-    addToCart({ id, title, price, image, pricing_type });
+    // ✅ ارسال title_en به سبد خرید
+    addToCart({ id, title, title_en, price, image, pricing_type });
   };
 
   return (
@@ -49,7 +50,6 @@ export default function ProductCard({ id, title, price, image, slug, pricing_typ
             <h3 className="mb-2 text-lg font-bold text-gray-900 line-clamp-1 hover:text-blue-600 transition-colors">{title}</h3>
         </Link>
         
-        {/* متن ترجمه شده */}
         <p className="text-sm text-gray-500 mb-4">{t('instant_delivery')}</p>
        
         <div className="mt-auto flex items-center justify-between">

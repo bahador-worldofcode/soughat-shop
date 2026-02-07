@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense, useRef } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import ProductCard from '@/components/ProductCard';
 import { 
@@ -19,17 +19,16 @@ import { useSearchParams } from 'next/navigation';
 import { useRouter, usePathname } from '@/i18n/navigation'; 
 import { useTranslations, useLocale } from 'next-intl'; 
 
-// --- Types ---
 interface Product {
   id: string;
   title: string;
-  title_en?: string;
+  title_en?: string; // ✅
   price: number;
   image: string;
   slug: string;
   category: string;
   created_at?: string;
-  pricing_type?: string; // ✅ اضافه شد
+  pricing_type?: string; 
 }
 
 interface Category {
@@ -42,7 +41,6 @@ interface Category {
 
 const PAGE_SIZE = 12;
 
-// --- Custom Hook for Debouncing ---
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState(value);
   useEffect(() => {
@@ -65,16 +63,13 @@ function ProductList() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // URL Params
   const currentCategory = searchParams.get('category') || 'all';
   const urlSearchQuery = searchParams.get('q') || '';
 
-  // Local State
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]); 
   const [loading, setLoading] = useState(true);
   
-  // Search State (Local input vs Debounced)
   const [searchTerm, setSearchTerm] = useState(urlSearchQuery);
   const debouncedSearch = useDebounce(searchTerm, 500); 
 
@@ -82,7 +77,6 @@ function ProductList() {
   const [totalCount, setTotalCount] = useState(0);
   const [sortOrder, setSortOrder] = useState<'newest' | 'price-asc' | 'price-desc'>('newest');
 
-  // --- Effects ---
   useEffect(() => {
     fetchCategories();
   }, []);
@@ -107,7 +101,6 @@ function ProductList() {
     setPage(1);
   }, [currentCategory, debouncedSearch]);
 
-  // --- Data Fetching ---
   const fetchCategories = async () => {
     const { data: catData } = await supabase
       .from('categories')
@@ -128,7 +121,6 @@ function ProductList() {
       .from('products')
       .select('*', { count: 'exact' });
 
-    // Search Logic
     const activeSearch = searchParams.get('q') || '';
     if (activeSearch) {
         if (isEn) {
@@ -138,12 +130,10 @@ function ProductList() {
         }
     }
 
-    // Category Filter
     if (currentCategory !== 'all') {
       query = query.eq('category', currentCategory);
     }
 
-    // Sorting
     if (sortOrder === 'newest') {
       query = query.order('created_at', { ascending: false });
     } else if (sortOrder === 'price-asc') {
@@ -152,7 +142,6 @@ function ProductList() {
       query = query.order('price', { ascending: false });
     }
 
-    // Pagination
     const from = (page - 1) * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
     query = query.range(from, to);
@@ -169,7 +158,6 @@ function ProductList() {
     setLoading(false);
   };
 
-  // --- Handlers ---
   const handleCategoryChange = (slug: string) => {
     const params = new URLSearchParams(searchParams.toString());
     if (slug === 'all') params.delete('category');
@@ -191,10 +179,8 @@ function ProductList() {
         
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
             
-            {/* === SIDEBAR === */}
             <aside className="lg:col-span-1 lg:sticky lg:top-24 flex flex-col gap-6 lg:max-h-[calc(100vh-8rem)]">
                 
-                {/* 1. Search Box */}
                 <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm transition-shadow hover:shadow-md">
                     <div className="relative group">
                         <Search className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors ${isEn ? 'left-3' : 'right-3'}`} />
@@ -216,7 +202,6 @@ function ProductList() {
                     </div>
                 </div>
 
-                {/* 2. Sorting */}
                 <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex items-center justify-between lg:flex-col lg:items-start lg:gap-3 transition-shadow hover:shadow-md">
                     <span className="text-sm font-bold text-gray-700 flex items-center gap-2">
                         <div className="p-1.5 bg-gray-100 rounded-lg text-gray-600">
@@ -235,7 +220,6 @@ function ProductList() {
                     </select>
                 </div>
 
-                {/* 3. Categories List */}
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col lg:overflow-hidden flex-1 transition-shadow hover:shadow-md">
                     <div className="p-4 border-b border-gray-100 bg-gray-50/50 backdrop-blur-sm sticky top-0 z-10">
                         <h3 className="font-bold text-gray-800 flex items-center gap-2">
@@ -244,7 +228,6 @@ function ProductList() {
                         </h3>
                     </div>
                     
-                    {/* Desktop: Vertical List */}
                     <div className="hidden lg:block overflow-y-auto overflow-x-hidden p-2 gap-1 custom-scrollbar" style={{ maxHeight: 'calc(100vh - 400px)' }}>
                         {categories.length === 0 ? (
                              <div className="p-4 space-y-3">
@@ -287,7 +270,6 @@ function ProductList() {
                         )}
                     </div>
 
-                    {/* Mobile: Horizontal List */}
                     <div className="lg:hidden flex overflow-x-auto p-3 gap-2 no-scrollbar items-center">
                          {categories.map(cat => {
                             const catName = isEn ? (cat.name_en || cat.name) : cat.name;
@@ -313,7 +295,6 @@ function ProductList() {
                 </div>
             </aside>
 
-            {/* === MAIN CONTENT === */}
             <div className="lg:col-span-3 min-h-[500px]">
                 {loading ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -361,23 +342,22 @@ function ProductList() {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             {products.map((product) => {
-                                const prodTitle = isEn ? (product.title_en || product.title) : product.title;
+                                // اینجا هم تایتل فارسی و انگلیسی جداگانه پاس داده می‌شود
                                 return (
                                     <ProductCard
                                         key={product.id}
                                         id={product.id}
-                                        title={prodTitle}
+                                        title={product.title}
+                                        title_en={product.title_en} // ✅
                                         price={product.price}
                                         image={product.image}
                                         slug={product.slug}
-                                        // ✅ تغییر اصلی: پاس دادن تایپ قیمت
                                         pricing_type={product.pricing_type}
                                     />
                                 );
                             })}
                         </div>
 
-                        {/* Pagination */}
                         {totalPages > 1 && (
                             <div className="flex justify-center items-center gap-2 mt-16" dir="ltr"> 
                                 <button
@@ -421,7 +401,6 @@ export default function ProductsPage() {
   return (
     <div className="min-h-screen bg-gray-50/50 pb-20 font-[family-name:var(--font-vazir)]">
       
-      {/* Page Header */}
       <div className="bg-white border-b border-gray-200 pt-12 pb-10 mb-2 shadow-sm relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 opacity-60 pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-50 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 opacity-60 pointer-events-none"></div>

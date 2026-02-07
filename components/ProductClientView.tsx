@@ -10,6 +10,7 @@ import { useTranslations } from 'next-intl';
 interface Product {
   id: string;
   title: string;
+  title_en?: string; // ✅ اضافه شد
   price: number;
   image: string;
   description: string;
@@ -21,10 +22,10 @@ interface Product {
 interface RelatedItem {
     id: string;
     title: string;
+    title_en?: string; // ✅ اضافه شد
     price: number;
     image: string;
     slug: string;
-    // ✅ اضافه شدن تایپ قیمت برای محصولات مرتبط
     pricing_type?: string; 
 }
 
@@ -59,13 +60,12 @@ export default function ProductClientView({ product, categoryName, categorySlug,
 
   const AddToCartButtons = ({ isMobile = false }: { isMobile?: boolean }) => {
       
+      // حالت حواله
       if (product.pricing_type === 'currency') {
-        
         const amounts = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 40, 50, 100];
 
         const handleCurrencyChange = (newQty: number) => {
             setCurrencyAmount(newQty);
-            
             if (quantity > 0) {
                 const diff = newQty - quantity;
                 if (diff > 0) {
@@ -137,6 +137,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
         );
       }
 
+      // حالت عادی
       if (quantity > 0) {
           return (
             <div className={`flex items-center justify-between bg-white border border-blue-200 rounded-xl p-1 shadow-inner ${isMobile ? 'h-12 w-full' : 'h-14 w-full'}`}>
@@ -293,10 +294,10 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                             key={item.id}
                             id={item.id}
                             title={item.title}
+                            title_en={item.title_en} // ✅ ارسال title_en به کارت محصول
                             price={item.price}
                             image={item.image}
                             slug={item.slug}
-                            // ✅ فیکس نهایی: انتقال تایپ قیمت برای محصولات مرتبط
                             pricing_type={item.pricing_type}
                        />
                     ))}

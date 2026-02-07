@@ -40,24 +40,20 @@ export default async function Home({
     settingsData.forEach(item => { settings[item.key] = item.value });
   }
 
-  // لاجیک انتخاب متن (فارسی یا انگلیسی)
   const heroTitle = isEn ? (settings['hero_title_en'] || settings['hero_title']) : settings['hero_title'];
   const heroSubtitle = isEn ? (settings['hero_subtitle_en'] || settings['hero_subtitle']) : settings['hero_subtitle'];
 
   return (
     <main className="flex flex-col min-h-screen font-[family-name:var(--font-vazir)]">
       
-      {/* 1. Hero Section */}
       <Hero 
         banner={settings.hero_banner}
         title={heroTitle}
         subtitle={heroSubtitle}
       />
 
-      {/* 1.5. Market Rates Section */}
       <MarketRates />
       
-      {/* 2. Categories Section */}
       <section className="container mx-auto px-4 -mt-4 relative z-10 mb-20">
           <div className="bg-white rounded-3xl p-8 shadow-xl shadow-gray-200/50 border border-gray-100 text-center">
             <h3 className="font-bold text-gray-800 mb-6 flex items-center justify-center gap-2">
@@ -70,7 +66,6 @@ export default async function Home({
             ) : (
               <div className="flex flex-wrap justify-center gap-4">
                 {categories.map((cat) => {
-                  // انتخاب نام دسته (انگلیسی یا فارسی)
                   const catName = isEn ? (cat.name_en || cat.name) : cat.name;
                   return (
                     <Link 
@@ -94,7 +89,6 @@ export default async function Home({
          </div>
       </section>
 
-      {/* 3. Products Showcase */}
       <section className="container mx-auto px-4 mb-20">
         
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
@@ -121,17 +115,17 @@ export default async function Home({
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {products.map((product) => {
-                // انتخاب عنوان محصول (انگلیسی یا فارسی)
-                const prodTitle = isEn ? (product.title_en || product.title) : product.title;
+                // نکته مهم: ما اینجا تایتل فارسی و انگلیسی را جدا پاس می‌دهیم تا در استور درست ذخیره شوند
+                // کارت محصول هوشمند است و می‌داند کدام را نمایش دهد
                 return (
                   <ProductCard
                     key={product.id}
                     id={product.id}
-                    title={prodTitle}
+                    title={product.title}        // همیشه فارسی
+                    title_en={product.title_en}  // همیشه انگلیسی
                     price={product.price}
                     image={product.image}
                     slug={product.slug}
-                    // ✅ تغییر اصلی: اضافه شدن تایپ قیمت
                     pricing_type={product.pricing_type}
                   />
                 );
@@ -146,7 +140,6 @@ export default async function Home({
         </div>
       </section>
 
-      {/* 4. Currency Rates Banner */}
       <div className="bg-gray-50 py-10 border-t border-gray-200">
         <div className="container mx-auto px-4 mb-4 text-center">
              <h2 className="text-2xl font-bold text-gray-900">{t('rates_title')}</h2>
@@ -157,10 +150,7 @@ export default async function Home({
         </div>
       </div>
 
-      {/* 5. FAQ Section */}
       <FAQ />
-
-      {/* 6. SEO Content */}
       <HomeSEOContent />
 
     </main>

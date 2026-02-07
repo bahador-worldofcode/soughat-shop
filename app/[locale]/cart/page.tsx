@@ -8,11 +8,10 @@ import { useTranslations, useLocale } from 'next-intl';
 
 export default function CartPage() {
   const t = useTranslations('Cart');
-  const tProduct = useTranslations('Product'); // برای دسترسی به ترجمه "میلیون تومان"
+  const tProduct = useTranslations('Product');
   const locale = useLocale();
   const isEn = locale === 'en';
 
-  // اضافه کردن متد updateItemQuantity از استور
   const { cart, removeFromCart, addToCart, decreaseFromCart, updateItemQuantity, totalPrice, getSymbol, convertPrice } = useStore();
   
   const displayTotal = totalPrice();
@@ -27,7 +26,6 @@ export default function CartPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  // لیست مبالغ برای دراپ‌داون حواله (دقیقاً مشابه صفحه محصول)
   const currencyAmounts = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 40, 50, 100];
 
   if (!mounted) return null;
@@ -56,100 +54,97 @@ export default function CartPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* لیست آیتم‌ها */}
         <div className="lg:col-span-2 space-y-4">
-          {cart.map((item) => (
-            <div key={item.id} className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-              
-              {/* تصویر محصول */}
-              <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 border border-gray-200 mx-auto sm:mx-0">
-                <img 
-                  src={item.image} 
-                  alt={item.title} 
-                  className="h-full w-full object-cover"
-                />
-              </div>
+          {cart.map((item) => {
+            // ✅ لاجیک هوشمند انتخاب نام بر اساس زبان
+            const displayTitle = isEn ? (item.title_en || item.title) : item.title;
 
-              {/* جزئیات و کنترل‌ها */}
-              <div className="flex flex-1 flex-col justify-between">
-                <div>
-                  <h3 className="text-base font-semibold text-gray-900 line-clamp-1 text-center sm:text-start">{item.title}</h3>
-                  {/* نمایش قیمت واحد فقط برای محصولات عادی (برای حواله گیج‌کننده است) */}
-                  {item.pricing_type !== 'currency' && (
-                      <p className="mt-1 text-xs text-gray-500 text-center sm:text-start">
-                        {t('unit_price')}: {symbol} {convertPrice(item.price).toFixed(2)}
-                      </p>
-                  )}
-                </div>
+            return (
+              <div key={item.id} className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
                 
-                <div className="flex flex-col sm:flex-row items-center justify-between mt-4 gap-4 sm:gap-0">
-                  
-                  {/* --- بخش کنترل تعداد / مبلغ --- */}
-                  <div className="flex items-center">
-                    
-                    {/* سناریو ۱: اگر محصول حواله (Currency) است -> نمایش دراپ‌داون */}
-                    {item.pricing_type === 'currency' ? (
-                        <div className="relative">
-                            <select
-                                value={item.quantity}
-                                onChange={(e) => updateItemQuantity(item.id, Number(e.target.value))}
-                                className="appearance-none bg-blue-50 border border-blue-200 text-blue-900 font-bold text-sm rounded-lg h-10 pl-3 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer dir-ltr"
-                                style={{ textAlign: 'center' }}
-                            >
-                                {currencyAmounts.map((amt) => (
-                                    <option key={amt} value={amt}>
-                                        {amt} {tProduct('currency_unit')}
-                                    </option>
-                                ))}
-                            </select>
-                            <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-blue-500">
-                                <ChevronDown className="h-4 w-4" />
-                            </div>
-                        </div>
-                    ) : (
-                        /* سناریو ۲: محصول عادی -> دکمه‌های مثبت و منفی */
-                        <div className="flex items-center bg-gray-50 rounded-lg border border-gray-200 p-1">
-                            <button 
-                                onClick={() => decreaseFromCart(item.id)}
-                                className="w-8 h-8 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-600 hover:text-red-500 hover:bg-red-50 transition-colors"
-                            >
-                                {item.quantity === 1 ? <Trash2 className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
-                            </button>
-                            
-                            <span className="w-8 text-center font-bold text-gray-800 text-sm">{item.quantity}</span>
-                            
-                            <button 
-                                onClick={() => addToCart(item)}
-                                className="w-8 h-8 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-600 hover:text-green-600 hover:bg-green-50 transition-colors"
-                            >
-                                <Plus className="h-4 w-4" />
-                            </button>
-                        </div>
+                <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 border border-gray-200 mx-auto sm:mx-0">
+                  <img 
+                    src={item.image} 
+                    alt={displayTitle} 
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+
+                <div className="flex flex-1 flex-col justify-between">
+                  <div>
+                    <h3 className="text-base font-semibold text-gray-900 line-clamp-1 text-center sm:text-start">
+                        {displayTitle}
+                    </h3>
+                    {item.pricing_type !== 'currency' && (
+                        <p className="mt-1 text-xs text-gray-500 text-center sm:text-start">
+                          {t('unit_price')}: {symbol} {convertPrice(item.price).toFixed(2)}
+                        </p>
                     )}
                   </div>
+                  
+                  <div className="flex flex-col sm:flex-row items-center justify-between mt-4 gap-4 sm:gap-0">
+                    
+                    <div className="flex items-center">
+                      {item.pricing_type === 'currency' ? (
+                          <div className="relative">
+                              <select
+                                  value={item.quantity}
+                                  onChange={(e) => updateItemQuantity(item.id, Number(e.target.value))}
+                                  className="appearance-none bg-blue-50 border border-blue-200 text-blue-900 font-bold text-sm rounded-lg h-10 pl-3 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer dir-ltr"
+                                  style={{ textAlign: 'center' }}
+                              >
+                                  {currencyAmounts.map((amt) => (
+                                      <option key={amt} value={amt}>
+                                          {amt} {tProduct('currency_unit')}
+                                      </option>
+                                  ))}
+                              </select>
+                              <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-blue-500">
+                                  <ChevronDown className="h-4 w-4" />
+                              </div>
+                          </div>
+                      ) : (
+                          <div className="flex items-center bg-gray-50 rounded-lg border border-gray-200 p-1">
+                              <button 
+                                  onClick={() => decreaseFromCart(item.id)}
+                                  className="w-8 h-8 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-600 hover:text-red-500 hover:bg-red-50 transition-colors"
+                              >
+                                  {item.quantity === 1 ? <Trash2 className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+                              </button>
+                              
+                              <span className="w-8 text-center font-bold text-gray-800 text-sm">{item.quantity}</span>
+                              
+                              <button 
+                                  onClick={() => addToCart(item)}
+                                  className="w-8 h-8 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-600 hover:text-green-600 hover:bg-green-50 transition-colors"
+                              >
+                                  <Plus className="h-4 w-4" />
+                              </button>
+                          </div>
+                      )}
+                    </div>
 
-                  {/* قیمت کل آیتم و دکمه حذف */}
-                  <div className="flex items-center gap-4">
-                      <span className="font-bold text-blue-600 text-lg">
-                        {symbol} {convertPrice(item.price * item.quantity).toFixed(2)}
-                      </span>
-                      
-                      <button 
-                        onClick={() => removeFromCart(item.id)}
-                        className="text-gray-400 hover:text-red-500 transition-colors p-2"
-                        title={t('remove_tooltip')}
-                      >
-                        <Trash2 className="h-5 w-5" />
-                      </button>
+                    <div className="flex items-center gap-4">
+                        <span className="font-bold text-blue-600 text-lg">
+                          {symbol} {convertPrice(item.price * item.quantity).toFixed(2)}
+                        </span>
+                        
+                        <button 
+                          onClick={() => removeFromCart(item.id)}
+                          className="text-gray-400 hover:text-red-500 transition-colors p-2"
+                          title={t('remove_tooltip')}
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </button>
+                    </div>
+
                   </div>
-
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        {/* خلاصه صورتحساب */}
         <div className="lg:col-span-1">
           <div className="rounded-xl border border-gray-200 bg-gray-50 p-6 shadow-sm sticky top-24">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('bill_title')}</h2>
@@ -196,7 +191,6 @@ export default function CartPage() {
               }`}
             >
               <span>{t('checkout_btn')}</span>
-              {/* چرخش فلش در حالت انگلیسی */}
               {!isBelowMinimum && <ArrowLeft className={`h-5 w-5 ${isEn ? 'rotate-180' : ''}`} />}
             </Link>
             

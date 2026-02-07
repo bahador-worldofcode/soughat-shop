@@ -7,10 +7,10 @@ type Currency = 'USD' | 'EUR' | 'GBP' | 'SEK';
 export interface Product {
   id: string;
   title: string;
+  title_en?: string; // ✅ اضافه شد: عنوان انگلیسی برای سبد خرید دو زبانه
   price: number; 
   image: string;
   category?: string;
-  // فیلد جدید: برای تشخیص نوع محصول (حواله یا عادی)
   pricing_type?: string; 
 }
 
@@ -34,7 +34,6 @@ interface StoreState {
   decreaseFromCart: (productId: string) => void;
   removeFromCart: (productId: string) => void;
   
-  // متد جدید: آپدیت مستقیم تعداد (برای دراپ‌داون حواله)
   updateItemQuantity: (productId: string, quantity: number) => void;
   
   clearCart: () => void;
@@ -104,7 +103,6 @@ export const useStore = create<StoreState>()(
       // === لاجیک سبد خرید ===
       cart: [],
       
-      // افزودن (یکی زیاد کردن)
       addToCart: (product) => set((state) => {
         const existing = state.cart.find((item) => item.id === product.id);
         if (existing) {
@@ -114,11 +112,10 @@ export const useStore = create<StoreState>()(
             ),
           };
         }
-        // هنگام افزودن، تمام ویژگی‌ها از جمله pricing_type منتقل می‌شوند
+        // تمام فیلدها (شامل title_en و pricing_type) اینجا به سبد منتقل می‌شوند
         return { cart: [...state.cart, { ...product, quantity: 1 }] };
       }),
 
-      // کاهش (یکی کم کردن)
       decreaseFromCart: (id) => set((state) => {
         const existing = state.cart.find((item) => item.id === id);
         if (existing && existing.quantity > 1) {
@@ -134,30 +131,24 @@ export const useStore = create<StoreState>()(
         }
       }),
 
-      // متد جدید: آپدیت مستقیم تعداد (برای دراپ‌داون حواله در سبد خرید)
       updateItemQuantity: (id, quantity) => set((state) => ({
         cart: state.cart.map((item) => 
             item.id === id ? { ...item, quantity: quantity } : item
         )
       })),
 
-      // حذف کامل آیتم
       removeFromCart: (id) => set((state) => ({
         cart: state.cart.filter((item) => item.id !== id),
       })),
 
       clearCart: () => set({ cart: [] }),
 
-      // اصلاح استراتژیک: شمارش آیتم‌ها
       totalItems: () => {
         const cart = get().cart;
         return cart.reduce((total, item) => {
-            // اگر محصول "حواله/پول" است، صرف نظر از مبلغ (تعداد)، آن را ۱ عدد بشمار
-            // چون مشتری ۱ تراکنش حواله دارد، نه ۵۰ تا محصول فیزیکی
             if (item.pricing_type === 'currency') {
                 return total + 1;
             }
-            // برای محصولات عادی (پسته، طلا) تعداد واقعی را بشمار
             return total + item.quantity;
         }, 0);
       },

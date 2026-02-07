@@ -146,7 +146,6 @@ export default function CheckoutPage() {
             <p className="text-gray-500 mt-2 max-w-md mx-auto leading-7">
                 {t('min_order_msg', { amount: MIN_ORDER_AMOUNT_USD })}
                 <br/>
-                {/* متن انگلیسی: Please add more items */}
             </p>
             <div className="mt-6 bg-gray-50 border border-gray-200 p-4 rounded-xl min-w-[200px]">
                 <div className="text-xs text-gray-400 mb-1">{t('current_total')}</div>
@@ -159,7 +158,6 @@ export default function CheckoutPage() {
     );
   }
 
-  // انتخاب آیکون فلش بر اساس زبان
   const ChevronIcon = isEn ? ChevronRight : ChevronLeft;
 
   return (
@@ -195,7 +193,6 @@ export default function CheckoutPage() {
         </div>
       )}
 
-      {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-gray-500 mb-8 overflow-x-auto pb-2">
         <Link href="/cart" className="flex items-center hover:text-blue-600 whitespace-nowrap">
           <ShoppingCart className={`h-4 w-4 ${isEn ? 'mr-1' : 'ml-1'}`} />
@@ -230,7 +227,6 @@ export default function CheckoutPage() {
               
               <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 
-                {/* Sender */}
                 <div className="bg-blue-50/50 p-6 rounded-xl border border-blue-100">
                     <h3 className="font-bold text-blue-800 mb-4 flex items-center gap-2 border-b border-blue-200 pb-2">
                         <Globe className="h-5 w-5" />
@@ -269,7 +265,7 @@ export default function CheckoutPage() {
                                 required
                                 dir="ltr"
                                 placeholder={t('sender.phone_ph')}
-                                className={`w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-white font-mono ${isEn ? 'text-left' : 'text-left'}`} // Phone always LTR
+                                className={`w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-white font-mono text-left`}
                                 onChange={handleInputChange}
                                 value={formData.senderPhone}
                             />
@@ -277,7 +273,6 @@ export default function CheckoutPage() {
                     </div>
                 </div>
 
-                {/* Receiver */}
                 <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                     <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2 border-b border-gray-100 pb-2">
                         <MapPin className="h-5 w-5 text-red-500" />
@@ -336,7 +331,6 @@ export default function CheckoutPage() {
                     </div>
                 </div>
 
-                {/* Notes */}
                 <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
                     <h3 className="font-bold text-gray-700 mb-4 flex items-center gap-2 border-b border-gray-200 pb-2">
                         <FileText className="h-5 w-5" />
@@ -375,7 +369,6 @@ export default function CheckoutPage() {
               </form>
             </>
           ) : (
-            /* --- Step 2: Payment --- */
             <>
               <h1 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                 <ShieldCheck className="text-blue-600 h-7 w-7" />
@@ -395,7 +388,6 @@ export default function CheckoutPage() {
 
         </div>
 
-        {/* Sidebar Summary */}
         <div className="lg:col-span-1">
           <div className="rounded-xl border border-blue-100 bg-blue-50 p-6 sticky top-24">
             <div className="flex items-center justify-between mb-4">
@@ -408,17 +400,22 @@ export default function CheckoutPage() {
             </div>
             
             <div className="space-y-3 mb-6">
-              {mounted && cart.map((item) => (
-                <div key={item.id} className="flex justify-between text-sm bg-white/50 p-2 rounded border border-blue-100">
-                  <span className="text-gray-700 line-clamp-1 flex-1 ml-2 text-start">{item.title}</span>
-                  <div className="flex items-center gap-2 whitespace-nowrap">
-                    <span className="text-xs text-gray-500">x{item.quantity}</span>
-                    <span className="font-medium text-gray-900">
-                        {symbol} {convertPrice(item.price * item.quantity).toFixed(2)}
-                    </span>
+              {mounted && cart.map((item) => {
+                // ✅ لاجیک هوشمند نام محصول در خلاصه فاکتور
+                const displayTitle = isEn ? (item.title_en || item.title) : item.title;
+                
+                return (
+                  <div key={item.id} className="flex justify-between text-sm bg-white/50 p-2 rounded border border-blue-100">
+                    <span className="text-gray-700 line-clamp-1 flex-1 ml-2 text-start">{displayTitle}</span>
+                    <div className="flex items-center gap-2 whitespace-nowrap">
+                      <span className="text-xs text-gray-500">x{item.quantity}</span>
+                      <span className="font-medium text-gray-900">
+                          {symbol} {convertPrice(item.price * item.quantity).toFixed(2)}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="border-t border-blue-200 pt-4 space-y-2">
