@@ -10,7 +10,7 @@ import { useTranslations } from 'next-intl';
 interface Product {
   id: string;
   title: string;
-  title_en?: string; // ✅ اضافه شد
+  title_en?: string;
   price: number;
   image: string;
   description: string;
@@ -22,7 +22,7 @@ interface Product {
 interface RelatedItem {
     id: string;
     title: string;
-    title_en?: string; // ✅ اضافه شد
+    title_en?: string;
     price: number;
     image: string;
     slug: string;
@@ -39,7 +39,8 @@ interface Props {
 
 export default function ProductClientView({ product, categoryName, categorySlug, categoryIcon, relatedProducts }: Props) {
   const t = useTranslations('Product');
-  const { convertPrice, getSymbol, addToCart, decreaseFromCart, cart } = useStore();
+  // اضافه کردن removeFromCart به استخراج‌های هوک
+  const { convertPrice, getSymbol, addToCart, decreaseFromCart, removeFromCart, cart } = useStore();
   const [mounted, setMounted] = useState(false);
   
   const [currencyAmount, setCurrencyAmount] = useState<number>(1);
@@ -66,13 +67,12 @@ export default function ProductClientView({ product, categoryName, categorySlug,
 
         const handleCurrencyChange = (newQty: number) => {
             setCurrencyAmount(newQty);
+            // سینک کردن با سبد خرید
             if (quantity > 0) {
-                const diff = newQty - quantity;
-                if (diff > 0) {
-                    for (let i = 0; i < diff; i++) addToCart(product);
-                } else if (diff < 0) {
-                    for (let i = 0; i < Math.abs(diff); i++) decreaseFromCart(product.id);
-                }
+                // اگر قبلا تو سبد هست، اول پاکش کن بعد با تعداد جدید اضافه کن
+                // این روش مطمئن‌تر از کم و زیاد کردن لوپ‌دار هست
+                removeFromCart(product.id);
+                for (let i = 0; i < newQty; i++) addToCart(product);
             }
         };
 
@@ -80,6 +80,12 @@ export default function ProductClientView({ product, categoryName, categorySlug,
              if (quantity === 0) {
                  for (let i = 0; i < currencyAmount; i++) addToCart(product);
              }
+        };
+
+        // هندلر حذف کامل برای دکمه "ویرایش / حذف"
+        const handleFullRemove = () => {
+            removeFromCart(product.id);
+            setCurrencyAmount(1); // ریست کردن دراپ‌داون به حالت پیش‌فرض
         };
 
         return (
@@ -120,7 +126,8 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                             <Check className="h-5 w-5 text-green-600" />
                             {currencyAmount} {t('in_cart_currency')}
                         </span>
-                        <button onClick={() => decreaseFromCart(product.id)} className="text-xs bg-white border border-blue-200 px-2 py-1 rounded hover:bg-red-50 hover:text-red-600 transition-colors">
+                        {/* ✅ تغییر مهم: دکمه حذف کامل برای حواله */}
+                        <button onClick={handleFullRemove} className="text-xs bg-white border border-blue-200 px-2 py-1 rounded hover:bg-red-50 hover:text-red-600 transition-colors">
                             {t('edit_remove')}
                         </button>
                      </div>
@@ -173,7 +180,9 @@ export default function ProductClientView({ product, categoryName, categorySlug,
             <div className="md:col-span-5 relative">
                 <div className="relative aspect-square bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm group sticky top-24">
                     <img src={product.image} alt={product.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                    {quantity > 0 && (
+                    
+                    {/* ✅ تغییر مهم: مخفی کردن بج برای محصولات ارزی */}
+                    {quantity > 0 && product.pricing_type !== 'currency' && (
                         <div className="absolute top-4 right-4 bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg border-2 border-white animate-in zoom-in">
                             {quantity}
                         </div>
@@ -294,7 +303,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                             key={item.id}
                             id={item.id}
                             title={item.title}
-                            title_en={item.title_en} // ✅ ارسال title_en به کارت محصول
+                            title_en={item.title_en}
                             price={item.price}
                             image={item.image}
                             slug={item.slug}
