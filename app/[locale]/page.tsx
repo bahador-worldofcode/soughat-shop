@@ -1,5 +1,5 @@
 import Hero from "@/components/Hero";
-import MarketRates from "@/components/MarketRates"; // کامپوننت جدید اضافه شد
+import MarketRates from "@/components/MarketRates"; 
 import ProductCard from "@/components/ProductCard";
 import CurrencyRatesBanner from "@/components/CurrencyRatesBanner";
 import FAQ from "@/components/FAQ"; 
@@ -54,8 +54,7 @@ export default async function Home({
         subtitle={heroSubtitle}
       />
 
-      {/* 1.5. Market Rates Section (NEW) */}
-      {/* اضافه شدن بخش نرخ‌های لحظه‌ای زیر هیرو */}
+      {/* 1.5. Market Rates Section */}
       <MarketRates />
       
       {/* 2. Categories Section */}
@@ -132,6 +131,8 @@ export default async function Home({
                     price={product.price}
                     image={product.image}
                     slug={product.slug}
+                    // ✅ تغییر اصلی: اضافه شدن تایپ قیمت
+                    pricing_type={product.pricing_type}
                   />
                 );
             })}

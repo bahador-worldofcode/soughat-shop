@@ -1,5 +1,5 @@
 ### Soughat-Shop Snapshot
-# Generated: 2026-02-07T00:56:00.870819
+# Generated: 2026-02-08T01:45:01.643001
 # Root: C:\projects\soughat-shop
 # Excluded dir names: .expo, .git, .next, .vscode, node_modules
 # Excluded files (by name/rel): collect_soughat_snapshot.bat, collect_soughat_snapshot.py, package-lock.json, snapshot_soughat.txt
@@ -586,21 +586,23 @@ export default async function BlogIndex({ searchParams, params }: BlogPageProps)
 }
 
 ===== File: app/[locale]/cart/page.tsx =====
-# Modified: 2026-01-01T04:03:05.398638 | Size: 8450 bytes | SHA1: 4e50857c6bfc1bfa32332db18c5132412cc61e4d
+# Modified: 2026-02-07T06:09:16.522640 | Size: 10738 bytes | SHA1: 2622a1f975bd3900c09aa8041a8246bb97ae6089
 'use client';
 
-import { Trash2, ArrowLeft, ShoppingBag, AlertTriangle, Plus, Minus } from 'lucide-react';
+import { Trash2, ArrowLeft, ShoppingBag, AlertTriangle, Plus, Minus, ChevronDown } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useEffect, useState } from 'react';
-import { Link } from '@/i18n/navigation'; // لینک هوشمند
-import { useTranslations, useLocale } from 'next-intl'; // هوک‌های ترجمه
+import { Link } from '@/i18n/navigation';
+import { useTranslations, useLocale } from 'next-intl';
 
 export default function CartPage() {
   const t = useTranslations('Cart');
+  const tProduct = useTranslations('Product'); // برای دسترسی به ترجمه "میلیون تومان"
   const locale = useLocale();
   const isEn = locale === 'en';
 
-  const { cart, removeFromCart, addToCart, decreaseFromCart, totalPrice, getSymbol, convertPrice } = useStore();
+  // اضافه کردن متد updateItemQuantity از استور
+  const { cart, removeFromCart, addToCart, decreaseFromCart, updateItemQuantity, totalPrice, getSymbol, convertPrice } = useStore();
   
   const displayTotal = totalPrice();
   const symbol = getSymbol();
@@ -613,6 +615,9 @@ export default function CartPage() {
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  // لیست مبالغ برای دراپ‌داون حواله (دقیقاً مشابه صفحه محصول)
+  const currencyAmounts = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 40, 50, 100];
 
   if (!mounted) return null;
 
@@ -645,6 +650,7 @@ export default function CartPage() {
           {cart.map((item) => (
             <div key={item.id} className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
               
+              {/* تصویر محصول */}
               <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 border border-gray-200 mx-auto sm:mx-0">
                 <img 
                   src={item.image} 
@@ -653,36 +659,65 @@ export default function CartPage() {
                 />
               </div>
 
+              {/* جزئیات و کنترل‌ها */}
               <div className="flex flex-1 flex-col justify-between">
                 <div>
-                  {/* اگر عنوان انگلیسی در استور ذخیره نشده باشد، همان تایتل اصلی را نشان می‌دهد 
-                      (برای کامل شدن باید استور هم آپدیت شود اما فعلا تایتل پیش‌فرض کافی است) */}
                   <h3 className="text-base font-semibold text-gray-900 line-clamp-1 text-center sm:text-start">{item.title}</h3>
-                  <p className="mt-1 text-xs text-gray-500 text-center sm:text-start">
-                    {t('unit_price')}: {symbol} {convertPrice(item.price).toFixed(2)}
-                  </p>
+                  {/* نمایش قیمت واحد فقط برای محصولات عادی (برای حواله گیج‌کننده است) */}
+                  {item.pricing_type !== 'currency' && (
+                      <p className="mt-1 text-xs text-gray-500 text-center sm:text-start">
+                        {t('unit_price')}: {symbol} {convertPrice(item.price).toFixed(2)}
+                      </p>
+                  )}
                 </div>
                 
                 <div className="flex flex-col sm:flex-row items-center justify-between mt-4 gap-4 sm:gap-0">
                   
-                  <div className="flex items-center bg-gray-50 rounded-lg border border-gray-200 p-1">
-                    <button 
-                        onClick={() => decreaseFromCart(item.id)}
-                        className="w-8 h-8 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-600 hover:text-red-500 hover:bg-red-50 transition-colors"
-                    >
-                        {item.quantity === 1 ? <Trash2 className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
-                    </button>
+                  {/* --- بخش کنترل تعداد / مبلغ --- */}
+                  <div className="flex items-center">
                     
-                    <span className="w-8 text-center font-bold text-gray-800 text-sm">{item.quantity}</span>
-                    
-                    <button 
-                        onClick={() => addToCart(item)}
-                        className="w-8 h-8 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-600 hover:text-green-600 hover:bg-green-50 transition-colors"
-                    >
-                        <Plus className="h-4 w-4" />
-                    </button>
+                    {/* سناریو ۱: اگر محصول حواله (Currency) است -> نمایش دراپ‌داون */}
+                    {item.pricing_type === 'currency' ? (
+                        <div className="relative">
+                            <select
+                                value={item.quantity}
+                                onChange={(e) => updateItemQuantity(item.id, Number(e.target.value))}
+                                className="appearance-none bg-blue-50 border border-blue-200 text-blue-900 font-bold text-sm rounded-lg h-10 pl-3 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer dir-ltr"
+                                style={{ textAlign: 'center' }}
+                            >
+                                {currencyAmounts.map((amt) => (
+                                    <option key={amt} value={amt}>
+                                        {amt} {tProduct('currency_unit')}
+                                    </option>
+                                ))}
+                            </select>
+                            <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-blue-500">
+                                <ChevronDown className="h-4 w-4" />
+                            </div>
+                        </div>
+                    ) : (
+                        /* سناریو ۲: محصول عادی -> دکمه‌های مثبت و منفی */
+                        <div className="flex items-center bg-gray-50 rounded-lg border border-gray-200 p-1">
+                            <button 
+                                onClick={() => decreaseFromCart(item.id)}
+                                className="w-8 h-8 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-600 hover:text-red-500 hover:bg-red-50 transition-colors"
+                            >
+                                {item.quantity === 1 ? <Trash2 className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+                            </button>
+                            
+                            <span className="w-8 text-center font-bold text-gray-800 text-sm">{item.quantity}</span>
+                            
+                            <button 
+                                onClick={() => addToCart(item)}
+                                className="w-8 h-8 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-600 hover:text-green-600 hover:bg-green-50 transition-colors"
+                            >
+                                <Plus className="h-4 w-4" />
+                            </button>
+                        </div>
+                    )}
                   </div>
 
+                  {/* قیمت کل آیتم و دکمه حذف */}
                   <div className="flex items-center gap-4">
                       <span className="font-bold text-blue-600 text-lg">
                         {symbol} {convertPrice(item.price * item.quantity).toFixed(2)}
@@ -5372,12 +5407,12 @@ export default function PaymentsAdminPage() {
 }
 
 ===== File: app/admin/pricing/page.tsx =====
-# Modified: 2025-11-29T16:13:35.475265 | Size: 14357 bytes | SHA1: 6e46613800062f68025140ce2a3daf4d3dcd14b8
+# Modified: 2026-02-07T01:53:49.375814 | Size: 16908 bytes | SHA1: be4c7fa3cbfe8105aaf96d2176cf24e55f16c6c2
 'use client';
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Calculator, Save, RefreshCw, DollarSign, TrendingUp, Truck, AlertCircle, Loader2, Wifi } from 'lucide-react';
+import { Calculator, Save, RefreshCw, DollarSign, TrendingUp, Truck, AlertCircle, Loader2, Wifi, Gem } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -5385,12 +5420,14 @@ interface Product {
   price: number;
   price_toman: number;
   image: string;
+  pricing_type?: string; // اضافه شد برای تشخیص محصولات طلا
 }
 
 interface PricingSettings {
   dollar_rate: number;
   profit_margin: number;
   shipping_base: number;
+  gold_markup_percent: number; // اضافه شد
 }
 
 export default function PricingPage() {
@@ -5398,12 +5435,13 @@ export default function PricingPage() {
   const [settings, setSettings] = useState<PricingSettings>({
     dollar_rate: 100000,
     profit_margin: 25,
-    shipping_base: 300000
+    shipping_base: 300000,
+    gold_markup_percent: 40 // مقدار پیش‌فرض
   });
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [fetchingRate, setFetchingRate] = useState(false); // حالت لودینگ برای دکمه استعلام
+  const [fetchingRate, setFetchingRate] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -5420,36 +5458,31 @@ export default function PricingPage() {
         if (item.key === 'dollar_rate') newSettings.dollar_rate = Number(item.value);
         if (item.key === 'profit_margin') newSettings.profit_margin = Number(item.value);
         if (item.key === 'shipping_base') newSettings.shipping_base = Number(item.value);
+        if (item.key === 'gold_markup_percent') newSettings.gold_markup_percent = Number(item.value);
       });
       setSettings(newSettings);
     }
 
-    // 2. محصولات
+    // 2. محصولات (pricing_type اضافه شد)
     const { data: productsData } = await supabase
       .from('products')
-      .select('id, title, price, price_toman, image')
+      .select('id, title, price, price_toman, image, pricing_type')
       .order('created_at', { ascending: false });
       
     if (productsData) setProducts(productsData);
     setLoading(false);
   };
 
-  // 🌐 تابع جدید: دریافت نرخ تتر/دلار از API
+  // 🌐 تابع دریافت نرخ تتر/دلار از API
   const fetchLiveRate = async () => {
     setFetchingRate(true);
     try {
-      // استفاده از یک API عمومی برای نرخ تتر (معمولاً نزدیک‌ترین نرخ به دلار آزاد)
-      // اگر این API کار نکرد، می‌توانیم از جایگزین استفاده کنیم
       const response = await fetch('https://api.tetherland.com/currencies');
       const data = await response.json();
-      
-      // اکثر APIهای ایرانی نرخ تتر رو میدن که دقیق‌ترین معیار برای ماست
       const usdtPrice = data.data.currencies.USDT.price; 
       
       if (usdtPrice) {
-        // قیمت رو رند می‌کنیم (مثلاً ۶۹۴۵۰ رو می‌کنیم ۶۹۵۰۰ که تمیزتر باشه)
         const roundedPrice = Math.ceil(Number(usdtPrice) / 100) * 100;
-        
         setSettings({ ...settings, dollar_rate: roundedPrice });
         alert(`نرخ لحظه‌ای تتر دریافت شد: ${roundedPrice.toLocaleString()} تومان`);
       } else {
@@ -5472,31 +5505,38 @@ export default function PricingPage() {
   };
 
   const handleApplyChanges = async () => {
-    if (!confirm(`قیمت دلار روی ${settings.dollar_rate.toLocaleString()} تومان تنظیم شده است.\nآیا مطمئن هستید که می‌خواهید قیمت تمام محصولات را بروزرسانی کنید؟`)) return;
+    if (!confirm(`قیمت دلار روی ${settings.dollar_rate.toLocaleString()} تومان تنظیم شده است.\nآیا مطمئن هستید که می‌خواهید قیمت محصولات عادی را بروزرسانی کنید؟\n(قیمت محصولات طلا دست‌نخورده باقی می‌ماند)`)) return;
     
     setSaving(true);
     try {
-      // ذخیره تنظیمات
+      // 1. ذخیره تمام تنظیمات (شامل ضریب طلا)
       const settingsUpdates = [
         { key: 'dollar_rate', value: String(settings.dollar_rate) },
         { key: 'profit_margin', value: String(settings.profit_margin) },
         { key: 'shipping_base', value: String(settings.shipping_base) },
+        { key: 'gold_markup_percent', value: String(settings.gold_markup_percent) }, // ذخیره ضریب جدید طلا
       ];
       
       for (const item of settingsUpdates) {
         await supabase.from('site_settings').upsert(item, { onConflict: 'key' });
       }
 
-      // آپدیت محصولات
+      // 2. آپدیت محصولات عادی (محافظت از طلا)
+      let updatedCount = 0;
       for (const product of products) {
+        // حیاتی: اگر محصول طلا بود، از آپدیت قیمتش صرف نظر کن
+        if (product.pricing_type === 'gold') continue;
+
         const newUSDPrice = calculateUSD(product.price_toman);
         await supabase
           .from('products')
           .update({ price_toman: product.price_toman, price: newUSDPrice })
           .eq('id', product.id);
+        
+        updatedCount++;
       }
 
-      alert('✅ تمام قیمت‌ها با نرخ جدید هماهنگ شدند.');
+      alert(`✅ تنظیمات ذخیره شد.\nتعداد ${updatedCount} محصول عادی با نرخ دلار جدید هماهنگ شدند.\nمحصولات طلا طبق فرمول خودکار آپدیت خواهند شد.`);
       await fetchData();
 
     } catch (error: any) {
@@ -5530,8 +5570,8 @@ export default function PricingPage() {
             <RefreshCw className="h-5 w-5" /> متغیرهای بازار
         </h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Dollar Rate (Updated UI) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* 1. Dollar Rate */}
             <div>
                 <label className="text-xs text-blue-200 mb-1 flex justify-between">
                     <span>نرخ روز دلار (تومان)</span>
@@ -5547,25 +5587,20 @@ export default function PricingPage() {
                         />
                         <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
                     </div>
-                    
-                    {/* دکمه استعلام آنلاین */}
                     <button 
                         onClick={fetchLiveRate}
                         disabled={fetchingRate}
-                        title="دریافت نرخ لحظه‌ای از بازار"
+                        title="دریافت نرخ لحظه‌ای"
                         className="bg-blue-500 hover:bg-blue-400 text-white p-3 rounded-xl transition-colors shadow-lg disabled:opacity-50"
                     >
                         {fetchingRate ? <Loader2 className="h-6 w-6 animate-spin" /> : <Wifi className="h-6 w-6" />}
                     </button>
                 </div>
-                <p className="text-[10px] text-blue-300 mt-1 text-right">
-                    برای دریافت نرخ خودکار دکمه وای‌فای را بزنید یا دستی وارد کنید.
-                </p>
             </div>
 
-            {/* Profit Margin */}
+            {/* 2. Profit Margin (Normal) */}
             <div>
-                <label className="text-xs text-blue-200 mb-1 block">حاشیه سود خالص (درصد)</label>
+                <label className="text-xs text-blue-200 mb-1 block">سود محصولات عادی (%)</label>
                 <div className="relative">
                     <input 
                         type="number" 
@@ -5577,7 +5612,23 @@ export default function PricingPage() {
                 </div>
             </div>
 
-            {/* Shipping Cost */}
+             {/* 3. Gold Markup (New) */}
+             <div className="relative">
+                <div className="absolute -top-2 -right-2 bg-yellow-400 text-blue-900 text-[9px] px-2 py-0.5 rounded-full font-bold animate-pulse z-10">جدید</div>
+                <label className="text-xs text-yellow-300 mb-1 block font-bold">ضریب امنیت طلا (%)</label>
+                <div className="relative">
+                    <input 
+                        type="number" 
+                        value={settings.gold_markup_percent}
+                        onChange={(e) => setSettings({...settings, gold_markup_percent: Number(e.target.value)})}
+                        className="w-full p-3 rounded-xl text-gray-900 font-mono font-bold text-lg outline-none focus:ring-4 focus:ring-yellow-500/50 border-2 border-yellow-500/50"
+                    />
+                    <Gem className="absolute left-3 top-1/2 -translate-y-1/2 text-yellow-600 h-5 w-5" />
+                </div>
+                <p className="text-[9px] text-blue-300 mt-1">شامل اجرت ساخت + سود فروشنده</p>
+            </div>
+
+            {/* 4. Shipping Cost */}
             <div>
                 <label className="text-xs text-blue-200 mb-1 block">هزینه ثابت ارسال (تومان)</label>
                 <div className="relative">
@@ -5597,7 +5648,7 @@ export default function PricingPage() {
       <div className="sticky top-4 z-20 bg-white/90 backdrop-blur-md p-4 rounded-xl border border-blue-100 shadow-lg flex justify-between items-center">
           <div className="flex items-center gap-2 text-sm text-gray-600">
               <AlertCircle className="h-5 w-5 text-amber-500" />
-              <span>قیمت خرید تومانی محصولات را پایین تغییر دهید.</span>
+              <span>قیمت خرید تومانی محصولات را در جدول زیر تغییر دهید.</span>
           </div>
           <button 
             onClick={handleApplyChanges}
@@ -5616,24 +5667,28 @@ export default function PricingPage() {
                 <tr>
                     <th className="px-6 py-4">محصول</th>
                     <th className="px-6 py-4 w-48">قیمت خرید (تومان)</th>
-                    <th className="px-6 py-4 font-mono text-xs text-gray-400">فرمول: (خرید + ارسال) ÷ دلار + سود</th>
+                    <th className="px-6 py-4 font-mono text-xs text-gray-400">فرمول محاسبه</th>
                     <th className="px-6 py-4">قیمت فعلی</th>
                     <th className="px-6 py-4">قیمت جدید</th>
                 </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
                 {products.map((product) => {
+                    const isGold = product.pricing_type === 'gold';
                     const newCalculatedPrice = calculateUSD(product.price_toman);
                     const priceDiff = newCalculatedPrice - product.price;
                     const isCheaper = priceDiff < 0;
                     const isMoreExpensive = priceDiff > 0;
 
                     return (
-                        <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">
+                        <tr key={product.id} className={`hover:bg-gray-50/50 transition-colors ${isGold ? 'bg-yellow-50/30' : ''}`}>
                             <td className="px-6 py-4">
                                 <div className="flex items-center gap-3">
                                     <img src={product.image} className="w-10 h-10 rounded-lg object-cover border border-gray-100" />
-                                    <span className="font-bold text-gray-800 text-sm">{product.title}</span>
+                                    <div>
+                                        <span className="font-bold text-gray-800 text-sm block">{product.title}</span>
+                                        {isGold && <span className="text-[9px] bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full mt-1 inline-block">قیمت‌گذاری طلا (خودکار)</span>}
+                                    </div>
                                 </div>
                             </td>
                             <td className="px-6 py-4">
@@ -5641,23 +5696,35 @@ export default function PricingPage() {
                                     type="number" 
                                     value={product.price_toman}
                                     onChange={(e) => handleProductChange(product.id, e.target.value)}
-                                    className="w-full p-2 border border-gray-300 rounded-lg text-sm font-mono focus:border-blue-500 outline-none"
+                                    disabled={isGold} // قیمت خرید طلا اینجا ویرایش نمی‌شود (وزنی است)
+                                    className={`w-full p-2 border rounded-lg text-sm font-mono focus:border-blue-500 outline-none ${isGold ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : 'border-gray-300'}`}
                                 />
                             </td>
                             <td className="px-6 py-4 text-xs text-gray-400 font-mono dir-ltr">
-                                {((product.price_toman + settings.shipping_base) / settings.dollar_rate).toFixed(2)}$ + {settings.profit_margin}%
+                                {isGold ? (
+                                    <span className="text-yellow-600 flex items-center gap-1">
+                                        <Gem className="h-3 w-3" />
+                                        نرخ لحظه‌ای طلا + {settings.gold_markup_percent}%
+                                    </span>
+                                ) : (
+                                    <span>{((product.price_toman + settings.shipping_base) / settings.dollar_rate).toFixed(2)}$ + {settings.profit_margin}%</span>
+                                )}
                             </td>
                             <td className="px-6 py-4 font-mono text-gray-600">
                                 ${product.price}
                             </td>
                             <td className="px-6 py-4">
-                                <div className="flex items-center gap-2">
-                                    <span className={`font-mono font-bold text-lg ${isMoreExpensive ? 'text-red-500' : isCheaper ? 'text-green-500' : 'text-gray-800'}`}>
-                                        ${newCalculatedPrice}
-                                    </span>
-                                    {isMoreExpensive && <span className="text-[10px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded">+{priceDiff.toFixed(2)}</span>}
-                                    {isCheaper && <span className="text-[10px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded">{priceDiff.toFixed(2)}</span>}
-                                </div>
+                                {isGold ? (
+                                    <span className="text-xs text-gray-400">محاسبه در سرور</span>
+                                ) : (
+                                    <div className="flex items-center gap-2">
+                                        <span className={`font-mono font-bold text-lg ${isMoreExpensive ? 'text-red-500' : isCheaper ? 'text-green-500' : 'text-gray-800'}`}>
+                                            ${newCalculatedPrice}
+                                        </span>
+                                        {isMoreExpensive && <span className="text-[10px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded">+{priceDiff.toFixed(2)}</span>}
+                                        {isCheaper && <span className="text-[10px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded">{priceDiff.toFixed(2)}</span>}
+                                    </div>
+                                )}
                             </td>
                         </tr>
                     );
@@ -5670,12 +5737,12 @@ export default function PricingPage() {
 }
 
 ===== File: app/admin/products/page.tsx =====
-# Modified: 2025-12-20T21:29:13.037846 | Size: 33288 bytes | SHA1: bcb059bc96e679540142badd4235ddf596bb5897
+# Modified: 2026-02-07T01:57:10.043739 | Size: 40042 bytes | SHA1: 3c135dab11ad46a140a0f3efad81bbd1a9b6d527
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Plus, Trash2, Edit2, Search, X, Loader2, ImageIcon, Check, Search as SearchIcon, Calculator, LayoutGrid, List, Package, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Edit2, Search, X, Loader2, ImageIcon, Check, Search as SearchIcon, Calculator, LayoutGrid, List, Package, AlertCircle, Gem, Scale } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -5690,13 +5757,15 @@ interface Product {
   seo_title: string;
   seo_desc: string;
   created_at?: string;
+  weight?: number; // اضافه شد
+  pricing_type?: 'fixed' | 'gold'; // اضافه شد
 }
 
 interface Category {
   id: string;
   name: string;
   slug: string;
-  icon_url?: string; // اضافه شد برای پشتیبانی از آیکون
+  icon_url?: string;
 }
 
 interface MediaFile {
@@ -5713,9 +5782,9 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   
-  const [loading, setLoading] = useState(true); // لودینگ اولیه صفحه
-  const [loadingMoreProducts, setLoadingMoreProducts] = useState(false); // لودینگ اسکرول محصولات
-  const [hasMoreProducts, setHasMoreProducts] = useState(true); // آیا محصول بیشتری هست؟
+  const [loading, setLoading] = useState(true);
+  const [loadingMoreProducts, setLoadingMoreProducts] = useState(false);
+  const [hasMoreProducts, setHasMoreProducts] = useState(true);
 
   // --- استیت آمار (Stats) ---
   const [stats, setStats] = useState({ total: 0, unavailable: 0 });
@@ -5729,6 +5798,7 @@ export default function ProductsPage() {
   const [dollarRate, setDollarRate] = useState(100000);
   const [profitMargin, setProfitMargin] = useState(25);
   const [shippingBase, setShippingBase] = useState(300000);
+  const [goldMarkupPercent, setGoldMarkupPercent] = useState(40); // اضافه شد
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -5744,7 +5814,9 @@ export default function ProductsPage() {
     description: '',
     features: '', 
     seo_title: '',
-    seo_desc: ''
+    seo_desc: '',
+    weight: '', // اضافه شد
+    pricing_type: 'fixed' // اضافه شد (fixed یا gold)
   });
 
   // --- استیت‌های گالری هوشمند ---
@@ -5829,6 +5901,7 @@ export default function ProductsPage() {
             if (item.key === 'profit_margin') setProfitMargin(Number(item.value));
             if (item.key === 'shipping_base') setShippingBase(Number(item.value));
             if (item.key === 'admin_product_view_mode') setViewMode(item.value as 'grid' | 'list');
+            if (item.key === 'gold_markup_percent') setGoldMarkupPercent(Number(item.value));
         });
     }
   };
@@ -5857,10 +5930,17 @@ export default function ProductsPage() {
     const { data } = await query;
 
     if (data) {
+        // برای تایپ‌اسکریپت، data رو کست می‌کنیم چون weight و pricing_type ممکنه در دیتای قدیمی نباشن
+        const typedData = data.map(item => ({
+            ...item,
+            weight: item.weight || 0,
+            pricing_type: item.pricing_type || 'fixed'
+        })) as Product[];
+
         if (isInitial) {
-            setProducts(data);
+            setProducts(typedData);
         } else {
-            setProducts(prev => [...prev, ...data]);
+            setProducts(prev => [...prev, ...typedData]);
         }
 
         if (data.length < BATCH_SIZE) {
@@ -5912,6 +5992,9 @@ export default function ProductsPage() {
   };
 
   const calculateSuggestedUSD = (tomanStr: string) => {
+    // فقط برای محصولات معمولی محاسبه انجام میشه
+    if (formData.pricing_type === 'gold') return;
+
     const toman = parseInt(tomanStr) || 0;
     if (toman === 0) return;
     const cost = toman + shippingBase;
@@ -5934,13 +6017,16 @@ export default function ProductsPage() {
         description: product.description || '',
         features: product.features ? product.features.join('\n') : '',
         seo_title: product.seo_title || '',
-        seo_desc: product.seo_desc || ''
+        seo_desc: product.seo_desc || '',
+        weight: product.weight ? product.weight.toString() : '', // مقداردهی وزن
+        pricing_type: product.pricing_type === 'gold' ? 'gold' : 'fixed' // مقداردهی نوع قیمت
       });
     } else {
       setEditingProduct(null);
       setFormData({ 
         title: '', price: '', price_toman: '', image: '', slug: '', 
-        category: categories[0]?.slug || '', description: '', features: '', seo_title: '', seo_desc: '' 
+        category: categories[0]?.slug || '', description: '', features: '', seo_title: '', seo_desc: '',
+        weight: '', pricing_type: 'fixed'
       });
     }
     setIsModalOpen(true);
@@ -5958,6 +6044,7 @@ export default function ProductsPage() {
       finalSlug = finalSlug.trim().toLowerCase().replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
       const finalCategory = formData.category || categories[0]?.slug || 'nuts';
 
+      // آماده‌سازی داده‌ها
       const productData = {
         title: formData.title,
         price: Number(formData.price),
@@ -5968,8 +6055,17 @@ export default function ProductsPage() {
         description: formData.description,
         features: featuresArray,
         seo_title: formData.seo_title,
-        seo_desc: formData.seo_desc
+        seo_desc: formData.seo_desc,
+        weight: Number(formData.weight) || 0, // ذخیره وزن
+        pricing_type: formData.pricing_type // ذخیره نوع قیمت
       };
+
+      // اگر طلا باشد، قیمت‌ها را موقتاً 0 یا مقدار فعلی رد می‌کنیم، چون کرون‌جاب مسئول آپدیت است
+      // اما برای اینکه ارور ندهد، اگر خالی بود 0 می‌گذاریم
+      if (formData.pricing_type === 'gold') {
+        productData.price = productData.price || 0;
+        productData.price_toman = productData.price_toman || 0;
+      }
 
       let response;
       if (editingProduct) {
@@ -6013,7 +6109,6 @@ export default function ProductsPage() {
     }
   };
 
-  // تابع اصلاح شد تا آبجکت کامل دسته را برگرداند
   const getCategoryObj = (slug: string) => {
     return categories.find(c => c.slug === slug);
   };
@@ -6088,13 +6183,14 @@ export default function ProductsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in duration-300">
             {products.map((product, index) => {
                 const isLast = index === products.length - 1;
-                const isUnavailable = product.price_toman === 0;
-                const catObj = getCategoryObj(product.category); // دریافت آبجکت دسته برای آیکون
+                const isUnavailable = product.price_toman === 0 && product.pricing_type !== 'gold'; // طلا ممکن است 0 باشد تا آپدیت شود
+                const isGold = product.pricing_type === 'gold';
+                const catObj = getCategoryObj(product.category); 
                 return (
                     <div 
                         key={product.id} 
                         ref={isLast ? lastProductElementRef : null}
-                        className={`bg-white rounded-2xl border shadow-sm hover:shadow-md transition-all overflow-hidden group flex flex-col ${isUnavailable ? 'border-red-200 bg-red-50/10' : 'border-gray-100'}`}
+                        className={`bg-white rounded-2xl border shadow-sm hover:shadow-md transition-all overflow-hidden group flex flex-col ${isUnavailable ? 'border-red-200 bg-red-50/10' : 'border-gray-100'} ${isGold ? 'border-yellow-200' : ''}`}
                     >
                         <div className="relative aspect-square bg-gray-100 overflow-hidden">
                             <img src={product.image} alt={product.title} className={`w-full h-full object-cover group-hover:scale-105 transition-transform ${isUnavailable ? 'grayscale' : ''}`} />
@@ -6102,11 +6198,20 @@ export default function ProductsPage() {
                                 <button onClick={() => openProductModal(product)} className="p-2 bg-white/90 rounded-full text-blue-600 shadow-sm"><Edit2 className="h-4 w-4" /></button>
                                 <button onClick={() => handleDelete(product.id)} className="p-2 bg-white/90 rounded-full text-red-500 shadow-sm"><Trash2 className="h-4 w-4" /></button>
                             </div>
-                            {/* نمایش آیکون در بج دسته بندی */}
+                            
+                            {/* بج دسته‌بندی */}
                             <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded-full backdrop-blur-sm flex items-center gap-1.5">
                               {catObj?.icon_url && <img src={catObj.icon_url} className="w-3 h-3 object-contain invert" alt="" />}
                               {catObj ? catObj.name : product.category}
                             </span>
+                            
+                            {/* نشانگر طلا */}
+                            {isGold && (
+                                <span className="absolute top-2 left-2 bg-yellow-400 text-blue-900 text-[10px] px-2 py-1 rounded-full shadow-md flex items-center gap-1 font-bold">
+                                    <Gem className="w-3 h-3" /> طلا
+                                </span>
+                            )}
+
                             {isUnavailable && (
                                 <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                                     <span className="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md">ناموجود</span>
@@ -6115,8 +6220,9 @@ export default function ProductsPage() {
                         </div>
                         <div className="p-4 flex flex-col flex-1">
                             <h3 className="font-bold text-gray-900 line-clamp-1 mb-1">{product.title}</h3>
-                            <div className="mt-auto">
+                            <div className="mt-auto flex justify-between items-end">
                                 <span className="text-lg font-bold text-blue-600">${product.price}</span>
+                                {isGold && <span className="text-[10px] text-gray-400 font-mono">{product.weight}g</span>}
                             </div>
                         </div>
                     </div>
@@ -6128,21 +6234,26 @@ export default function ProductsPage() {
               <div className="divide-y divide-gray-100">
                   {products.map((product, index) => {
                       const isLast = index === products.length - 1;
-                      const isUnavailable = product.price_toman === 0;
+                      const isUnavailable = product.price_toman === 0 && product.pricing_type !== 'gold';
+                      const isGold = product.pricing_type === 'gold';
                       return (
                         <div 
                             key={product.id} 
                             ref={isLast ? lastProductElementRef : null}
-                            className={`p-3 hover:bg-gray-50 transition-colors flex items-center justify-between group ${isUnavailable ? 'bg-red-50/30' : ''}`}
+                            className={`p-3 hover:bg-gray-50 transition-colors flex items-center justify-between group ${isUnavailable ? 'bg-red-50/30' : ''} ${isGold ? 'bg-yellow-50/20' : ''}`}
                         >
                             <div className="flex items-center gap-3">
                                 <img src={product.image} className={`w-10 h-10 rounded object-cover border border-gray-100 ${isUnavailable ? 'grayscale' : ''}`} />
                                 <div>
                                     <div className="font-bold text-gray-800 text-sm select-all cursor-text flex items-center gap-2">
                                         {product.title}
+                                        {isGold && <span className="text-[9px] bg-yellow-200 text-yellow-800 px-1.5 rounded flex items-center gap-0.5"><Gem className="h-3 w-3"/> طلا</span>}
                                         {isUnavailable && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full">ناموجود</span>}
                                     </div>
-                                    <div className="text-xs text-gray-500">${product.price}</div>
+                                    <div className="text-xs text-gray-500 flex gap-2">
+                                        <span>${product.price}</span>
+                                        {isGold && <span className="border-r pr-2 border-gray-300">{product.weight} گرم</span>}
+                                    </div>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
@@ -6175,51 +6286,102 @@ export default function ProductsPage() {
             <form onSubmit={handleSave} className="p-6 space-y-6 overflow-y-auto">
               <div className="space-y-4">
                   <h4 className="font-bold text-blue-800 text-sm border-b pb-2">۱. اطلاعات پایه</h4>
+                  
+                  {/* Toggle Pricing Type - NEW */}
+                  <div className="flex gap-2 p-1 bg-gray-100 rounded-lg w-fit">
+                        <button 
+                            type="button"
+                            onClick={() => setFormData({...formData, pricing_type: 'fixed'})}
+                            className={`px-4 py-2 rounded-md text-xs font-bold transition-all flex items-center gap-2 ${formData.pricing_type === 'fixed' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                        >
+                            <Package className="h-4 w-4" /> محصول عادی
+                        </button>
+                        <button 
+                            type="button"
+                            onClick={() => setFormData({...formData, pricing_type: 'gold'})}
+                            className={`px-4 py-2 rounded-md text-xs font-bold transition-all flex items-center gap-2 ${formData.pricing_type === 'gold' ? 'bg-yellow-400 text-blue-900 shadow' : 'text-gray-500 hover:text-gray-700'}`}
+                        >
+                            <Gem className="h-4 w-4" /> طلا و جواهر (وزنی)
+                        </button>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="md:col-span-2">
                         <label className="block text-xs font-medium text-gray-700 mb-1">نام محصول</label>
                         <input type="text" required className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} />
                       </div>
                       
-                      <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                             <label className="block text-xs font-bold text-gray-700 mb-1">قیمت خرید (تومان)</label>
-                             <div className="relative">
-                                <input 
-                                    type="number" 
-                                    required 
-                                    min="0" 
-                                    className="w-full p-2 pl-8 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm font-mono" 
-                                    value={formData.price_toman} 
-                                    onChange={(e) => {
-                                        setFormData({...formData, price_toman: e.target.value});
-                                        calculateSuggestedUSD(e.target.value);
-                                    }} 
-                                />
-                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-500">T</span>
+                      {/* Conditional Inputs based on Pricing Type */}
+                      {formData.pricing_type === 'fixed' ? (
+                          <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in zoom-in duration-200">
+                              <div>
+                                 <label className="block text-xs font-bold text-gray-700 mb-1">قیمت خرید (تومان)</label>
+                                 <div className="relative">
+                                    <input 
+                                        type="number" 
+                                        required 
+                                        min="0" 
+                                        className="w-full p-2 pl-8 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm font-mono" 
+                                        value={formData.price_toman} 
+                                        onChange={(e) => {
+                                            setFormData({...formData, price_toman: e.target.value});
+                                            calculateSuggestedUSD(e.target.value);
+                                        }} 
+                                    />
+                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-500">T</span>
+                                 </div>
+                                 <p className="text-[10px] text-gray-500 mt-1">مبنای محاسبه قیمت دلاری</p>
+                              </div>
+                              <div>
+                                <label className="block text-xs font-bold text-blue-700 mb-1">قیمت فروش (دلار)</label>
+                                <div className="relative">
+                                    <input 
+                                        type="number" 
+                                        required 
+                                        min="0" 
+                                        step="0.01" 
+                                        className="w-full p-2 pl-6 rounded-lg border border-blue-300 outline-none focus:border-blue-600 text-sm font-bold text-blue-800 dir-ltr" 
+                                        value={formData.price} 
+                                        onChange={(e) => setFormData({...formData, price: e.target.value})} 
+                                    />
+                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-blue-600">$</span>
+                                </div>
+                                <p className="text-[10px] text-blue-400 mt-1 flex items-center gap-1">
+                                    <Calculator className="h-3 w-3"/>
+                                    محاسبه شده با سود {profitMargin}٪
+                                </p>
+                              </div>
+                          </div>
+                      ) : (
+                          <div className="bg-yellow-50 p-3 rounded-xl border border-yellow-200 md:col-span-2 animate-in fade-in zoom-in duration-200">
+                             <div className="flex items-start gap-3">
+                                <div className="p-2 bg-yellow-200 rounded-lg text-yellow-700">
+                                    <Scale className="h-6 w-6" />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block text-xs font-bold text-gray-800 mb-1">وزن خالص (گرم)</label>
+                                    <div className="relative max-w-xs">
+                                        <input 
+                                            type="number" 
+                                            required 
+                                            min="0.01" 
+                                            step="0.01"
+                                            placeholder="مثال: 1.05"
+                                            className="w-full p-2 pl-8 rounded-lg border border-yellow-400 outline-none focus:ring-2 focus:ring-yellow-400 text-sm font-mono font-bold" 
+                                            value={formData.weight} 
+                                            onChange={(e) => setFormData({...formData, weight: e.target.value})} 
+                                        />
+                                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-600 font-bold">gr</span>
+                                    </div>
+                                    <div className="mt-2 text-[10px] text-gray-600 flex items-center gap-1">
+                                        <AlertCircle className="h-3 w-3" />
+                                        <span>قیمت به صورت خودکار محاسبه می‌شود: </span>
+                                        <span className="font-bold text-blue-800">(نرخ طلا × وزن) + {goldMarkupPercent}٪ سود</span>
+                                    </div>
+                                </div>
                              </div>
-                             <p className="text-[10px] text-gray-500 mt-1">مبنای محاسبه قیمت دلاری</p>
                           </div>
-                          <div>
-                            <label className="block text-xs font-bold text-blue-700 mb-1">قیمت فروش (دلار)</label>
-                            <div className="relative">
-                                <input 
-                                    type="number" 
-                                    required 
-                                    min="0" 
-                                    step="0.01" 
-                                    className="w-full p-2 pl-6 rounded-lg border border-blue-300 outline-none focus:border-blue-600 text-sm font-bold text-blue-800 dir-ltr" 
-                                    value={formData.price} 
-                                    onChange={(e) => setFormData({...formData, price: e.target.value})} 
-                                />
-                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-blue-600">$</span>
-                            </div>
-                            <p className="text-[10px] text-blue-400 mt-1 flex items-center gap-1">
-                                <Calculator className="h-3 w-3"/>
-                                محاسبه شده با سود {profitMargin}٪
-                            </p>
-                          </div>
-                      </div>
+                      )}
 
                       <div>
                           <label className="block text-xs font-medium text-gray-700 mb-1">دسته‌بندی</label>
@@ -6249,12 +6411,12 @@ export default function ProductsPage() {
               <div className="space-y-4">
                    <h4 className="font-bold text-blue-800 text-sm border-b pb-2">۲. جزئیات</h4>
                    <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">توضیحات کامل</label>
-                        <textarea rows={4} className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} />
+                       <label className="block text-xs font-medium text-gray-700 mb-1">توضیحات کامل</label>
+                       <textarea rows={4} className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} />
                    </div>
                    <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">ویژگی‌ها</label>
-                        <textarea rows={3} className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm" value={formData.features} onChange={(e) => setFormData({...formData, features: e.target.value})} />
+                       <label className="block text-xs font-medium text-gray-700 mb-1">ویژگی‌ها</label>
+                       <textarea rows={3} className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm" value={formData.features} onChange={(e) => setFormData({...formData, features: e.target.value})} />
                    </div>
               </div>
 
@@ -6279,12 +6441,12 @@ export default function ProductsPage() {
               <div className="bg-gray-50 p-4 rounded-xl space-y-4 border border-gray-200">
                    <h4 className="font-bold text-gray-700 text-sm flex items-center gap-1"><SearchIcon className="h-4 w-4"/> سئو</h4>
                    <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">SEO Title</label>
-                        <input type="text" className="w-full p-2 rounded border border-gray-300 text-sm" value={formData.seo_title} onChange={(e) => setFormData({...formData, seo_title: e.target.value})} />
+                       <label className="block text-xs font-medium text-gray-500 mb-1">SEO Title</label>
+                       <input type="text" className="w-full p-2 rounded border border-gray-300 text-sm" value={formData.seo_title} onChange={(e) => setFormData({...formData, seo_title: e.target.value})} />
                    </div>
                    <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">Meta Description</label>
-                        <textarea rows={2} className="w-full p-2 rounded border border-gray-300 text-sm" value={formData.seo_desc} onChange={(e) => setFormData({...formData, seo_desc: e.target.value})} />
+                       <label className="block text-xs font-medium text-gray-500 mb-1">Meta Description</label>
+                       <textarea rows={2} className="w-full p-2 rounded border border-gray-300 text-sm" value={formData.seo_desc} onChange={(e) => setFormData({...formData, seo_desc: e.target.value})} />
                    </div>
               </div>
 
@@ -6327,7 +6489,7 @@ export default function ProductsPage() {
                       </div>
                      );
                    })}
-                 </div>
+                  </div>
                )}
                {mediaLoadingMore && (
                   <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin text-blue-600"/></div>
@@ -6587,43 +6749,57 @@ ${data.content}
 }
 
 ===== File: app/api/cron/update-rates/route.ts =====
-# Modified: 2026-02-07T00:34:57.508492 | Size: 2333 bytes | SHA1: 0e3a1884761664eeb9f2650417c2c9282daf9b35
+# Modified: 2026-02-07T05:14:49.467780 | Size: 9527 bytes | SHA1: 997f2bafade23a2275ca1bc51904ce003f0fb5b2
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
-// جلوگیری از کش شدن (چون قیمت‌ها لحظه‌ای عوض میشن)
+// جلوگیری از کش شدن (چون قیمت‌ها لحظه‌ای عوض میشن و کرون‌جاب باید دیتای تازه بگیره)
 export const dynamic = 'force-dynamic';
+
+// --------------------------------------------------------------------------
+// تنظیمات سود (درصد)
+// --------------------------------------------------------------------------
+// سود سکه (پوشش نوسان و خواب سرمایه)
+const COIN_PROFIT_PERCENT = 12; 
+
+// سود حواله/ارسال پول (کمتر از سکه چون ریسک فیزیکی ندارد)
+const CURRENCY_PROFIT_PERCENT = 12;
 
 export async function GET() {
   try {
     const sheetUrl = process.env.MARKET_RATES_SHEET_URL;
     if (!sheetUrl) {
-      throw new Error('لینک گوگل شیت در تنظیمات پیدا نشد!');
+      throw new Error('لینک گوگل شیت در تنظیمات پیدا نشد! (MARKET_RATES_SHEET_URL)');
     }
 
-    console.log('🔄 در حال دریافت نرخ‌ها از گوگل شیت...');
+    console.log('🔄 [Step 1] Start: Fetching rates from Google Sheet...');
 
+    // =========================================================================
+    // بخش ۱: دانلود و آپدیت نرخ‌ها از گوگل شیت
+    // =========================================================================
+    
     // 1. دانلود فایل CSV از گوگل
     const response = await fetch(sheetUrl, { cache: 'no-store' });
+    if (!response.ok) {
+        throw new Error(`خطا در دانلود فایل شیت: ${response.statusText}`);
+    }
     const csvText = await response.text();
 
     // 2. پردازش متن CSV
-    // هر خط رو جدا می‌کنیم
     const rows = csvText.split('\n');
-    
     const updates = [];
 
-    for (const row of rows) {
-      // جدا کردن ستون A و B با کاما
-      const [key, rateStr] = row.split(',');
+    // نگاشت نرخ‌ها برای دسترسی سریع (Dictionary Map)
+    const ratesMap: Record<string, number> = {};
 
-      // تمیزکاری داده‌ها
+    for (const row of rows) {
+      const [key, rateStr] = row.split(',');
       const cleanKey = key?.trim();
-      // حذف فاصله و خط جدید از قیمت
       const cleanRateStr = rateStr?.trim(); 
 
       if (cleanKey && cleanRateStr) {
-        const rate = parseFloat(cleanRateStr);
+        const safeRateStr = cleanRateStr.replace(/,/g, ''); 
+        const rate = parseFloat(safeRateStr);
         
         if (!isNaN(rate)) {
           updates.push({
@@ -6631,32 +6807,178 @@ export async function GET() {
             rate: rate,
             updated_at: new Date().toISOString(),
           });
+          ratesMap[cleanKey] = rate;
         }
       }
     }
 
     if (updates.length === 0) {
-      return NextResponse.json({ error: 'هیچ داده‌ای یافت نشد' }, { status: 400 });
+      return NextResponse.json({ error: 'هیچ داده‌ای در فایل CSV یافت نشد.' }, { status: 400 });
     }
 
-    // 3. ذخیره در دیتابیس (Upsert یعنی اگر بود آپدیت کن، نبود بساز)
-    const { error } = await supabaseAdmin
+    // 3. ذخیره نرخ‌ها در دیتابیس market_rates
+    const { error: ratesError } = await supabaseAdmin
       .from('market_rates')
       .upsert(updates, { onConflict: 'key' });
 
-    if (error) {
-      console.error('Supabase Error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (ratesError) {
+      console.error('Supabase Error (Rates):', ratesError);
+      return NextResponse.json({ error: ratesError.message }, { status: 500 });
     }
+
+    console.log(`✅ [Step 1] Rates Updated: ${updates.length} items.`);
+
+
+    // =========================================================================
+    // بخش ۲: دریافت تنظیمات کلی سایت (دلار، سود طلا و...)
+    // =========================================================================
+    
+    const { data: settingsData } = await supabaseAdmin.from('site_settings').select('*');
+    
+    // مقادیر پیش‌فرض
+    const settings: any = {
+        dollar_rate: 100000,     
+        gold_markup_percent: 40, 
+        shipping_base: 0         
+    };
+
+    if (settingsData) {
+        settingsData.forEach((item: any) => {
+            if (item.key === 'dollar_rate') settings.dollar_rate = Number(item.value) || 100000;
+            if (item.key === 'gold_markup_percent') settings.gold_markup_percent = Number(item.value) || 40;
+            if (item.key === 'shipping_base') settings.shipping_base = Number(item.value) || 0;
+        });
+    }
+
+
+    // =========================================================================
+    // بخش ۳: آپدیت قیمت محصولات "طلا" (Pricing Type = 'gold')
+    // =========================================================================
+    console.log('💎 [Step 3] Start: Updating Gold Products...');
+    
+    const currentGoldRate = ratesMap['gold_18k'];
+    let goldUpdatedCount = 0;
+    let message = `${updates.length} نرخ آپدیت شد.`;
+
+    if (currentGoldRate) {
+        const { data: goldProducts } = await supabaseAdmin
+            .from('products')
+            .select('id, weight')
+            .eq('pricing_type', 'gold');
+
+        if (goldProducts && goldProducts.length > 0) {
+            for (const product of goldProducts) {
+                const weight = Number(product.weight) || 0;
+                if (weight <= 0) continue;
+
+                const rawMaterialPrice = weight * currentGoldRate;
+                const priceWithMarkup = rawMaterialPrice * (1 + settings.gold_markup_percent / 100);
+                const finalTomanPrice = Math.round(priceWithMarkup + settings.shipping_base);
+                const finalUSDPrice = Math.round((finalTomanPrice / settings.dollar_rate) * 100) / 100;
+
+                await supabaseAdmin.from('products').update({
+                    price_toman: finalTomanPrice,
+                    price: finalUSDPrice
+                }).eq('id', product.id);
+                
+                goldUpdatedCount++;
+            }
+            message += ` | طلا: ${goldUpdatedCount}`;
+        }
+    }
+
+
+    // =========================================================================
+    // بخش ۴: آپدیت قیمت محصولات "سکه" (Pricing Type = coin_full, ...)
+    // =========================================================================
+    console.log('🪙 [Step 4] Start: Updating Coin Products...');
+
+    const coinTypes = ['coin_full', 'coin_half', 'coin_quarter', 'coin_grami'];
+    
+    const { data: coinProducts } = await supabaseAdmin
+        .from('products')
+        .select('id, pricing_type')
+        .in('pricing_type', coinTypes);
+
+    let coinUpdatedCount = 0;
+
+    if (coinProducts && coinProducts.length > 0) {
+        for (const product of coinProducts) {
+            const currentCoinRate = ratesMap[product.pricing_type || ''];
+
+            if (currentCoinRate) {
+                const priceWithProfit = currentCoinRate * (1 + COIN_PROFIT_PERCENT / 100);
+                const finalTomanPrice = Math.round(priceWithProfit + settings.shipping_base);
+                const finalUSDPrice = Math.round((finalTomanPrice / settings.dollar_rate) * 100) / 100;
+
+                await supabaseAdmin.from('products').update({
+                    price_toman: finalTomanPrice,
+                    price: finalUSDPrice
+                }).eq('id', product.id);
+
+                coinUpdatedCount++;
+            }
+        }
+        message += ` | سکه: ${coinUpdatedCount}`;
+    }
+
+
+    // =========================================================================
+    // بخش ۵: آپدیت قیمت محصولات "ارسال پول/حواله" (Pricing Type = 'currency')
+    // =========================================================================
+    console.log('💵 [Step 5] Start: Updating Currency Products...');
+
+    const { data: currencyProducts } = await supabaseAdmin
+        .from('products')
+        .select('id')
+        .eq('pricing_type', 'currency');
+
+    let currencyUpdatedCount = 0;
+
+    if (currencyProducts && currencyProducts.length > 0) {
+        // واحد پایه محاسبه: ۱ میلیون تومان
+        const BASE_TOMAN_UNIT = 1000000;
+        
+        // اطمینان از اینکه نرخ دلار معتبر است
+        let dollarRateForCalc = settings.dollar_rate;
+        if (!dollarRateForCalc || dollarRateForCalc < 1000) {
+             // اگر نرخ دلار در تنظیمات نبود، از نرخ زنده بازار استفاده کن
+             dollarRateForCalc = ratesMap['usd'] || 100000;
+        }
+
+        // محاسبه: (۱ میلیون تومان تقسیم بر دلار) + درصد سود حواله
+        const rawDollarPrice = BASE_TOMAN_UNIT / dollarRateForCalc;
+        const finalUSDPrice = rawDollarPrice * (1 + CURRENCY_PROFIT_PERCENT / 100);
+        
+        // رند کردن تا ۲ رقم اعشار
+        const roundedUSDPrice = Math.round(finalUSDPrice * 100) / 100;
+
+        for (const product of currencyProducts) {
+             await supabaseAdmin.from('products').update({
+                price_toman: BASE_TOMAN_UNIT, // قیمت تومانی همیشه ۱ میلیون فیکس (واحد پایه)
+                price: roundedUSDPrice
+            }).eq('id', product.id);
+            currencyUpdatedCount++;
+        }
+        message += ` | حواله: ${currencyUpdatedCount}`;
+    }
+
+    console.log('✅ All Done.');
 
     return NextResponse.json({ 
       success: true, 
-      message: `${updates.length} نرخ با موفقیت آپدیت شد.`,
-      data: updates 
+      message: message,
+      data: {
+          updated_rates_count: updates.length,
+          updated_gold_products: goldUpdatedCount,
+          updated_coin_products: coinUpdatedCount,
+          updated_currency_products: currencyUpdatedCount,
+          rates_preview: ratesMap 
+      } 
     });
 
   } catch (error: any) {
-    console.error('Update Error:', error);
+    console.error('CRITICAL Update Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -7797,7 +8119,7 @@ export default function Footer() {
 }
 
 ===== File: components/Header.tsx =====
-# Modified: 2026-01-30T07:02:33.395913 | Size: 10970 bytes | SHA1: 8f03a46498f1e8255848d27994055df48a69c674
+# Modified: 2026-02-07T06:11:12.121807 | Size: 11316 bytes | SHA1: 472a4faf65929ba86e1b37eaa3e526b4a831f79c
 'use client';
 import { useState, useEffect } from 'react';
 import { ShoppingBag, Menu, X, Globe, Search, ChevronDown } from 'lucide-react';
@@ -7810,8 +8132,12 @@ export default function Header() {
   const locale = useLocale(); // دریافت زبان فعلی
   const isEn = locale === 'en';
   
+  // دریافت متد totalItems از استور (که اکنون هوشمند شده و حواله را ۱ عدد می‌شمارد)
   const { currency, setCurrency, totalItems, fetchRates } = useStore();
+  
+  // محاسبه تعداد آیتم‌های سبد خرید
   const cartCount = totalItems();
+  
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -7917,8 +8243,9 @@ export default function Header() {
           <Link href="/cart">
             <button className="relative p-2.5 hover:bg-blue-50 rounded-xl transition-colors group border border-transparent hover:border-blue-100">
               <ShoppingBag className="h-5 w-5 text-gray-600 group-hover:text-blue-600" />
+              {/* بج (Badge) تعداد آیتم‌ها - حالا هوشمند شده */}
               {mounted && cartCount > 0 && (
-                <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center shadow-sm transform scale-100 group-hover:scale-110 transition-transform">
+                <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center shadow-sm transform scale-100 group-hover:scale-110 transition-transform animate-in zoom-in">
                   {cartCount}
                 </span>
               )}
@@ -7945,7 +8272,7 @@ export default function Header() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('searchPlaceholder')}
-                className={`bg-transparent border-none outline-none text-sm w-full text-gray-700 ${!isEn ? 'mr-3' : 'ml-3'}`}
+                className={`bg-transparent border-none outline-none text-sm w-full text-gray-700 placeholder-gray-400 ${!isEn ? 'mr-3' : 'ml-3'}`}
             />
         </form>
       </div>
@@ -7988,8 +8315,8 @@ export default function Header() {
                   </span>
                   
                   <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm text-blue-600">
-                     {/* نمایش زبان مقصد برای سوییچ */}
-                     <span>{isEn ? 'فارسی' : 'English'}</span>
+                      {/* نمایش زبان مقصد برای سوییچ */}
+                      <span>{isEn ? 'فارسی' : 'English'}</span>
                   </div>
                 </button>
 
@@ -8298,7 +8625,7 @@ export default async function MarketRates() {
 }
 
 ===== File: components/ProductCard.tsx =====
-# Modified: 2026-01-01T03:35:47.715398 | Size: 2734 bytes | SHA1: 864c33e40e38d4b328f5fd3f11e61c82d035aa85
+# Modified: 2026-02-07T06:04:08.546356 | Size: 2991 bytes | SHA1: bd04b52f4391c3a9d72a1bf254e86b7d14602b35
 'use client';
 
 import { Plus } from 'lucide-react';
@@ -8313,9 +8640,10 @@ interface ProductCardProps {
   price: number;
   image: string;
   slug: string;
+  pricing_type?: string; // فیلد جدید: برای انتقال نوع محصول به سبد خرید
 }
 
-export default function ProductCard({ id, title, price, image, slug }: ProductCardProps) {
+export default function ProductCard({ id, title, price, image, slug, pricing_type }: ProductCardProps) {
   const t = useTranslations('ProductCard'); // اتصال به دیکشنری
   const { convertPrice, getSymbol, addToCart } = useStore();
   const [mounted, setMounted] = useState(false);
@@ -8329,7 +8657,8 @@ export default function ProductCard({ id, title, price, image, slug }: ProductCa
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    addToCart({ id, title, price, image });
+    // ارسال pricing_type به استور برای تشخیص اینکه محصول حواله است یا خیر
+    addToCart({ id, title, price, image, pricing_type });
   };
 
   return (
@@ -8380,16 +8709,17 @@ export default function ProductCard({ id, title, price, image, slug }: ProductCa
 }
 
 ===== File: components/ProductClientView.tsx =====
-# Modified: 2026-01-01T03:48:11.299207 | Size: 10810 bytes | SHA1: b089560a4c085aae5909fb9159112a87b3839e8b
+# Modified: 2026-02-07T05:45:10.116612 | Size: 18595 bytes | SHA1: 321761b7d6809f839cc87cef4f28983faa6c0205
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
-import { ShoppingBag, Check, ShieldCheck, Truck, Star, Plus, Minus, Trash2, Tag, LayoutGrid, FileText } from 'lucide-react';
-import { Link } from '@/i18n/navigation'; // تغییر مهم: لینک هوشمند
+import { ShoppingBag, Check, ShieldCheck, Truck, Star, Plus, Minus, Trash2, Tag, LayoutGrid, FileText, ChevronDown, Wallet } from 'lucide-react';
+import { Link } from '@/i18n/navigation';
 import ProductCard from './ProductCard';
 import { useTranslations } from 'next-intl';
 
+// اضافه کردن pricing_type به اینترفیس برای تشخیص نوع محصول
 interface Product {
   id: string;
   title: string;
@@ -8398,6 +8728,7 @@ interface Product {
   description: string;
   features: string[];
   slug: string;
+  pricing_type?: string; // فیلد جدید
 }
 
 interface RelatedItem {
@@ -8417,9 +8748,12 @@ interface Props {
 }
 
 export default function ProductClientView({ product, categoryName, categorySlug, categoryIcon, relatedProducts }: Props) {
-  const t = useTranslations('Product'); // اتصال به دیکشنری
+  const t = useTranslations('Product');
   const { convertPrice, getSymbol, addToCart, decreaseFromCart, cart } = useStore();
   const [mounted, setMounted] = useState(false);
+  
+  // استیت مخصوص بخش حواله (برای ذخیره مبلغ انتخابی در دراپ‌داون)
+  const [currencyAmount, setCurrencyAmount] = useState<number>(1);
 
   useEffect(() => setMounted(true), []);
 
@@ -8429,25 +8763,112 @@ export default function ProductClientView({ product, categoryName, categorySlug,
   const cartItem = cart.find(item => item.id === product.id);
   const quantity = cartItem ? cartItem.quantity : 0;
 
-  const renderDescription = (text: string) => {
-    if (!text) return null;
-    return text.split('\n').map((line, index) => {
-      if (!line.trim()) return <div key={index} className="h-2"></div>;
-      const parts = line.split(/(\*\*.*?\*\*)/g);
-      return (
-        <p key={index} className="mb-2 leading-8 text-justify text-gray-600 text-sm md:text-base">
-          {parts.map((part, i) => {
-            if (part.startsWith('**') && part.endsWith('**')) {
-              return <strong key={i} className="font-bold text-gray-900">{part.slice(2, -2)}</strong>;
-            }
-            return part;
-          })}
-        </p>
-      );
-    });
-  };
+  // همگام‌سازی مبلغ انتخابی با سبد خرید (اگر کاربر قبلا این محصول را به سبد اضافه کرده باشد)
+  useEffect(() => {
+    if (quantity > 0 && product.pricing_type === 'currency') {
+        setCurrencyAmount(quantity);
+    }
+  }, [quantity, product.pricing_type]);
 
+  // --- کامپوننت هوشمند دکمه‌های خرید ---
   const AddToCartButtons = ({ isMobile = false }: { isMobile?: boolean }) => {
+      
+      // ============================================================
+      // حالت ویژه: محصول ارسال پول (Currency) -> نمایش دراپ‌داون
+      // ============================================================
+      if (product.pricing_type === 'currency') {
+        
+        // مبالغ قابل انتخاب (بر حسب میلیون تومان)
+        const amounts = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 40, 50, 100];
+
+        // تابع مدیریت تغییر مبلغ (سینک کردن لحظه‌ای با سبد خرید)
+        const handleCurrencyChange = (newQty: number) => {
+            setCurrencyAmount(newQty);
+            
+            // اگر محصول در سبد هست، باید تعدادش رو دقیقاً با انتخاب کاربر یکی کنیم
+            if (quantity > 0) {
+                const diff = newQty - quantity;
+                if (diff > 0) {
+                    // اگر مبلغ رو زیاد کرد، اضافه کن
+                    for (let i = 0; i < diff; i++) addToCart(product);
+                } else if (diff < 0) {
+                    // اگر مبلغ رو کم کرد، کم کن
+                    for (let i = 0; i < Math.abs(diff); i++) decreaseFromCart(product.id);
+                }
+            }
+        };
+
+        // دکمه افزودن اولیه
+        const handleAddCurrency = () => {
+             if (quantity === 0) {
+                 for (let i = 0; i < currencyAmount; i++) addToCart(product);
+             }
+        };
+
+        return (
+            <div className={`flex flex-col gap-3 w-full ${isMobile ? 'p-1' : ''}`}>
+                
+                {/* 1. لیست کشویی انتخاب مبلغ */}
+                <div className="relative w-full">
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5 mr-1">
+                        {isMobile ? t('currency_label_mobile') : t('currency_label_desktop')}
+                    </label>
+                    <div className="relative">
+                        <select 
+                            value={currencyAmount} 
+                            onChange={(e) => handleCurrencyChange(Number(e.target.value))}
+                            className={`w-full appearance-none bg-white border-2 border-blue-100 text-gray-800 font-black rounded-xl focus:border-blue-500 focus:ring-0 transition-all cursor-pointer ${isMobile ? 'h-12 pl-4 pr-10 text-base' : 'h-14 pl-4 pr-12 text-lg'}`}
+                            // جهت متن همیشه چپ‌چین برای اعداد
+                            style={{direction: 'ltr', textAlign: 'left'}} 
+                        >
+                            {amounts.map(amt => (
+                                <option key={amt} value={amt}>
+                                    {amt} {t('currency_unit')}
+                                </option>
+                            ))}
+                        </select>
+                        {/* آیکون فلش دراپ‌داون */}
+                        <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-blue-600 bg-blue-50 rounded-r-xl border-l border-blue-100 rtl:rounded-l-xl rtl:rounded-r-none rtl:border-r rtl:border-l-0">
+                            <ChevronDown className="h-5 w-5" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* 2. نمایش قیمت محاسبه شده */}
+                <div className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                     <span className="text-xs text-gray-500 font-medium">{t('payable_label')}</span>
+                     <span className="text-lg font-black text-green-600 font-mono tracking-tight">
+                        {symbol} {typeof finalPrice === 'number' ? (finalPrice * currencyAmount).toFixed(2) : '...'}
+                     </span>
+                </div>
+
+                {/* 3. دکمه عملیات (افزودن یا ویرایش) */}
+                {quantity > 0 ? (
+                     <div className={`flex items-center justify-between bg-blue-50 border border-blue-200 text-blue-700 rounded-xl px-4 font-bold ${isMobile ? 'h-12' : 'h-14'}`}>
+                        <span className="flex items-center gap-2 text-sm">
+                            <Check className="h-5 w-5 text-green-600" />
+                            {currencyAmount} {t('in_cart_currency')}
+                        </span>
+                        <button onClick={() => decreaseFromCart(product.id)} className="text-xs bg-white border border-blue-200 px-2 py-1 rounded hover:bg-red-50 hover:text-red-600 transition-colors">
+                            {t('edit_remove')}
+                        </button>
+                     </div>
+                ) : (
+                    <button 
+                        onClick={handleAddCurrency}
+                        className={`w-full font-bold flex items-center justify-center gap-2 transition-all shadow-lg bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-green-200 hover:-translate-y-1 active:scale-95 ${isMobile ? 'h-12 text-base rounded-xl' : 'h-14 rounded-xl text-lg'}`}
+                    >
+                        <Wallet className={isMobile ? "h-5 w-5" : "h-6 w-6"} /> 
+                        {t('confirm_add')}
+                    </button>
+                )}
+            </div>
+        );
+      }
+
+      // ============================================================
+      // حالت عادی: محصولات معمولی (طلا، سکه، آجیل و...) -> بدون تغییر
+      // ============================================================
       if (quantity > 0) {
           return (
             <div className={`flex items-center justify-between bg-white border border-blue-200 rounded-xl p-1 shadow-inner ${isMobile ? 'h-12 w-full' : 'h-14 w-full'}`}>
@@ -8480,6 +8901,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
         
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 animate-in fade-in slide-in-from-bottom-4 duration-500 items-start">
         
+            {/* تصویر محصول */}
             <div className="md:col-span-5 relative">
                 <div className="relative aspect-square bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm group sticky top-24">
                     <img src={product.image} alt={product.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
@@ -8491,6 +8913,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                 </div>
             </div>
 
+            {/* اطلاعات محصول */}
             <div className="md:col-span-7 flex flex-col">
                 
                 <div className="mb-4 flex items-center justify-between">
@@ -8514,23 +8937,29 @@ export default function ProductClientView({ product, categoryName, categorySlug,
 
                 <h1 className="text-2xl md:text-4xl font-black text-gray-900 mb-6 leading-snug">{product.title}</h1>
 
+                {/* باکس قیمت و خرید دسکتاپ */}
                 <div className="hidden md:block bg-white p-6 rounded-2xl border border-blue-100 shadow-sm mb-8">
-                    <div className="flex items-center justify-between mb-6">
-                        <div>
-                            <span className="text-gray-400 text-xs block mb-1">{t('final_price_label')}</span>
-                            <div className="text-3xl font-black text-blue-700 font-mono tracking-tight">
-                                {symbol} {typeof finalPrice === 'number' ? finalPrice.toFixed(2) : finalPrice}
+                    
+                    {/* اگر محصول حواله است، قیمت استاندارد را مخفی می‌کنیم تا گیج‌کننده نباشد (قیمت در پنل دراپ‌داون نمایش داده می‌شود) */}
+                    {product.pricing_type !== 'currency' && (
+                        <div className="flex items-center justify-between mb-6">
+                            <div>
+                                <span className="text-gray-400 text-xs block mb-1">{t('final_price_label')}</span>
+                                <div className="text-3xl font-black text-blue-700 font-mono tracking-tight">
+                                    {symbol} {typeof finalPrice === 'number' ? finalPrice.toFixed(2) : finalPrice}
+                                </div>
+                            </div>
+                            <div className="text-right hidden lg:block">
+                                <div className="text-xs text-green-600 font-bold flex items-center gap-1 mb-1 justify-end"><ShieldCheck className="h-3 w-3"/> {t('health_guarantee')}</div>
+                                <div className="text-xs text-blue-600 font-bold flex items-center gap-1 justify-end"><Truck className="h-3 w-3"/> {t('free_shipping')}</div>
                             </div>
                         </div>
-                        <div className="text-right hidden lg:block">
-                            <div className="text-xs text-green-600 font-bold flex items-center gap-1 mb-1 justify-end"><ShieldCheck className="h-3 w-3"/> {t('health_guarantee')}</div>
-                            <div className="text-xs text-blue-600 font-bold flex items-center gap-1 justify-end"><Truck className="h-3 w-3"/> {t('free_shipping')}</div>
-                        </div>
-                    </div>
+                    )}
                     
                     <AddToCartButtons isMobile={false} />
                 </div>
 
+                {/* ویژگی‌ها */}
                 {product.features && product.features.length > 0 && (
                     <div className="mb-8 grid grid-cols-1 gap-3">
                         {product.features.map((feat, index) => (
@@ -8545,6 +8974,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
             </div>
         </div>
 
+        {/* --- بخش توضیحات (HTML Render) --- */}
         {product.description && (
             <div className="mt-12 pt-10 border-t border-gray-200">
                 <h3 className="font-bold text-gray-900 mb-6 text-xl flex items-center gap-2">
@@ -8552,28 +8982,47 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                     <FileText className="h-6 w-6 text-gray-400" />
                     {t('description')}
                 </h3>
+                
                 <div className="bg-white rounded-3xl p-6 md:p-10 border border-gray-100 shadow-sm">
-                    {renderDescription(product.description)}
+                   <div 
+                     className="
+                       text-gray-600 leading-8 text-justify
+                       [&>h2]:text-xl [&>h2]:font-black [&>h2]:text-gray-800 [&>h2]:mb-4 [&>h2]:mt-8 [&>h2]:border-b [&>h2]:pb-2 [&>h2]:border-gray-100
+                       [&>h3]:text-lg [&>h3]:font-bold [&>h3]:text-gray-700 [&>h3]:mb-3 [&>h3]:mt-6
+                       [&>p]:mb-4 [&>p]:text-sm md:[&>p]:text-base
+                       [&>strong]:text-gray-900 [&>strong]:font-bold
+                       [&>ul]:list-disc [&>ul]:pr-5 [&>ul]:mb-4
+                       [&>li]:mb-1
+                     "
+                     dangerouslySetInnerHTML={{ __html: product.description }}
+                   />
                 </div>
             </div>
         )}
 
+        {/* منوی موبایل (چسبان پایین صفحه) */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 z-[100] md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.1)] animate-in slide-in-from-bottom-full duration-300">
             <div className="flex items-center gap-4 max-w-md mx-auto">
-                <div className="flex flex-col flex-1">
-                    <span className="text-xs text-gray-400 mb-0.5">
-                        {quantity > 0 ? t('final_price_label') : t('final_price_label')}
-                    </span>
-                    <span className="text-xl font-black text-blue-700 font-mono">
-                        {symbol} {typeof finalPrice === 'number' ? (finalPrice * (quantity || 1)).toFixed(2) : finalPrice}
-                    </span>
-                </div>
-                <div className="w-[55%]">
+                {/* اگر محصول عادی است، قیمت کل را نشان بده */}
+                {product.pricing_type !== 'currency' && (
+                    <div className="flex flex-col flex-1">
+                        <span className="text-xs text-gray-400 mb-0.5">
+                            {quantity > 0 ? t('final_price_label') : t('final_price_label')}
+                        </span>
+                        <span className="text-xl font-black text-blue-700 font-mono">
+                            {symbol} {typeof finalPrice === 'number' ? (finalPrice * (quantity || 1)).toFixed(2) : finalPrice}
+                        </span>
+                    </div>
+                )}
+                
+                {/* اگر محصول حواله است، دکمه باید تمام عرض باشد چون دراپ‌داون جا می‌خواهد */}
+                <div className={product.pricing_type === 'currency' ? "w-full" : "w-[55%]"}>
                     <AddToCartButtons isMobile={true} />
                 </div>
             </div>
         </div>
 
+        {/* محصولات مرتبط */}
         {relatedProducts.length > 0 && (
             <div className="mt-20 pt-10 border-t border-gray-200">
                 <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
@@ -8659,7 +9108,7 @@ export const routing = defineRouting({
 });
 
 ===== File: lib/store.ts =====
-# Modified: 2025-12-02T18:13:03.604943 | Size: 4644 bytes | SHA1: 168fbe29acfb8ef97a10a92af055e862fa9975db
+# Modified: 2026-02-07T06:01:23.722330 | Size: 5587 bytes | SHA1: 19c761271d3c24b5c61c66c5d71d049de381d2aa
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '@/lib/supabase';
@@ -8672,6 +9121,8 @@ export interface Product {
   price: number; 
   image: string;
   category?: string;
+  // فیلد جدید: برای تشخیص نوع محصول (حواله یا عادی)
+  pricing_type?: string; 
 }
 
 interface CartItem extends Product {
@@ -8691,8 +9142,12 @@ interface StoreState {
   // --- بخش سبد خرید ---
   cart: CartItem[];
   addToCart: (product: Product) => void;
-  decreaseFromCart: (productId: string) => void; // <--- تابع جدید
+  decreaseFromCart: (productId: string) => void;
   removeFromCart: (productId: string) => void;
+  
+  // متد جدید: آپدیت مستقیم تعداد (برای دراپ‌داون حواله)
+  updateItemQuantity: (productId: string, quantity: number) => void;
+  
   clearCart: () => void;
   totalItems: () => number;
   totalPrice: () => number;
@@ -8770,14 +9225,13 @@ export const useStore = create<StoreState>()(
             ),
           };
         }
+        // هنگام افزودن، تمام ویژگی‌ها از جمله pricing_type منتقل می‌شوند
         return { cart: [...state.cart, { ...product, quantity: 1 }] };
       }),
 
-      // کاهش (یکی کم کردن) - جدید
+      // کاهش (یکی کم کردن)
       decreaseFromCart: (id) => set((state) => {
         const existing = state.cart.find((item) => item.id === id);
-        // اگر تعداد بیشتر از 1 بود، کم کن. اگر 1 بود، حذفش نکن (بذار کاربر خودش دکمه حذف رو بزنه یا اگه میخوای حذف شه بگو)
-        // استراتژی: اگر 1 بود و زد، حذف میشه (مثل دیجی‌کالا)
         if (existing && existing.quantity > 1) {
             return {
                 cart: state.cart.map((item) =>
@@ -8785,12 +9239,18 @@ export const useStore = create<StoreState>()(
                 ),
             };
         } else {
-            // اگر 1 بود و منفی زد، حذف بشه
             return {
                 cart: state.cart.filter((item) => item.id !== id),
             };
         }
       }),
+
+      // متد جدید: آپدیت مستقیم تعداد (برای دراپ‌داون حواله در سبد خرید)
+      updateItemQuantity: (id, quantity) => set((state) => ({
+        cart: state.cart.map((item) => 
+            item.id === id ? { ...item, quantity: quantity } : item
+        )
+      })),
 
       // حذف کامل آیتم
       removeFromCart: (id) => set((state) => ({
@@ -8799,7 +9259,19 @@ export const useStore = create<StoreState>()(
 
       clearCart: () => set({ cart: [] }),
 
-      totalItems: () => get().cart.reduce((total, item) => total + item.quantity, 0),
+      // اصلاح استراتژیک: شمارش آیتم‌ها
+      totalItems: () => {
+        const cart = get().cart;
+        return cart.reduce((total, item) => {
+            // اگر محصول "حواله/پول" است، صرف نظر از مبلغ (تعداد)، آن را ۱ عدد بشمار
+            // چون مشتری ۱ تراکنش حواله دارد، نه ۵۰ تا محصول فیزیکی
+            if (item.pricing_type === 'currency') {
+                return total + 1;
+            }
+            // برای محصولات عادی (پسته، طلا) تعداد واقعی را بشمار
+            return total + item.quantity;
+        }, 0);
+      },
 
       totalPrice: () => {
         const totalUSD = get().cart.reduce((total, item) => total + (item.price * item.quantity), 0);
@@ -8849,7 +9321,7 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 ===== File: messages/en.json =====
-# Modified: 2026-02-07T00:26:36.587536 | Size: 22331 bytes | SHA1: 9a44ea99e9ccdd39b697a28f54b7a97be8bb7aed
+# Modified: 2026-02-07T05:41:38.703468 | Size: 22670 bytes | SHA1: 4d7df0641f1b593bea3bf4fd2ab37bbb21096d14
 {
   "Header": {
     "home": "Home",
@@ -8968,7 +9440,14 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
     "features": "Features",
     "similar_products": "You might also like",
     "back_to_list": "Back to List",
-    "rating": "5.0"
+    "rating": "5.0",
+    "currency_label_mobile": "Remittance Amount (Million Toman):",
+    "currency_label_desktop": "Select Amount (Million Toman):",
+    "currency_unit": "Million Tomans",
+    "payable_label": "Payable Amount:",
+    "in_cart_currency": "Million Tomans in cart",
+    "edit_remove": "Edit / Remove",
+    "confirm_add": "Confirm & Add"
   },
   "ProductsPage": {
     "title": "Soughat Shop Store",
@@ -9295,7 +9774,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 }
 
 ===== File: messages/fa.json =====
-# Modified: 2026-02-07T00:25:41.904163 | Size: 33627 bytes | SHA1: efcb35bd4bd614cc47fae5e208f4eb7ba4c30921
+# Modified: 2026-02-07T05:41:03.373635 | Size: 34094 bytes | SHA1: 4b60b2b699aa61a2c506df1ccb3ca0abb3c94c8d
 {
   "Header": {
     "home": "خانه",
@@ -9414,7 +9893,15 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
     "features": "ویژگی‌ها",
     "similar_products": "محصولات مشابه (شاید بپسندید)",
     "back_to_list": "بازگشت به لیست",
-    "rating": "۵.۰"
+    "rating": "۵.۰",
+    "currency_label_mobile": "مبلغ حواله (میلیون تومان):",
+    "currency_label_desktop": "مبلغ مورد نظر جهت ارسال (میلیون تومان):",
+    "currency_unit": "میلیون تومان",
+    "payable_label": "مبلغ قابل پرداخت:",
+    "in_cart_currency": "میلیون تومان در سبد",
+    "edit_remove": "ویرایش / حذف",
+    "confirm_add": "تایید و افزودن به سبد"
+    
   },
   "ProductsPage": {
     "title": "فروشگاه سوغات شاپ",
@@ -10369,4 +10856,4 @@ print("\n✨ تمام آیکون‌ها با موفقیت آپدیت شدند. �
 
 ### Summary
 # Files considered: 81 | Written: 75 | Skipped: 6
-# Output size: 479425 bytes
+# Output size: 507863 bytes

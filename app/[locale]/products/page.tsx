@@ -29,6 +29,7 @@ interface Product {
   slug: string;
   category: string;
   created_at?: string;
+  pricing_type?: string; // ✅ اضافه شد
 }
 
 interface Category {
@@ -75,20 +76,17 @@ function ProductList() {
   
   // Search State (Local input vs Debounced)
   const [searchTerm, setSearchTerm] = useState(urlSearchQuery);
-  const debouncedSearch = useDebounce(searchTerm, 500); // Wait 500ms before triggering search
+  const debouncedSearch = useDebounce(searchTerm, 500); 
 
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [sortOrder, setSortOrder] = useState<'newest' | 'price-asc' | 'price-desc'>('newest');
 
   // --- Effects ---
-  
-  // 1. Fetch Categories once
   useEffect(() => {
     fetchCategories();
   }, []);
 
-  // 2. Sync URL when Debounced Search changes
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
     if (debouncedSearch) {
@@ -96,18 +94,15 @@ function ProductList() {
     } else {
       params.delete('q');
     }
-    // Only push if query actually changed to avoid redundant pushes
     if (params.get('q') !== urlSearchQuery) {
         router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
   }, [debouncedSearch]);
 
-  // 3. Fetch Products when criteria changes (depend on URL params, not local state)
   useEffect(() => {
     fetchProducts();
   }, [searchParams, page, sortOrder]);
 
-  // 4. Reset page on filter change
   useEffect(() => {
     setPage(1);
   }, [currentCategory, debouncedSearch]);
@@ -133,10 +128,8 @@ function ProductList() {
       .from('products')
       .select('*', { count: 'exact' });
 
-    // Use URL param for search to ensure sync
-    const activeSearch = searchParams.get('q') || '';
-
     // Search Logic
+    const activeSearch = searchParams.get('q') || '';
     if (activeSearch) {
         if (isEn) {
              query = query.or(`title.ilike.%${activeSearch}%,title_en.ilike.%${activeSearch}%`);
@@ -182,7 +175,6 @@ function ProductList() {
     if (slug === 'all') params.delete('category');
     else params.set('category', slug);
     
-    // Reset page to 1 when category changes
     setPage(1);
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
   };
@@ -199,8 +191,7 @@ function ProductList() {
         
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
             
-            {/* === SIDEBAR (Desktop) / TOPBAR (Mobile) === */}
-            {/* FIX: Removed space-y-6, used flex-col and defined height for sticky scrolling */}
+            {/* === SIDEBAR === */}
             <aside className="lg:col-span-1 lg:sticky lg:top-24 flex flex-col gap-6 lg:max-h-[calc(100vh-8rem)]">
                 
                 {/* 1. Search Box */}
@@ -245,7 +236,6 @@ function ProductList() {
                 </div>
 
                 {/* 3. Categories List */}
-                {/* FIX: Added flex-1 and overflow logic for desktop independent scrolling */}
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col lg:overflow-hidden flex-1 transition-shadow hover:shadow-md">
                     <div className="p-4 border-b border-gray-100 bg-gray-50/50 backdrop-blur-sm sticky top-0 z-10">
                         <h3 className="font-bold text-gray-800 flex items-center gap-2">
@@ -254,8 +244,7 @@ function ProductList() {
                         </h3>
                     </div>
                     
-                    {/* Desktop: Vertical List with Independent Scroll */}
-                    {/* FIX: Added custom-scrollbar class (ensure you have it in globals.css or use tailwind scrollbar plugin) */}
+                    {/* Desktop: Vertical List */}
                     <div className="hidden lg:block overflow-y-auto overflow-x-hidden p-2 gap-1 custom-scrollbar" style={{ maxHeight: 'calc(100vh - 400px)' }}>
                         {categories.length === 0 ? (
                              <div className="p-4 space-y-3">
@@ -284,7 +273,6 @@ function ProductList() {
                                         ) : (
                                             <div className={`p-1.5 rounded-lg flex items-center justify-center transition-colors ${isActive ? 'bg-blue-200' : 'bg-gray-100 group-hover:bg-white'}`}>
                                                 {cat.icon_url ? (
-                                                    // FIX: Removed grayscale, added object-contain
                                                     <img src={cat.icon_url} alt="" className="w-4 h-4 object-contain" />
                                                 ) : (
                                                     <Layers className={`h-4 w-4 ${isActive ? 'text-blue-700' : 'text-gray-400'}`} />
@@ -315,7 +303,6 @@ function ProductList() {
                                     }`}
                                 >
                                     {cat.icon_url && cat.slug !== 'all' && (
-                                        // FIX: Removed invert/brightness filters for active state unless icon is purely black
                                         <img src={cat.icon_url} alt="" className={`w-4 h-4 object-contain ${isActive ? 'brightness-200 grayscale-0' : ''}`} />
                                     )}
                                     {catName}
@@ -326,7 +313,7 @@ function ProductList() {
                 </div>
             </aside>
 
-            {/* === MAIN CONTENT (Products Grid) === */}
+            {/* === MAIN CONTENT === */}
             <div className="lg:col-span-3 min-h-[500px]">
                 {loading ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -363,7 +350,6 @@ function ProductList() {
                     </div>
                 ) : (
                     <>
-                        {/* Result Count & Active Filters Info (Optional Enhancement) */}
                         <div className="mb-6 flex items-center justify-between">
                              <div className="text-sm text-gray-500 font-medium px-1">
                                 {isEn 
@@ -384,7 +370,8 @@ function ProductList() {
                                         price={product.price}
                                         image={product.image}
                                         slug={product.slug}
-                                        // Ensure ProductCard handles visual polish internally
+                                        // ✅ تغییر اصلی: پاس دادن تایپ قیمت
+                                        pricing_type={product.pricing_type}
                                     />
                                 );
                             })}
@@ -436,7 +423,6 @@ export default function ProductsPage() {
       
       {/* Page Header */}
       <div className="bg-white border-b border-gray-200 pt-12 pb-10 mb-2 shadow-sm relative overflow-hidden">
-        {/* Simple decorative background element */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 opacity-60 pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-50 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 opacity-60 pointer-events-none"></div>
         
