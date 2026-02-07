@@ -4,6 +4,12 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 // جلوگیری از کش شدن (چون قیمت‌ها لحظه‌ای عوض میشن و کرون‌جاب باید دیتای تازه بگیره)
 export const dynamic = 'force-dynamic';
 
+// --------------------------------------------------------------------------
+// تنظیمات سود سکه (درصد)
+// --------------------------------------------------------------------------
+// طبق دستور شما برای پوشش نوسانات بازار، سود روی ۱۲ درصد تنظیم شد.
+const COIN_PROFIT_PERCENT = 12; 
+
 export async function GET() {
   try {
     const sheetUrl = process.env.MARKET_RATES_SHEET_URL;
@@ -13,9 +19,9 @@ export async function GET() {
 
     console.log('🔄 [Step 1] Start: Fetching rates from Google Sheet...');
 
-    // ---------------------------------------------------------
-    // بخش ۱: دانلود و آپدیت نرخ‌ها از گوگل شیت (کد اصلی قبلی)
-    // ---------------------------------------------------------
+    // =========================================================================
+    // بخش ۱: دانلود و آپدیت نرخ‌ها از گوگل شیت
+    // =========================================================================
     
     // 1. دانلود فایل CSV از گوگل
     const response = await fetch(sheetUrl, { cache: 'no-store' });
@@ -28,31 +34,35 @@ export async function GET() {
     const rows = csvText.split('\n');
     const updates = [];
 
-    for (const row of rows) {
-      // جدا کردن ستون A و B با کاما
-      const [key, rateStr] = row.split(',');
+    // نگاشت نرخ‌ها برای دسترسی سریع (Dictionary Map)
+    // این به ما اجازه میده مثلا با نوشتن ratesMap['coin_full'] سریع قیمتش رو پیدا کنیم
+    const ratesMap: Record<string, number> = {};
 
-      // تمیزکاری داده‌ها
+    for (const row of rows) {
+      const [key, rateStr] = row.split(',');
       const cleanKey = key?.trim();
       const cleanRateStr = rateStr?.trim(); 
 
       if (cleanKey && cleanRateStr) {
-        // حذف کاراکترهای غیرعددی احتمالی (مثل ویرگول داخل عدد)
+        // حذف ویرگول احتمالی در اعداد
         const safeRateStr = cleanRateStr.replace(/,/g, ''); 
         const rate = parseFloat(safeRateStr);
         
         if (!isNaN(rate)) {
+          // اضافه کردن به لیست برای آپدیت دیتابیس
           updates.push({
             key: cleanKey,
             rate: rate,
             updated_at: new Date().toISOString(),
           });
+          // اضافه کردن به مپ برای استفاده در همین فایل
+          ratesMap[cleanKey] = rate;
         }
       }
     }
 
     if (updates.length === 0) {
-      return NextResponse.json({ error: 'هیچ داده‌ای در فایل CSV یافت نشد یا فرمت صحیح نیست.' }, { status: 400 });
+      return NextResponse.json({ error: 'هیچ داده‌ای در فایل CSV یافت نشد.' }, { status: 400 });
     }
 
     // 3. ذخیره نرخ‌ها در دیتابیس market_rates
@@ -67,93 +77,112 @@ export async function GET() {
 
     console.log(`✅ [Step 1] Rates Updated: ${updates.length} items.`);
 
-    // ---------------------------------------------------------
-    // بخش ۲: آپدیت قیمت محصولات طلا (منطق جدید و تکمیلی)
-    // ---------------------------------------------------------
 
-    console.log('💎 [Step 2] Start: Updating Gold Products...');
+    // =========================================================================
+    // بخش ۲: دریافت تنظیمات کلی سایت (دلار، سود طلا و...)
+    // =========================================================================
+    
+    const { data: settingsData } = await supabaseAdmin.from('site_settings').select('*');
+    
+    // مقادیر پیش‌فرض
+    const settings: any = {
+        dollar_rate: 100000,     
+        gold_markup_percent: 40, // سود طلا (پیش‌فرض ۴۰٪)
+        shipping_base: 0         
+    };
 
-    // الف) پیدا کردن نرخ طلای ۱۸ عیار از بین نرخ‌های دانلود شده
-    // فرض بر این است که در گوگل شیت کلیدی به نام 'gold_18k' داریم
-    const goldRateObj = updates.find(u => u.key === 'gold_18k');
-    const currentGoldRate = goldRateObj ? goldRateObj.rate : null;
+    if (settingsData) {
+        settingsData.forEach((item: any) => {
+            if (item.key === 'dollar_rate') settings.dollar_rate = Number(item.value) || 100000;
+            if (item.key === 'gold_markup_percent') settings.gold_markup_percent = Number(item.value) || 40;
+            if (item.key === 'shipping_base') settings.shipping_base = Number(item.value) || 0;
+        });
+    }
 
+
+    // =========================================================================
+    // بخش ۳: آپدیت قیمت محصولات "طلا" (Pricing Type = 'gold')
+    // =========================================================================
+    console.log('💎 [Step 3] Start: Updating Gold Products...');
+    
+    const currentGoldRate = ratesMap['gold_18k'];
     let goldUpdatedCount = 0;
-    let message = `${updates.length} نرخ ارز/طلا آپدیت شد.`;
+    let message = `${updates.length} نرخ آپدیت شد.`;
 
     if (currentGoldRate) {
-        // ب) دریافت تنظیمات مورد نیاز برای محاسبه قیمت (دلار، سود، هزینه ارسال)
-        const { data: settingsData } = await supabaseAdmin.from('site_settings').select('*');
-        
-        // مقادیر پیش‌فرض (جهت جلوگیری از کرش کردن در صورت خالی بودن دیتابیس)
-        const settings: any = {
-            dollar_rate: 100000,     
-            gold_markup_percent: 40, 
-            shipping_base: 0         
-        };
-
-        if (settingsData) {
-            settingsData.forEach((item: any) => {
-                if (item.key === 'dollar_rate') settings.dollar_rate = Number(item.value) || 100000;
-                if (item.key === 'gold_markup_percent') settings.gold_markup_percent = Number(item.value) || 40;
-                if (item.key === 'shipping_base') settings.shipping_base = Number(item.value) || 0;
-            });
-        }
-
-        // ج) دریافت تمام محصولاتی که نوع قیمت‌گذاری آن‌ها 'gold' است
-        const { data: goldProducts, error: productError } = await supabaseAdmin
+        // دریافت محصولات طلا
+        const { data: goldProducts } = await supabaseAdmin
             .from('products')
-            .select('id, weight, title') // فقط فیلدهای مورد نیاز
+            .select('id, weight')
             .eq('pricing_type', 'gold');
 
-        if (productError) {
-            console.error('Error fetching gold products:', productError);
-        }
-
         if (goldProducts && goldProducts.length > 0) {
-            console.log(`Found ${goldProducts.length} gold products to update.`);
-
-            // د) حلقه محاسبه و آپدیت برای تک تک محصولات طلا
             for (const product of goldProducts) {
-                // چک کردن اینکه وزن معتبر باشد
                 const weight = Number(product.weight) || 0;
                 if (weight <= 0) continue;
 
-                // --- فرمول محاسبه ---
-                // 1. قیمت طلای خام محصول: وزن * نرخ گرم طلا
+                // فرمول طلا: (وزن * نرخ) + سود ۴۰٪ + هزینه ارسال
                 const rawMaterialPrice = weight * currentGoldRate;
-
-                // 2. اعمال ضریب سود (شامل اجرت و سود فروشنده): قیمت خام * (1 + درصد/100)
                 const priceWithMarkup = rawMaterialPrice * (1 + settings.gold_markup_percent / 100);
-
-                // 3. اضافه کردن هزینه ثابت ارسال به قیمت تومانی
                 const finalTomanPrice = Math.round(priceWithMarkup + settings.shipping_base);
-
-                // 4. تبدیل به دلار (جهت نمایش و پرداخت در سایت)
-                // قیمت نهایی تومان تقسیم بر نرخ دلار
-                // Math.round(... * 100) / 100 برای داشتن حداکثر 2 رقم اعشار
+                
+                // تبدیل به دلار
                 const finalUSDPrice = Math.round((finalTomanPrice / settings.dollar_rate) * 100) / 100;
 
-                // ه) انجام آپدیت در دیتابیس
-                await supabaseAdmin
-                    .from('products')
-                    .update({
-                        price_toman: finalTomanPrice,
-                        price: finalUSDPrice
-                    })
-                    .eq('id', product.id);
+                await supabaseAdmin.from('products').update({
+                    price_toman: finalTomanPrice,
+                    price: finalUSDPrice
+                }).eq('id', product.id);
                 
                 goldUpdatedCount++;
             }
-            message += ` همچنین قیمت ${goldUpdatedCount} محصول طلا بر اساس نرخ جدید (${currentGoldRate.toLocaleString()} T) محاسبه و اعمال شد.`;
-        } else {
-            console.log('No products with pricing_type="gold" found.');
-            message += ' محصول طلایی برای آپدیت یافت نشد.';
+            message += ` | طلا: ${goldUpdatedCount} محصول`;
         }
+    }
 
+
+    // =========================================================================
+    // بخش ۴: آپدیت قیمت محصولات "سکه" (Pricing Type = coin_full, coin_half, ...)
+    // =========================================================================
+    console.log('🪙 [Step 4] Start: Updating Coin Products...');
+
+    // لیست انواع سکه که باید چک کنیم (باید دقیقاً با کلیدهای گوگل شیت یکی باشه)
+    const coinTypes = ['coin_full', 'coin_half', 'coin_quarter', 'coin_grami'];
+    
+    // دریافت تمام محصولات سکه یکجا
+    const { data: coinProducts } = await supabaseAdmin
+        .from('products')
+        .select('id, pricing_type')
+        .in('pricing_type', coinTypes);
+
+    let coinUpdatedCount = 0;
+
+    if (coinProducts && coinProducts.length > 0) {
+        for (const product of coinProducts) {
+            // پیدا کردن نرخ مربوط به نوع سکه
+            // مثلاً اگر محصول "نیم سکه" باشه، pricing_type میشه coin_half
+            // ما میریم از ratesMap مقدار coin_half رو برمیداریم
+            const currentCoinRate = ratesMap[product.pricing_type || ''];
+
+            if (currentCoinRate) {
+                // فرمول سکه: نرخ بازار + سود ۱۲٪ + هزینه ارسال
+                const priceWithProfit = currentCoinRate * (1 + COIN_PROFIT_PERCENT / 100);
+                const finalTomanPrice = Math.round(priceWithProfit + settings.shipping_base);
+                
+                // تبدیل به دلار
+                const finalUSDPrice = Math.round((finalTomanPrice / settings.dollar_rate) * 100) / 100;
+
+                await supabaseAdmin.from('products').update({
+                    price_toman: finalTomanPrice,
+                    price: finalUSDPrice
+                }).eq('id', product.id);
+
+                coinUpdatedCount++;
+            }
+        }
+        message += ` | سکه: ${coinUpdatedCount} محصول`;
     } else {
-        console.warn('⚠️ هشدار: کلید "gold_18k" در فایل گوگل شیت پیدا نشد. قیمت محصولات طلا آپدیت نمی‌شود.');
-        message += ' (هشدار: نرخ طلا gold_18k یافت نشد)';
+        message += ` | سکه: محصولی یافت نشد`;
     }
 
     console.log('✅ All Done.');
@@ -164,7 +193,8 @@ export async function GET() {
       data: {
           updated_rates_count: updates.length,
           updated_gold_products: goldUpdatedCount,
-          rates: updates // برای دیباگ نرخ‌ها رو برمی‌گردونیم
+          updated_coin_products: coinUpdatedCount,
+          rates_preview: ratesMap // برای اطمینان در لاگ‌ها
       } 
     });
 
