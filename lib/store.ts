@@ -10,6 +10,8 @@ export interface Product {
   price: number; 
   image: string;
   category?: string;
+  // فیلد جدید: برای تشخیص نوع محصول (حواله یا عادی)
+  pricing_type?: string; 
 }
 
 interface CartItem extends Product {
@@ -29,8 +31,12 @@ interface StoreState {
   // --- بخش سبد خرید ---
   cart: CartItem[];
   addToCart: (product: Product) => void;
-  decreaseFromCart: (productId: string) => void; // <--- تابع جدید
+  decreaseFromCart: (productId: string) => void;
   removeFromCart: (productId: string) => void;
+  
+  // متد جدید: آپدیت مستقیم تعداد (برای دراپ‌داون حواله)
+  updateItemQuantity: (productId: string, quantity: number) => void;
+  
   clearCart: () => void;
   totalItems: () => number;
   totalPrice: () => number;
@@ -108,14 +114,13 @@ export const useStore = create<StoreState>()(
             ),
           };
         }
+        // هنگام افزودن، تمام ویژگی‌ها از جمله pricing_type منتقل می‌شوند
         return { cart: [...state.cart, { ...product, quantity: 1 }] };
       }),
 
-      // کاهش (یکی کم کردن) - جدید
+      // کاهش (یکی کم کردن)
       decreaseFromCart: (id) => set((state) => {
         const existing = state.cart.find((item) => item.id === id);
-        // اگر تعداد بیشتر از 1 بود، کم کن. اگر 1 بود، حذفش نکن (بذار کاربر خودش دکمه حذف رو بزنه یا اگه میخوای حذف شه بگو)
-        // استراتژی: اگر 1 بود و زد، حذف میشه (مثل دیجی‌کالا)
         if (existing && existing.quantity > 1) {
             return {
                 cart: state.cart.map((item) =>
@@ -123,12 +128,18 @@ export const useStore = create<StoreState>()(
                 ),
             };
         } else {
-            // اگر 1 بود و منفی زد، حذف بشه
             return {
                 cart: state.cart.filter((item) => item.id !== id),
             };
         }
       }),
+
+      // متد جدید: آپدیت مستقیم تعداد (برای دراپ‌داون حواله در سبد خرید)
+      updateItemQuantity: (id, quantity) => set((state) => ({
+        cart: state.cart.map((item) => 
+            item.id === id ? { ...item, quantity: quantity } : item
+        )
+      })),
 
       // حذف کامل آیتم
       removeFromCart: (id) => set((state) => ({
@@ -137,7 +148,19 @@ export const useStore = create<StoreState>()(
 
       clearCart: () => set({ cart: [] }),
 
-      totalItems: () => get().cart.reduce((total, item) => total + item.quantity, 0),
+      // اصلاح استراتژیک: شمارش آیتم‌ها
+      totalItems: () => {
+        const cart = get().cart;
+        return cart.reduce((total, item) => {
+            // اگر محصول "حواله/پول" است، صرف نظر از مبلغ (تعداد)، آن را ۱ عدد بشمار
+            // چون مشتری ۱ تراکنش حواله دارد، نه ۵۰ تا محصول فیزیکی
+            if (item.pricing_type === 'currency') {
+                return total + 1;
+            }
+            // برای محصولات عادی (پسته، طلا) تعداد واقعی را بشمار
+            return total + item.quantity;
+        }, 0);
+      },
 
       totalPrice: () => {
         const totalUSD = get().cart.reduce((total, item) => total + (item.price * item.quantity), 0);

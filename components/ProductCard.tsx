@@ -12,9 +12,10 @@ interface ProductCardProps {
   price: number;
   image: string;
   slug: string;
+  pricing_type?: string; // فیلد جدید: برای انتقال نوع محصول به سبد خرید
 }
 
-export default function ProductCard({ id, title, price, image, slug }: ProductCardProps) {
+export default function ProductCard({ id, title, price, image, slug, pricing_type }: ProductCardProps) {
   const t = useTranslations('ProductCard'); // اتصال به دیکشنری
   const { convertPrice, getSymbol, addToCart } = useStore();
   const [mounted, setMounted] = useState(false);
@@ -28,7 +29,8 @@ export default function ProductCard({ id, title, price, image, slug }: ProductCa
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    addToCart({ id, title, price, image });
+    // ارسال pricing_type به استور برای تشخیص اینکه محصول حواله است یا خیر
+    addToCart({ id, title, price, image, pricing_type });
   };
 
   return (

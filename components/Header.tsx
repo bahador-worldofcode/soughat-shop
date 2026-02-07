@@ -10,8 +10,12 @@ export default function Header() {
   const locale = useLocale(); // دریافت زبان فعلی
   const isEn = locale === 'en';
   
+  // دریافت متد totalItems از استور (که اکنون هوشمند شده و حواله را ۱ عدد می‌شمارد)
   const { currency, setCurrency, totalItems, fetchRates } = useStore();
+  
+  // محاسبه تعداد آیتم‌های سبد خرید
   const cartCount = totalItems();
+  
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -117,8 +121,9 @@ export default function Header() {
           <Link href="/cart">
             <button className="relative p-2.5 hover:bg-blue-50 rounded-xl transition-colors group border border-transparent hover:border-blue-100">
               <ShoppingBag className="h-5 w-5 text-gray-600 group-hover:text-blue-600" />
+              {/* بج (Badge) تعداد آیتم‌ها - حالا هوشمند شده */}
               {mounted && cartCount > 0 && (
-                <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center shadow-sm transform scale-100 group-hover:scale-110 transition-transform">
+                <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center shadow-sm transform scale-100 group-hover:scale-110 transition-transform animate-in zoom-in">
                   {cartCount}
                 </span>
               )}
@@ -145,7 +150,7 @@ export default function Header() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('searchPlaceholder')}
-                className={`bg-transparent border-none outline-none text-sm w-full text-gray-700 ${!isEn ? 'mr-3' : 'ml-3'}`}
+                className={`bg-transparent border-none outline-none text-sm w-full text-gray-700 placeholder-gray-400 ${!isEn ? 'mr-3' : 'ml-3'}`}
             />
         </form>
       </div>
@@ -188,8 +193,8 @@ export default function Header() {
                   </span>
                   
                   <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm text-blue-600">
-                     {/* نمایش زبان مقصد برای سوییچ */}
-                     <span>{isEn ? 'فارسی' : 'English'}</span>
+                      {/* نمایش زبان مقصد برای سوییچ */}
+                      <span>{isEn ? 'فارسی' : 'English'}</span>
                   </div>
                 </button>
 
