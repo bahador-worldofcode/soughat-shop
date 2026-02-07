@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
-import { ShoppingBag, Check, ShieldCheck, Truck, Star, Plus, Minus, Trash2, Tag, LayoutGrid, FileText } from 'lucide-react';
+import { ShoppingBag, Check, ShieldCheck, Truck, Star, Plus, Minus, Trash2, Tag, LayoutGrid, FileText, ChevronDown, Wallet } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import ProductCard from './ProductCard';
 import { useTranslations } from 'next-intl';
 
+// اضافه کردن pricing_type به اینترفیس برای تشخیص نوع محصول
 interface Product {
   id: string;
   title: string;
@@ -15,6 +16,7 @@ interface Product {
   description: string;
   features: string[];
   slug: string;
+  pricing_type?: string; // فیلد جدید
 }
 
 interface RelatedItem {
@@ -37,6 +39,9 @@ export default function ProductClientView({ product, categoryName, categorySlug,
   const t = useTranslations('Product');
   const { convertPrice, getSymbol, addToCart, decreaseFromCart, cart } = useStore();
   const [mounted, setMounted] = useState(false);
+  
+  // استیت مخصوص بخش حواله (برای ذخیره مبلغ انتخابی در دراپ‌داون)
+  const [currencyAmount, setCurrencyAmount] = useState<number>(1);
 
   useEffect(() => setMounted(true), []);
 
@@ -46,8 +51,112 @@ export default function ProductClientView({ product, categoryName, categorySlug,
   const cartItem = cart.find(item => item.id === product.id);
   const quantity = cartItem ? cartItem.quantity : 0;
 
-  // --- بخش تغییر یافته: دکمه افزودن به سبد خرید ---
+  // همگام‌سازی مبلغ انتخابی با سبد خرید (اگر کاربر قبلا این محصول را به سبد اضافه کرده باشد)
+  useEffect(() => {
+    if (quantity > 0 && product.pricing_type === 'currency') {
+        setCurrencyAmount(quantity);
+    }
+  }, [quantity, product.pricing_type]);
+
+  // --- کامپوننت هوشمند دکمه‌های خرید ---
   const AddToCartButtons = ({ isMobile = false }: { isMobile?: boolean }) => {
+      
+      // ============================================================
+      // حالت ویژه: محصول ارسال پول (Currency) -> نمایش دراپ‌داون
+      // ============================================================
+      if (product.pricing_type === 'currency') {
+        
+        // مبالغ قابل انتخاب (بر حسب میلیون تومان)
+        const amounts = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 40, 50, 100];
+
+        // تابع مدیریت تغییر مبلغ (سینک کردن لحظه‌ای با سبد خرید)
+        const handleCurrencyChange = (newQty: number) => {
+            setCurrencyAmount(newQty);
+            
+            // اگر محصول در سبد هست، باید تعدادش رو دقیقاً با انتخاب کاربر یکی کنیم
+            if (quantity > 0) {
+                const diff = newQty - quantity;
+                if (diff > 0) {
+                    // اگر مبلغ رو زیاد کرد، اضافه کن
+                    for (let i = 0; i < diff; i++) addToCart(product);
+                } else if (diff < 0) {
+                    // اگر مبلغ رو کم کرد، کم کن
+                    for (let i = 0; i < Math.abs(diff); i++) decreaseFromCart(product.id);
+                }
+            }
+        };
+
+        // دکمه افزودن اولیه
+        const handleAddCurrency = () => {
+             if (quantity === 0) {
+                 for (let i = 0; i < currencyAmount; i++) addToCart(product);
+             }
+        };
+
+        return (
+            <div className={`flex flex-col gap-3 w-full ${isMobile ? 'p-1' : ''}`}>
+                
+                {/* 1. لیست کشویی انتخاب مبلغ */}
+                <div className="relative w-full">
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5 mr-1">
+                        {isMobile ? t('currency_label_mobile') : t('currency_label_desktop')}
+                    </label>
+                    <div className="relative">
+                        <select 
+                            value={currencyAmount} 
+                            onChange={(e) => handleCurrencyChange(Number(e.target.value))}
+                            className={`w-full appearance-none bg-white border-2 border-blue-100 text-gray-800 font-black rounded-xl focus:border-blue-500 focus:ring-0 transition-all cursor-pointer ${isMobile ? 'h-12 pl-4 pr-10 text-base' : 'h-14 pl-4 pr-12 text-lg'}`}
+                            // جهت متن همیشه چپ‌چین برای اعداد
+                            style={{direction: 'ltr', textAlign: 'left'}} 
+                        >
+                            {amounts.map(amt => (
+                                <option key={amt} value={amt}>
+                                    {amt} {t('currency_unit')}
+                                </option>
+                            ))}
+                        </select>
+                        {/* آیکون فلش دراپ‌داون */}
+                        <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-blue-600 bg-blue-50 rounded-r-xl border-l border-blue-100 rtl:rounded-l-xl rtl:rounded-r-none rtl:border-r rtl:border-l-0">
+                            <ChevronDown className="h-5 w-5" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* 2. نمایش قیمت محاسبه شده */}
+                <div className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                     <span className="text-xs text-gray-500 font-medium">{t('payable_label')}</span>
+                     <span className="text-lg font-black text-green-600 font-mono tracking-tight">
+                        {symbol} {typeof finalPrice === 'number' ? (finalPrice * currencyAmount).toFixed(2) : '...'}
+                     </span>
+                </div>
+
+                {/* 3. دکمه عملیات (افزودن یا ویرایش) */}
+                {quantity > 0 ? (
+                     <div className={`flex items-center justify-between bg-blue-50 border border-blue-200 text-blue-700 rounded-xl px-4 font-bold ${isMobile ? 'h-12' : 'h-14'}`}>
+                        <span className="flex items-center gap-2 text-sm">
+                            <Check className="h-5 w-5 text-green-600" />
+                            {currencyAmount} {t('in_cart_currency')}
+                        </span>
+                        <button onClick={() => decreaseFromCart(product.id)} className="text-xs bg-white border border-blue-200 px-2 py-1 rounded hover:bg-red-50 hover:text-red-600 transition-colors">
+                            {t('edit_remove')}
+                        </button>
+                     </div>
+                ) : (
+                    <button 
+                        onClick={handleAddCurrency}
+                        className={`w-full font-bold flex items-center justify-center gap-2 transition-all shadow-lg bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-green-200 hover:-translate-y-1 active:scale-95 ${isMobile ? 'h-12 text-base rounded-xl' : 'h-14 rounded-xl text-lg'}`}
+                    >
+                        <Wallet className={isMobile ? "h-5 w-5" : "h-6 w-6"} /> 
+                        {t('confirm_add')}
+                    </button>
+                )}
+            </div>
+        );
+      }
+
+      // ============================================================
+      // حالت عادی: محصولات معمولی (طلا، سکه، آجیل و...) -> بدون تغییر
+      // ============================================================
       if (quantity > 0) {
           return (
             <div className={`flex items-center justify-between bg-white border border-blue-200 rounded-xl p-1 shadow-inner ${isMobile ? 'h-12 w-full' : 'h-14 w-full'}`}>
@@ -118,18 +227,22 @@ export default function ProductClientView({ product, categoryName, categorySlug,
 
                 {/* باکس قیمت و خرید دسکتاپ */}
                 <div className="hidden md:block bg-white p-6 rounded-2xl border border-blue-100 shadow-sm mb-8">
-                    <div className="flex items-center justify-between mb-6">
-                        <div>
-                            <span className="text-gray-400 text-xs block mb-1">{t('final_price_label')}</span>
-                            <div className="text-3xl font-black text-blue-700 font-mono tracking-tight">
-                                {symbol} {typeof finalPrice === 'number' ? finalPrice.toFixed(2) : finalPrice}
+                    
+                    {/* اگر محصول حواله است، قیمت استاندارد را مخفی می‌کنیم تا گیج‌کننده نباشد (قیمت در پنل دراپ‌داون نمایش داده می‌شود) */}
+                    {product.pricing_type !== 'currency' && (
+                        <div className="flex items-center justify-between mb-6">
+                            <div>
+                                <span className="text-gray-400 text-xs block mb-1">{t('final_price_label')}</span>
+                                <div className="text-3xl font-black text-blue-700 font-mono tracking-tight">
+                                    {symbol} {typeof finalPrice === 'number' ? finalPrice.toFixed(2) : finalPrice}
+                                </div>
+                            </div>
+                            <div className="text-right hidden lg:block">
+                                <div className="text-xs text-green-600 font-bold flex items-center gap-1 mb-1 justify-end"><ShieldCheck className="h-3 w-3"/> {t('health_guarantee')}</div>
+                                <div className="text-xs text-blue-600 font-bold flex items-center gap-1 justify-end"><Truck className="h-3 w-3"/> {t('free_shipping')}</div>
                             </div>
                         </div>
-                        <div className="text-right hidden lg:block">
-                            <div className="text-xs text-green-600 font-bold flex items-center gap-1 mb-1 justify-end"><ShieldCheck className="h-3 w-3"/> {t('health_guarantee')}</div>
-                            <div className="text-xs text-blue-600 font-bold flex items-center gap-1 justify-end"><Truck className="h-3 w-3"/> {t('free_shipping')}</div>
-                        </div>
-                    </div>
+                    )}
                     
                     <AddToCartButtons isMobile={false} />
                 </div>
@@ -149,7 +262,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
             </div>
         </div>
 
-        {/* --- بخش توضیحات (اصلاح شده برای HTML) --- */}
+        {/* --- بخش توضیحات (HTML Render) --- */}
         {product.description && (
             <div className="mt-12 pt-10 border-t border-gray-200">
                 <h3 className="font-bold text-gray-900 mb-6 text-xl flex items-center gap-2">
@@ -158,19 +271,16 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                     {t('description')}
                 </h3>
                 
-                {/* در اینجا از dangerouslySetInnerHTML استفاده می‌کنیم.
-                   همچنین استایل‌های Tailwind دلخواه برای تگ‌های h2, h3, p اضافه شده تا متن زیبا شود.
-                */}
                 <div className="bg-white rounded-3xl p-6 md:p-10 border border-gray-100 shadow-sm">
                    <div 
                      className="
-                        text-gray-600 leading-8 text-justify
-                        [&>h2]:text-xl [&>h2]:font-black [&>h2]:text-gray-800 [&>h2]:mb-4 [&>h2]:mt-8 [&>h2]:border-b [&>h2]:pb-2 [&>h2]:border-gray-100
-                        [&>h3]:text-lg [&>h3]:font-bold [&>h3]:text-gray-700 [&>h3]:mb-3 [&>h3]:mt-6
-                        [&>p]:mb-4 [&>p]:text-sm md:[&>p]:text-base
-                        [&>strong]:text-gray-900 [&>strong]:font-bold
-                        [&>ul]:list-disc [&>ul]:pr-5 [&>ul]:mb-4
-                        [&>li]:mb-1
+                       text-gray-600 leading-8 text-justify
+                       [&>h2]:text-xl [&>h2]:font-black [&>h2]:text-gray-800 [&>h2]:mb-4 [&>h2]:mt-8 [&>h2]:border-b [&>h2]:pb-2 [&>h2]:border-gray-100
+                       [&>h3]:text-lg [&>h3]:font-bold [&>h3]:text-gray-700 [&>h3]:mb-3 [&>h3]:mt-6
+                       [&>p]:mb-4 [&>p]:text-sm md:[&>p]:text-base
+                       [&>strong]:text-gray-900 [&>strong]:font-bold
+                       [&>ul]:list-disc [&>ul]:pr-5 [&>ul]:mb-4
+                       [&>li]:mb-1
                      "
                      dangerouslySetInnerHTML={{ __html: product.description }}
                    />
@@ -178,18 +288,23 @@ export default function ProductClientView({ product, categoryName, categorySlug,
             </div>
         )}
 
-        {/* منوی موبایل پایین صفحه */}
+        {/* منوی موبایل (چسبان پایین صفحه) */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 z-[100] md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.1)] animate-in slide-in-from-bottom-full duration-300">
             <div className="flex items-center gap-4 max-w-md mx-auto">
-                <div className="flex flex-col flex-1">
-                    <span className="text-xs text-gray-400 mb-0.5">
-                        {quantity > 0 ? t('final_price_label') : t('final_price_label')}
-                    </span>
-                    <span className="text-xl font-black text-blue-700 font-mono">
-                        {symbol} {typeof finalPrice === 'number' ? (finalPrice * (quantity || 1)).toFixed(2) : finalPrice}
-                    </span>
-                </div>
-                <div className="w-[55%]">
+                {/* اگر محصول عادی است، قیمت کل را نشان بده */}
+                {product.pricing_type !== 'currency' && (
+                    <div className="flex flex-col flex-1">
+                        <span className="text-xs text-gray-400 mb-0.5">
+                            {quantity > 0 ? t('final_price_label') : t('final_price_label')}
+                        </span>
+                        <span className="text-xl font-black text-blue-700 font-mono">
+                            {symbol} {typeof finalPrice === 'number' ? (finalPrice * (quantity || 1)).toFixed(2) : finalPrice}
+                        </span>
+                    </div>
+                )}
+                
+                {/* اگر محصول حواله است، دکمه باید تمام عرض باشد چون دراپ‌داون جا می‌خواهد */}
+                <div className={product.pricing_type === 'currency' ? "w-full" : "w-[55%]"}>
                     <AddToCartButtons isMobile={true} />
                 </div>
             </div>

@@ -116,7 +116,15 @@
     "features": "ویژگی‌ها",
     "similar_products": "محصولات مشابه (شاید بپسندید)",
     "back_to_list": "بازگشت به لیست",
-    "rating": "۵.۰"
+    "rating": "۵.۰",
+    "currency_label_mobile": "مبلغ حواله (میلیون تومان):",
+    "currency_label_desktop": "مبلغ مورد نظر جهت ارسال (میلیون تومان):",
+    "currency_unit": "میلیون تومان",
+    "payable_label": "مبلغ قابل پرداخت:",
+    "in_cart_currency": "میلیون تومان در سبد",
+    "edit_remove": "ویرایش / حذف",
+    "confirm_add": "تایید و افزودن به سبد"
+    
   },
   "ProductsPage": {
     "title": "فروشگاه سوغات شاپ",

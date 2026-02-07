@@ -116,7 +116,14 @@
     "features": "Features",
     "similar_products": "You might also like",
     "back_to_list": "Back to List",
-    "rating": "5.0"
+    "rating": "5.0",
+    "currency_label_mobile": "Remittance Amount (Million Toman):",
+    "currency_label_desktop": "Select Amount (Million Toman):",
+    "currency_unit": "Million Tomans",
+    "payable_label": "Payable Amount:",
+    "in_cart_currency": "Million Tomans in cart",
+    "edit_remove": "Edit / Remove",
+    "confirm_add": "Confirm & Add"
   },
   "ProductsPage": {
     "title": "Soughat Shop Store",

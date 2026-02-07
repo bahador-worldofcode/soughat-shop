@@ -5,10 +5,13 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 export const dynamic = 'force-dynamic';
 
 // --------------------------------------------------------------------------
-// تنظیمات سود سکه (درصد)
+// تنظیمات سود (درصد)
 // --------------------------------------------------------------------------
-// طبق دستور شما برای پوشش نوسانات بازار، سود روی ۱۲ درصد تنظیم شد.
+// سود سکه (پوشش نوسان و خواب سرمایه)
 const COIN_PROFIT_PERCENT = 12; 
+
+// سود حواله/ارسال پول (کمتر از سکه چون ریسک فیزیکی ندارد)
+const CURRENCY_PROFIT_PERCENT = 12;
 
 export async function GET() {
   try {
@@ -35,7 +38,6 @@ export async function GET() {
     const updates = [];
 
     // نگاشت نرخ‌ها برای دسترسی سریع (Dictionary Map)
-    // این به ما اجازه میده مثلا با نوشتن ratesMap['coin_full'] سریع قیمتش رو پیدا کنیم
     const ratesMap: Record<string, number> = {};
 
     for (const row of rows) {
@@ -44,18 +46,15 @@ export async function GET() {
       const cleanRateStr = rateStr?.trim(); 
 
       if (cleanKey && cleanRateStr) {
-        // حذف ویرگول احتمالی در اعداد
         const safeRateStr = cleanRateStr.replace(/,/g, ''); 
         const rate = parseFloat(safeRateStr);
         
         if (!isNaN(rate)) {
-          // اضافه کردن به لیست برای آپدیت دیتابیس
           updates.push({
             key: cleanKey,
             rate: rate,
             updated_at: new Date().toISOString(),
           });
-          // اضافه کردن به مپ برای استفاده در همین فایل
           ratesMap[cleanKey] = rate;
         }
       }
@@ -87,7 +86,7 @@ export async function GET() {
     // مقادیر پیش‌فرض
     const settings: any = {
         dollar_rate: 100000,     
-        gold_markup_percent: 40, // سود طلا (پیش‌فرض ۴۰٪)
+        gold_markup_percent: 40, 
         shipping_base: 0         
     };
 
@@ -110,7 +109,6 @@ export async function GET() {
     let message = `${updates.length} نرخ آپدیت شد.`;
 
     if (currentGoldRate) {
-        // دریافت محصولات طلا
         const { data: goldProducts } = await supabaseAdmin
             .from('products')
             .select('id, weight')
@@ -121,12 +119,9 @@ export async function GET() {
                 const weight = Number(product.weight) || 0;
                 if (weight <= 0) continue;
 
-                // فرمول طلا: (وزن * نرخ) + سود ۴۰٪ + هزینه ارسال
                 const rawMaterialPrice = weight * currentGoldRate;
                 const priceWithMarkup = rawMaterialPrice * (1 + settings.gold_markup_percent / 100);
                 const finalTomanPrice = Math.round(priceWithMarkup + settings.shipping_base);
-                
-                // تبدیل به دلار
                 const finalUSDPrice = Math.round((finalTomanPrice / settings.dollar_rate) * 100) / 100;
 
                 await supabaseAdmin.from('products').update({
@@ -136,20 +131,18 @@ export async function GET() {
                 
                 goldUpdatedCount++;
             }
-            message += ` | طلا: ${goldUpdatedCount} محصول`;
+            message += ` | طلا: ${goldUpdatedCount}`;
         }
     }
 
 
     // =========================================================================
-    // بخش ۴: آپدیت قیمت محصولات "سکه" (Pricing Type = coin_full, coin_half, ...)
+    // بخش ۴: آپدیت قیمت محصولات "سکه" (Pricing Type = coin_full, ...)
     // =========================================================================
     console.log('🪙 [Step 4] Start: Updating Coin Products...');
 
-    // لیست انواع سکه که باید چک کنیم (باید دقیقاً با کلیدهای گوگل شیت یکی باشه)
     const coinTypes = ['coin_full', 'coin_half', 'coin_quarter', 'coin_grami'];
     
-    // دریافت تمام محصولات سکه یکجا
     const { data: coinProducts } = await supabaseAdmin
         .from('products')
         .select('id, pricing_type')
@@ -159,17 +152,11 @@ export async function GET() {
 
     if (coinProducts && coinProducts.length > 0) {
         for (const product of coinProducts) {
-            // پیدا کردن نرخ مربوط به نوع سکه
-            // مثلاً اگر محصول "نیم سکه" باشه، pricing_type میشه coin_half
-            // ما میریم از ratesMap مقدار coin_half رو برمیداریم
             const currentCoinRate = ratesMap[product.pricing_type || ''];
 
             if (currentCoinRate) {
-                // فرمول سکه: نرخ بازار + سود ۱۲٪ + هزینه ارسال
                 const priceWithProfit = currentCoinRate * (1 + COIN_PROFIT_PERCENT / 100);
                 const finalTomanPrice = Math.round(priceWithProfit + settings.shipping_base);
-                
-                // تبدیل به دلار
                 const finalUSDPrice = Math.round((finalTomanPrice / settings.dollar_rate) * 100) / 100;
 
                 await supabaseAdmin.from('products').update({
@@ -180,9 +167,48 @@ export async function GET() {
                 coinUpdatedCount++;
             }
         }
-        message += ` | سکه: ${coinUpdatedCount} محصول`;
-    } else {
-        message += ` | سکه: محصولی یافت نشد`;
+        message += ` | سکه: ${coinUpdatedCount}`;
+    }
+
+
+    // =========================================================================
+    // بخش ۵: آپدیت قیمت محصولات "ارسال پول/حواله" (Pricing Type = 'currency')
+    // =========================================================================
+    console.log('💵 [Step 5] Start: Updating Currency Products...');
+
+    const { data: currencyProducts } = await supabaseAdmin
+        .from('products')
+        .select('id')
+        .eq('pricing_type', 'currency');
+
+    let currencyUpdatedCount = 0;
+
+    if (currencyProducts && currencyProducts.length > 0) {
+        // واحد پایه محاسبه: ۱ میلیون تومان
+        const BASE_TOMAN_UNIT = 1000000;
+        
+        // اطمینان از اینکه نرخ دلار معتبر است
+        let dollarRateForCalc = settings.dollar_rate;
+        if (!dollarRateForCalc || dollarRateForCalc < 1000) {
+             // اگر نرخ دلار در تنظیمات نبود، از نرخ زنده بازار استفاده کن
+             dollarRateForCalc = ratesMap['usd'] || 100000;
+        }
+
+        // محاسبه: (۱ میلیون تومان تقسیم بر دلار) + درصد سود حواله
+        const rawDollarPrice = BASE_TOMAN_UNIT / dollarRateForCalc;
+        const finalUSDPrice = rawDollarPrice * (1 + CURRENCY_PROFIT_PERCENT / 100);
+        
+        // رند کردن تا ۲ رقم اعشار
+        const roundedUSDPrice = Math.round(finalUSDPrice * 100) / 100;
+
+        for (const product of currencyProducts) {
+             await supabaseAdmin.from('products').update({
+                price_toman: BASE_TOMAN_UNIT, // قیمت تومانی همیشه ۱ میلیون فیکس (واحد پایه)
+                price: roundedUSDPrice
+            }).eq('id', product.id);
+            currencyUpdatedCount++;
+        }
+        message += ` | حواله: ${currencyUpdatedCount}`;
     }
 
     console.log('✅ All Done.');
@@ -194,7 +220,8 @@ export async function GET() {
           updated_rates_count: updates.length,
           updated_gold_products: goldUpdatedCount,
           updated_coin_products: coinUpdatedCount,
-          rates_preview: ratesMap // برای اطمینان در لاگ‌ها
+          updated_currency_products: currencyUpdatedCount,
+          rates_preview: ratesMap 
       } 
     });
 
