@@ -13,12 +13,14 @@ import {
   Layers, 
   Filter,
   XCircle,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Info
 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useRouter, usePathname } from '@/i18n/navigation'; 
 import { useTranslations, useLocale } from 'next-intl'; 
 
+// اینترفیس‌ها (تایپ‌ها)
 interface Product {
   id: string;
   title: string;
@@ -29,7 +31,7 @@ interface Product {
   category: string;
   created_at?: string;
   pricing_type?: string; 
-  weight?: number; // ✅ اضافه شد
+  weight?: number;
 }
 
 interface Category {
@@ -38,10 +40,16 @@ interface Category {
   name_en?: string;
   slug: string;
   icon_url?: string;
+  // فیلدهای جدید محتوایی
+  description?: string;
+  description_en?: string;
+  seo_title?: string;
+  seo_desc?: string;
 }
 
 const PAGE_SIZE = 12;
 
+// هوک برای تاخیر در جستجو (Debounce)
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState(value);
   useEffect(() => {
@@ -78,6 +86,9 @@ function ProductList() {
   const [totalCount, setTotalCount] = useState(0);
   const [sortOrder, setSortOrder] = useState<'newest' | 'price-asc' | 'price-desc'>('newest');
 
+  // استیت برای ذخیره اطلاعات دسته انتخاب شده (برای نمایش متن سئو)
+  const [activeCategoryInfo, setActiveCategoryInfo] = useState<Category | null>(null);
+
   useEffect(() => {
     fetchCategories();
   }, []);
@@ -100,7 +111,16 @@ function ProductList() {
 
   useEffect(() => {
     setPage(1);
-  }, [currentCategory, debouncedSearch]);
+    // پیدا کردن اطلاعات دسته فعال برای نمایش متن
+    if (categories.length > 0) {
+        if (currentCategory === 'all') {
+            setActiveCategoryInfo(null);
+        } else {
+            const found = categories.find(c => c.slug === currentCategory);
+            setActiveCategoryInfo(found || null);
+        }
+    }
+  }, [currentCategory, debouncedSearch, categories]);
 
   const fetchCategories = async () => {
     const { data: catData } = await supabase
@@ -108,9 +128,11 @@ function ProductList() {
       .select('*')
       .order('name');
     if (catData) {
+      // تایپ‌کستینگ برای اطمینان
+      const typedCategories = catData as Category[];
       setCategories([
         { id: 'all', name: t('all_categories'), name_en: 'All Products', slug: 'all' }, 
-        ...catData
+        ...typedCategories
       ]);
     }
   };
@@ -152,7 +174,14 @@ function ProductList() {
     if (error) {
         console.error('Error fetching products:', error);
     } else {
-        setProducts(data || []);
+        // افزودن مقادیر پیش‌فرض
+        const typedData = data?.map(p => ({
+            ...p,
+            weight: p.weight || 0,
+            pricing_type: p.pricing_type || 'fixed'
+        })) as Product[];
+        
+        setProducts(typedData || []);
         setTotalCount(count || 0);
     }
     
@@ -175,11 +204,17 @@ function ProductList() {
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
+  // انتخاب محتوای مناسب بر اساس زبان
+  const activeDescription = activeCategoryInfo 
+    ? (isEn ? activeCategoryInfo.description_en : activeCategoryInfo.description) 
+    : null;
+
   return (
     <div className="container mx-auto px-4 py-8">
         
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
             
+            {/* Sidebar Filters */}
             <aside className="lg:col-span-1 lg:sticky lg:top-24 flex flex-col gap-6 lg:max-h-[calc(100vh-8rem)]">
                 
                 <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm transition-shadow hover:shadow-md">
@@ -271,6 +306,7 @@ function ProductList() {
                         )}
                     </div>
 
+                    {/* Mobile Category List */}
                     <div className="lg:hidden flex overflow-x-auto p-3 gap-2 no-scrollbar items-center">
                          {categories.map(cat => {
                             const catName = isEn ? (cat.name_en || cat.name) : cat.name;
@@ -296,6 +332,7 @@ function ProductList() {
                 </div>
             </aside>
 
+            {/* Main Content */}
             <div className="lg:col-span-3 min-h-[500px]">
                 {loading ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -343,7 +380,6 @@ function ProductList() {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             {products.map((product) => {
-                                // ✅ اضافه کردن weight برای پاس دادن به کارت محصول
                                 return (
                                     <ProductCard
                                         key={product.id}
@@ -354,7 +390,7 @@ function ProductList() {
                                         image={product.image}
                                         slug={product.slug}
                                         pricing_type={product.pricing_type}
-                                        weight={product.weight} // ✅ پاس دادن وزن
+                                        weight={product.weight}
                                     />
                                 );
                             })}
@@ -389,6 +425,32 @@ function ProductList() {
                                 </button>
                             </div>
                         )}
+                        
+                        {/* --- SEO CONTENT SECTION (NEW) --- */}
+                        {activeDescription && (
+                            <div className="mt-16 pt-10 border-t border-gray-200 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                                <div className="bg-white rounded-3xl p-8 md:p-10 border border-gray-100 shadow-sm relative overflow-hidden">
+                                    {/* Decorative Background */}
+                                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+                                    <div className="absolute top-10 right-10 text-gray-50 opacity-50 rotate-12">
+                                        <Info className="h-32 w-32" />
+                                    </div>
+
+                                    <div 
+                                        className="relative z-10 text-gray-700 leading-8 text-justify 
+                                        [&>h2]:text-2xl [&>h2]:font-black [&>h2]:text-gray-900 [&>h2]:mb-6 [&>h2]:mt-2
+                                        [&>h3]:text-xl [&>h3]:font-bold [&>h3]:text-gray-800 [&>h3]:mb-4 [&>h3]:mt-8
+                                        [&>p]:mb-6 [&>p]:text-base [&>p]:opacity-90
+                                        [&>ul]:list-disc [&>ul]:pr-6 [&>ul]:mb-6 [&>ul]:space-y-2
+                                        [&>strong]:text-blue-700 [&>strong]:font-bold
+                                        "
+                                        dangerouslySetInnerHTML={{ __html: activeDescription }}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                        {/* ----------------------------- */}
+
                     </>
                 )}
             </div>
