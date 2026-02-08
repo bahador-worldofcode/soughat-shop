@@ -7,11 +7,12 @@ type Currency = 'USD' | 'EUR' | 'GBP' | 'SEK';
 export interface Product {
   id: string;
   title: string;
-  title_en?: string; // ✅ اضافه شد: عنوان انگلیسی برای سبد خرید دو زبانه
+  title_en?: string; 
   price: number; 
   image: string;
   category?: string;
   pricing_type?: string; 
+  weight?: number; // ✅ اضافه شد برای محصولات طلا
 }
 
 interface CartItem extends Product {
@@ -112,7 +113,7 @@ export const useStore = create<StoreState>()(
             ),
           };
         }
-        // تمام فیلدها (شامل title_en و pricing_type) اینجا به سبد منتقل می‌شوند
+        // تمام فیلدها (شامل weight و pricing_type) اینجا به سبد منتقل می‌شوند
         return { cart: [...state.cart, { ...product, quantity: 1 }] };
       }),
 

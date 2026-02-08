@@ -9,14 +9,15 @@ import { useTranslations } from 'next-intl';
 interface ProductCardProps {
   id: string;
   title: string;
-  title_en?: string; // ✅ اضافه شد
+  title_en?: string; 
   price: number;
   image: string;
   slug: string;
   pricing_type?: string; 
+  weight?: number; // ✅ اضافه شد
 }
 
-export default function ProductCard({ id, title, title_en, price, image, slug, pricing_type }: ProductCardProps) {
+export default function ProductCard({ id, title, title_en, price, image, slug, pricing_type, weight }: ProductCardProps) {
   const t = useTranslations('ProductCard'); 
   const { convertPrice, getSymbol, addToCart } = useStore();
   const [mounted, setMounted] = useState(false);
@@ -30,8 +31,8 @@ export default function ProductCard({ id, title, title_en, price, image, slug, p
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    // ✅ ارسال title_en به سبد خرید
-    addToCart({ id, title, title_en, price, image, pricing_type });
+    // ✅ ارسال weight به سبد خرید
+    addToCart({ id, title, title_en, price, image, pricing_type, weight });
   };
 
   return (

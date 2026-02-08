@@ -22,13 +22,14 @@ import { useTranslations, useLocale } from 'next-intl';
 interface Product {
   id: string;
   title: string;
-  title_en?: string; // ✅
+  title_en?: string; 
   price: number;
   image: string;
   slug: string;
   category: string;
   created_at?: string;
   pricing_type?: string; 
+  weight?: number; // ✅ اضافه شد
 }
 
 interface Category {
@@ -342,17 +343,18 @@ function ProductList() {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             {products.map((product) => {
-                                // اینجا هم تایتل فارسی و انگلیسی جداگانه پاس داده می‌شود
+                                // ✅ اضافه کردن weight برای پاس دادن به کارت محصول
                                 return (
                                     <ProductCard
                                         key={product.id}
                                         id={product.id}
                                         title={product.title}
-                                        title_en={product.title_en} // ✅
+                                        title_en={product.title_en}
                                         price={product.price}
                                         image={product.image}
                                         slug={product.slug}
                                         pricing_type={product.pricing_type}
+                                        weight={product.weight} // ✅ پاس دادن وزن
                                     />
                                 );
                             })}
