@@ -1,5 +1,5 @@
 ### Soughat-Shop Snapshot
-# Generated: 2026-02-08T03:15:51.450242
+# Generated: 2026-02-18T07:54:23.157684
 # Root: C:\projects\soughat-shop
 # Excluded dir names: .expo, .git, .next, .vscode, node_modules
 # Excluded files (by name/rel): collect_soughat_snapshot.bat, collect_soughat_snapshot.py, package-lock.json, snapshot_soughat.txt
@@ -19,7 +19,7 @@ BALE_ORDER_GROUP_ID=***
 MARKET_RATES_SHEET_URL=***
 
 ===== File: .gitignore =====
-# Modified: 2025-11-26T16:29:39.811510 | Size: 480 bytes | SHA1: 163e4a00866eb54fd22d029b521c4103a3e3e4fc
+# Modified: 2026-02-08T03:31:53.950328 | Size: 481 bytes | SHA1: 861db0374d4c319f3f2d279706b9520df5ccece7
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
@@ -61,6 +61,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
 
 ===== File: app/[locale]/about/page.tsx =====
 # Modified: 2026-01-01T03:56:38.777111 | Size: 3930 bytes | SHA1: 7cd66ed0f86dab7a2e05a95fb990181dfe03535e
@@ -2208,7 +2209,7 @@ export default async function ProductPage({ params }: Props) {
 }
 
 ===== File: app/[locale]/products/page.tsx =====
-# Modified: 2026-02-08T02:36:29.354937 | Size: 21426 bytes | SHA1: a09e4393ac7fcdc05451da0f1527b557433d459a
+# Modified: 2026-02-08T03:57:40.897152 | Size: 24787 bytes | SHA1: 4d7ba33c437c3a08d0512cfa09fb580a318da7b9
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -2224,22 +2225,25 @@ import {
   Layers, 
   Filter,
   XCircle,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Info
 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useRouter, usePathname } from '@/i18n/navigation'; 
 import { useTranslations, useLocale } from 'next-intl'; 
 
+// اینترفیس‌ها (تایپ‌ها)
 interface Product {
   id: string;
   title: string;
-  title_en?: string; // ✅
+  title_en?: string; 
   price: number;
   image: string;
   slug: string;
   category: string;
   created_at?: string;
   pricing_type?: string; 
+  weight?: number;
 }
 
 interface Category {
@@ -2248,10 +2252,16 @@ interface Category {
   name_en?: string;
   slug: string;
   icon_url?: string;
+  // فیلدهای جدید محتوایی
+  description?: string;
+  description_en?: string;
+  seo_title?: string;
+  seo_desc?: string;
 }
 
 const PAGE_SIZE = 12;
 
+// هوک برای تاخیر در جستجو (Debounce)
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState(value);
   useEffect(() => {
@@ -2288,6 +2298,9 @@ function ProductList() {
   const [totalCount, setTotalCount] = useState(0);
   const [sortOrder, setSortOrder] = useState<'newest' | 'price-asc' | 'price-desc'>('newest');
 
+  // استیت برای ذخیره اطلاعات دسته انتخاب شده (برای نمایش متن سئو)
+  const [activeCategoryInfo, setActiveCategoryInfo] = useState<Category | null>(null);
+
   useEffect(() => {
     fetchCategories();
   }, []);
@@ -2310,7 +2323,16 @@ function ProductList() {
 
   useEffect(() => {
     setPage(1);
-  }, [currentCategory, debouncedSearch]);
+    // پیدا کردن اطلاعات دسته فعال برای نمایش متن
+    if (categories.length > 0) {
+        if (currentCategory === 'all') {
+            setActiveCategoryInfo(null);
+        } else {
+            const found = categories.find(c => c.slug === currentCategory);
+            setActiveCategoryInfo(found || null);
+        }
+    }
+  }, [currentCategory, debouncedSearch, categories]);
 
   const fetchCategories = async () => {
     const { data: catData } = await supabase
@@ -2318,9 +2340,11 @@ function ProductList() {
       .select('*')
       .order('name');
     if (catData) {
+      // تایپ‌کستینگ برای اطمینان
+      const typedCategories = catData as Category[];
       setCategories([
         { id: 'all', name: t('all_categories'), name_en: 'All Products', slug: 'all' }, 
-        ...catData
+        ...typedCategories
       ]);
     }
   };
@@ -2362,7 +2386,14 @@ function ProductList() {
     if (error) {
         console.error('Error fetching products:', error);
     } else {
-        setProducts(data || []);
+        // افزودن مقادیر پیش‌فرض
+        const typedData = data?.map(p => ({
+            ...p,
+            weight: p.weight || 0,
+            pricing_type: p.pricing_type || 'fixed'
+        })) as Product[];
+        
+        setProducts(typedData || []);
         setTotalCount(count || 0);
     }
     
@@ -2385,11 +2416,17 @@ function ProductList() {
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
+  // انتخاب محتوای مناسب بر اساس زبان
+  const activeDescription = activeCategoryInfo 
+    ? (isEn ? activeCategoryInfo.description_en : activeCategoryInfo.description) 
+    : null;
+
   return (
     <div className="container mx-auto px-4 py-8">
         
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
             
+            {/* Sidebar Filters */}
             <aside className="lg:col-span-1 lg:sticky lg:top-24 flex flex-col gap-6 lg:max-h-[calc(100vh-8rem)]">
                 
                 <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm transition-shadow hover:shadow-md">
@@ -2481,6 +2518,7 @@ function ProductList() {
                         )}
                     </div>
 
+                    {/* Mobile Category List */}
                     <div className="lg:hidden flex overflow-x-auto p-3 gap-2 no-scrollbar items-center">
                          {categories.map(cat => {
                             const catName = isEn ? (cat.name_en || cat.name) : cat.name;
@@ -2506,6 +2544,7 @@ function ProductList() {
                 </div>
             </aside>
 
+            {/* Main Content */}
             <div className="lg:col-span-3 min-h-[500px]">
                 {loading ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -2553,17 +2592,17 @@ function ProductList() {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             {products.map((product) => {
-                                // اینجا هم تایتل فارسی و انگلیسی جداگانه پاس داده می‌شود
                                 return (
                                     <ProductCard
                                         key={product.id}
                                         id={product.id}
                                         title={product.title}
-                                        title_en={product.title_en} // ✅
+                                        title_en={product.title_en}
                                         price={product.price}
                                         image={product.image}
                                         slug={product.slug}
                                         pricing_type={product.pricing_type}
+                                        weight={product.weight}
                                     />
                                 );
                             })}
@@ -2598,6 +2637,32 @@ function ProductList() {
                                 </button>
                             </div>
                         )}
+                        
+                        {/* --- SEO CONTENT SECTION (NEW) --- */}
+                        {activeDescription && (
+                            <div className="mt-16 pt-10 border-t border-gray-200 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                                <div className="bg-white rounded-3xl p-8 md:p-10 border border-gray-100 shadow-sm relative overflow-hidden">
+                                    {/* Decorative Background */}
+                                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+                                    <div className="absolute top-10 right-10 text-gray-50 opacity-50 rotate-12">
+                                        <Info className="h-32 w-32" />
+                                    </div>
+
+                                    <div 
+                                        className="relative z-10 text-gray-700 leading-8 text-justify 
+                                        [&>h2]:text-2xl [&>h2]:font-black [&>h2]:text-gray-900 [&>h2]:mb-6 [&>h2]:mt-2
+                                        [&>h3]:text-xl [&>h3]:font-bold [&>h3]:text-gray-800 [&>h3]:mb-4 [&>h3]:mt-8
+                                        [&>p]:mb-6 [&>p]:text-base [&>p]:opacity-90
+                                        [&>ul]:list-disc [&>ul]:pr-6 [&>ul]:mb-6 [&>ul]:space-y-2
+                                        [&>strong]:text-blue-700 [&>strong]:font-bold
+                                        "
+                                        dangerouslySetInnerHTML={{ __html: activeDescription }}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                        {/* ----------------------------- */}
+
                     </>
                 )}
             </div>
@@ -3721,17 +3786,25 @@ export default function BlogPage() {
 }
 
 ===== File: app/admin/categories/page.tsx =====
-# Modified: 2025-12-20T20:45:17.424124 | Size: 8182 bytes | SHA1: f7839ff476fa2d9f26df73c77d9b38988362eabe
+# Modified: 2026-02-08T03:55:51.979560 | Size: 17452 bytes | SHA1: 7dbb448ad4b04c15babe9d330c0b8559fe00850c
 'use client';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Plus, Trash2, Layers, Loader2, AlertCircle, Image as ImageIcon } from 'lucide-react';
+import { Plus, Trash2, Layers, Loader2, Image as ImageIcon, Edit2, X, Save, Globe, FileText, Search } from 'lucide-react';
 
 interface Category {
   id: string;
   name: string;
   slug: string;
-  icon_url: string; // فیلد جدید اضافه شد
+  icon_url: string;
+  name_en?: string;
+  // فیلدهای جدید
+  description?: string;
+  description_en?: string;
+  seo_title?: string;
+  seo_desc?: string;
+  seo_title_en?: string;
+  seo_desc_en?: string;
   created_at: string;
 }
 
@@ -3739,11 +3812,16 @@ export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [saving, setSaving] = useState(false);
   
-  // فرم افزودن
+  // برای مودال ویرایش
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // فرم افزودن سریع (فقط اطلاعات پایه)
   const [newName, setNewName] = useState('');
   const [newSlug, setNewSlug] = useState('');
-  const [newIconUrl, setNewIconUrl] = useState(''); // استیت جدید برای آیکون
+  const [newIconUrl, setNewIconUrl] = useState('');
 
   useEffect(() => {
     fetchCategories();
@@ -3764,25 +3842,17 @@ export default function CategoriesPage() {
     setAdding(true);
 
     try {
-      // چک کنیم تکراری نباشه
-      const { data: existing } = await supabase
-        .from('categories')
-        .select('id')
-        .eq('slug', newSlug)
-        .single();
-      
+      const { data: existing } = await supabase.from('categories').select('id').eq('slug', newSlug).single();
       if (existing) {
         alert('این نامک (Slug) قبلاً استفاده شده است.');
         setAdding(false);
         return;
       }
 
-      const { error } = await supabase
-        .from('categories')
-        .insert([{ 
+      const { error } = await supabase.from('categories').insert([{ 
           name: newName, 
           slug: newSlug, 
-          icon_url: newIconUrl // ارسال آیکون به دیتابیس
+          icon_url: newIconUrl 
         }]);
 
       if (error) throw error;
@@ -3790,7 +3860,7 @@ export default function CategoriesPage() {
       await fetchCategories();
       setNewName('');
       setNewSlug('');
-      setNewIconUrl(''); // ریست کردن فیلد
+      setNewIconUrl('');
     } catch (error: any) {
       alert('خطا: ' + error.message);
     } finally {
@@ -3799,80 +3869,85 @@ export default function CategoriesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('آیا مطمئن هستید؟ حذف دسته‌بندی ممکن است محصولات متصل به آن را بدون دسته کند.')) return;
-    
+    if (!confirm('آیا مطمئن هستید؟')) return;
     const { error } = await supabase.from('categories').delete().eq('id', id);
-    if (!error) {
-      setCategories(categories.filter(c => c.id !== id));
-    } else {
-      alert('خطا در حذف');
+    if (!error) setCategories(categories.filter(c => c.id !== id));
+    else alert('خطا در حذف');
+  };
+
+  // باز کردن مودال ویرایش
+  const openEditModal = (cat: Category) => {
+    setEditingCategory({ ...cat }); // کپی کردن آبجکت برای جلوگیری از تغییر مستقیم
+    setIsModalOpen(true);
+  };
+
+  // ذخیره تغییرات کامل (شامل سئو و توضیحات)
+  const handleUpdate = async () => {
+    if (!editingCategory) return;
+    setSaving(true);
+    try {
+        const { error } = await supabase
+            .from('categories')
+            .update({
+                name: editingCategory.name,
+                name_en: editingCategory.name_en,
+                slug: editingCategory.slug,
+                icon_url: editingCategory.icon_url,
+                description: editingCategory.description,
+                description_en: editingCategory.description_en,
+                seo_title: editingCategory.seo_title,
+                seo_desc: editingCategory.seo_desc,
+                seo_title_en: editingCategory.seo_title_en,
+                seo_desc_en: editingCategory.seo_desc_en
+            })
+            .eq('id', editingCategory.id);
+
+        if (error) throw error;
+        
+        await fetchCategories();
+        setIsModalOpen(false);
+    } catch (error: any) {
+        alert('خطا در بروزرسانی: ' + error.message);
+    } finally {
+        setSaving(false);
     }
   };
 
-  const handleNameChange = (val: string) => {
-    setNewName(val);
-  };
-
-  if (loading) return <div className="p-10 text-center">در حال بارگذاری...</div>;
+  if (loading) return <div className="p-10 text-center"><Loader2 className="animate-spin h-8 w-8 mx-auto text-blue-600"/></div>;
 
   return (
     <div className="space-y-6 font-[family-name:var(--font-vazir)]">
-      <div>
-         <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-            <Layers className="h-6 w-6 text-blue-600" />
-            مدیریت دسته‌بندی‌ها
-         </h2>
-         <p className="text-sm text-gray-500 mt-1">دسته‌های محصول را اینجا تعریف کنید تا در سایت نمایش داده شوند.</p>
+      
+      {/* Header */}
+      <div className="flex justify-between items-end">
+         <div>
+            <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <Layers className="h-6 w-6 text-blue-600" />
+                مدیریت دسته‌بندی‌ها
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">مدیریت نام، آیکون و سئوی دسته‌ها</p>
+         </div>
       </div>
 
-      {/* فرم افزودن */}
+      {/* فرم افزودن سریع */}
       <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-        <h3 className="font-bold text-gray-700 mb-4 text-sm">افزودن دسته جدید</h3>
-        <form onSubmit={handleAdd} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="w-full">
-              <label className="text-xs text-gray-500 mb-1 block">عنوان فارسی (مثال: زعفران)</label>
-              <input 
-                type="text" 
-                required
-                value={newName}
-                onChange={(e) => handleNameChange(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:border-blue-500 outline-none"
-                placeholder="نام دسته..."
-              />
+        <h3 className="font-bold text-gray-700 mb-4 text-sm">افزودن دسته جدید (اطلاعات پایه)</h3>
+        <form onSubmit={handleAdd} className="flex flex-col md:flex-row gap-4 items-end">
+            <div className="flex-1 w-full">
+              <label className="text-xs text-gray-500 mb-1 block">عنوان فارسی</label>
+              <input type="text" required value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:border-blue-500 outline-none" placeholder="مثال: زعفران" />
             </div>
-            <div className="w-full">
-              <label className="text-xs text-gray-500 mb-1 block">نامک انگلیسی (Slug)</label>
-              <input 
-                type="text" 
-                required
-                value={newSlug}
-                onChange={(e) => setNewSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
-                className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:border-blue-500 outline-none dir-ltr text-left font-mono"
-                placeholder="e.g: saffron-premium"
-              />
+            <div className="flex-1 w-full">
+              <label className="text-xs text-gray-500 mb-1 block">نامک (Slug)</label>
+              <input type="text" required value={newSlug} onChange={(e) => setNewSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))} className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:border-blue-500 outline-none dir-ltr text-left" placeholder="saffron" />
             </div>
-            <div className="w-full">
-              <label className="text-xs text-gray-500 mb-1 block">لینک آیکون (PNG یا SVG)</label>
-              <input 
-                type="text" 
-                value={newIconUrl}
-                onChange={(e) => setNewIconUrl(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:border-blue-500 outline-none dir-ltr text-left"
-                placeholder="https://example.com/icon.png"
-              />
+            <div className="flex-1 w-full">
+              <label className="text-xs text-gray-500 mb-1 block">لینک آیکون</label>
+              <input type="text" value={newIconUrl} onChange={(e) => setNewIconUrl(e.target.value)} className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:border-blue-500 outline-none dir-ltr text-left" placeholder="https://..." />
             </div>
-          </div>
-          <div className="flex justify-end">
-            <button 
-              type="submit" 
-              disabled={adding}
-              className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-bold text-sm flex justify-center gap-2 items-center"
-            >
-              {adding ? <Loader2 className="animate-spin h-5 w-5" /> : <Plus className="h-5 w-5" />}
-              افزودن دسته
+            <button type="submit" disabled={adding} className="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition-colors font-bold text-sm flex gap-2 items-center">
+              {adding ? <Loader2 className="animate-spin h-5 w-5" /> : <Plus className="h-5 w-5" />} افزودن
             </button>
-          </div>
         </form>
       </div>
 
@@ -3883,7 +3958,7 @@ export default function CategoriesPage() {
             <tr>
               <th className="px-6 py-4">آیکون</th>
               <th className="px-6 py-4">نام دسته</th>
-              <th className="px-6 py-4">نامک (Slug)</th>
+              <th className="px-6 py-4">وضعیت سئو</th>
               <th className="px-6 py-4 text-center">عملیات</th>
             </tr>
           </thead>
@@ -3891,40 +3966,140 @@ export default function CategoriesPage() {
             {categories.map((cat) => (
               <tr key={cat.id} className="hover:bg-gray-50/50">
                 <td className="px-6 py-4">
-                  {cat.icon_url ? (
-                    <img src={cat.icon_url} alt={cat.name} className="h-10 w-10 object-contain bg-gray-50 rounded-lg p-1" />
-                  ) : (
-                    <div className="h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                      <ImageIcon className="h-5 w-5 text-gray-400" />
-                    </div>
-                  )}
+                  {cat.icon_url ? <img src={cat.icon_url} className="h-10 w-10 object-contain" /> : <div className="h-10 w-10 bg-gray-100 rounded flex items-center justify-center"><ImageIcon className="h-5 w-5 text-gray-400"/></div>}
                 </td>
-                <td className="px-6 py-4 font-bold text-gray-800">{cat.name}</td>
-                <td className="px-6 py-4 font-mono text-gray-500 text-sm dir-ltr text-right">{cat.slug}</td>
+                <td className="px-6 py-4">
+                    <span className="font-bold text-gray-800 block">{cat.name}</span>
+                    <span className="text-xs text-gray-400 dir-ltr">{cat.slug}</span>
+                </td>
+                <td className="px-6 py-4">
+                    {cat.description ? (
+                        <span className="bg-green-100 text-green-700 text-[10px] px-2 py-1 rounded-full">تکمیل شده</span>
+                    ) : (
+                        <span className="bg-yellow-100 text-yellow-700 text-[10px] px-2 py-1 rounded-full">بدون محتوا</span>
+                    )}
+                </td>
                 <td className="px-6 py-4 text-center">
-                  <button 
-                    onClick={() => handleDelete(cat.id)}
-                    className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors"
-                    title="حذف"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  <div className="flex justify-center gap-2">
+                    <button onClick={() => openEditModal(cat)} className="text-blue-600 hover:bg-blue-50 p-2 rounded-lg" title="ویرایش کامل">
+                        <Edit2 className="h-4 w-4" />
+                    </button>
+                    <button onClick={() => handleDelete(cat.id)} className="text-red-500 hover:bg-red-50 p-2 rounded-lg">
+                        <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
-            {categories.length === 0 && (
-                <tr>
-                    <td colSpan={4} className="px-6 py-10 text-center text-gray-400">
-                        <div className="flex flex-col items-center gap-2">
-                           <AlertCircle className="h-8 w-8 opacity-50" />
-                           هنوز دسته‌بندی نساخته‌اید.
-                        </div>
-                    </td>
-                </tr>
-            )}
           </tbody>
         </table>
       </div>
+
+      {/* --- MODAL EDIT (FULL SEO) --- */}
+      {isModalOpen && editingCategory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col">
+                <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                    <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                        <Edit2 className="h-5 w-5 text-blue-600"/> ویرایش دسته: {editingCategory.name}
+                    </h3>
+                    <button onClick={() => setIsModalOpen(false)}><X className="h-6 w-6 text-gray-400 hover:text-red-500"/></button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                    
+                    {/* 1. Basic Info */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1">نام فارسی</label>
+                            <input type="text" className="w-full p-2 border rounded-lg" value={editingCategory.name} onChange={e => setEditingCategory({...editingCategory, name: e.target.value})} />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1">نام انگلیسی (Name EN)</label>
+                            <input type="text" className="w-full p-2 border rounded-lg dir-ltr" value={editingCategory.name_en || ''} onChange={e => setEditingCategory({...editingCategory, name_en: e.target.value})} />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1">نامک (Slug - غیرقابل تغییر توصیه می‌شود)</label>
+                            <input type="text" className="w-full p-2 border rounded-lg dir-ltr bg-gray-50" value={editingCategory.slug} onChange={e => setEditingCategory({...editingCategory, slug: e.target.value})} />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1">آدرس آیکون</label>
+                            <input type="text" className="w-full p-2 border rounded-lg dir-ltr" value={editingCategory.icon_url || ''} onChange={e => setEditingCategory({...editingCategory, icon_url: e.target.value})} />
+                        </div>
+                    </div>
+
+                    <hr className="border-gray-200" />
+
+                    {/* 2. Persian SEO & Content */}
+                    <div className="space-y-4">
+                        <h4 className="font-bold text-green-700 flex items-center gap-2 border-b pb-2">
+                            <span className="text-xl">🇮🇷</span> سئو و محتوای فارسی
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1">عنوان سئو (Browser Title)</label>
+                                <input type="text" className="w-full p-2 border rounded-lg" placeholder="مثال: خرید آنلاین گل و گیاه | ارسال به ایران" value={editingCategory.seo_title || ''} onChange={e => setEditingCategory({...editingCategory, seo_title: e.target.value})} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1">توضیحات متا (Meta Description)</label>
+                                <input type="text" className="w-full p-2 border rounded-lg" placeholder="توضیح کوتاه برای گوگل..." value={editingCategory.seo_desc || ''} onChange={e => setEditingCategory({...editingCategory, seo_desc: e.target.value})} />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1">متن کامل پایین صفحه (پشتیبانی از HTML)</label>
+                            <textarea 
+                                rows={6} 
+                                className="w-full p-3 border rounded-lg text-sm font-mono leading-6" 
+                                placeholder="اینجا می‌توانید متن طولانی بنویسید. از تگ‌های <h2> و <p> استفاده کنید..."
+                                value={editingCategory.description || ''} 
+                                onChange={e => setEditingCategory({...editingCategory, description: e.target.value})}
+                            ></textarea>
+                            <p className="text-[10px] text-gray-400 mt-1">نکته: برای تیترها از تگ &lt;h2&gt;تیتر&lt;/h2&gt; و برای پاراگراف از &lt;p&gt;متن&lt;/p&gt; استفاده کنید.</p>
+                        </div>
+                    </div>
+
+                    <hr className="border-gray-200" />
+
+                    {/* 3. English SEO & Content */}
+                    <div className="space-y-4" dir="ltr">
+                        <h4 className="font-bold text-blue-700 flex items-center gap-2 border-b pb-2">
+                            <span className="text-xl">🇺🇸</span> English SEO & Content
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1">SEO Title</label>
+                                <input type="text" className="w-full p-2 border rounded-lg" placeholder="e.g: Send Flowers to Iran | Same Day Delivery" value={editingCategory.seo_title_en || ''} onChange={e => setEditingCategory({...editingCategory, seo_title_en: e.target.value})} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1">Meta Description</label>
+                                <input type="text" className="w-full p-2 border rounded-lg" placeholder="Short description for Google..." value={editingCategory.seo_desc_en || ''} onChange={e => setEditingCategory({...editingCategory, seo_desc_en: e.target.value})} />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1">Category Description (HTML Supported)</label>
+                            <textarea 
+                                rows={6} 
+                                className="w-full p-3 border rounded-lg text-sm font-mono leading-6" 
+                                placeholder="Write detailed content here using HTML tags..."
+                                value={editingCategory.description_en || ''} 
+                                onChange={e => setEditingCategory({...editingCategory, description_en: e.target.value})}
+                            ></textarea>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div className="p-5 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+                    <button onClick={() => setIsModalOpen(false)} className="px-6 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-white transition-colors">انصراف</button>
+                    <button onClick={handleUpdate} disabled={saving} className="px-8 py-2 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 shadow-md flex items-center gap-2 disabled:opacity-50">
+                        {saving ? <Loader2 className="animate-spin h-5 w-5"/> : <Save className="h-5 w-5"/>}
+                        ذخیره تغییرات
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
+
     </div>
   );
 }
@@ -8572,7 +8747,7 @@ export default async function MarketRates() {
 }
 
 ===== File: components/ProductCard.tsx =====
-# Modified: 2026-02-08T02:30:45.665492 | Size: 2788 bytes | SHA1: 20ba51d5927d5c5df53ac46dc6d581e14f749fa0
+# Modified: 2026-02-08T03:28:40.432054 | Size: 2823 bytes | SHA1: cab13d8ef516b44c88fb0f99d296f787bd4eb796
 'use client';
 
 import { Plus } from 'lucide-react';
@@ -8584,14 +8759,15 @@ import { useTranslations } from 'next-intl';
 interface ProductCardProps {
   id: string;
   title: string;
-  title_en?: string; // ✅ اضافه شد
+  title_en?: string; 
   price: number;
   image: string;
   slug: string;
   pricing_type?: string; 
+  weight?: number; // ✅ اضافه شد
 }
 
-export default function ProductCard({ id, title, title_en, price, image, slug, pricing_type }: ProductCardProps) {
+export default function ProductCard({ id, title, title_en, price, image, slug, pricing_type, weight }: ProductCardProps) {
   const t = useTranslations('ProductCard'); 
   const { convertPrice, getSymbol, addToCart } = useStore();
   const [mounted, setMounted] = useState(false);
@@ -8605,8 +8781,8 @@ export default function ProductCard({ id, title, title_en, price, image, slug, p
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    // ✅ ارسال title_en به سبد خرید
-    addToCart({ id, title, title_en, price, image, pricing_type });
+    // ✅ ارسال weight به سبد خرید
+    addToCart({ id, title, title_en, price, image, pricing_type, weight });
   };
 
   return (
@@ -8656,7 +8832,7 @@ export default function ProductCard({ id, title, title_en, price, image, slug, p
 }
 
 ===== File: components/ProductClientView.tsx =====
-# Modified: 2026-02-08T03:12:15.827959 | Size: 16778 bytes | SHA1: 3498fc234928c2547bcd3fe8f2d1866765701161
+# Modified: 2026-02-08T03:29:50.082669 | Size: 16256 bytes | SHA1: e647fd8710d44bfde43b04507196ce70a6179a53
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8676,6 +8852,7 @@ interface Product {
   features: string[];
   slug: string;
   pricing_type?: string; 
+  weight?: number; // ✅ اضافه شد
 }
 
 interface RelatedItem {
@@ -8686,6 +8863,7 @@ interface RelatedItem {
     image: string;
     slug: string;
     pricing_type?: string; 
+    weight?: number; // ✅ اضافه شد
 }
 
 interface Props {
@@ -8698,7 +8876,6 @@ interface Props {
 
 export default function ProductClientView({ product, categoryName, categorySlug, categoryIcon, relatedProducts }: Props) {
   const t = useTranslations('Product');
-  // اضافه کردن removeFromCart به استخراج‌های هوک
   const { convertPrice, getSymbol, addToCart, decreaseFromCart, removeFromCart, cart } = useStore();
   const [mounted, setMounted] = useState(false);
   
@@ -8726,10 +8903,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
 
         const handleCurrencyChange = (newQty: number) => {
             setCurrencyAmount(newQty);
-            // سینک کردن با سبد خرید
             if (quantity > 0) {
-                // اگر قبلا تو سبد هست، اول پاکش کن بعد با تعداد جدید اضافه کن
-                // این روش مطمئن‌تر از کم و زیاد کردن لوپ‌دار هست
                 removeFromCart(product.id);
                 for (let i = 0; i < newQty; i++) addToCart(product);
             }
@@ -8741,10 +8915,9 @@ export default function ProductClientView({ product, categoryName, categorySlug,
              }
         };
 
-        // هندلر حذف کامل برای دکمه "ویرایش / حذف"
         const handleFullRemove = () => {
             removeFromCart(product.id);
-            setCurrencyAmount(1); // ریست کردن دراپ‌داون به حالت پیش‌فرض
+            setCurrencyAmount(1);
         };
 
         return (
@@ -8785,7 +8958,6 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                             <Check className="h-5 w-5 text-green-600" />
                             {currencyAmount} {t('in_cart_currency')}
                         </span>
-                        {/* ✅ تغییر مهم: دکمه حذف کامل برای حواله */}
                         <button onClick={handleFullRemove} className="text-xs bg-white border border-blue-200 px-2 py-1 rounded hover:bg-red-50 hover:text-red-600 transition-colors">
                             {t('edit_remove')}
                         </button>
@@ -8840,7 +9012,6 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                 <div className="relative aspect-square bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm group sticky top-24">
                     <img src={product.image} alt={product.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                     
-                    {/* ✅ تغییر مهم: مخفی کردن بج برای محصولات ارزی */}
                     {quantity > 0 && product.pricing_type !== 'currency' && (
                         <div className="absolute top-4 right-4 bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg border-2 border-white animate-in zoom-in">
                             {quantity}
@@ -8967,6 +9138,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                             image={item.image}
                             slug={item.slug}
                             pricing_type={item.pricing_type}
+                            weight={item.weight} // ✅ پاس دادن وزن برای محصولات مرتبط
                        />
                     ))}
                 </div>
@@ -9037,7 +9209,7 @@ export const routing = defineRouting({
 });
 
 ===== File: lib/store.ts =====
-# Modified: 2026-02-08T02:30:13.780630 | Size: 4836 bytes | SHA1: e85e676dc3ce54e723a292b7d3461653181aaa28
+# Modified: 2026-02-08T03:28:07.260309 | Size: 4818 bytes | SHA1: ec1a6184d29c8a60c0c587061410c5c4b94835c9
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '@/lib/supabase';
@@ -9047,11 +9219,12 @@ type Currency = 'USD' | 'EUR' | 'GBP' | 'SEK';
 export interface Product {
   id: string;
   title: string;
-  title_en?: string; // ✅ اضافه شد: عنوان انگلیسی برای سبد خرید دو زبانه
+  title_en?: string; 
   price: number; 
   image: string;
   category?: string;
   pricing_type?: string; 
+  weight?: number; // ✅ اضافه شد برای محصولات طلا
 }
 
 interface CartItem extends Product {
@@ -9152,7 +9325,7 @@ export const useStore = create<StoreState>()(
             ),
           };
         }
-        // تمام فیلدها (شامل title_en و pricing_type) اینجا به سبد منتقل می‌شوند
+        // تمام فیلدها (شامل weight و pricing_type) اینجا به سبد منتقل می‌شوند
         return { cart: [...state.cart, { ...product, quantity: 1 }] };
       }),
 
@@ -10776,4 +10949,4 @@ print("\n✨ تمام آیکون‌ها با موفقیت آپدیت شدند. �
 
 ### Summary
 # Files considered: 81 | Written: 75 | Skipped: 6
-# Output size: 502437 bytes
+# Output size: 514393 bytes

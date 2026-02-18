@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Calendar, ArrowRight, User, Tag, Folder } from 'lucide-react';
+import { Calendar, ArrowRight, ArrowLeft, User, Tag, Folder } from 'lucide-react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
@@ -29,6 +29,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     ? (post.seo_desc_en || post.summary_en || post.content_en?.substring(0, 160))
     : (post.seo_desc || post.summary || post.content.substring(0, 160));
 
+  const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat.shop';
+
   return {
     title: pageTitle,
     description: pageDesc,
@@ -37,14 +39,23 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       description: pageDesc,
       type: 'article',
       images: post.image ? [{ url: post.image }] : [],
-      locale: isEn ? 'en_US' : 'fa_IR',
+      // ✅ اصلاح مهم: حذف IR و US برای تارگت جهانی
+      locale: isEn ? 'en' : 'fa',
     },
     twitter: {
       card: 'summary_large_image',
       title: pageTitle,
       description: pageDesc,
       images: post.image ? [post.image] : [],
-    }
+    },
+    // ✅ اصلاح مهم: اضافه کردن Hreflang برای سئوی بین‌المللی
+    alternates: {
+      canonical: `${siteUrl}/${locale}/blog/${decodedSlug}`,
+      languages: {
+        'fa': `${siteUrl}/fa/blog/${decodedSlug}`,
+        'en': `${siteUrl}/en/blog/${decodedSlug}`,
+      },
+    },
   };
 }
 
@@ -163,10 +174,8 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
 
   // --- انتخاب محتوای مناسب بر اساس زبان ---
   const displayTitle = isEn ? (post.title_en || post.title) : post.title;
-  // برای محتوا، اگر متن انگلیسی نبود، متن فارسی را نشان بده (Fallback)
   const displayContent = isEn ? (post.content_en || post.content) : post.content;
   
-  // انتخاب دسته‌بندی و تگ‌ها (اضافه شده)
   const displayCategory = isEn ? (post.category_en || post.category) : post.category;
   const displayTags = isEn ? (post.tags_en || post.tags) : post.tags;
 
@@ -181,7 +190,8 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
       name: 'Soughat Shop Team'
     },
     articleBody: displayContent,
-    inLanguage: isEn ? 'en-US' : 'fa-IR'
+    // ✅ اصلاح مهم: زبان عمومی
+    inLanguage: isEn ? 'en' : 'fa'
   };
 
   return (

@@ -31,12 +31,22 @@ export const metadata: Metadata = {
     follow: true,
   },
 
+  // ✅ اصلاح حیاتی ۱: اضافه کردن تگ‌های زبان (Hreflang)
+  // این بخش به گوگل می‌گوید که این سایت نسخه‌های مختلف زبانی دارد
+  alternates: {
+    canonical: '/',
+    languages: {
+      'fa': '/fa', // فارسی برای همه دنیا (نه فقط ایران)
+      'en': '/en', // انگلیسی برای همه دنیا
+    },
+  },
+
   openGraph: {
     title: "سوغات شاپ | پل ارتباطی با ایران",
     description: "عزیزانتان در ایران را خوشحال کنید. ارسال آنی هدیه و سوغات با پرداخت ارزی و کریپتو.",
     url: 'https://soughat.shop',
     siteName: 'Soughat Shop',
-    locale: 'fa_IR',
+    locale: 'fa', // ✅ اصلاح حیاتی ۲: حذف IR (فارسی عمومی برای تمام کشورها)
     type: 'website',
   },
   
@@ -68,7 +78,6 @@ export default async function LocaleLayout({
   const direction = locale === 'fa' ? 'rtl' : 'ltr';
 
   // 5. تعریف اسکیمای سازمان (Organization Schema) برای گوگل
-  // این همان کدی است که باعث می‌شود لوگوی شما در نتایج گوگل شناسایی شود
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
@@ -81,11 +90,10 @@ export default async function LocaleLayout({
       '@type': 'ContactPoint',
       'telephone': '+98-916-803-8017',
       'contactType': 'customer service',
-      'areaServed': ['IR', 'US', 'CA', 'DE', 'GB', 'SE'],
+      'areaServed': ['IR', 'US', 'CA', 'DE', 'GB', 'SE'], // کشورهایی که سرویس می‌دهیم
       'availableLanguage': ['en', 'fa']
     },
     'sameAs': [
-      // اگر شبکه‌های اجتماعی دارید لینک‌های واقعی را اینجا بگذارید
       'https://www.instagram.com/soughatshop',
       'https://twitter.com/soughatshop'
     ]

@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import ProductClientView from '@/components/ProductClientView';
 import { ArrowRight } from 'lucide-react';
-import { Link } from '@/i18n/navigation'; // لینک هوشمند
+import { Link } from '@/i18n/navigation';
 import { getTranslations } from 'next-intl/server';
 
 export const revalidate = 60;
@@ -46,7 +46,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url: `${siteUrl}/${locale}/products/${decodedSlug}`,
       images: [{ url: product.image, width: 800, height: 800, alt: pageTitle }],
       type: 'website',
-      locale: locale === 'fa' ? 'fa_IR' : 'en_US',
+      // ✅ اصلاح مهم: حذف IR و US برای جهانی شدن
+      locale: locale === 'fa' ? 'fa' : 'en',
       siteName: 'Soughat Shop',
     },
     twitter: {
@@ -58,8 +59,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: {
       canonical: `${siteUrl}/${locale}/products/${decodedSlug}`,
       languages: {
-        'fa-IR': `${siteUrl}/fa/products/${decodedSlug}`,
-        'en-US': `${siteUrl}/en/products/${decodedSlug}`,
+        // ✅ اصلاح مهم: تگ‌های زبان عمومی برای ایندکس شدن در خارج کشور
+        'fa': `${siteUrl}/fa/products/${decodedSlug}`,
+        'en': `${siteUrl}/en/products/${decodedSlug}`,
       },
     },
   };
@@ -112,13 +114,15 @@ export default async function ProductPage({ params }: Props) {
     ? (categoryData?.name_en || categoryData?.name || product.category)
     : (categoryData?.name || product.category);
 
-  // محصولات مرتبط
+  // محصولات مرتبط (همراه با وزن و تایپ برای نمایش صحیح)
   const relatedProducts = relatedRaw?.map(p => ({
     id: p.id,
     title: isEn ? (p.title_en || p.title) : p.title,
     price: p.price,
     image: p.image,
-    slug: p.slug
+    slug: p.slug,
+    pricing_type: p.pricing_type,
+    weight: p.weight
   })) || [];
 
   // جیسون اسکیما (برای گوگل)
