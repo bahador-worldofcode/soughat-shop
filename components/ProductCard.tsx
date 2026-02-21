@@ -4,7 +4,7 @@ import { Plus } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useEffect, useState } from 'react';
 import { Link } from '@/i18n/navigation'; 
-import { useTranslations } from 'next-intl'; 
+import { useTranslations, useLocale } from 'next-intl'; 
 
 interface ProductCardProps {
   id: string;
@@ -14,11 +14,14 @@ interface ProductCardProps {
   image: string;
   slug: string;
   pricing_type?: string; 
-  weight?: number; // ✅ اضافه شد
+  weight?: number;
 }
 
 export default function ProductCard({ id, title, title_en, price, image, slug, pricing_type, weight }: ProductCardProps) {
   const t = useTranslations('ProductCard'); 
+  const locale = useLocale(); // دریافت زبان فعلی
+  const isEn = locale === 'en'; // بررسی انگلیسی بودن
+
   const { convertPrice, getSymbol, addToCart } = useStore();
   const [mounted, setMounted] = useState(false);
 
@@ -29,9 +32,12 @@ export default function ProductCard({ id, title, title_en, price, image, slug, p
   const finalPrice = convertPrice(price);
   const symbol = getSymbol();
 
+  // انتخاب هوشمند عنوان بر اساس زبان
+  // اگر انگلیسی بود و تایتل انگلیسی موجود بود، همون رو نشون بده، وگرنه فارسی
+  const displayTitle = isEn ? (title_en || title) : title;
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    // ✅ ارسال weight به سبد خرید
     addToCart({ id, title, title_en, price, image, pricing_type, weight });
   };
 
@@ -41,22 +47,24 @@ export default function ProductCard({ id, title, title_en, price, image, slug, p
       <Link href={`/products/${slug}`} className="relative aspect-square overflow-hidden bg-gray-100 block">
         <img
           src={image}
-          alt={title}
+          alt={displayTitle}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
       </Link>
 
       <div className="flex flex-1 flex-col p-4">
         <Link href={`/products/${slug}`}>
-            <h3 className="mb-2 text-lg font-bold text-gray-900 line-clamp-1 hover:text-blue-600 transition-colors">{title}</h3>
+            <h3 className="mb-2 text-lg font-bold text-gray-900 line-clamp-1 hover:text-blue-600 transition-colors text-start">
+                {displayTitle}
+            </h3>
         </Link>
         
-        <p className="text-sm text-gray-500 mb-4">{t('instant_delivery')}</p>
+        <p className="text-sm text-gray-500 mb-4 text-start">{t('instant_delivery')}</p>
        
         <div className="mt-auto flex items-center justify-between">
           <div className="flex flex-col">
-            <span className="text-xs text-gray-400">{t('final_price')}</span>
-            <span className="text-xl font-bold text-blue-600 font-mono">
+            <span className="text-xs text-gray-400 text-start">{t('final_price')}</span>
+            <span className="text-xl font-bold text-blue-600 font-mono text-start">
               {mounted ? (
                 <>
                   {symbol} {finalPrice.toFixed(2)}
