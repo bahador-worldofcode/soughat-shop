@@ -40,3 +40,17 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# =========================================
+# Internal Tools, Snapshots & Strategy Docs
+# =========================================
+# فایل‌های متنی و اسنپ‌شات‌ها
+snapshot_*.txt
+
+# اسکریپت‌های پایتون و بچ‌فایل‌های داخلی
+collect_*.py
+collect_*.bat
+update_*.py
+upload_*.py
+
+# داکیومنت‌های استراتژی داخلی
+STRATEGY.md
