@@ -1,59 +1,67 @@
+import "../globals.css";
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import type { Metadata } from "next";
+import { Vazirmatn } from 'next/font/google';
 
 // ایمپورت کامپوننت‌های اصلی
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FloatingContact from "@/components/FloatingContact";
 
+// کانفیگ فونت برای خوانایی بهتر سایت
+const vazir = Vazirmatn({ subsets: ['arabic', 'latin'] });
+
 // --- تنظیمات متادیتا (سئو) ---
-export const metadata: Metadata = {
-  metadataBase: new URL('https://soughat.shop'),
-  
-  title: {
-    default: "سوغات شاپ | ارسال هدیه به ایران با ارز دیجیتال",
-    template: "%s | سوغات شاپ"
-  },
-  
-  description: "اولین پلتفرم تخصصی ارسال هدیه، سوغات و پول به ایران برای ایرانیان خارج از کشور. خرید پسته، زعفران و کادو با پرداخت امن تتر (USDT) و سولانا. تحویل فوری در سراسر ایران.",
-  
-  manifest: '/site.webmanifest',
-  
-  keywords: ["ارسال هدیه به ایران", "خرید سوغات ایران", "ارسال پول با تتر", "سوغات شاپ", "Soughat Shop", "خرید پسته صادراتی", "گیفت شاپ ایران", "پرداخت با کریپتو"],
-  
-  authors: [{ name: "تیم سوغات شاپ" }],
-  creator: "Soughat Shop",
-  publisher: "Soughat Shop",
-  robots: {
-    index: true,
-    follow: true,
-  },
+// تبدیل به تابع برای اینکه بتوانیم زبان را داینامیک از آدرس بگیریم
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
 
-  // ✅ اصلاح حیاتی ۱: اضافه کردن تگ‌های زبان (Hreflang)
-  // این بخش به گوگل می‌گوید که این سایت نسخه‌های مختلف زبانی دارد
-  alternates: {
-    canonical: '/',
-    languages: {
-      'fa': '/fa', // فارسی برای همه دنیا (نه فقط ایران)
-      'en': '/en', // انگلیسی برای همه دنیا
+  return {
+    metadataBase: new URL('https://soughat.shop'),
+    
+    title: {
+      default: "سوغات شاپ | ارسال هدیه به ایران با ارز دیجیتال",
+      template: "%s | سوغات شاپ"
     },
-  },
+    
+    description: "اولین پلتفرم تخصصی ارسال هدیه، سوغات و پول به ایران برای ایرانیان خارج از کشور. خرید پسته، زعفران و کادو با پرداخت امن تتر (USDT) و سولانا. تحویل فوری در سراسر ایران.",
+    
+    manifest: '/site.webmanifest',
+    
+    keywords: ["ارسال هدیه به ایران", "خرید سوغات ایران", "ارسال پول با تتر", "سوغات شاپ", "Soughat Shop", "خرید پسته صادراتی", "گیفت شاپ ایران", "پرداخت با کریپتو"],
+    
+    authors: [{ name: "تیم سوغات شاپ" }],
+    creator: "Soughat Shop",
+    publisher: "Soughat Shop",
+    robots: {
+      index: true,
+      follow: true,
+    },
 
-  openGraph: {
-    title: "سوغات شاپ | پل ارتباطی با ایران",
-    description: "عزیزانتان در ایران را خوشحال کنید. ارسال آنی هدیه و سوغات با پرداخت ارزی و کریپتو.",
-    url: 'https://soughat.shop',
-    siteName: 'Soughat Shop',
-    locale: 'fa', // ✅ اصلاح حیاتی ۲: حذف IR (فارسی عمومی برای تمام کشورها)
-    type: 'website',
-  },
-  
-  verification: {
-    google: "889fIOlZo4jHk-UB3Sv_X-vuaJQa-YPzZKLPMqpcYEo",
-  },
-};
+    // ✅ اصلاح ۱: کاننیکال ثابت حذف شد تا هر صفحه کاننیکال خودش را داشته باشد
+    alternates: {
+      languages: {
+        'fa': '/fa', 
+        'en': '/en', 
+      },
+    },
+
+    openGraph: {
+      title: "سوغات شاپ | پل ارتباطی با ایران",
+      description: "عزیزانتان در ایران را خوشحال کنید. ارسال آنی هدیه و سوغات با پرداخت ارزی و کریپتو.",
+      url: 'https://soughat.shop',
+      siteName: 'Soughat Shop',
+      locale: locale === 'fa' ? 'fa_IR' : 'en_US', // ✅ اصلاح ۲: زبان به صورت هوشمند تغییر می‌کند
+      type: 'website',
+    },
+    
+    verification: {
+      google: "889fIOlZo4jHk-UB3Sv_X-vuaJQa-YPzZKLPMqpcYEo",
+    },
+  };
+}
 
 // --- کامپوننت اصلی لی‌اوت ---
 export default async function LocaleLayout({
@@ -90,7 +98,7 @@ export default async function LocaleLayout({
       '@type': 'ContactPoint',
       'telephone': '+98-916-803-8017',
       'contactType': 'customer service',
-      'areaServed': ['IR', 'US', 'CA', 'DE', 'GB', 'SE'], // کشورهایی که سرویس می‌دهیم
+      'areaServed': ['IR', 'US', 'CA', 'DE', 'GB', 'SE'],
       'availableLanguage': ['en', 'fa']
     },
     'sameAs': [
@@ -100,31 +108,33 @@ export default async function LocaleLayout({
   };
 
   return (
-    <NextIntlClientProvider messages={messages}>
-      {/* دیو اصلی که جهت صفحه را کنترل می‌کند */}
-      <div dir={direction} className="flex flex-col min-h-screen w-full">
-        
-        {/* تزریق اسکریپت جیسون برای گوگل */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
+    // ✅ اصلاح ۳: اضافه شدن تگ html و body به جای div
+    <html lang={locale} dir={direction}>
+      <body className={`${vazir.className} antialiased bg-gray-50 flex flex-col min-h-screen w-full`}>
+        <NextIntlClientProvider messages={messages}>
+          
+          {/* تزریق اسکریپت جیسون برای گوگل */}
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          />
 
-        {/* هدر سایت */}
-        <Header />
-        
-        {/* محتوای اصلی صفحات */}
-        <main className="flex-1 w-full">
-            {children}
-        </main>
-        
-        {/* فوتر سایت */}
-        <Footer />
-        
-        {/* دکمه شناور تماس */}
-        <FloatingContact />
-        
-      </div>
-    </NextIntlClientProvider>
+          {/* هدر سایت */}
+          <Header />
+          
+          {/* محتوای اصلی صفحات */}
+          <main className="flex-1 w-full">
+              {children}
+          </main>
+          
+          {/* فوتر سایت */}
+          <Footer />
+          
+          {/* دکمه شناور تماس */}
+          <FloatingContact />
+          
+        </NextIntlClientProvider>
+      </body>
+    </html>
   );
 }
