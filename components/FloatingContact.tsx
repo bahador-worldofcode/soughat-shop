@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { usePathname } from '@/i18n/navigation'; // استفاده از نویگیشن هوشمند
+import { usePathname } from '@/i18n/navigation';
 import { MessageCircle, X, Send, Phone, MessageSquare, ArrowLeft, Loader2, CheckCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useTranslations, useLocale } from 'next-intl';
@@ -71,7 +71,6 @@ export default function FloatingContact() {
   };
 
   if (!mounted) return null;
-  // مخفی کردن در پنل ادمین
   if (pathname?.startsWith('/admin')) return null;
 
   return (
@@ -112,7 +111,7 @@ export default function FloatingContact() {
                     <p className="text-gray-600 text-xs mb-2 text-start">{t('greeting')}</p>
                     
                     <a 
-                    href="https://wa.me/989168038017" 
+                    href={`https://wa.me/989168038017?text=${encodeURIComponent(t('whatsapp_msg'))}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 w-full p-3 bg-green-50 hover:bg-green-100 text-green-700 rounded-xl transition-colors group"

@@ -1,13 +1,29 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { supabase } from '@/lib/supabase';
+
+// بررسی احراز هویت (قفل امنیتی جدید)
+async function verifyAdmin(request: Request) {
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader) return false;
+  
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  
+  if (error || !user) return false;
+  return true;
+}
 
 // 1. افزودن محصول جدید (POST)
 export async function POST(request: Request) {
   try {
+    // چک کردن قفل امنیتی
+    if (!(await verifyAdmin(request))) {
+      return NextResponse.json({ error: 'عدم دسترسی! لطفاً وارد پنل شوید.' }, { status: 401 });
+    }
+
     const body = await request.json();
     
-    // اینجا از supabaseAdmin استفاده می‌کنیم که محدودیت‌های RLS رو دور می‌زنه
-    // چون مطمئنیم این درخواست از پنل ادمین اومده (در آینده میشه Auth رو هم چک کرد)
     const { data, error } = await supabaseAdmin
       .from('products')
       .insert([body])
@@ -23,6 +39,10 @@ export async function POST(request: Request) {
 // 2. ویرایش محصول (PUT)
 export async function PUT(request: Request) {
   try {
+    if (!(await verifyAdmin(request))) {
+      return NextResponse.json({ error: 'عدم دسترسی! لطفاً وارد پنل شوید.' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { id, ...updates } = body;
 
@@ -44,6 +64,10 @@ export async function PUT(request: Request) {
 // 3. حذف محصول (DELETE)
 export async function DELETE(request: Request) {
   try {
+    if (!(await verifyAdmin(request))) {
+      return NextResponse.json({ error: 'عدم دسترسی! لطفاً وارد پنل شوید.' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 

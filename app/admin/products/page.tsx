@@ -17,8 +17,8 @@ interface Product {
   seo_title: string;
   seo_desc: string;
   created_at?: string;
-  weight?: number; // اضافه شد
-  pricing_type?: 'fixed' | 'gold'; // اضافه شد
+  weight?: number; 
+  pricing_type?: 'fixed' | 'gold'; 
 }
 
 interface Category {
@@ -34,11 +34,9 @@ interface MediaFile {
   id: string;
 }
 
-// تعداد آیتم در هر بار لود
 const BATCH_SIZE = 20;
 
 export default function ProductsPage() {
-  // --- استیت‌های محصولات ---
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   
@@ -46,51 +44,33 @@ export default function ProductsPage() {
   const [loadingMoreProducts, setLoadingMoreProducts] = useState(false);
   const [hasMoreProducts, setHasMoreProducts] = useState(true);
 
-  // --- استیت آمار (Stats) ---
   const [stats, setStats] = useState({ total: 0, unavailable: 0 });
-
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // --- حالت نمایش ---
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   
-  // تنظیمات سراسری
   const [dollarRate, setDollarRate] = useState(100000);
   const [profitMargin, setProfitMargin] = useState(25);
   const [shippingBase, setShippingBase] = useState(300000);
-  const [goldMarkupPercent, setGoldMarkupPercent] = useState(40); // اضافه شد
+  const [goldMarkupPercent, setGoldMarkupPercent] = useState(40);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   
   const [formData, setFormData] = useState({ 
-    title: '', 
-    price: '', 
-    price_toman: '',
-    image: '',
-    slug: '',
-    category: '',
-    description: '',
-    features: '', 
-    seo_title: '',
-    seo_desc: '',
-    weight: '', // اضافه شد
-    pricing_type: 'fixed' // اضافه شد (fixed یا gold)
+    title: '', price: '', price_toman: '', image: '', slug: '', category: '',
+    description: '', features: '', seo_title: '', seo_desc: '', weight: '', pricing_type: 'fixed'
   });
 
-  // --- استیت‌های گالری هوشمند ---
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [loadingMedia, setLoadingMedia] = useState(false);
   const [mediaLoadingMore, setMediaLoadingMore] = useState(false);
   const [mediaHasMore, setMediaHasMore] = useState(true);
 
-  // --- رفرنس‌ها برای اسکرول ---
   const productObserver = useRef<IntersectionObserver | null>(null);
   const mediaObserver = useRef<IntersectionObserver | null>(null);
 
-  // 1. آبزرور برای لیست محصولات
   const lastProductElementRef = useCallback((node: HTMLDivElement) => {
     if (loading || loadingMoreProducts) return;
     if (productObserver.current) productObserver.current.disconnect();
@@ -104,7 +84,6 @@ export default function ProductsPage() {
     if (node) productObserver.current.observe(node);
   }, [loading, loadingMoreProducts, hasMoreProducts, searchTerm]);
 
-  // 2. آبزرور برای گالری عکس
   const lastMediaElementRef = useCallback((node: HTMLDivElement) => {
     if (loadingMedia || mediaLoadingMore) return;
     if (mediaObserver.current) mediaObserver.current.disconnect();
@@ -117,7 +96,6 @@ export default function ProductsPage() {
     
     if (node) mediaObserver.current.observe(node);
   }, [loadingMedia, mediaLoadingMore, mediaHasMore]);
-
 
   useEffect(() => {
     initialLoad();
@@ -190,7 +168,6 @@ export default function ProductsPage() {
     const { data } = await query;
 
     if (data) {
-        // برای تایپ‌اسکریپت، data رو کست می‌کنیم چون weight و pricing_type ممکنه در دیتای قدیمی نباشن
         const typedData = data.map(item => ({
             ...item,
             weight: item.weight || 0,
@@ -252,7 +229,6 @@ export default function ProductsPage() {
   };
 
   const calculateSuggestedUSD = (tomanStr: string) => {
-    // فقط برای محصولات معمولی محاسبه انجام میشه
     if (formData.pricing_type === 'gold') return;
 
     const toman = parseInt(tomanStr) || 0;
@@ -278,8 +254,8 @@ export default function ProductsPage() {
         features: product.features ? product.features.join('\n') : '',
         seo_title: product.seo_title || '',
         seo_desc: product.seo_desc || '',
-        weight: product.weight ? product.weight.toString() : '', // مقداردهی وزن
-        pricing_type: product.pricing_type === 'gold' ? 'gold' : 'fixed' // مقداردهی نوع قیمت
+        weight: product.weight ? product.weight.toString() : '',
+        pricing_type: product.pricing_type === 'gold' ? 'gold' : 'fixed' 
       });
     } else {
       setEditingProduct(null);
@@ -299,12 +275,15 @@ export default function ProductsPage() {
     e.preventDefault();
     setIsSaving(true);
     try {
+      // دیافت توکن ادمین برای ارسال به بک‌اند
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || '';
+
       const featuresArray = formData.features.split('\n').filter(line => line.trim() !== '');
       let finalSlug = formData.slug || formData.title;
       finalSlug = finalSlug.trim().toLowerCase().replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
       const finalCategory = formData.category || categories[0]?.slug || 'nuts';
 
-      // آماده‌سازی داده‌ها
       const productData = {
         title: formData.title,
         price: Number(formData.price),
@@ -316,12 +295,10 @@ export default function ProductsPage() {
         features: featuresArray,
         seo_title: formData.seo_title,
         seo_desc: formData.seo_desc,
-        weight: Number(formData.weight) || 0, // ذخیره وزن
-        pricing_type: formData.pricing_type // ذخیره نوع قیمت
+        weight: Number(formData.weight) || 0,
+        pricing_type: formData.pricing_type 
       };
 
-      // اگر طلا باشد، قیمت‌ها را موقتاً 0 یا مقدار فعلی رد می‌کنیم، چون کرون‌جاب مسئول آپدیت است
-      // اما برای اینکه ارور ندهد، اگر خالی بود 0 می‌گذاریم
       if (formData.pricing_type === 'gold') {
         productData.price = productData.price || 0;
         productData.price_toman = productData.price_toman || 0;
@@ -331,13 +308,19 @@ export default function ProductsPage() {
       if (editingProduct) {
         response = await fetch('/api/admin/products', {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` 
+          },
           body: JSON.stringify({ id: editingProduct.id, ...productData }),
         });
       } else {
         response = await fetch('/api/admin/products', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` 
+          },
           body: JSON.stringify(productData),
         });
       }
@@ -360,8 +343,18 @@ export default function ProductsPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('آیا مطمئن هستید؟')) return;
     try {
-      const response = await fetch(`/api/admin/products?id=${id}`, { method: 'DELETE' });
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || '';
+
+      const response = await fetch(`/api/admin/products?id=${id}`, { 
+          method: 'DELETE',
+          headers: {
+             'Authorization': `Bearer ${token}` 
+          }
+      });
+      
       if (!response.ok) throw new Error('خطا در حذف');
+      
       setProducts(products.filter(p => p.id !== id));
       fetchStats();
     } catch (error: any) {
@@ -443,7 +436,7 @@ export default function ProductsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in duration-300">
             {products.map((product, index) => {
                 const isLast = index === products.length - 1;
-                const isUnavailable = product.price_toman === 0 && product.pricing_type !== 'gold'; // طلا ممکن است 0 باشد تا آپدیت شود
+                const isUnavailable = product.price_toman === 0 && product.pricing_type !== 'gold'; 
                 const isGold = product.pricing_type === 'gold';
                 const catObj = getCategoryObj(product.category); 
                 return (
@@ -459,13 +452,11 @@ export default function ProductsPage() {
                                 <button onClick={() => handleDelete(product.id)} className="p-2 bg-white/90 rounded-full text-red-500 shadow-sm"><Trash2 className="h-4 w-4" /></button>
                             </div>
                             
-                            {/* بج دسته‌بندی */}
                             <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded-full backdrop-blur-sm flex items-center gap-1.5">
                               {catObj?.icon_url && <img src={catObj.icon_url} className="w-3 h-3 object-contain invert" alt="" />}
                               {catObj ? catObj.name : product.category}
                             </span>
                             
-                            {/* نشانگر طلا */}
                             {isGold && (
                                 <span className="absolute top-2 left-2 bg-yellow-400 text-blue-900 text-[10px] px-2 py-1 rounded-full shadow-md flex items-center gap-1 font-bold">
                                     <Gem className="w-3 h-3" /> طلا
@@ -534,7 +525,6 @@ export default function ProductsPage() {
           <p className="text-center text-gray-400 text-xs mt-4">تمام محصولات نمایش داده شدند.</p>
       )}
 
-      {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[50] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -547,7 +537,6 @@ export default function ProductsPage() {
               <div className="space-y-4">
                   <h4 className="font-bold text-blue-800 text-sm border-b pb-2">۱. اطلاعات پایه</h4>
                   
-                  {/* Toggle Pricing Type - NEW */}
                   <div className="flex gap-2 p-1 bg-gray-100 rounded-lg w-fit">
                         <button 
                             type="button"
@@ -571,7 +560,6 @@ export default function ProductsPage() {
                         <input type="text" required className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} />
                       </div>
                       
-                      {/* Conditional Inputs based on Pricing Type */}
                       {formData.pricing_type === 'fixed' ? (
                           <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in zoom-in duration-200">
                               <div>
@@ -721,7 +709,6 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {/* Gallery Modal */}
       {isGalleryOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in zoom-in duration-200">
            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl h-[80vh] flex flex-col overflow-hidden">

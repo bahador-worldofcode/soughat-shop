@@ -37,7 +37,7 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
                 <a href="tel:+989168038017" className="text-gray-900 font-bold text-lg hover:text-green-600 transition-colors font-mono">
                     +98 916 803 8017
                 </a>
-                <a href="https://wa.me/989168038017" target="_blank" className="text-xs inline-flex items-center text-green-600 hover:underline" dir={isEn ? 'ltr' : 'rtl'}>
+                <a href={`https://wa.me/989168038017?text=${encodeURIComponent(t('whatsapp_msg'))}`} target="_blank" className="text-xs inline-flex items-center text-green-600 hover:underline" dir={isEn ? 'ltr' : 'rtl'}>
                    {t('whatsapp_btn')} <ArrowLeft className={`h-3 w-3 ${isEn ? 'ml-1 rotate-180' : 'mr-1'}`} />
                 </a>
             </div>

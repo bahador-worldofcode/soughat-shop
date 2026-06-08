@@ -171,7 +171,8 @@
     "address_line": "Azadi Street, Azadi Sq, Tehran (Distribution Office)",
     "faq_title": "Have a question?",
     "faq_desc": "You might find the answer in our terms.",
-    "faq_btn": "View Terms & Guarantee"
+    "faq_btn": "View Terms & Guarantee",
+    "whatsapp_msg": "Hello, I am messaging from Soughat Shop and need assistance."
   },
   "Terms": {
     "title": "Terms & Guarantee",
@@ -375,7 +376,8 @@
     "success_title": "Message Received!",
     "success_desc": "Our team will contact you shortly via WhatsApp or this number.",
     "btn_back": "Back to Menu",
-    "footer": "Powered by Soughat Shop"
+    "footer": "Powered by Soughat Shop",
+    "whatsapp_msg": "Hello, I am messaging from Soughat Shop and need assistance."
   },
   "HomeSEO": {
     "main_title": "Soughat Shop: Reliable Gift Delivery to Iran Worldwide",

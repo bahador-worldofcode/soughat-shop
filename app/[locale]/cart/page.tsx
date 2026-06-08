@@ -39,7 +39,7 @@ export default function CartPage() {
         <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('empty_title')}</h1>
         <p className="text-gray-500 mb-8">{t('empty_desc')}</p>
         <Link 
-          href="/" 
+          href="/products" 
           className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-blue-700 transition-colors"
         >
           {t('back_to_store')}
@@ -56,7 +56,6 @@ export default function CartPage() {
         
         <div className="lg:col-span-2 space-y-4">
           {cart.map((item) => {
-            // ✅ لاجیک هوشمند انتخاب نام بر اساس زبان
             const displayTitle = isEn ? (item.title_en || item.title) : item.title;
 
             return (
