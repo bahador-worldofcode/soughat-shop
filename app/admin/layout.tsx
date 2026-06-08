@@ -1,130 +1,33 @@
-'use client';
+import "@/app/globals.css";
+import type { Metadata } from "next";
+import { Vazirmatn } from 'next/font/google';
+import AdminWrapper from "@/components/AdminWrapper";
 
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-// آیکون‌ها
-import { LayoutDashboard, ShoppingCart, Package, LogOut, Image as ImageIcon, BookOpen, Wallet, RefreshCw, MessageSquare, Layers, Settings, Calculator, Loader2 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
-import { useEffect, useState } from 'react';
+// کانفیگ فونت 
+const vazir = Vazirmatn({ subsets: ['arabic', 'latin'] });
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const router = useRouter();
-  
-  // وضعیت بارگذاری امنیتی (دیوار دفاعی)
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthorized, setIsAuthorized] = useState(false);
+// تنظیمات سئو برای اینکه گوگل پنل ادمین رو ایندکس نکنه
+export const metadata: Metadata = {
+  title: "پنل مدیریت | سوغات شاپ",
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      // 1. اگر کاربر در صفحه لاگین است، کاری نداشته باش (بذار صفحه لود شه)
-      if (pathname === '/admin/login') {
-        setIsLoading(false);
-        return;
-      }
-
-      // 2. بررسی وضعیت لاگین از سوپابیس
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session) {
-        // اگر لاگین نبود، بفرستش به صفحه لاگین
-        router.replace('/admin/login');
-      } else {
-        // اگر لاگین بود، اجازه بده محتوا لود شه
-        setIsAuthorized(true);
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, [pathname, router]);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.replace('/admin/login');
-  };
-
-  // --- دیوار امنیتی ---
-  // تا زمانی که داریم چک می‌کنیم، فقط لودینگ نشون بده
-  // این باعث میشه محتوای اصلی حتی برای یک میلی‌ثانیه هم دیده نشه
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
-            <p className="text-gray-500 text-sm font-bold">در حال بررسی دسترسی...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // اگر صفحه لاگین بود، قالب ادمین (سایدبار) رو نشون نده، فقط فرم رو نشون بده
-  if (pathname === '/admin/login') {
-    return <>{children}</>;
-  }
-
-  // اگر لودینگ تموم شد ولی کاربر لاگین نبود (حالت گذار ریدارکت)، چیزی نشون نده
-  if (!isAuthorized) {
-    return null;
-  }
-
-  // --- محتوای اصلی پنل (فقط وقتی نشون داده میشه که isAuthorized true باشه) ---
-  const menuItems = [
-    { name: 'داشبورد', href: '/admin/dashboard', icon: LayoutDashboard },
-    { name: 'سفارشات', href: '/admin/orders', icon: ShoppingCart },
-    { name: 'محصولات', href: '/admin/products', icon: Package },
-    { name: 'دسته‌بندی‌ها', href: '/admin/categories', icon: Layers },
-    { name: 'قیمت‌گذاری', href: '/admin/pricing', icon: Calculator }, 
-    { name: 'پیام‌ها', href: '/admin/messages', icon: MessageSquare },
-    { name: 'درگاه پرداخت', href: '/admin/payments', icon: Wallet },
-    { name: 'نرخ ارز', href: '/admin/currencies', icon: RefreshCw },
-    { name: 'رسانه', href: '/admin/media', icon: ImageIcon },
-    { name: 'وبلاگ', href: '/admin/blog', icon: BookOpen },
-    { name: 'تنظیمات سایت', href: '/admin/settings', icon: Settings },
-  ];
-
+export default function RootAdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <div className="min-h-screen bg-gray-50 font-[family-name:var(--font-vazir)] flex">
-      <aside className="w-64 bg-blue-900 text-white hidden md:flex flex-col shadow-2xl sticky top-0 h-screen z-20">
-        <div className="p-6 border-b border-blue-800 flex items-center gap-2">
-          <div className="h-8 w-8 bg-blue-500 rounded-lg flex items-center justify-center font-bold">S</div>
-          <div>
-            <h1 className="text-lg font-bold">سوغات شاپ</h1>
-            <span className="text-[10px] text-blue-300 uppercase tracking-wider">پنل مدیریت</span>
-          </div>
-        </div>
-
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-          {menuItems.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link key={item.href} href={item.href}>
-                <div className={`flex items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer ${
-                  isActive ? 'bg-blue-700 text-white shadow-inner' : 'hover:bg-blue-800/50 text-blue-100'
-                }`}>
-                  <item.icon className="h-5 w-5" />
-                  <span className="font-medium">{item.name}</span>
-                </div>
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="p-4 border-t border-blue-800">
-          <button onClick={handleLogout} className="flex items-center gap-2 text-sm text-red-300 hover:text-red-100 hover:bg-red-900/20 p-2 rounded-lg transition-all w-full">
-            <LogOut className="h-4 w-4" />
-            خروج امن
-          </button>
-        </div>
-      </aside>
-
-      <main className="flex-1 p-4 md:p-8 overflow-y-auto h-screen relative">
-        <div className="md:hidden flex justify-between items-center mb-6 bg-white p-4 rounded-xl shadow-sm">
-          <span className="font-bold text-blue-900">Soughat Admin</span>
-          <button onClick={handleLogout}><LogOut className="h-5 w-5 text-red-500" /></button>
-        </div>
-        {children}
-      </main>
-    </div>
+    <html lang="fa" dir="rtl">
+      <body className={`${vazir.className} antialiased bg-gray-50 flex flex-col min-h-screen w-full`}>
+        {/* کدهای سایدبار و احراز هویت رو دادیم به این کامپوننت */}
+        <AdminWrapper>
+          {children}
+        </AdminWrapper>
+      </body>
+    </html>
   );
 }
