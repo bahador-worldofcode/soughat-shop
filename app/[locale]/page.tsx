@@ -20,20 +20,17 @@ export default async function Home({
   const t = await getTranslations('Home');
   const isEn = locale === 'en';
 
-  // 1. دریافت محصولات
   const { data: products } = await supabase
     .from('products')
     .select('*')
     .order('created_at', { ascending: false })
     .limit(8);
 
-  // 2. دریافت دسته‌بندی‌ها (مرتب‌سازی بر اساس نام)
   const { data: categories } = await supabase
     .from('categories')
     .select('*')
     .order('name');
 
-  // 3. دریافت تنظیمات سایت (بنر و متن‌ها)
   const { data: settingsData } = await supabase.from('site_settings').select('*');
   const settings: any = {};
   if (settingsData) {
@@ -64,7 +61,6 @@ export default async function Home({
                <Layers className="h-6 w-6 text-blue-600" />
                {t('categories_title')}
             </h3>
-            {/* اصلاح شد: خواندن از فایل ترجمه */}
             <p className="text-gray-500 text-sm">{t('categories_subtitle')}</p>
           </div>
           
@@ -74,7 +70,6 @@ export default async function Home({
             </div>
           ) : (
             <div className="relative">
-              {/* کانتینر اصلی گرید/اسکرول */}
               <div 
                 className="
                   grid grid-flow-col auto-cols-[160px] md:auto-cols-auto gap-4 md:gap-6 
@@ -101,7 +96,6 @@ export default async function Home({
                          snap-center h-full min-h-[180px]
                        "
                     >
-                     {/* دایره پس‌زمینه آیکون */}
                      <div className="
                         w-20 h-20 mb-5 rounded-full 
                         bg-blue-50/80 group-hover:bg-blue-600 
@@ -124,12 +118,10 @@ export default async function Home({
                        )}
                      </div>
 
-                     {/* نام دسته */}
                      <h3 className="font-bold text-gray-800 text-lg group-hover:text-blue-700 transition-colors text-center leading-tight">
                         {catName}
                      </h3>
                      
-                     {/* متن مخفی (فقط هاور) - اصلاح شد: خواندن از فایل ترجمه */}
                      <span className="
                         text-[10px] text-gray-400 mt-2 
                         opacity-0 group-hover:opacity-100 
@@ -207,6 +199,75 @@ export default async function Home({
             <CurrencyRatesBanner />
         </div>
       </div>
+
+      {/* 6. Social Proof / Reviews Section */}
+      <section className="bg-gradient-to-br from-slate-900 to-blue-900 py-16 mt-12">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-black text-white mb-4">
+              {t('reviews_title')}
+            </h2>
+            <p className="text-blue-200 text-sm">
+              {t('reviews_subtitle')}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6" dir={isEn ? 'ltr' : 'rtl'}>
+            
+            {/* Review 1 */}
+            <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20">
+              <div className="flex text-yellow-400 mb-4">
+                {[...Array(5)].map((_, i) => <Sparkles key={i} className="h-4 w-4 fill-current" />)}
+              </div>
+              <p className="text-blue-50 text-sm leading-7 mb-6 text-justify">
+                {t('review1_text')}
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">M</div>
+                <div>
+                  <h4 className="text-white font-bold text-sm">{t('review1_name')}</h4>
+                  <p className="text-blue-300 text-xs">{t('review1_loc')}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Review 2 */}
+            <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 relative top-0 md:top-4">
+              <div className="flex text-yellow-400 mb-4">
+                {[...Array(5)].map((_, i) => <Sparkles key={i} className="h-4 w-4 fill-current" />)}
+              </div>
+              <p className="text-blue-50 text-sm leading-7 mb-6 text-justify">
+                {t('review2_text')}
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold">S</div>
+                <div>
+                  <h4 className="text-white font-bold text-sm">{t('review2_name')}</h4>
+                  <p className="text-blue-300 text-xs">{t('review2_loc')}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Review 3 */}
+            <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20">
+              <div className="flex text-yellow-400 mb-4">
+                {[...Array(5)].map((_, i) => <Sparkles key={i} className="h-4 w-4 fill-current" />)}
+              </div>
+              <p className="text-blue-50 text-sm leading-7 mb-6 text-justify">
+                {t('review3_text')}
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-emerald-500 rounded-full flex items-center justify-center text-white font-bold">A</div>
+                <div>
+                  <h4 className="text-white font-bold text-sm">{t('review3_name')}</h4>
+                  <p className="text-blue-300 text-xs">{t('review3_loc')}</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
 
       <FAQ />
       <HomeSEOContent />

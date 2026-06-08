@@ -17,7 +17,7 @@ interface Product {
   features: string[];
   slug: string;
   pricing_type?: string; 
-  weight?: number; // ✅ اضافه شد
+  weight?: number; 
 }
 
 interface RelatedItem {
@@ -28,7 +28,7 @@ interface RelatedItem {
     image: string;
     slug: string;
     pricing_type?: string; 
-    weight?: number; // ✅ اضافه شد
+    weight?: number; 
 }
 
 interface Props {
@@ -41,6 +41,7 @@ interface Props {
 
 export default function ProductClientView({ product, categoryName, categorySlug, categoryIcon, relatedProducts }: Props) {
   const t = useTranslations('Product');
+  
   const { convertPrice, getSymbol, addToCart, decreaseFromCart, removeFromCart, cart } = useStore();
   const [mounted, setMounted] = useState(false);
   
@@ -62,7 +63,6 @@ export default function ProductClientView({ product, categoryName, categorySlug,
 
   const AddToCartButtons = ({ isMobile = false }: { isMobile?: boolean }) => {
       
-      // حالت حواله
       if (product.pricing_type === 'currency') {
         const amounts = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 40, 50, 100];
 
@@ -140,7 +140,6 @@ export default function ProductClientView({ product, categoryName, categorySlug,
         );
       }
 
-      // حالت عادی
       if (quantity > 0) {
           return (
             <div className={`flex items-center justify-between bg-white border border-blue-200 rounded-xl p-1 shadow-inner ${isMobile ? 'h-12 w-full' : 'h-14 w-full'}`}>
@@ -226,6 +225,19 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                     )}
                     
                     <AddToCartButtons isMobile={false} />
+
+                    {/* Trust Badge - Crypto Guarantee */}
+                    <div className="mt-5 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl flex items-start gap-3 animate-in fade-in duration-500">
+                        <ShieldCheck className="h-6 w-6 text-green-600 flex-shrink-0" />
+                        <div>
+                            <h4 className="text-sm font-bold text-green-900 mb-1">
+                                {t('crypto_guarantee_title')}
+                            </h4>
+                            <p className="text-xs text-green-700 leading-5 text-justify">
+                                {t('crypto_guarantee_desc')}
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 {product.features && product.features.length > 0 && (
@@ -303,7 +315,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                             image={item.image}
                             slug={item.slug}
                             pricing_type={item.pricing_type}
-                            weight={item.weight} // ✅ پاس دادن وزن برای محصولات مرتبط
+                            weight={item.weight}
                        />
                     ))}
                 </div>

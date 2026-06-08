@@ -43,7 +43,18 @@
     "view_archive": "View Full Archive",
     "products_loading": "Setting up the showcase...",
     "rates_title": "Financial Transparency is Our Pride",
-    "rates_desc": "View real-time currency exchange rates"
+    "rates_desc": "View real-time currency exchange rates",
+    "reviews_title": "Trusted by Iranians Worldwide",
+    "reviews_subtitle": "Experience the joy of secure crypto gifting.",
+    "review1_text": "I was hesitant about paying with USDT, but the process was flawless. My parents in Tehran received the pistachio box in 24 hours. Will order again!",
+    "review1_name": "Mehrdad Valizadeh",
+    "review1_loc": "🇨🇦 Toronto, Canada",
+    "review2_text": "Finally a service that solves the banking sanction issue! Sent a beautiful flower basket to my wife in Shiraz using Solana. The delivery guy was very respectful.",
+    "review2_name": "Sara Tehrani",
+    "review2_loc": "🇩🇪 Berlin, Germany",
+    "review3_text": "The support is 10/10. I made a mistake in the address, contacted them on WhatsApp, and they fixed it instantly. The Saffron quality was top-notch.",
+    "review3_name": "Ali Rezaei",
+    "review3_loc": "🇬🇧 London, UK"
   },
   "ProductCard": {
     "instant_delivery": "Instant delivery to Tehran & Cities",
@@ -125,7 +136,9 @@
     "payable_label": "Payable Amount:",
     "in_cart_currency": "Million Tomans in cart",
     "edit_remove": "Edit / Remove",
-    "confirm_add": "Confirm & Add"
+    "confirm_add": "Confirm & Add",
+    "crypto_guarantee_title": "100% Safe Crypto Delivery",
+    "crypto_guarantee_desc": "Your crypto payment is held securely. If the gift is not delivered to your family in Iran, the full amount will be refunded directly to your wallet."
   },
   "ProductsPage": {
     "title": "Soughat Shop Store",
