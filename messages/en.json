@@ -322,7 +322,11 @@
     "btn_checking": "Registering transaction...",
     "refresh_rate": "Refresh Rate",
     "warning_title": "IMPORTANT: Network Selection",
-    "warning_desc": "Please ONLY select Solana (SPL) network for USDT. Sending via TRC20 or ERC20 will result in fund loss."
+    "warning_desc": "Please ONLY select Solana (SPL) network for USDT. Sending via TRC20 or ERC20 will result in fund loss.",
+    "manual_pay_title": "Final Step: Get Wallet Address",
+    "manual_pay_desc": "For security and to prevent any deposit errors, the automatic gateway is temporarily disabled. Please click the button below to contact us on WhatsApp to receive the Tether (USDT) or Solana (SOL) wallet address and finalize your order.",
+    "btn_whatsapp": "Contact via WhatsApp & Get Address",
+    "whatsapp_message_template": "Hello, I have placed order #{orderId} on the website and I am messaging to get the wallet address for payment."
   },
   "Track": {
     "title": "Track Your Order",

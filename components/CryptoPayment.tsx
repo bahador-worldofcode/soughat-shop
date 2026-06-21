@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useStore } from '@/lib/store';
-import { Loader2, Copy, CheckCircle, Wallet, Info, RefreshCw, ScanLine, AlertTriangle } from 'lucide-react';
+import { Loader2, Copy, CheckCircle, Wallet, Info, RefreshCw, ScanLine, AlertTriangle, MessageCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
@@ -189,6 +189,8 @@ export default function CryptoPayment({ orderId }: Props) {
            </div>
         </div>
 
+        {/* بخش راهنمای پرداخت قبلی - کامنت شد تا حذف نشود */}
+        {/*
         <div className="text-center mb-6 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
             <div className="flex items-center justify-center gap-2 text-blue-800 mb-1">
                 <ScanLine className="h-5 w-5" />
@@ -198,11 +200,33 @@ export default function CryptoPayment({ orderId }: Props) {
                 {t('guide_desc')}
             </p>
         </div>
+        */}
 
         {selectedMethod && (
             <div className="flex flex-col items-center animate-in fade-in duration-300">
                 
-                <div className="bg-white p-3 rounded-xl border-2 border-dashed border-gray-300 mb-6 shadow-inner relative group">
+                {/* 🌟 بخش جدید واتساپ برای دریافت آدرس کیف پول 🌟 */}
+                <div className="text-center mb-6 bg-green-50 p-5 rounded-xl border border-green-200 shadow-sm w-full">
+                    <h4 className="font-bold text-green-900 mb-3 flex items-center justify-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-green-700" />
+                        {t('manual_pay_title')}
+                    </h4>
+                    <p className="text-sm text-green-800 leading-relaxed mb-5">
+                        {t('manual_pay_desc')}
+                    </p>
+                    <a 
+                        href={`https://wa.me/989168038017?text=${encodeURIComponent(t('whatsapp_message_template', { orderId: orderId }))}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-2 w-full py-4 px-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all shadow-lg"
+                    >
+                        <MessageCircle className="h-6 w-6" />
+                        {t('btn_whatsapp')}
+                    </a>
+                </div>
+
+                {/* بخش نمایش QR کد و آدرس کیف پول قبلی - کامنت شد تا چیزی حذف نشود */}
+                {/* <div className="bg-white p-3 rounded-xl border-2 border-dashed border-gray-300 mb-6 shadow-inner relative group">
                     <QRCodeSVG 
                         value={selectedMethod.address} 
                         size={180}
@@ -247,11 +271,13 @@ export default function CryptoPayment({ orderId }: Props) {
                     </button>
                     {copied && <p className="text-center text-xs text-green-600 mt-1 font-bold animate-pulse">{t('copy_success')}</p>}
                 </div>
+                */}
 
+                {/* دکمه تایید نهایی */}
                 <button
                     onClick={handlePaymentDone}
                     disabled={isChecking}
-                    className="w-full py-4 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold shadow-lg shadow-green-200 transition-all flex items-center justify-center gap-2"
+                    className="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg shadow-blue-200 transition-all flex items-center justify-center gap-2"
                 >
                     {isChecking ? <Loader2 className="animate-spin h-5 w-5" /> : <CheckCircle className="h-5 w-5" />}
                     {isChecking ? t('btn_checking') : t('btn_confirm')}
