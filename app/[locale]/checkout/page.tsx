@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { MapPin, ShoppingCart, ChevronLeft, ChevronRight, Loader2, Globe, FileText, ShieldCheck, ArrowLeft, AlertTriangle, Trash2, X } from 'lucide-react';
+import { MapPin, ShoppingCart, ChevronLeft, ChevronRight, Loader2, Globe, FileText, ShieldCheck, ArrowLeft, AlertTriangle, Trash2, XCircle } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import CryptoPayment from '@/components/CryptoPayment';
 import { useTranslations, useLocale } from 'next-intl';
@@ -26,6 +26,10 @@ export default function CheckoutPage() {
   const [orderId, setOrderId] = useState('');
   const [showClearModal, setShowClearModal] = useState(false);
 
+  // استیت‌های جدید برای مدیریت خطاهای فرم
+  const [formErrors, setFormErrors] = useState<Record<string, boolean>>({});
+  const [globalError, setGlobalError] = useState('');
+
   const [formData, setFormData] = useState({
     senderName: '',
     senderPhone: '',
@@ -37,8 +41,8 @@ export default function CheckoutPage() {
     notes: '', 
   });
 
+  // حل مشکل Race Condition و بازیابی وضعیت بعد از رفرش
   useEffect(() => {
-    setMounted(true);
     const savedData = localStorage.getItem('checkout_draft');
     if (savedData) {
         try {
@@ -47,6 +51,15 @@ export default function CheckoutPage() {
             console.error('Error loading draft', e);
         }
     }
+
+    // بررسی اینکه آیا سفارشی از قبل ثبت شده و منتظر پرداخت است؟
+    const pendingOrder = localStorage.getItem('pending_order_id');
+    if (pendingOrder) {
+        setOrderId(pendingOrder);
+        setStep(2);
+    }
+    
+    setMounted(true);
   }, []);
 
   useEffect(() => {
@@ -58,6 +71,10 @@ export default function CheckoutPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    // اگر فیلدی قبلا ارور داشت، با تایپ کردن کاربر ارور رو پاک کن
+    if (formErrors[name]) {
+        setFormErrors((prev) => ({ ...prev, [name]: false }));
+    }
   };
 
   const clearForm = () => {
@@ -66,22 +83,36 @@ export default function CheckoutPage() {
         receiverName: '', receiverPhone: '', city: '', address: '', notes: ''
     };
     setFormData(emptyState);
+    setFormErrors({});
+    setGlobalError('');
     localStorage.removeItem('checkout_draft');
     setShowClearModal(false);
   };
 
+  const handleGoBack = () => {
+    // اگر کاربر خواست برگرده اطلاعات رو اصلاح کنه، سفارش قبلی رو از لوکال پاک می‌کنیم
+    localStorage.removeItem('pending_order_id');
+    setStep(1);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (
-      !formData.senderName.trim() ||
-      !formData.senderPhone.trim() ||
-      !formData.senderCountry.trim() ||
-      !formData.receiverName.trim() ||
-      !formData.receiverPhone.trim() ||
-      !formData.city.trim() ||
-      !formData.address.trim()
-    ) {
-      alert(t('errors.fill_all'));
+    setGlobalError('');
+    
+    // اعتبارسنجی دستی (Validation) برای تجربه کاربری بهتر
+    const errors: Record<string, boolean> = {};
+    if (!formData.senderName.trim()) errors.senderName = true;
+    if (!formData.senderPhone.trim()) errors.senderPhone = true;
+    if (!formData.senderCountry.trim()) errors.senderCountry = true;
+    if (!formData.receiverName.trim()) errors.receiverName = true;
+    if (!formData.receiverPhone.trim()) errors.receiverPhone = true;
+    if (!formData.city.trim()) errors.city = true;
+    if (!formData.address.trim()) errors.address = true;
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      setGlobalError(t('errors.fill_all'));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -113,13 +144,15 @@ export default function CheckoutPage() {
 
       if (result.id) {
         localStorage.removeItem('checkout_draft');
+        localStorage.setItem('pending_order_id', result.id); // ذخیره آیدی برای جلوگیری از پریدن با رفرش
         setOrderId(result.id);
         setStep(2);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
 
     } catch (error: any) {
-      alert(t('errors.server_error') + ': ' + error.message);
+      setGlobalError(t('errors.server_error') + ': ' + error.message);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       console.error(error);
     } finally {
       setIsSubmitting(false);
@@ -224,8 +257,16 @@ export default function CheckoutPage() {
                     {t('clear_form')}
                   </button>
               </div>
+
+              {/* باکس نمایش خطای سراسری */}
+              {globalError && (
+                <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl flex items-center gap-3 animate-in fade-in">
+                    <XCircle className="h-5 w-5 flex-shrink-0" />
+                    <span className="text-sm font-bold">{globalError}</span>
+                </div>
+              )}
               
-              <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <form onSubmit={handleSubmit} noValidate className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 
                 <div className="bg-blue-50/50 p-6 rounded-xl border border-blue-100">
                     <h3 className="font-bold text-blue-800 mb-4 flex items-center gap-2 border-b border-blue-200 pb-2">
@@ -238,9 +279,8 @@ export default function CheckoutPage() {
                             <input
                                 type="text"
                                 name="senderName"
-                                required
                                 placeholder={t('sender.name_ph')}
-                                className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-white"
+                                className={`w-full rounded-lg border p-3 text-sm outline-none transition-colors ${formErrors.senderName ? 'border-red-500 bg-red-50' : 'border-gray-300 bg-white focus:border-blue-500'}`}
                                 onChange={handleInputChange}
                                 value={formData.senderName}
                             />
@@ -250,9 +290,8 @@ export default function CheckoutPage() {
                             <input
                                 type="text"
                                 name="senderCountry"
-                                required
                                 placeholder={t('sender.country_ph')}
-                                className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-white"
+                                className={`w-full rounded-lg border p-3 text-sm outline-none transition-colors ${formErrors.senderCountry ? 'border-red-500 bg-red-50' : 'border-gray-300 bg-white focus:border-blue-500'}`}
                                 onChange={handleInputChange}
                                 value={formData.senderCountry}
                             />
@@ -262,10 +301,9 @@ export default function CheckoutPage() {
                             <input
                                 type="tel"
                                 name="senderPhone"
-                                required
                                 dir="ltr"
                                 placeholder={t('sender.phone_ph')}
-                                className={`w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-white font-mono text-left`}
+                                className={`w-full rounded-lg border p-3 text-sm outline-none font-mono text-left transition-colors ${formErrors.senderPhone ? 'border-red-500 bg-red-50' : 'border-gray-300 bg-white focus:border-blue-500'}`}
                                 onChange={handleInputChange}
                                 value={formData.senderPhone}
                             />
@@ -284,9 +322,8 @@ export default function CheckoutPage() {
                             <input
                                 type="text"
                                 name="receiverName"
-                                required
                                 placeholder={t('receiver.name_ph')}
-                                className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-gray-50 focus:bg-white transition-colors"
+                                className={`w-full rounded-lg border p-3 text-sm outline-none transition-colors ${formErrors.receiverName ? 'border-red-500 bg-red-50' : 'border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500'}`}
                                 onChange={handleInputChange}
                                 value={formData.receiverName}
                             />
@@ -296,10 +333,9 @@ export default function CheckoutPage() {
                             <input
                                 type="tel"
                                 name="receiverPhone"
-                                required
                                 dir="ltr"
                                 placeholder={t('receiver.phone_ph')}
-                                className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-gray-50 focus:bg-white transition-colors text-left font-mono"
+                                className={`w-full rounded-lg border p-3 text-sm outline-none text-left font-mono transition-colors ${formErrors.receiverPhone ? 'border-red-500 bg-red-50' : 'border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500'}`}
                                 onChange={handleInputChange}
                                 value={formData.receiverPhone}
                             />
@@ -309,9 +345,8 @@ export default function CheckoutPage() {
                             <input
                                 type="text"
                                 name="city"
-                                required
                                 placeholder={t('receiver.city_ph')}
-                                className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-gray-50 focus:bg-white transition-colors"
+                                className={`w-full rounded-lg border p-3 text-sm outline-none transition-colors ${formErrors.city ? 'border-red-500 bg-red-50' : 'border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500'}`}
                                 onChange={handleInputChange}
                                 value={formData.city}
                             />
@@ -320,10 +355,9 @@ export default function CheckoutPage() {
                             <label className="text-xs text-gray-600">{t('receiver.address')} <span className="text-red-500">*</span></label>
                             <textarea
                                 name="address"
-                                required
                                 rows={2}
                                 placeholder={t('receiver.address_ph')}
-                                className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 outline-none bg-gray-50 focus:bg-white transition-colors resize-none"
+                                className={`w-full rounded-lg border p-3 text-sm outline-none resize-none transition-colors ${formErrors.address ? 'border-red-500 bg-red-50' : 'border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500'}`}
                                 onChange={handleInputChange}
                                 value={formData.address}
                             />
@@ -370,7 +404,7 @@ export default function CheckoutPage() {
             </>
           ) : (
             <>
-              <h1 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2 animate-in fade-in">
                 <ShieldCheck className="text-blue-600 h-7 w-7" />
                 {t('btn_pay_title')}
               </h1>
@@ -378,9 +412,10 @@ export default function CheckoutPage() {
               <CryptoPayment orderId={orderId} />
               
               <button 
-                onClick={() => setStep(1)}
-                className="mt-4 text-sm text-gray-500 hover:text-gray-900 underline"
+                onClick={handleGoBack}
+                className="mt-6 flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg transition-colors"
               >
+                <ArrowLeft className={`h-4 w-4 ${!isEn ? 'rotate-180' : ''}`} />
                 {t('btn_back')}
               </button>
             </>
@@ -393,7 +428,7 @@ export default function CheckoutPage() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-blue-900">{t('cart_summary.title')}</h3>
               {step === 1 && (
-                <Link href="/cart" className="text-xs text-blue-600 hover:underline">
+                <Link href="/cart" className="text-xs text-blue-600 hover:underline font-bold">
                   {t('cart_summary.edit')}
                 </Link>
               )}
@@ -401,7 +436,6 @@ export default function CheckoutPage() {
             
             <div className="space-y-3 mb-6">
               {mounted && cart.map((item) => {
-                // ✅ لاجیک هوشمند نام محصول در خلاصه فاکتور
                 const displayTitle = isEn ? (item.title_en || item.title) : item.title;
                 
                 return (
