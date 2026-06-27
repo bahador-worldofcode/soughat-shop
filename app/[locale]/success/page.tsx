@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { CheckCircle, Package, ArrowRight, Copy } from 'lucide-react';
+import { Package, ArrowRight, Copy, AlertCircle, MessageCircle, ClipboardCheck } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { Link } from '@/i18n/navigation';
 import { useTranslations, useLocale } from 'next-intl';
@@ -16,67 +16,122 @@ function SuccessContent() {
   const searchParams = useSearchParams(); 
   const orderId = searchParams.get('id'); 
   const [trackingCode, setTrackingCode] = useState('');
+  const [isValid, setIsValid] = useState(true);
 
   useEffect(() => {
+    // اگر آیدی سفارش وجود داشت، سبد خرید را پاک کن و کد را نمایش بده
     if (orderId) {
       setTrackingCode(orderId);
+      clearCart(); 
     } else {
-      setTrackingCode('SGT-' + Math.floor(100000 + Math.random() * 900000));
+      // اگر آیدی نبود، یعنی کاربر الکی لینک را باز کرده. کد فیک نساز!
+      setIsValid(false); 
     }
-    clearCart();
   }, [clearCart, orderId]);
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(trackingCode);
-    alert(t('copy_toast'));
+    alert(isEn ? "Tracking code copied!" : "کد رهگیری کپی شد!");
   };
 
+  // --- اگر کاربر بدون سفارش وارد صفحه شد ---
+  if (!isValid) {
+    return (
+        <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center min-h-[60vh] text-center animate-in fade-in duration-700 font-[family-name:var(--font-vazir)]">
+            <div className="mb-6 relative">
+                <div className="bg-red-50 p-6 rounded-full">
+                    <AlertCircle className="h-16 w-16 text-red-500" />
+                </div>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+                {isEn ? "Invalid Order" : "سفارش نامعتبر"}
+            </h1>
+            <p className="text-gray-500 max-w-md mb-8 leading-7">
+                {isEn ? "No order information found. Your cart might be empty." : "اطلاعات سفارشی یافت نشد. ممکن است سبد خرید شما خالی باشد یا مستقیماً وارد این صفحه شده باشید."}
+            </p>
+            <Link 
+                href="/products" 
+                className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-8 py-3 text-base font-bold text-white shadow-lg hover:bg-blue-700 transition-all"
+            >
+                {isEn ? "Back to Store" : "بازگشت به فروشگاه"}
+            </Link>
+        </div>
+    )
+  }
+
+  // --- متون هاردکد شده برای رفع مشکل تناقض بدون نیاز به دستکاری فایل های ترجمه ---
+  const pageTitle = isEn ? "Order Registered Successfully" : "سفارش با موفقیت ثبت شد";
+  const pageDesc = isEn 
+    ? "Your order has been registered in our system. To receive the wallet address and finalize the payment, please send this tracking code to our WhatsApp support."
+    : "سفارش شما در سیستم ثبت شد. لطفاً برای دریافت آدرس کیف پول و نهایی کردن خرید، کد رهگیری زیر را کپی کرده و در واتساپ برای پشتیبانی ارسال کنید.";
+
+  // --- نمایش صفحه برای سفارشات معتبر ---
   return (
-    <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center min-h-[60vh] text-center animate-in fade-in duration-700">
+    <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center min-h-[60vh] text-center animate-in fade-in duration-700 font-[family-name:var(--font-vazir)]">
       
+      {/* آیکون آبی (ثبت سفارش) به جای تیک سبز (پرداخت) */}
       <div className="mb-8 relative">
-        <div className="absolute inset-0 bg-green-100 rounded-full animate-ping opacity-75"></div>
-        <div className="relative bg-green-100 p-6 rounded-full">
-          <CheckCircle className="h-16 w-16 text-green-600" />
+        <div className="absolute inset-0 bg-blue-100 rounded-full animate-ping opacity-75"></div>
+        <div className="relative bg-blue-100 p-6 rounded-full border-4 border-white shadow-sm">
+          <ClipboardCheck className="h-14 w-14 text-blue-600" />
         </div>
       </div>
 
-      <h1 className="text-3xl font-bold text-gray-900 mb-4">{t('title')}</h1>
-      <p className="text-gray-500 max-w-md mb-8">
-        {t('desc')}
+      <h1 className="text-2xl md:text-3xl font-black text-gray-900 mb-4">{pageTitle}</h1>
+      <p className="text-gray-600 max-w-md mb-8 leading-8">
+        {pageDesc}
       </p>
 
-      <div className="bg-white border border-dashed border-gray-300 rounded-xl p-6 w-full max-w-sm mb-8 shadow-sm">
-        <span className="text-xs text-gray-400 uppercase tracking-wider">{t('code_label')}</span>
-        <div className="flex items-center justify-between mt-2 bg-gray-50 p-3 rounded-lg border border-gray-100">
+      {/* باکس نمایش کد پیگیری */}
+      <div className="bg-white border-2 border-blue-100 rounded-3xl p-6 w-full max-w-md mb-8 shadow-sm">
+        <span className="text-xs font-bold text-blue-600 uppercase tracking-wider bg-blue-50 px-3 py-1.5 rounded-full mb-3 inline-block">
+            {isEn ? "Order Tracking Code" : "کد رهگیری سفارش"}
+        </span>
+        <div className="flex items-center justify-between mt-3 bg-gray-50 p-4 rounded-xl border border-gray-200">
           <span className="text-sm font-mono font-bold text-gray-800 break-all text-left dir-ltr">
             {trackingCode || '...'}
           </span>
-          <button onClick={copyToClipboard} className="text-gray-400 hover:text-blue-600 transition-colors ml-2 flex-shrink-0">
+          <button onClick={copyToClipboard} className="text-gray-400 hover:text-blue-600 transition-colors ml-3 flex-shrink-0 bg-white p-2 rounded-lg border border-gray-200 shadow-sm hover:shadow active:scale-95">
             <Copy className="h-5 w-5" />
           </button>
         </div>
-        <p className="text-xs text-gray-400 mt-3">
-          {t('note')}
+        <p className="text-[11px] text-gray-400 mt-4 font-medium">
+          {isEn ? "* Please save this code to track your package." : "* این کد را برای پیگیری وضعیت ارسال بسته خود ذخیره کنید."}
         </p>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-        <Link 
-          href="/track" 
-          className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-8 py-3 text-base font-medium text-gray-700 hover:bg-gray-50 transition-all"
-        >
-          <Package className={`h-5 w-5 ${isEn ? 'mr-2' : 'ml-2'}`} />
-          {t('btn_track')}
-        </Link>
+      {/* دکمه‌های اکشن */}
+      <div className="flex flex-col gap-4 w-full max-w-md">
         
-        <Link 
-          href="/" 
-          className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-8 py-3 text-base font-bold text-white shadow-lg hover:bg-blue-700 transition-all"
+        {/* دکمه اصلی واتساپ */}
+        <a 
+            href={`https://wa.me/989168038017?text=${encodeURIComponent(isEn ? `Hello, I placed order #${trackingCode}. Please provide the wallet address for payment.` : `سلام، من سفارش شماره ${trackingCode} رو در سایت ثبت کردم. لطفاً آدرس ولت رو برای پرداخت برام بفرستید.`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 w-full py-4 px-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-green-200 hover:-translate-y-1"
         >
-          {t('btn_home')}
-          <ArrowRight className={`h-5 w-5 ${isEn ? 'rotate-180 ml-2' : 'mr-2'}`} />
-        </Link>
+            <MessageCircle className="h-6 w-6" />
+            {isEn ? "Send Code to WhatsApp" : "ارسال کد به واتساپ (تکمیل خرید)"}
+        </a>
+
+        {/* دکمه‌های فرعی پیگیری و بازگشت */}
+        <div className="flex gap-4">
+            <Link 
+              href="/track" 
+              className="flex-1 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-3.5 text-sm font-bold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+            >
+              <Package className={`h-4 w-4 ${isEn ? 'mr-2' : 'ml-2'}`} />
+              {t('btn_track')}
+            </Link>
+            
+            <Link 
+              href="/" 
+              className="flex-1 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-3.5 text-sm font-bold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+            >
+              {t('btn_home')}
+              <ArrowRight className={`h-4 w-4 ${isEn ? 'rotate-180 ml-2' : 'mr-2'}`} />
+            </Link>
+        </div>
       </div>
 
     </div>
@@ -86,7 +141,7 @@ function SuccessContent() {
 export default function SuccessPage() {
   const t = useTranslations('Success');
   return (
-    <Suspense fallback={<div className="p-20 text-center text-gray-500">{t('loading')}</div>}>
+    <Suspense fallback={<div className="p-20 text-center text-gray-500 font-[family-name:var(--font-vazir)]">{t('loading')}</div>}>
       <SuccessContent />
     </Suspense>
   );
