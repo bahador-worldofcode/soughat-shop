@@ -24,7 +24,7 @@ function SuccessContent() {
       setTrackingCode(orderId);
       clearCart(); 
     } else {
-      // اگر آیدی نبود، یعنی کاربر الکی لینک را باز کرده. کد فیک نساز!
+      // جلوگیری از تولید کدهای فیک
       setIsValid(false); 
     }
   }, [clearCart, orderId]);
@@ -62,8 +62,8 @@ function SuccessContent() {
   // --- متون هاردکد شده برای رفع مشکل تناقض بدون نیاز به دستکاری فایل های ترجمه ---
   const pageTitle = isEn ? "Order Registered Successfully" : "سفارش با موفقیت ثبت شد";
   const pageDesc = isEn 
-    ? "Your order has been registered in our system. To receive the wallet address and finalize the payment, please send this tracking code to our WhatsApp support."
-    : "سفارش شما در سیستم ثبت شد. لطفاً برای دریافت آدرس کیف پول و نهایی کردن خرید، کد رهگیری زیر را کپی کرده و در واتساپ برای پشتیبانی ارسال کنید.";
+    ? "Your order has been registered in our system. To receive the wallet address and finalize the payment, please click the button below to connect with us on WhatsApp."
+    : "فاکتور شما در سیستم ثبت شد. لطفاً برای دریافت آدرس کیف پول و نهایی کردن خرید، روی دکمه زیر کلیک کنید تا به واتساپ متصل شوید.";
 
   // --- نمایش صفحه برای سفارشات معتبر ---
   return (
@@ -83,11 +83,14 @@ function SuccessContent() {
       </p>
 
       {/* باکس نمایش کد پیگیری */}
-      <div className="bg-white border-2 border-blue-100 rounded-3xl p-6 w-full max-w-md mb-8 shadow-sm">
-        <span className="text-xs font-bold text-blue-600 uppercase tracking-wider bg-blue-50 px-3 py-1.5 rounded-full mb-3 inline-block">
+      <div className="bg-white border-2 border-blue-100 rounded-3xl p-6 w-full max-w-md mb-8 shadow-sm relative overflow-hidden">
+        {/* افکت نوری پس‌زمینه باکس */}
+        <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 opacity-60 pointer-events-none"></div>
+
+        <span className="relative z-10 text-xs font-bold text-blue-600 uppercase tracking-wider bg-blue-50 px-3 py-1.5 rounded-full mb-3 inline-block">
             {isEn ? "Order Tracking Code" : "کد رهگیری سفارش"}
         </span>
-        <div className="flex items-center justify-between mt-3 bg-gray-50 p-4 rounded-xl border border-gray-200">
+        <div className="relative z-10 flex items-center justify-between mt-3 bg-gray-50 p-4 rounded-xl border border-gray-200">
           <span className="text-sm font-mono font-bold text-gray-800 break-all text-left dir-ltr">
             {trackingCode || '...'}
           </span>
@@ -95,9 +98,6 @@ function SuccessContent() {
             <Copy className="h-5 w-5" />
           </button>
         </div>
-        <p className="text-[11px] text-gray-400 mt-4 font-medium">
-          {isEn ? "* Please save this code to track your package." : "* این کد را برای پیگیری وضعیت ارسال بسته خود ذخیره کنید."}
-        </p>
       </div>
 
       {/* دکمه‌های اکشن */}
@@ -105,13 +105,13 @@ function SuccessContent() {
         
         {/* دکمه اصلی واتساپ */}
         <a 
-            href={`https://wa.me/989168038017?text=${encodeURIComponent(isEn ? `Hello, I placed order #${trackingCode}. Please provide the wallet address for payment.` : `سلام، من سفارش شماره ${trackingCode} رو در سایت ثبت کردم. لطفاً آدرس ولت رو برای پرداخت برام بفرستید.`)}`}
+            href={`https://wa.me/989168038017?text=${encodeURIComponent(isEn ? `Hello, I placed order #${trackingCode}. Please provide the wallet address for payment.` : `سلام، من فاکتور شماره ${trackingCode} رو در سایت ثبت کردم. لطفاً آدرس ولت رو برای پرداخت برام بفرستید.`)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 w-full py-4 px-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-green-200 hover:-translate-y-1"
         >
             <MessageCircle className="h-6 w-6" />
-            {isEn ? "Send Code to WhatsApp" : "ارسال کد به واتساپ (تکمیل خرید)"}
+            {isEn ? "Get Wallet Address via WhatsApp" : "ارتباط در واتساپ و دریافت آدرس ولت"}
         </a>
 
         {/* دکمه‌های فرعی پیگیری و بازگشت */}
