@@ -404,20 +404,23 @@ export default function CheckoutPage() {
             </>
           ) : (
             <>
-              <h1 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2 animate-in fade-in">
-                <ShieldCheck className="text-blue-600 h-7 w-7" />
-                {t('btn_pay_title')}
-              </h1>
+              {/* === طراحی جدید دکمه بازگشت در مرحله پرداخت === */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 animate-in fade-in">
+                <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                  <ShieldCheck className="text-blue-600 h-7 w-7" />
+                  {t('btn_pay_title')}
+                </h1>
+                
+                <button 
+                  onClick={handleGoBack}
+                  className="flex items-center gap-2 text-sm font-bold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 hover:text-blue-600 px-5 py-2.5 rounded-xl transition-all shadow-sm group"
+                >
+                  <ArrowLeft className={`h-4 w-4 transition-transform ${!isEn ? 'rotate-180 group-hover:translate-x-1' : 'group-hover:-translate-x-1'}`} />
+                  {t('btn_back')}
+                </button>
+              </div>
               
               <CryptoPayment orderId={orderId} />
-              
-              <button 
-                onClick={handleGoBack}
-                className="mt-6 flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg transition-colors"
-              >
-                <ArrowLeft className={`h-4 w-4 ${!isEn ? 'rotate-180' : ''}`} />
-                {t('btn_back')}
-              </button>
             </>
           )}
 
