@@ -1,4 +1,4 @@
-import { Instagram, Twitter, Mail, Heart, Lock, ShieldCheck, HelpCircle, ShoppingBag, BookOpen, Package, Info, Phone, Code2, Library } from 'lucide-react';
+import { Instagram, Twitter, Mail, Heart, Lock, ShieldCheck, HelpCircle, ShoppingBag, BookOpen, Package, Info, Phone, Code2, Library, Star } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 
@@ -70,6 +70,11 @@ export default function Footer() {
               <li>
                 <Link href="/track" className="hover:text-blue-600 hover:pr-2 transition-all flex items-center gap-2">
                     <Package className="h-4 w-4" /> {t('track')}
+                </Link>
+              </li>
+              <li>
+                <Link href="/review" className="hover:text-blue-600 hover:pr-2 transition-all flex items-center gap-2">
+                    <Star className="h-4 w-4" /> {t('review')}
                 </Link>
               </li>
             </ul>

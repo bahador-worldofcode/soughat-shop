@@ -84,6 +84,9 @@ export default function Header() {
           <Link href="/track" className="text-sm font-bold text-gray-600 hover:text-blue-600 transition-colors">
             {t('track')}
           </Link>
+          <Link href="/review" className="text-sm font-bold text-gray-600 hover:text-blue-600 transition-colors">
+            {t('review')}
+          </Link>
         </nav>
 
         {/* Actions */}
@@ -166,6 +169,7 @@ export default function Header() {
                   { href: '/products', label: t('products') },
                   { href: '/blog', label: t('blog') },
                   { href: '/track', label: t('track') },
+                  { href: '/review', label: t('review') },
                   { href: '/how-it-works', label: t('guide') },
                 ].map((link) => (
                   <Link 
