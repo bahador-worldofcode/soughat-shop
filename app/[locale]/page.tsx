@@ -54,15 +54,15 @@ export default async function Home({
       {/* 2. Live Market Rates */}
       <MarketRates />
       
-      {/* 3. Modern Category Showcase (Bento Grid Style) */}
-      <section className="container mx-auto px-4 py-8 mb-12">
+      {/* 3. Modern 3D Category Showcase */}
+      <section className="container mx-auto px-4 py-12 mb-12">
           
-          <div className="text-center mb-10">
-            <h3 className="text-2xl md:text-3xl font-black text-gray-900 flex items-center justify-center gap-2 mb-2">
-               <Layers className="h-6 w-6 text-blue-600" />
+          <div className="text-center mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <h3 className="text-3xl md:text-4xl font-black text-gray-900 mb-3 tracking-tight flex items-center justify-center gap-3">
+               <Layers className="h-8 w-8 text-blue-600 hidden md:block" />
                {t('categories_title')}
             </h3>
-            <p className="text-gray-500 text-sm">{t('categories_subtitle')}</p>
+            <p className="text-gray-500 font-medium">{t('categories_subtitle')}</p>
           </div>
           
           {!categories || categories.length === 0 ? (
@@ -70,71 +70,58 @@ export default async function Home({
                <p className="text-sm text-gray-400">{t('categories_empty')}</p>
             </div>
           ) : (
-            <div className="relative">
-              <div 
-                className="
-                  grid grid-flow-col auto-cols-[160px] md:auto-cols-auto gap-4 md:gap-6 
-                  overflow-x-auto md:overflow-visible pb-6 md:pb-0 
-                  md:grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5
-                  snap-x snap-mandatory scroll-smooth no-scrollbar
-                "
-                dir={isEn ? 'ltr' : 'rtl'}
-              >
-                {categories.map((cat) => {
-                  const catName = isEn ? (cat.name_en || cat.name) : cat.name;
-                  
-                  return (
-                    <Link 
-                       key={cat.id} 
-                       href={`/products?category=${cat.slug}`} 
-                       className="
-                         group relative flex flex-col items-center justify-center 
-                         bg-white p-6 rounded-[2rem] 
-                         border border-gray-100 
-                         shadow-sm hover:shadow-xl hover:shadow-blue-100/50 
-                         hover:-translate-y-1 hover:border-blue-200
-                         transition-all duration-300 
-                         snap-center h-full min-h-[180px]
-                       "
-                    >
-                     <div className="
-                        w-20 h-20 mb-5 rounded-full 
-                        bg-blue-50/80 group-hover:bg-blue-600 
-                        flex items-center justify-center 
-                        transition-colors duration-300
-                        shadow-inner group-hover:shadow-lg
-                     ">
-                       {cat.icon_url ? (
-                         <img 
-                            src={cat.icon_url} 
-                            alt={catName} 
-                            className="
-                              w-10 h-10 object-contain 
-                              group-hover:invert group-hover:brightness-0 
-                              transition-all duration-300 group-hover:scale-110
-                            " 
-                         />
-                       ) : (
-                         <Layers className="w-8 h-8 text-blue-300 group-hover:text-white transition-colors" />
-                       )}
-                     </div>
-
-                     <h3 className="font-bold text-gray-800 text-lg group-hover:text-blue-700 transition-colors text-center leading-tight">
-                        {catName}
-                     </h3>
+            <div 
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6"
+              dir={isEn ? 'ltr' : 'rtl'}
+            >
+              {categories.map((cat, index) => {
+                const catName = isEn ? (cat.name_en || cat.name) : cat.name;
+                
+                return (
+                  <Link 
+                     key={cat.id} 
+                     href={`/products?category=${cat.slug}`} 
+                     style={{ animationDelay: `${index * 50}ms` }}
+                     className="
+                       group relative flex flex-col items-center justify-center 
+                       bg-white p-6 rounded-3xl 
+                       border border-gray-100 
+                       shadow-[0_4px_20px_rgba(0,0,0,0.03)] 
+                       hover:shadow-[0_10px_40px_rgba(37,99,235,0.12)] 
+                       hover:-translate-y-2 hover:border-blue-100
+                       transition-all duration-300 ease-out
+                       animate-in fade-in slide-in-from-bottom-8 fill-mode-both
+                     "
+                  >
+                   <div className="relative w-24 h-24 mb-4 flex items-center justify-center group-hover:-translate-y-2 transition-transform duration-500 ease-out">
+                     <div className="absolute inset-0 bg-blue-400/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 scale-150"></div>
                      
-                     <span className="
-                        text-[10px] text-gray-400 mt-2 
-                        opacity-0 group-hover:opacity-100 
-                        transition-opacity duration-300
-                        flex items-center gap-1
-                     ">
-                        {t('view_category')} <ArrowLeft className={`w-3 h-3 ${isEn ? 'rotate-180' : ''}`} />
-                     </span>
-                    </Link>
-                  );
-                })}
-              </div>
+                     {cat.icon_url ? (
+                       <img 
+                          src={cat.icon_url} 
+                          alt={catName} 
+                          className="relative z-10 w-full h-full object-contain drop-shadow-[0_10px_15px_rgba(0,0,0,0.15)] group-hover:scale-110 transition-transform duration-500" 
+                       />
+                     ) : (
+                       <Layers className="relative z-10 w-10 h-10 text-gray-300" />
+                     )}
+                   </div>
+
+                   <h3 className="font-bold text-gray-800 text-sm md:text-base group-hover:text-blue-600 transition-colors text-center leading-tight">
+                      {catName}
+                   </h3>
+                   
+                   <span className="
+                      text-[10px] text-gray-400 mt-2 font-bold
+                      opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0
+                      transition-all duration-300
+                      flex items-center gap-1
+                   ">
+                      {t('view_category')} <ArrowLeft className={`w-3 h-3 ${isEn ? 'rotate-180' : ''}`} />
+                   </span>
+                  </Link>
+                );
+              })}
             </div>
           )}
       </section>
