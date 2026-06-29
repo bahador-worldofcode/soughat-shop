@@ -441,6 +441,20 @@
     "next": "Next",
     "page": "Page",
     "of": "of"
+  },
+  
+  "Review": {
+    "title": "Share Your Experience",
+    "subtitle": "Help others make a better decision by sharing your experience.",
+    "order_id": "Order ID (Tracking Code)",
+    "rating": "Rate us:",
+    "comment": "Your Review:",
+    "comment_ph": "How was the packaging, quality, and delivery speed?",
+    "submit": "Submit Review",
+    "success_title": "Thank You!",
+    "success_desc": "Your review has been successfully submitted and will be displayed on the website after review.",
+    "back_home": "Back to Home",
+    "error": "Failed to submit review. Please check your Order ID."
   }
   ,
   "MarketRates": {
@@ -467,5 +481,8 @@
       "uk": "UK",
       "uae": "UAE"
     }
+    
   }
+
+  
 }

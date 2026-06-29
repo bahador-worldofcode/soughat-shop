@@ -4,6 +4,7 @@ import ProductCard from "@/components/ProductCard";
 import CurrencyRatesBanner from "@/components/CurrencyRatesBanner";
 import FAQ from "@/components/FAQ"; 
 import HomeSEOContent from "@/components/HomeSEOContent";
+import ReviewsFeed from "@/components/ReviewsFeed"; // <--- فقط این خط به ایمپورت‌ها اضافه شد
 import { supabase } from '@/lib/supabase';
 import { ArrowLeft, Layers, Sparkles } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
@@ -200,72 +201,24 @@ export default async function Home({
         </div>
       </div>
 
-      {/* 6. Social Proof / Reviews Section */}
+      {/* 6. Social Proof / Reviews Section (فقط این بخش تغییر کرد) */}
       <section className="bg-gradient-to-br from-slate-900 to-blue-900 py-16 mt-12">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-black text-white mb-4">
               {t('reviews_title')}
             </h2>
-            <p className="text-blue-200 text-sm">
+            <p className="text-blue-200 text-sm mb-6">
               {t('reviews_subtitle')}
             </p>
+            <Link href="/review" className="inline-block bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-bold px-8 py-3 rounded-full transition-all backdrop-blur-sm shadow-lg hover:-translate-y-1">
+                {isEn ? 'Write a Review' : 'ثبت تجربه خرید شما'}
+            </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6" dir={isEn ? 'ltr' : 'rtl'}>
-            
-            {/* Review 1 */}
-            <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20">
-              <div className="flex text-yellow-400 mb-4">
-                {[...Array(5)].map((_, i) => <Sparkles key={i} className="h-4 w-4 fill-current" />)}
-              </div>
-              <p className="text-blue-50 text-sm leading-7 mb-6 text-justify">
-                {t('review1_text')}
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">M</div>
-                <div>
-                  <h4 className="text-white font-bold text-sm">{t('review1_name')}</h4>
-                  <p className="text-blue-300 text-xs">{t('review1_loc')}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Review 2 */}
-            <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 relative top-0 md:top-4">
-              <div className="flex text-yellow-400 mb-4">
-                {[...Array(5)].map((_, i) => <Sparkles key={i} className="h-4 w-4 fill-current" />)}
-              </div>
-              <p className="text-blue-50 text-sm leading-7 mb-6 text-justify">
-                {t('review2_text')}
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold">S</div>
-                <div>
-                  <h4 className="text-white font-bold text-sm">{t('review2_name')}</h4>
-                  <p className="text-blue-300 text-xs">{t('review2_loc')}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Review 3 */}
-            <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20">
-              <div className="flex text-yellow-400 mb-4">
-                {[...Array(5)].map((_, i) => <Sparkles key={i} className="h-4 w-4 fill-current" />)}
-              </div>
-              <p className="text-blue-50 text-sm leading-7 mb-6 text-justify">
-                {t('review3_text')}
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-emerald-500 rounded-full flex items-center justify-center text-white font-bold">A</div>
-                <div>
-                  <h4 className="text-white font-bold text-sm">{t('review3_name')}</h4>
-                  <p className="text-blue-300 text-xs">{t('review3_loc')}</p>
-                </div>
-              </div>
-            </div>
-
-          </div>
+          {/* کامپوننت فید نظرات با اسکرول نامحدود */}
+          <ReviewsFeed />
+          
         </div>
       </section>
 
