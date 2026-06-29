@@ -86,7 +86,7 @@ export default function ReviewsFeed() {
             {review.admin_reply && (
                 <div className="mb-6 bg-blue-900/40 p-4 rounded-2xl border border-blue-400/20 text-xs">
                     <div className="flex items-center gap-1.5 text-blue-300 font-bold mb-2">
-                        <Reply className="h-3 w-3" /> پشتیبانی سوغات شاپ:
+                        <Reply className="h-3 w-3" /> {t('admin_reply_label')}
                     </div>
                     <p className="text-blue-100 leading-6 text-justify">{review.admin_reply}</p>
                 </div>

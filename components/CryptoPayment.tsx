@@ -194,7 +194,7 @@ export default function CryptoPayment({ orderId }: Props) {
                 {/* پیام راهنمای مرحله بعد */}
                 <div className="flex items-center justify-center gap-2 mb-6 text-blue-800 bg-blue-50 px-4 py-4 rounded-xl border border-blue-200 w-full text-center shadow-sm">
                     <ShieldCheck className="h-6 w-6 flex-shrink-0" />
-                    <span className="text-sm font-bold leading-6">با تایید اطلاعات، فاکتور شما صادر شده و در مرحله بعد راهنمای پرداخت را دریافت می‌کنید.</span>
+                    <span className="text-sm font-bold leading-6">{t('security_msg')}</span>
                 </div>
 
                 {/* دکمه اتمام فرآیند در سایت */}
@@ -204,7 +204,7 @@ export default function CryptoPayment({ orderId }: Props) {
                     className="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-base font-bold shadow-lg shadow-blue-200 transition-all flex items-center justify-center gap-2 disabled:opacity-70 hover:-translate-y-1"
                 >
                     {isChecking ? <Loader2 className="animate-spin h-5 w-5" /> : <CheckCircle className="h-5 w-5" />}
-                    {isChecking ? t('btn_checking') : "تایید و ثبت نهایی سفارش"}
+                    {isChecking ? t('btn_checking') : t('btn_final_submit')}
                 </button>
                 
                 <button 

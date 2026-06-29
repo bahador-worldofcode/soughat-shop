@@ -56,6 +56,7 @@
     "review2_loc": "🇩🇪 Berlin, Germany",
     "review3_text": "The support is 10/10. I made a mistake in the address, contacted them on WhatsApp, and they fixed it instantly. The Saffron quality was top-notch.",
     "review3_name": "Ali Rezaei",
+    "admin_reply_label": "Soughat Shop Support:",
     "review3_loc": "🇬🇧 London, UK"
   },
   "ProductCard": {
@@ -328,6 +329,8 @@
     "manual_pay_title": "Final Step: Get Wallet Address",
     "manual_pay_desc": "For security and to prevent any deposit errors, the automatic gateway is temporarily disabled. Please click the button below to contact us on WhatsApp to receive the Tether (USDT) or Solana (SOL) wallet address and finalize your order.",
     "btn_whatsapp": "Contact via WhatsApp & Get Address",
+    "security_msg": "By confirming the details, your invoice will be generated and you will receive payment instructions in the next step.",
+    "btn_final_submit": "Confirm & Finalize Order",
     "whatsapp_message_template": "Hello, I have placed order #{orderId} on the website and I am messaging to get the wallet address for payment."
   },
   "Track": {
@@ -457,6 +460,13 @@
     "success_desc": "Your review has been successfully submitted and will be displayed on the website after review.",
     "back_home": "Back to Home",
     "error": "Failed to submit review. Please check your Order ID."
+  }
+  ,
+  "Metadata": {
+    "title": "Soughat Shop | Send Gifts to Iran with Crypto",
+    "title_template": "%s | Soughat Shop",
+    "description": "The first specialized platform for sending gifts, souvenirs, and money to Iran for Iranians abroad. Buy pistachio, saffron, and gifts with secure Tether (USDT) and Solana payment. Instant delivery.",
+    "keywords": ["Send gift to Iran", "Iranian souvenirs", "Send money with Tether", "Soughat Shop", "Buy Iranian pistachio", "Iran gift shop", "Crypto payment"]
   }
   ,
   "MarketRates": {

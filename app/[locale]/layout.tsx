@@ -17,22 +17,26 @@ const vazir = Vazirmatn({ subsets: ['arabic', 'latin'] });
 // تبدیل به تابع برای اینکه بتوانیم زبان را داینامیک از آدرس بگیریم
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
+  
+  // خواندن متادیتا از فایل زبان
+  const t = await getMessages({ locale });
+  const meta = (t as any).Metadata;
 
   return {
     metadataBase: new URL('https://soughat.shop'),
     
     title: {
-      default: "سوغات شاپ | ارسال هدیه به ایران با ارز دیجیتال",
-      template: "%s | سوغات شاپ"
+      default: meta.title,
+      template: meta.title_template
     },
     
-    description: "اولین پلتفرم تخصصی ارسال هدیه، سوغات و پول به ایران برای ایرانیان خارج از کشور. خرید پسته، زعفران و کادو با پرداخت امن تتر (USDT) و سولانا. تحویل فوری در سراسر ایران.",
+    description: meta.description,
     
     manifest: '/site.webmanifest',
     
-    keywords: ["ارسال هدیه به ایران", "خرید سوغات ایران", "ارسال پول با تتر", "سوغات شاپ", "Soughat Shop", "خرید پسته صادراتی", "گیفت شاپ ایران", "پرداخت با کریپتو"],
+    keywords: meta.keywords,
     
-    authors: [{ name: "تیم سوغات شاپ" }],
+    authors: [{ name: "Soughat Shop Team" }],
     creator: "Soughat Shop",
     publisher: "Soughat Shop",
     robots: {
@@ -40,7 +44,6 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       follow: true,
     },
 
-    // ✅ اصلاح ۱: کاننیکال ثابت حذف شد تا هر صفحه کاننیکال خودش را داشته باشد
     alternates: {
       languages: {
         'fa': '/fa', 
@@ -49,11 +52,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     },
 
     openGraph: {
-      title: "سوغات شاپ | پل ارتباطی با ایران",
-      description: "عزیزانتان در ایران را خوشحال کنید. ارسال آنی هدیه و سوغات با پرداخت ارزی و کریپتو.",
+      title: meta.title,
+      description: meta.description,
       url: 'https://soughat.shop',
       siteName: 'Soughat Shop',
-      locale: locale === 'fa' ? 'fa_IR' : 'en_US', // ✅ اصلاح ۲: زبان به صورت هوشمند تغییر می‌کند
+      locale: locale === 'fa' ? 'fa_IR' : 'en_US',
       type: 'website',
     },
     
