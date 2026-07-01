@@ -9,6 +9,7 @@ import { Vazirmatn } from 'next/font/google';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FloatingContact from "@/components/FloatingContact";
+import WebMCPProvider from "@/components/WebMCPProvider";
 
 // کانفیگ فونت برای خوانایی بهتر سایت
 const vazir = Vazirmatn({ subsets: ['arabic', 'latin'] });
@@ -135,6 +136,9 @@ export default async function LocaleLayout({
           
           {/* دکمه شناور تماس */}
           <FloatingContact />
+
+          {/* WebMCP: نمایش اکشن‌های فرانت‌اند به ایجنت‌های مبتنی بر مرورگر */}
+          <WebMCPProvider locale={locale} />
           
         </NextIntlClientProvider>
       </body>
