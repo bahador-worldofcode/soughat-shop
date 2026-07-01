@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import ProductCard from '@/components/ProductCard';
 import { 
@@ -10,6 +10,8 @@ import {
   Loader2, 
   ChevronLeft, 
   ChevronRight, 
+  ChevronDown,
+  Check,
   Layers, 
   Filter,
   XCircle,
@@ -72,8 +74,11 @@ function ProductList() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const currentCategory = searchParams.get('category') || 'all';
+  const rawCategoryParam = searchParams.get('category');
+  const currentCategory = rawCategoryParam ? decodeURIComponent(rawCategoryParam).trim() : 'all';
   const urlSearchQuery = searchParams.get('q') || '';
+
+  const isCatActive = (slug: string) => (slug || '').trim() === currentCategory;
 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]); 
@@ -89,9 +94,23 @@ function ProductList() {
   // استیت برای ذخیره اطلاعات دسته انتخاب شده (برای نمایش متن سئو)
   const [activeCategoryInfo, setActiveCategoryInfo] = useState<Category | null>(null);
 
+  // استیت برای باز/بسته بودن پنل فیلترهای موبایل
+  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
+
+  // رفرنس دکمه‌های دسته‌بندی در سایدبار دسکتاپ، برای اسکرول خودکار به دسته‌ی فعال
+  const categoryButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  // به محض تغییر دسته‌ی فعال (یا لود شدن لیست دسته‌ها)، دکمه‌ی فعال در سایدبار دسکتاپ را داخل دید بیاور
+  useEffect(() => {
+    const el = categoryButtonRefs.current[currentCategory];
+    if (el) {
+      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }, [currentCategory, categories]);
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
@@ -212,10 +231,155 @@ function ProductList() {
   return (
     <div className="container mx-auto px-4 py-8">
         
+        {/* Mobile Filter Bar */}
+        <div className="lg:hidden flex flex-col gap-3 mb-6">
+            <div className="bg-white p-1 rounded-2xl border border-gray-200 shadow-sm">
+                <div className="relative group">
+                    <Search className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors ${isEn ? 'left-3' : 'right-3'}`} />
+                    <input 
+                        type="text" 
+                        placeholder={t('search_placeholder')}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className={`w-full py-3 bg-transparent text-sm outline-none transition-all ${isEn ? 'pl-10 pr-9' : 'pr-10 pl-9'}`} 
+                    />
+                    {searchTerm && (
+                        <button 
+                            onClick={() => setSearchTerm('')} 
+                            className={`absolute top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-red-50 transition-colors ${isEn ? 'right-2' : 'left-2'}`}
+                        >
+                            <XCircle className="h-4 w-4" />
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            <button
+                onClick={() => setIsFilterSheetOpen(true)}
+                className="flex items-center justify-between bg-white px-4 py-3.5 rounded-2xl border border-gray-200 shadow-sm text-sm font-bold text-gray-700 active:scale-[0.98] transition-transform"
+            >
+                <span className="flex items-center gap-2 min-w-0">
+                    <SlidersHorizontal className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                    <span className="truncate">
+                        {currentCategory === 'all'
+                            ? (isEn ? 'Filter & Sort' : 'فیلتر و مرتب‌سازی')
+                            : (isEn ? (activeCategoryInfo?.name_en || activeCategoryInfo?.name || 'Category') : (activeCategoryInfo?.name || 'دسته‌بندی'))
+                        }
+                    </span>
+                    {currentCategory !== 'all' && (
+                        <span className="flex-shrink-0 w-2 h-2 rounded-full bg-blue-600"></span>
+                    )}
+                </span>
+                <ChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0" />
+            </button>
+        </div>
+
+        {/* Mobile Filter Bottom Sheet */}
+        {isFilterSheetOpen && (
+            <div className="fixed inset-0 z-[60] lg:hidden">
+                <div 
+                    className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
+                    onClick={() => setIsFilterSheetOpen(false)}
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[85vh] flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-300">
+                    <div className="flex items-center justify-between p-4 border-b border-gray-100 flex-shrink-0">
+                        <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                            <SlidersHorizontal className="h-5 w-5 text-blue-600" />
+                            {isEn ? 'Filters' : 'فیلترها'}
+                        </h3>
+                        <button onClick={() => setIsFilterSheetOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                            <XCircle className="h-5 w-5 text-gray-400" />
+                        </button>
+                    </div>
+
+                    <div className="overflow-y-auto p-4 flex-1">
+                        {/* Sort */}
+                        <div className="mb-6">
+                            <h4 className="text-xs font-bold text-gray-400 uppercase mb-3 tracking-wide">{isEn ? 'Sort By' : 'مرتب‌سازی'}</h4>
+                            <div className="flex flex-col gap-2">
+                                {[
+                                    { value: 'newest', label: t('sort_newest') },
+                                    { value: 'price-asc', label: t('sort_cheapest') },
+                                    { value: 'price-desc', label: t('sort_expensive') },
+                                ].map((opt) => (
+                                    <button
+                                        key={opt.value}
+                                        onClick={() => { setSortOrder(opt.value as any); setIsFilterSheetOpen(false); }}
+                                        className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold border transition-all ${
+                                            sortOrder === opt.value
+                                            ? 'bg-blue-50 border-blue-200 text-blue-700'
+                                            : 'bg-white border-gray-200 text-gray-600'
+                                        }`}
+                                    >
+                                        {opt.label}
+                                        {sortOrder === opt.value && <Check className="h-4 w-4" />}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Categories */}
+                        <div>
+                            <h4 className="text-xs font-bold text-gray-400 uppercase mb-3 tracking-wide">{isEn ? 'Category' : 'دسته‌بندی'}</h4>
+                            {categories.length === 0 ? (
+                                <div className="grid grid-cols-2 gap-2">
+                                    {[...Array(6)].map((_, i) => (
+                                        <div key={i} className="h-14 bg-gray-100 rounded-xl animate-pulse"></div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-2 gap-2">
+                                    {categories.map((cat) => {
+                                        const catName = isEn ? (cat.name_en || cat.name) : cat.name;
+                                        const isActive = isCatActive(cat.slug);
+                                        return (
+                                            <button
+                                                key={cat.id}
+                                                onClick={() => { handleCategoryChange(cat.slug); setIsFilterSheetOpen(false); }}
+                                                className={`flex items-center gap-2 px-3 py-3 rounded-xl text-sm font-bold border transition-all text-start ${
+                                                    isActive
+                                                    ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                                                    : 'bg-white text-gray-600 border-gray-200'
+                                                }`}
+                                            >
+                                                {cat.slug === 'all' ? (
+                                                    <Filter className="h-4 w-4 flex-shrink-0" />
+                                                ) : cat.icon_url ? (
+                                                    <img src={cat.icon_url} alt="" className={`w-4 h-4 object-contain flex-shrink-0 ${isActive ? 'brightness-200' : ''}`} />
+                                                ) : (
+                                                    <Layers className="h-4 w-4 flex-shrink-0" />
+                                                )}
+                                                <span className="truncate">{catName}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="p-4 border-t border-gray-100 flex-shrink-0 flex gap-3" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
+                        <button 
+                            onClick={() => { clearFilters(); setIsFilterSheetOpen(false); }}
+                            className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-colors"
+                        >
+                            {isEn ? 'Clear' : 'پاک کردن'}
+                        </button>
+                        <button 
+                            onClick={() => setIsFilterSheetOpen(false)}
+                            className="flex-[2] py-3 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 transition-colors"
+                        >
+                            {isEn ? 'Show Results' : 'مشاهده نتایج'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
             
-            {/* Sidebar Filters */}
-            <aside className="lg:col-span-1 lg:sticky lg:top-24 flex flex-col gap-6 lg:max-h-[calc(100vh-8rem)]">
+            {/* Sidebar Filters (Desktop only — mobile uses the filter sheet above) */}
+            <aside className="hidden lg:flex lg:col-span-1 lg:sticky lg:top-24 flex-col gap-6 lg:max-h-[calc(100vh-8rem)]">
                 
                 <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm transition-shadow hover:shadow-md">
                     <div className="relative group">
@@ -238,17 +402,17 @@ function ProductList() {
                     </div>
                 </div>
 
-                <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex items-center justify-between lg:flex-col lg:items-start lg:gap-3 transition-shadow hover:shadow-md">
+                <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col items-start gap-3 transition-shadow hover:shadow-md">
                     <span className="text-sm font-bold text-gray-700 flex items-center gap-2">
                         <div className="p-1.5 bg-gray-100 rounded-lg text-gray-600">
                              <ArrowDownUp className="h-4 w-4" />
                         </div>
-                        <span className="hidden lg:inline">{isEn ? 'Sort By:' : 'مرتب‌سازی:'}</span>
+                        <span>{isEn ? 'Sort By:' : 'مرتب‌سازی:'}</span>
                     </span>
                     <select 
                         value={sortOrder}
                         onChange={(e) => setSortOrder(e.target.value as any)}
-                        className="bg-transparent lg:bg-gray-50 lg:hover:bg-gray-100 lg:w-full lg:p-3 lg:rounded-xl lg:border lg:border-gray-200 text-sm outline-none cursor-pointer font-medium text-gray-700 transition-colors"
+                        className="bg-gray-50 hover:bg-gray-100 w-full p-3 rounded-xl border border-gray-200 text-sm outline-none cursor-pointer font-medium text-gray-700 transition-colors"
                     >
                         <option value="newest">{t('sort_newest')}</option>
                         <option value="price-asc">{t('sort_cheapest')}</option>
@@ -256,7 +420,7 @@ function ProductList() {
                     </select>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col lg:overflow-hidden flex-1 transition-shadow hover:shadow-md">
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col overflow-hidden flex-1 transition-shadow hover:shadow-md">
                     <div className="p-4 border-b border-gray-100 bg-gray-50/50 backdrop-blur-sm sticky top-0 z-10">
                         <h3 className="font-bold text-gray-800 flex items-center gap-2">
                             <Layers className="h-5 w-5 text-blue-600" />
@@ -264,7 +428,7 @@ function ProductList() {
                         </h3>
                     </div>
                     
-                    <div className="hidden lg:block overflow-y-auto overflow-x-hidden p-2 gap-1 custom-scrollbar" style={{ maxHeight: 'calc(100vh - 400px)' }}>
+                    <div className="overflow-y-auto overflow-x-hidden p-2 gap-1 custom-scrollbar" style={{ maxHeight: 'calc(100vh - 400px)' }}>
                         {categories.length === 0 ? (
                              <div className="p-4 space-y-3">
                                 <div className="h-10 bg-gray-100 rounded-xl w-full animate-pulse"></div>
@@ -274,10 +438,11 @@ function ProductList() {
                         ) : (
                             categories.map(cat => {
                                 const catName = isEn ? (cat.name_en || cat.name) : cat.name;
-                                const isActive = currentCategory === cat.slug;
+                                const isActive = isCatActive(cat.slug);
                                 return (
                                     <button
                                         key={cat.id}
+                                        ref={(el) => { categoryButtonRefs.current[cat.slug] = el; }}
                                         onClick={() => handleCategoryChange(cat.slug)}
                                         className={`w-full flex items-center gap-3 px-3 py-2.5 mb-1 rounded-xl text-sm font-medium transition-all duration-200 group ${
                                             isActive 
@@ -304,30 +469,6 @@ function ProductList() {
                                 );
                             })
                         )}
-                    </div>
-
-                    {/* Mobile Category List */}
-                    <div className="lg:hidden flex overflow-x-auto p-3 gap-2 no-scrollbar items-center">
-                         {categories.map(cat => {
-                            const catName = isEn ? (cat.name_en || cat.name) : cat.name;
-                            const isActive = currentCategory === cat.slug;
-                            return (
-                                <button
-                                    key={cat.id}
-                                    onClick={() => handleCategoryChange(cat.slug)}
-                                    className={`whitespace-nowrap flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all ${
-                                        isActive 
-                                        ? 'bg-blue-600 text-white border-blue-600 shadow-md transform scale-105' 
-                                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300'
-                                    }`}
-                                >
-                                    {cat.icon_url && cat.slug !== 'all' && (
-                                        <img src={cat.icon_url} alt="" className={`w-4 h-4 object-contain ${isActive ? 'brightness-200 grayscale-0' : ''}`} />
-                                    )}
-                                    {catName}
-                                </button>
-                            );
-                        })}
                     </div>
                 </div>
             </aside>
@@ -369,6 +510,32 @@ function ProductList() {
                     </div>
                 ) : (
                     <>
+                        {(currentCategory !== 'all' || debouncedSearch) && (
+                            <div className="flex flex-wrap items-center gap-2 mb-4">
+                                {currentCategory !== 'all' && (
+                                    <button
+                                        onClick={() => handleCategoryChange('all')}
+                                        className="flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-blue-100 transition-colors"
+                                    >
+                                        {activeCategoryInfo
+                                            ? (isEn ? (activeCategoryInfo.name_en || activeCategoryInfo.name) : activeCategoryInfo.name)
+                                            : (isEn ? 'Category' : 'دسته‌بندی')
+                                        }
+                                        <XCircle className="h-3.5 w-3.5" />
+                                    </button>
+                                )}
+                                {debouncedSearch && (
+                                    <button
+                                        onClick={() => setSearchTerm('')}
+                                        className="flex items-center gap-1.5 bg-gray-100 text-gray-700 border border-gray-200 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-gray-200 transition-colors"
+                                    >
+                                        "{debouncedSearch}"
+                                        <XCircle className="h-3.5 w-3.5" />
+                                    </button>
+                                )}
+                            </div>
+                        )}
+
                         <div className="mb-6 flex items-center justify-between">
                              <div className="text-sm text-gray-500 font-medium px-1">
                                 {isEn 
