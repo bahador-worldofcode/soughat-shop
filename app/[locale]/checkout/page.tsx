@@ -182,7 +182,7 @@ export default function CheckoutPage() {
             </p>
             <div className="mt-6 bg-gray-50 border border-gray-200 p-4 rounded-xl min-w-[200px]">
                 <div className="text-xs text-gray-400 mb-1">{t('current_total')}</div>
-                <div className="text-xl font-bold text-gray-800 dir-ltr font-mono">{symbol} {displayTotal}</div>
+                <div className="text-xl font-bold text-gray-800 dir-ltr font-mono">{symbol} {displayTotal.toFixed(2)}</div>
             </div>
             <Link href="/products" className="bg-blue-600 text-white px-8 py-3 rounded-xl mt-8 hover:bg-blue-700 transition-colors font-bold shadow-lg">
                 {t('back_products')}
@@ -462,7 +462,7 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between items-center font-bold text-lg text-blue-900 mt-2">
                 <span>{t('cart_summary.total')}</span>
-                <span>{mounted ? `${symbol} ${displayTotal}` : '...'}</span>
+                <span>{mounted ? `${symbol} ${displayTotal.toFixed(2)}` : '...'}</span>
               </div>
             </div>
 

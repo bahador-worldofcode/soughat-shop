@@ -151,7 +151,7 @@ export default function CartPage() {
             <div className="space-y-2 mb-4">
               <div className="flex justify-between text-sm text-gray-600">
                 <span>{t('total_items')}</span>
-                <span>{symbol} {displayTotal}</span>
+                <span>{symbol} {displayTotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm text-gray-600">
                 <span>{t('shipping_cost')}</span>
@@ -162,7 +162,7 @@ export default function CartPage() {
             <div className="border-t border-gray-200 pt-4 mb-6">
               <div className="flex justify-between items-center">
                 <span className="text-base font-bold text-gray-900">{t('payable_amount')}</span>
-                <span className="text-xl font-bold text-blue-600">{symbol} {displayTotal}</span>
+                <span className="text-xl font-bold text-blue-600">{symbol} {displayTotal.toFixed(2)}</span>
               </div>
               <p className="text-xs text-gray-500 mt-1 text-start">{t('calc_note')}</p>
             </div>
@@ -175,7 +175,7 @@ export default function CartPage() {
                             {t('min_order_title', { amount: `${symbol} ${minOrderDisplay.toFixed(2)}` })}
                         </p>
                         <p className="text-xs mt-1 opacity-80 leading-5">
-                            {t('min_order_desc', { current: `${symbol} ${displayTotal}` })}
+                            {t('min_order_desc', { current: `${symbol} ${displayTotal.toFixed(2)}` })}
                         </p>
                     </div>
                 </div>
