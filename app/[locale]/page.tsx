@@ -21,16 +21,39 @@ export default async function Home({
   const t = await getTranslations('Home');
   const isEn = locale === 'en';
 
+  // جدیدترین محصولات (۴ کارت)
   const { data: products } = await supabase
     .from('products')
     .select('*')
     .order('created_at', { ascending: false })
-    .limit(8);
+    .limit(4);
 
   const { data: categories } = await supabase
     .from('categories')
     .select('*')
     .order('name');
+
+  // برای هر دسته‌بندی، ۴ محصول تازه‌ی همان دسته را جداگانه واکشی می‌کنیم
+  const categorySections: { category: any; items: any[] }[] = [];
+  if (categories && categories.length > 0) {
+    const results = await Promise.all(
+      categories.map((cat) =>
+        supabase
+          .from('products')
+          .select('*')
+          .eq('category', cat.slug)
+          .order('created_at', { ascending: false })
+          .limit(4)
+      )
+    );
+
+    categories.forEach((cat, idx) => {
+      const items = results[idx]?.data || [];
+      if (items.length > 0) {
+        categorySections.push({ category: cat, items });
+      }
+    });
+  }
 
   const { data: settingsData } = await supabase.from('site_settings').select('*');
   const settings: any = {};
@@ -54,79 +77,7 @@ export default async function Home({
       {/* 2. Live Market Rates */}
       <MarketRates />
       
-      {/* 3. Modern 3D Category Showcase */}
-      <section className="container mx-auto px-4 py-12 mb-12">
-          
-          <div className="text-center mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <h3 className="text-3xl md:text-4xl font-black text-gray-900 mb-3 tracking-tight flex items-center justify-center gap-3">
-               <Layers className="h-8 w-8 text-blue-600 hidden md:block" />
-               {t('categories_title')}
-            </h3>
-            <p className="text-gray-500 font-medium">{t('categories_subtitle')}</p>
-          </div>
-          
-          {!categories || categories.length === 0 ? (
-            <div className="text-center py-10 bg-white rounded-3xl border border-dashed border-gray-300">
-               <p className="text-sm text-gray-400">{t('categories_empty')}</p>
-            </div>
-          ) : (
-            <div 
-              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6"
-              dir={isEn ? 'ltr' : 'rtl'}
-            >
-              {categories.map((cat, index) => {
-                const catName = isEn ? (cat.name_en || cat.name) : cat.name;
-                
-                return (
-                  <Link 
-                     key={cat.id} 
-                     href={`/products?category=${cat.slug}`} 
-                     style={{ animationDelay: `${index * 50}ms` }}
-                     className="
-                       group relative flex flex-col items-center justify-center 
-                       bg-white p-6 rounded-3xl 
-                       border border-gray-100 
-                       shadow-[0_4px_20px_rgba(0,0,0,0.03)] 
-                       hover:shadow-[0_10px_40px_rgba(37,99,235,0.12)] 
-                       hover:-translate-y-2 hover:border-blue-100
-                       transition-all duration-300 ease-out
-                       animate-in fade-in slide-in-from-bottom-8 fill-mode-both
-                     "
-                  >
-                   <div className="relative w-24 h-24 mb-4 flex items-center justify-center group-hover:-translate-y-2 transition-transform duration-500 ease-out">
-                     <div className="absolute inset-0 bg-blue-400/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 scale-150"></div>
-                     
-                     {cat.icon_url ? (
-                       <img 
-                          src={cat.icon_url} 
-                          alt={catName} 
-                          className="relative z-10 w-full h-full object-contain drop-shadow-[0_10px_15px_rgba(0,0,0,0.15)] group-hover:scale-110 transition-transform duration-500" 
-                       />
-                     ) : (
-                       <Layers className="relative z-10 w-10 h-10 text-gray-300" />
-                     )}
-                   </div>
-
-                   <h3 className="font-bold text-gray-800 text-sm md:text-base group-hover:text-blue-600 transition-colors text-center leading-tight">
-                      {catName}
-                   </h3>
-                   
-                   <span className="
-                      text-[10px] text-gray-400 mt-2 font-bold
-                      opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0
-                      transition-all duration-300
-                      flex items-center gap-1
-                   ">
-                      {t('view_category')} <ArrowLeft className={`w-3 h-3 ${isEn ? 'rotate-180' : ''}`} />
-                   </span>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-      </section>
-
-      {/* 4. Newest Products */}
+      {/* 3. Newest Products */}
       <section className="container mx-auto px-4 mb-20">
         
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
@@ -176,6 +127,80 @@ export default async function Home({
           </Link>
         </div>
       </section>
+
+      {/* 4. Category Sections — هر دسته‌بندی، ویترین اختصاصی خودش را دارد */}
+      {categorySections.length > 0 && (
+        <section className="container mx-auto px-4 mb-20">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-3 tracking-tight flex items-center justify-center gap-3">
+              <Layers className="h-7 w-7 text-blue-600 hidden md:block" />
+              {t('categories_title')}
+            </h2>
+            <p className="text-gray-500 font-medium">{t('categories_subtitle')}</p>
+          </div>
+
+          <div className="flex flex-col gap-6 md:gap-8">
+            {categorySections.map(({ category: cat, items }, index) => {
+              const catName = isEn ? (cat.name_en || cat.name) : cat.name;
+              const isTinted = index % 2 === 1;
+
+              return (
+                <div
+                  key={cat.id}
+                  className={`
+                    rounded-3xl p-5 md:p-8 border transition-colors
+                    ${isTinted ? 'bg-white border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)]' : 'bg-transparent border-transparent'}
+                  `}
+                >
+                  <div className="flex items-center justify-between gap-4 mb-6">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex-shrink-0 w-11 h-11 md:w-12 md:h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center overflow-hidden">
+                        {cat.icon_url ? (
+                          <img
+                            src={cat.icon_url}
+                            alt={catName}
+                            className="w-7 h-7 md:w-8 md:h-8 object-contain"
+                          />
+                        ) : (
+                          <Layers className="w-5 h-5 md:w-6 md:h-6 text-blue-500" />
+                        )}
+                      </div>
+                      <h3 className="text-lg md:text-xl font-bold text-gray-900 truncate">
+                        {catName}
+                      </h3>
+                    </div>
+
+                    <Link
+                      href={`/products?category=${cat.slug}`}
+                      className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs md:text-sm font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-2 rounded-xl transition-all group"
+                    >
+                      <span className="hidden sm:inline">{t('view_all')}</span>
+                      <span className="sm:hidden">{t('view_category')}</span>
+                      <ArrowLeft className={`h-4 w-4 transition-transform ${isEn ? 'rotate-180 group-hover:translate-x-1' : 'group-hover:-translate-x-1'}`} />
+                    </Link>
+                  </div>
+
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                    {items.map((product) => (
+                      <ProductCard
+                        key={product.id}
+                        id={product.id}
+                        title={product.title}
+                        title_en={product.title_en}
+                        price={product.price}
+                        image={product.image}
+                        slug={product.slug}
+                        pricing_type={product.pricing_type}
+                        weight={product.weight}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* 5. Currency & Info */}
       <div className="bg-white py-12 border-t border-gray-200">
