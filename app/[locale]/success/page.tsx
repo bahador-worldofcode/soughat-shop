@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Package, ArrowRight, Copy, AlertCircle, MessageCircle, ClipboardCheck } from 'lucide-react';
+import { Package, ArrowRight, Copy, AlertCircle, MessageCircle, ClipboardCheck, Check } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { Link } from '@/i18n/navigation';
 import { useTranslations, useLocale } from 'next-intl';
@@ -29,9 +29,12 @@ function SuccessContent() {
     }
   }, [clearCart, orderId]);
 
+  const [copied, setCopied] = useState(false);
+
   const copyToClipboard = () => {
     navigator.clipboard.writeText(trackingCode);
-    alert(isEn ? "Tracking code copied!" : "کد رهگیری کپی شد!");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   // --- اگر کاربر بدون سفارش وارد صفحه شد ---
@@ -94,8 +97,22 @@ function SuccessContent() {
           <span className="text-sm font-mono font-bold text-gray-800 break-all text-left dir-ltr">
             {trackingCode || '...'}
           </span>
-          <button onClick={copyToClipboard} className="text-gray-400 hover:text-blue-600 transition-colors ml-3 flex-shrink-0 bg-white p-2 rounded-lg border border-gray-200 shadow-sm hover:shadow active:scale-95">
-            <Copy className="h-5 w-5" />
+          <button 
+            onClick={copyToClipboard} 
+            className={`ml-3 flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg border shadow-sm hover:shadow active:scale-95 transition-all text-xs font-bold ${
+              copied 
+                ? 'bg-green-50 border-green-200 text-green-600' 
+                : 'bg-white border-gray-200 text-gray-400 hover:text-blue-600'
+            }`}
+          >
+            {copied ? (
+              <>
+                <Check className="h-4 w-4" />
+                <span>{isEn ? 'Copied' : 'کپی شد'}</span>
+              </>
+            ) : (
+              <Copy className="h-5 w-5" />
+            )}
           </button>
         </div>
       </div>

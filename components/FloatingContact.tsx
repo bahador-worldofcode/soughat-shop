@@ -21,6 +21,7 @@ export default function FloatingContact() {
   
   const [formData, setFormData] = useState({ contact: '', content: '' });
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState('');
 
   const isProductPage = pathname?.startsWith('/products/') && pathname !== '/products';
 
@@ -33,6 +34,7 @@ export default function FloatingContact() {
     if (!formData.content || !formData.contact) return;
 
     setSending(true);
+    setSendError('');
     try {
       const { error } = await supabase.from('messages').insert([{
         user_contact: formData.contact,
@@ -56,7 +58,7 @@ export default function FloatingContact() {
       setFormData({ contact: '', content: '' });
     } catch (error) {
       console.error(error);
-      alert('Error sending message.');
+      setSendError(isEn ? 'Something went wrong. Please try again.' : 'مشکلی پیش اومد. لطفاً دوباره امتحان کنید.');
     } finally {
       setSending(false);
     }
@@ -67,6 +69,7 @@ export default function FloatingContact() {
     setTimeout(() => {
         setView('menu');
         setFormData({ contact: '', content: '' });
+        setSendError('');
     }, 300);
   };
 
@@ -172,6 +175,12 @@ export default function FloatingContact() {
                         {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className={`h-4 w-4 ${isEn ? 'rotate-180' : ''}`} />}
                         {sending ? t('btn_sending') : t('btn_send')}
                     </button>
+
+                    {sendError && (
+                        <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 text-center">
+                            {sendError}
+                        </p>
+                    )}
                 </form>
             )}
 
