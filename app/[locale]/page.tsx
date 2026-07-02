@@ -102,20 +102,25 @@ export default async function Home({
             <p className="text-gray-400 text-lg">{t('products_loading')}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          // موبایل: نوار افقی با اسکرول و اسنپ (مثل اسنپ/دیجی‌کالا) | از sm به بعد: همون گرید قبلی، بدون تغییر
+          <div className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-smooth -mx-4 px-4 pb-1 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:snap-none sm:mx-0 sm:px-0 sm:pb-0 lg:grid-cols-4">
             {products.map((product) => {
                 return (
-                  <ProductCard
+                  <div
                     key={product.id}
-                    id={product.id}
-                    title={product.title}
-                    title_en={product.title_en}
-                    price={product.price}
-                    image={product.image}
-                    slug={product.slug}
-                    pricing_type={product.pricing_type}
-                    weight={product.weight}
-                  />
+                    className="w-[44%] min-w-[152px] max-w-[190px] flex-shrink-0 snap-start sm:contents"
+                  >
+                    <ProductCard
+                      id={product.id}
+                      title={product.title}
+                      title_en={product.title_en}
+                      price={product.price}
+                      image={product.image}
+                      slug={product.slug}
+                      pricing_type={product.pricing_type}
+                      weight={product.weight}
+                    />
+                  </div>
                 );
             })}
           </div>
@@ -128,74 +133,44 @@ export default async function Home({
         </div>
       </section>
 
-      {/* 4. Category Sections — هر دسته‌بندی، ویترین اختصاصی خودش را دارد */}
+      {/* 4. Quick Access / Categories — نوار افقی دسته‌بندی‌ها، بدون بنر و بدون جعبه‌های سنگین */}
       {categorySections.length > 0 && (
         <section className="container mx-auto px-4 mb-20">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-3 tracking-tight flex items-center justify-center gap-3">
-              <Layers className="h-7 w-7 text-blue-600 hidden md:block" />
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <Layers className="h-6 w-6 text-blue-600" />
               {t('categories_title')}
             </h2>
-            <p className="text-gray-500 font-medium">{t('categories_subtitle')}</p>
+            <p className="text-sm text-gray-500 mt-2 mr-4">
+              {t('categories_subtitle')}
+            </p>
           </div>
 
-          <div className="flex flex-col gap-6 md:gap-8">
-            {categorySections.map(({ category: cat, items }, index) => {
+          <div className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-smooth -mx-4 px-4 pb-1 sm:flex-wrap sm:overflow-visible sm:snap-none sm:mx-0 sm:px-0 sm:pb-0">
+            {categorySections.map(({ category: cat }) => {
               const catName = isEn ? (cat.name_en || cat.name) : cat.name;
-              const isTinted = index % 2 === 1;
 
               return (
-                <div
+                <Link
                   key={cat.id}
-                  className={`
-                    rounded-3xl p-5 md:p-8 border transition-colors
-                    ${isTinted ? 'bg-white border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)]' : 'bg-transparent border-transparent'}
-                  `}
+                  href={`/products?category=${cat.slug}`}
+                  className="group flex w-[76px] flex-shrink-0 snap-start flex-col items-center gap-2 sm:w-24"
                 >
-                  <div className="flex items-center justify-between gap-4 mb-6">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="flex-shrink-0 w-11 h-11 md:w-12 md:h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center overflow-hidden">
-                        {cat.icon_url ? (
-                          <img
-                            src={cat.icon_url}
-                            alt={catName}
-                            className="w-7 h-7 md:w-8 md:h-8 object-contain"
-                          />
-                        ) : (
-                          <Layers className="w-5 h-5 md:w-6 md:h-6 text-blue-500" />
-                        )}
-                      </div>
-                      <h3 className="text-lg md:text-xl font-bold text-gray-900 truncate">
-                        {catName}
-                      </h3>
-                    </div>
-
-                    <Link
-                      href={`/products?category=${cat.slug}`}
-                      className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs md:text-sm font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-2 rounded-xl transition-all group"
-                    >
-                      <span className="hidden sm:inline">{t('view_all')}</span>
-                      <span className="sm:hidden">{t('view_category')}</span>
-                      <ArrowLeft className={`h-4 w-4 transition-transform ${isEn ? 'rotate-180 group-hover:translate-x-1' : 'group-hover:-translate-x-1'}`} />
-                    </Link>
-                  </div>
-
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                    {items.map((product) => (
-                      <ProductCard
-                        key={product.id}
-                        id={product.id}
-                        title={product.title}
-                        title_en={product.title_en}
-                        price={product.price}
-                        image={product.image}
-                        slug={product.slug}
-                        pricing_type={product.pricing_type}
-                        weight={product.weight}
+                  <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-blue-100 bg-blue-50 transition-colors group-hover:border-blue-300 group-hover:bg-blue-100/70 sm:h-20 sm:w-20">
+                    {cat.icon_url ? (
+                      <img
+                        src={cat.icon_url}
+                        alt={catName}
+                        className="h-9 w-9 object-contain sm:h-11 sm:w-11"
                       />
-                    ))}
+                    ) : (
+                      <Layers className="h-6 w-6 text-blue-500" />
+                    )}
                   </div>
-                </div>
+                  <span className="line-clamp-2 text-center text-xs font-bold leading-tight text-gray-700 transition-colors group-hover:text-blue-600 sm:text-sm">
+                    {catName}
+                  </span>
+                </Link>
               );
             })}
           </div>
