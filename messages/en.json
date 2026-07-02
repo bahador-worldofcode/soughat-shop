@@ -11,6 +11,11 @@
     "language": "Change Language",
     "review": "Write Review"
   },
+  "MobileNav": {
+    "cart": "Cart",
+    "menu": "Menu",
+    "quickLinks": "Quick Links"
+  },
   "Footer": {
     "brand_desc": "The first specialized platform for sending gifts to Iran. By eliminating banking intermediaries and using secure blockchain networks, we enable fast, sanction-free payments via Tether (USDT) and Solana.",
     "links_store": "Store",

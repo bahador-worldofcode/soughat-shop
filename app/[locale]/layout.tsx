@@ -9,6 +9,7 @@ import { Vazirmatn } from 'next/font/google';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FloatingContact from "@/components/FloatingContact";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import WebMCPProvider from "@/components/WebMCPProvider";
 
 // کانفیگ فونت برای خوانایی بهتر سایت
@@ -133,7 +134,10 @@ export default async function LocaleLayout({
           
           {/* فوتر سایت */}
           <Footer />
-          
+
+          {/* نوار پایین ناوبری موبایل (خانه، محصولات، سبد خرید، پیگیری، منو) */}
+          <MobileBottomNav />
+
           {/* دکمه شناور تماس */}
           <FloatingContact />
 

@@ -5,6 +5,7 @@ import { usePathname } from '@/i18n/navigation';
 import { MessageCircle, X, Send, Phone, MessageSquare, ArrowLeft, Loader2, CheckCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useTranslations, useLocale } from 'next-intl';
+import { isMobileNavHidden } from '@/lib/navVisibility';
 
 type ViewState = 'menu' | 'form' | 'success';
 
@@ -24,6 +25,10 @@ export default function FloatingContact() {
   const [sendError, setSendError] = useState('');
 
   const isProductPage = pathname?.startsWith('/products/') && pathname !== '/products';
+
+  // در صفحاتی که نوار پایین موبایل نمایش داده می‌شود (اکثر صفحات سایت)،
+  // دکمه شناور باید بالاتر از آن نوار بنشیند تا رویش نیفتد
+  const hasBottomNav = !isMobileNavHidden(pathname);
 
   useEffect(() => {
     setMounted(true);
@@ -79,7 +84,7 @@ export default function FloatingContact() {
   return (
     <div 
       className={`fixed right-6 z-50 flex flex-col items-end font-[family-name:var(--font-vazir)] transition-all duration-300 ${
-        isProductPage ? 'bottom-24 md:bottom-6' : 'bottom-6'
+        isProductPage || hasBottomNav ? 'bottom-24 md:bottom-6' : 'bottom-6'
       }`}
       dir={isEn ? 'ltr' : 'rtl'}
     >

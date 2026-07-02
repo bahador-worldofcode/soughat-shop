@@ -1,9 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { ShoppingBag, Menu, X, Globe, Search, ChevronDown } from 'lucide-react';
+import { ShoppingBag, Globe, Search } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link, useRouter, usePathname } from '@/i18n/navigation';
+import { isMobileNavHidden } from '@/lib/navVisibility';
 
 export default function Header() {
   const t = useTranslations('Header');
@@ -18,10 +19,15 @@ export default function Header() {
   
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const router = useRouter();
   const pathname = usePathname();
+
+  // در موبایل، آیتم‌های اصلی ناوبری (خانه، محصولات، سبد خرید، پیگیری، منو)
+  // به نوار پایین صفحه منتقل شده‌اند. آیکون سبد خرید هدر فقط در صفحاتی که
+  // آن نوار پایین نمایش داده نمی‌شود (مثل جزئیات محصول) در موبایل دیده می‌شود،
+  // تا کاربر همیشه یک راه برای رسیدن به سبد خرید داشته باشد.
+  const showMobileCartIcon = isMobileNavHidden(pathname);
 
   useEffect(() => {
     setMounted(true);
@@ -32,7 +38,6 @@ export default function Header() {
     e.preventDefault();
     if (searchQuery.trim()) {
       router.push(`/products?q=${encodeURIComponent(searchQuery)}`);
-      setIsMobileMenuOpen(false);
     }
   };
 
@@ -121,25 +126,20 @@ export default function Header() {
           </div>
 
           {/* Cart Button */}
-          <Link href="/cart">
+          {/* در دسکتاپ همیشه دیده می‌شود. در موبایل فقط وقتی نوار پایین
+              نمایش داده نمی‌شود (مثل صفحه جزئیات محصول) ظاهر می‌شود، چون
+              در بقیه صفحات دسترسی به سبد خرید از طریق نوار پایین انجام می‌شود */}
+          <Link href="/cart" className={showMobileCartIcon ? 'flex' : 'hidden md:flex'}>
             <button className="relative p-2.5 hover:bg-blue-50 rounded-xl transition-colors group border border-transparent hover:border-blue-100">
               <ShoppingBag className="h-5 w-5 text-gray-600 group-hover:text-blue-600" />
               {/* بج (Badge) تعداد آیتم‌ها - حالا هوشمند شده */}
               {mounted && cartCount > 0 && (
-                <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center shadow-sm transform scale-100 group-hover:scale-110 transition-transform animate-in zoom-in">
+                <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center shadow-sm transform scale-100 group-hover:scale-110 transition-transform">
                   {cartCount}
                 </span>
               )}
             </button>
           </Link>
-          
-          {/* Mobile Menu Trigger */}
-          <button 
-            className="md:hidden p-2 hover:bg-gray-100 rounded-xl transition-colors border border-transparent hover:border-gray-200"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            {isMobileMenuOpen ? <X className="h-6 w-6 text-gray-800" /> : <Menu className="h-6 w-6 text-gray-800" />}
-          </button>
         </div>
 
       </div>
@@ -157,74 +157,6 @@ export default function Header() {
             />
         </form>
       </div>
-
-      {/* Mobile Dropdown Menu */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-white border-t border-gray-100 shadow-xl animate-in fade-in slide-in-from-top-2 z-40 h-screen">
-            <div className="flex flex-col p-4 gap-2">
-                
-                {/* Mobile Links */}
-                {[
-                  { href: '/', label: t('home') },
-                  { href: '/products', label: t('products') },
-                  { href: '/blog', label: t('blog') },
-                  { href: '/track', label: t('track') },
-                  { href: '/review', label: t('review') },
-                  { href: '/how-it-works', label: t('guide') },
-                ].map((link) => (
-                  <Link 
-                    key={link.href}
-                    href={link.href} 
-                    onClick={() => setIsMobileMenuOpen(false)} 
-                    className="text-gray-700 font-bold hover:text-blue-600 hover:bg-blue-50 px-4 py-3 rounded-xl flex items-center justify-between transition-colors"
-                  >
-                      {link.label}
-                      <ChevronDown className={`h-4 w-4 text-gray-400 ${!isEn ? 'rotate-90' : '-rotate-90'}`} />
-                  </Link>
-                ))}
-
-                <hr className="my-2 border-gray-100" />
-
-                {/* Mobile Language Switcher */}
-                <button 
-                  onClick={() => { toggleLanguage(); setIsMobileMenuOpen(false); }}
-                  className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-700 active:bg-gray-100"
-                >
-                  <span className="flex items-center gap-2">
-                    <Globe className="h-4 w-4 text-blue-600" /> 
-                    {/* حل مشکل هدر لنگویج با نوشتن شرط دستی */}
-                    {isEn ? 'Language' : 'تغییر زبان'}
-                  </span>
-                  
-                  <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm text-blue-600">
-                      {/* نمایش زبان مقصد برای سوییچ */}
-                      <span>{isEn ? 'فارسی' : 'English'}</span>
-                  </div>
-                </button>
-
-                {/* Mobile Currency Switcher */}
-                <div className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-700">
-                    <span className="flex items-center gap-2">
-                        <span className="text-gray-500 text-xs">$</span> 
-                        {isEn ? 'Currency' : 'واحد پول'}
-                    </span>
-                    <select 
-                        value={currency}
-                        onChange={(e) => {
-                            setCurrency(e.target.value as any);
-                            setIsMobileMenuOpen(false); // بستن منو پس از تغییر ارز
-                        }}
-                        className="bg-transparent text-sm font-bold outline-none text-blue-700 dir-ltr"
-                    >
-                        <option value="USD">USD ($)</option>
-                        <option value="EUR">EUR (€)</option>
-                        <option value="GBP">GBP (£)</option>
-                        <option value="SEK">SEK (kr)</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-      )}
     </header>
   );
 }

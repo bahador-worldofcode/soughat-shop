@@ -1,1 +1,25 @@
 @import "tailwindcss";
+
+/* ===== انیمیشن‌های نوار پایین موبایل و منوی کشویی «بیشتر» ===== */
+/* داخل این مدیا-کوئری تعریف شده‌اند تا با تنظیمات حرکت کاهش‌یافته
+   (Reduced Motion) دستگاه کاربر سازگار باشند؛ در آن حالت این کلاس‌ها
+   بدون انیمیشن اجرا می‌شوند و صرفاً به‌صورت آنی نمایش داده می‌شوند. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes soughat-overlay-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes soughat-sheet-up {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  .animate-sheet-overlay {
+    animation: soughat-overlay-in 0.2s ease-out;
+  }
+
+  .animate-sheet-panel {
+    animation: soughat-sheet-up 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
