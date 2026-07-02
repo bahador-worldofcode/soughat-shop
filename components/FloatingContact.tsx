@@ -9,30 +9,63 @@ import { isMobileNavHidden } from '@/lib/navVisibility';
 
 type ViewState = 'menu' | 'form' | 'success';
 
+// آیا ویوپورت در بازه‌ی موبایل است؟ (هم‌راستا با بریک‌پوینت md در بقیه‌ی پروژه)
+const isMobileViewport = () =>
+  typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+
 export default function FloatingContact() {
   const t = useTranslations('FloatingContact');
   const locale = useLocale();
   const isEn = locale === 'en';
-  
+
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
 
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState<ViewState>('menu');
-  
+
   const [formData, setFormData] = useState({ contact: '', content: '' });
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState('');
 
   const isProductPage = pathname?.startsWith('/products/') && pathname !== '/products';
+  const isHome = pathname === '/';
 
   // در صفحاتی که نوار پایین موبایل نمایش داده می‌شود (اکثر صفحات سایت)،
   // دکمه شناور باید بالاتر از آن نوار بنشیند تا رویش نیفتد
   const hasBottomNav = !isMobileNavHidden(pathname);
 
+  // در صفحه‌ی اصلی موبایل، تا وقتی بخش Hero (و دکمه‌ی «شروع خرید» داخل آن)
+  // هنوز روی صفحه دیده می‌شود، دکمه‌ی شناور را مخفی نگه می‌داریم تا رویش
+  // نیفتد؛ به‌محض اینکه کاربر کمی اسکرول کند و از Hero عبور کند، دکمه با
+  // یک فید نرم ظاهر می‌شود. مقدار اولیه به‌صورت هم‌گام (sync) محاسبه می‌شود
+  // تا هیچ پرش/چشمک‌زدنی در لحظه‌ی لود دیده نشود.
+  const [hideForHero, setHideForHero] = useState(() => isHome && isMobileViewport());
+
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!isHome || !isMobileViewport()) {
+      setHideForHero(false);
+      return;
+    }
+
+    const heroEl = document.getElementById('home-hero');
+    if (!heroEl) {
+      setHideForHero(false);
+      return;
+    }
+
+    setHideForHero(true);
+    const observer = new IntersectionObserver(
+      ([entry]) => setHideForHero(entry.isIntersecting),
+      { threshold: 0.1 }
+    );
+    observer.observe(heroEl);
+    return () => observer.disconnect();
+  }, [pathname, isHome]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,10 +115,10 @@ export default function FloatingContact() {
   if (pathname?.startsWith('/admin')) return null;
 
   return (
-    <div 
+    <div
       className={`fixed right-6 z-50 flex flex-col items-end font-[family-name:var(--font-vazir)] transition-all duration-300 ${
         isProductPage || hasBottomNav ? 'bottom-24 md:bottom-6' : 'bottom-6'
-      }`}
+      } ${hideForHero ? 'opacity-0 translate-y-3 pointer-events-none' : 'opacity-100 translate-y-0'}`}
       dir={isEn ? 'ltr' : 'rtl'}
     >
       

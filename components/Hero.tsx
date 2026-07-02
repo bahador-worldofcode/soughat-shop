@@ -18,7 +18,10 @@ export default function Hero({ banner, title, subtitle }: HeroProps) {
   const hasBanner = !!banner;
 
   return (
-    <section className="relative overflow-hidden font-[family-name:var(--font-vazir)] bg-gradient-to-br from-indigo-950 via-blue-900 to-blue-950 min-h-[auto] md:min-h-[600px] py-12 md:py-0">
+    // شناسه‌ی «home-hero»: توسط FloatingContact با IntersectionObserver دیده
+    // می‌شود تا دکمه‌ی شناور تماس، تا وقتی این بخش (و دکمه‌ی «شروع خرید» داخلش)
+    // در معرض دید کاربر است، روی آن نیفتد و مخفی بماند.
+    <section id="home-hero" className="relative overflow-hidden font-[family-name:var(--font-vazir)] bg-gradient-to-br from-indigo-950 via-blue-900 to-blue-950 min-h-[auto] md:min-h-[600px] py-12 md:py-0">
       
       {/* کانتینر اصلی */}
       <div className="container mx-auto px-4 relative z-10">
