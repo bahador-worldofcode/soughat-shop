@@ -73,8 +73,16 @@ export default function Header() {
         {/* یک ردیف باریک (۵۶ پیکسل): آیکون جستجو، لوگوی وسط‌چین، آیکون سبد خرید
             (در صورت نیاز). با تپ روی آیکون جستجو، همین ردیف به یک نوار جستجوی
             تمام‌عرض تبدیل می‌شود؛ به این ترتیب سرچ همیشه در دسترس است اما فضای
-            دائمی از هدر نمی‌گیرد — الگویی که در اکثر اپ‌های موبایل مدرن دیده می‌شود. */}
-        <div className="grid grid-cols-3 items-center h-14 md:hidden">
+            دائمی از هدر نمی‌گیرد — الگویی که در اکثر اپ‌های موبایل مدرن دیده می‌شود.
+
+            نکته‌ی مهم (رفع باگ): قبلاً این ردیف grid-cols-3 بود، یعنی هر سه
+            ستون دقیقاً ۱/۳ عرض را می‌گرفتند و ستون وسط (لوگو) هرچه فضای متن
+            برند بزرگ‌تر بود، مجبور به truncate (سه‌نقطه) می‌شد. با
+            grid-cols-[1fr_auto_1fr] ستون وسط دقیقاً به اندازه‌ی محتوایش
+            (آیکون + متن برند) عرض می‌گیرد و هرگز بریده نمی‌شود، و دو ستون
+            کناری (۱fr) فضای باقی‌مانده را مساوی تقسیم می‌کنند تا لوگو همچنان
+            دقیقاً وسط‌چین بماند. */}
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center h-14 md:hidden">
           {mobileSearchOpen ? (
             <form
               onSubmit={handleSearch}
@@ -112,12 +120,17 @@ export default function Header() {
                 </button>
               </div>
 
-              <Link href="/" className="flex items-center justify-center gap-2 min-w-0">
+              {/* dir="ltr" ثابت: مستقل از جهت صفحه (rtl برای فارسی، ltr برای
+                  انگلیسی)، ترتیب آیکون لوگو و متن برند همیشه یکسان می‌ماند
+                  (لوگو همیشه قبل از متن). قبلاً چون این Link جهت را از صفحه
+                  ارث می‌برد، در حالت فارسی مرورگر ترتیب فرزندهای فلکس را
+                  خودکار برعکس می‌کرد و لوگو به راست و متن به چپ می‌رفت. */}
+              <Link href="/" dir="ltr" className="flex items-center justify-center gap-2 flex-shrink-0">
                 <div className="relative w-8 h-8 rounded-lg overflow-hidden shadow-sm border border-blue-100 flex-shrink-0">
                   <img src="/logo.png" alt="Soughat Logo" className="w-full h-full object-cover" />
                 </div>
-                <span className="text-base font-extrabold text-blue-600 tracking-tighter leading-none truncate">
-                  Soughat Shop
+                <span className="text-base font-extrabold text-blue-600 tracking-tighter leading-none whitespace-nowrap">
+                  {t('brand')}
                 </span>
               </Link>
 
@@ -140,18 +153,18 @@ export default function Header() {
         </div>
 
         {/* ============================= ردیف دسکتاپ ============================= */}
-        {/* بدون تغییر نسبت به قبل — طبق دستور، تمرکز این بروزرسانی فقط روی موبایل است */}
         <div className="hidden md:flex h-16 items-center justify-between gap-4">
 
-          {/* Logo Section */}
-          <Link href="/" className="flex items-center gap-3 flex-shrink-0 group">
+          {/* Logo Section — همان dir="ltr" ثابت برای هماهنگی با نسخه موبایل
+              و برند، به‌علاوه‌ی متن برند لوکالایز‌شده (t('brand')) */}
+          <Link href="/" dir="ltr" className="flex items-center gap-3 flex-shrink-0 group">
             <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-sm border border-blue-100 group-hover:scale-105 transition-transform">
               <img src="/logo.png" alt="Soughat Logo" className="w-full h-full object-cover" />
             </div>
 
             <div className="flex flex-col justify-center">
               <span className="text-xl font-extrabold text-blue-600 tracking-tighter leading-none">
-                Soughat Shop
+                {t('brand')}
               </span>
               <span className="text-[10px] md:text-xs text-gray-500 font-bold mt-1 tracking-wide">
                 {t('subtitle')}
