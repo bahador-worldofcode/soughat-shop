@@ -120,12 +120,14 @@ export default function Header() {
                 </button>
               </div>
 
-              {/* dir="ltr" ثابت: مستقل از جهت صفحه (rtl برای فارسی، ltr برای
-                  انگلیسی)، ترتیب آیکون لوگو و متن برند همیشه یکسان می‌ماند
-                  (لوگو همیشه قبل از متن). قبلاً چون این Link جهت را از صفحه
-                  ارث می‌برد، در حالت فارسی مرورگر ترتیب فرزندهای فلکس را
-                  خودکار برعکس می‌کرد و لوگو به راست و متن به چپ می‌رفت. */}
-              <Link href="/" dir="ltr" className="flex items-center justify-center gap-2 flex-shrink-0">
+              {/* توجه: عمداً دیگه dir="ltr" روی این Link ثابت نیست. طبق
+                  قانون کلی سایت، آیکون همیشه *بعد* از نوشته می‌آید (در
+                  ترتیب خواندن)؛ چون فارسی راست‌به‌چپ است، «بعد از نوشته»
+                  در فارسی یعنی سمت چپ نوشته قرار می‌گیرد و خود نوشته سمت
+                  راست می‌ماند — دقیقاً برعکس انگلیسی که «بعد از نوشته»
+                  یعنی سمت راست. با حذف dir ثابت، این چرخش به‌صورت طبیعی
+                  و خودکار توسط جهت صفحه (rtl/ltr) انجام می‌شود. */}
+              <Link href="/" className="flex items-center justify-center gap-2 flex-shrink-0">
                 <div className="relative w-8 h-8 rounded-lg overflow-hidden shadow-sm border border-blue-100 flex-shrink-0">
                   <img src="/logo.png" alt="Soughat Logo" className="w-full h-full object-cover" />
                 </div>
