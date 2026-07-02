@@ -78,7 +78,7 @@ export default async function Home({
       <MarketRates />
       
       {/* 3. Newest Products */}
-      <section className="container mx-auto px-4 mb-20">
+      <section className="container mx-auto px-4 mb-14 md:mb-20">
         
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
           <div>
@@ -135,10 +135,10 @@ export default async function Home({
 
       {/* 4. Category Sections — هر دسته‌بندی، ویترین اختصاصی خودش را دارد؛ آیتم‌ها به‌صورت ریلی/نواری (مثل بخش تازه‌ترین‌ها) */}
       {categorySections.length > 0 && (
-        <section className="container mx-auto px-4 mb-20">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-3 tracking-tight flex items-center justify-center gap-3">
-              <Layers className="h-7 w-7 text-blue-600 hidden md:block" />
+        <section className="container mx-auto px-4 mb-14 md:mb-20">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2 tracking-tight flex items-center justify-center gap-2 md:gap-3">
+              <Layers className="h-6 w-6 md:h-7 md:w-7 text-blue-600" />
               {t('categories_title')}
             </h2>
             <p className="text-gray-500 font-medium">{t('categories_subtitle')}</p>
