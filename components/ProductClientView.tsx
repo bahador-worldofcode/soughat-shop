@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
-import { ShoppingBag, Check, ShieldCheck, Truck, Star, Plus, Minus, Trash2, Tag, LayoutGrid, FileText, ChevronDown, Wallet, ArrowRight } from 'lucide-react';
+import { ShoppingBag, Check, ShieldCheck, Truck, Star, Plus, Minus, Trash2, Tag, LayoutGrid, FileText, ChevronDown, Wallet, ChevronsRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import ProductCard from './ProductCard';
 import { useTranslations, useLocale } from 'next-intl';
@@ -63,10 +63,8 @@ export default function ProductClientView({ product, categoryName, categorySlug,
   }, [quantity, product.pricing_type]);
 
   const AddToCartButtons = () => {
-      
       if (product.pricing_type === 'currency') {
         const amounts = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 40, 50, 100];
-
         const handleCurrencyChange = (newQty: number) => {
             setCurrencyAmount(newQty);
             if (quantity > 0) {
@@ -74,18 +72,15 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                 for (let i = 0; i < newQty; i++) addToCart(product);
             }
         };
-
         const handleAddCurrency = () => {
              if (quantity === 0) {
                  for (let i = 0; i < currencyAmount; i++) addToCart(product);
              }
         };
-
         const handleFullRemove = () => {
             removeFromCart(product.id);
             setCurrencyAmount(1);
         };
-
         return (
             <div className="flex flex-col gap-4 w-full">
                 <div className="relative w-full">
@@ -170,13 +165,11 @@ export default function ProductClientView({ product, categoryName, categorySlug,
 
   return (
     <div className="relative font-[family-name:var(--font-vazir)]">
-        
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-12 animate-in fade-in slide-in-from-bottom-4 duration-500 items-start">
         
             <div className="md:col-span-5 relative">
                 <div className="relative aspect-square bg-gray-50 md:bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm md:sticky md:top-24 group">
                     <img src={product.image} alt={product.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                    
                     {quantity > 0 && product.pricing_type !== 'currency' && (
                         <div className="absolute top-4 right-4 bg-blue-600 text-white w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center font-black text-sm md:text-base shadow-lg border-2 border-white animate-in zoom-in">
                             {quantity}
@@ -186,7 +179,6 @@ export default function ProductClientView({ product, categoryName, categorySlug,
             </div>
 
             <div className="md:col-span-7 flex flex-col">
-                
                 <div className="mb-4 flex items-center justify-between px-1 md:px-0">
                     <Link 
                         href={`/products?category=${categorySlug}`} 
@@ -221,13 +213,12 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                                     {symbol} {typeof finalPrice === 'number' ? finalPrice.toFixed(2) : finalPrice}
                                 </div>
                             </div>
-                            
                             <div className="text-right flex flex-col items-end gap-1.5 opacity-90">
-                                <div className="text-xs md:text-sm text-emerald-600 font-bold flex items-center gap-1.5 bg-emerald-50/50 px-2.5 py-1 rounded-md">
+                                <div className="text-[11px] md:text-sm text-emerald-600 font-bold flex items-center gap-1.5 bg-emerald-50/50 px-2 py-1 rounded-md">
                                     <ShieldCheck className="h-4 w-4 md:h-5 md:w-5"/> 
                                     {t('health_guarantee')}
                                 </div>
-                                <div className="text-xs md:text-sm text-blue-500 font-bold flex items-center gap-1.5 bg-blue-50/50 px-2.5 py-1 rounded-md">
+                                <div className="text-[11px] md:text-sm text-blue-500 font-bold flex items-center gap-1.5 bg-blue-50/50 px-2 py-1 rounded-md">
                                     <Truck className="h-4 w-4 md:h-5 md:w-5"/> 
                                     {t('free_shipping')}
                                 </div>
@@ -264,7 +255,6 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                         ))}
                     </div>
                 )}
-
             </div>
         </div>
 
@@ -293,7 +283,7 @@ export default function ProductClientView({ product, categoryName, categorySlug,
             </div>
         )}
 
-        {/* محصولات مرتبط (Carousel Swipe-able در موبایل / گرید در دسکتاپ) */}
+        {/* محصولات مرتبط با ارتقا هوشمند UI: کارت‌ها عریض‌تر و یک نشانگر تصویری روان برای اسکرول افقی اضافه شده */}
         {relatedProducts.length > 0 && (
             <div className="mt-16 md:mt-20 pt-10 border-t border-gray-100">
                 <div className="flex items-center justify-between mb-6">
@@ -302,20 +292,18 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                         {t('similar_products')}
                     </h3>
 
-                    {/* دکمه انیمیشنی نبض دار، نشان دهنده اسلاید، فقط در سایزهای کوچکتر نمایش داده می شود */}
-                    <div className="flex sm:hidden items-center gap-1.5 bg-blue-50/80 border border-blue-100 px-3 py-1.5 rounded-lg text-blue-600 text-[10px] font-bold animate-pulse cursor-default">
-                        <span>{isEn ? 'Swipe for more' : 'برای ادامه بکشید'}</span>
-                        <ArrowRight className={`h-3.5 w-3.5 ${!isEn ? 'rotate-180' : ''}`} />
+                    {/* استفاده از نشانگر ۲ فِلشه ظریف به عنوان الگوی شناختی استاندارد موبایل برای حرکت افقی */}
+                    <div className="flex sm:hidden items-center justify-center w-8 h-8 rounded-full bg-blue-50/50 border border-blue-100/60 opacity-80 animate-pulse shadow-sm pointer-events-none">
+                        <ChevronsRight className={`h-4 w-4 text-blue-500 ${!isEn ? 'rotate-180' : ''}`} />
                     </div>
                 </div>
 
-                {/* با کاهش درصد به w-[44%] و اضافه شدنِ کشیدگی اجباری items-stretch ساختار کاملا هم ارتفاع با درک دیداری کامل (بیرون زدگی کارت بعدی) است */}
+                {/* با تخصیص عرض دقیق w-[65%] (نسخه بهینه‌شدهِ قانون پهنا)، کات بصری استاندارد اپ‌ها شکل میگیرد و فضای متنی عالی میشود. ترکیب items-stretch هم از ناهمترازیِ قدِ المانها محافظت می‌کند. */}
                 <div className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-smooth pt-1 pb-4 px-1 items-stretch sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 sm:overflow-visible sm:snap-none sm:px-0">
                     {relatedProducts.map((item) => (
                         <div 
                            key={item.id}
-                           // اینجا روی ۴۴ درصد قرار داده شد که ۲ تا کارت کامل بیافتد توی تصویر و مقداری هم کارت سوم نمایان باشد و از صفحه بزنه بیرون که ناخوداگاه مخاطب به اسکرول ترغیب شود.
-                           className="w-[44%] min-w-[155px] max-w-[210px] flex-shrink-0 snap-start sm:w-auto sm:flex-none sm:contents"
+                           className="w-[65%] min-w-[240px] max-w-[290px] flex-shrink-0 snap-start sm:w-auto sm:flex-none sm:contents"
                         >
                             <ProductCard 
                                 id={item.id}
