@@ -76,21 +76,27 @@ export default async function Home({
       {/* 3. Newest Products */}
       <section className="container mx-auto px-4 mb-14 md:mb-20">
         
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
-          <div>
-            <div className="flex items-center justify-between sm:justify-start gap-4">
-                <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <Sparkles className="h-6 w-6 text-yellow-500 fill-yellow-500" />
-                {t('newest_title')}
-                </h2>
-                {/* دکمه انیمیشنی موبایل */}
-                <div className="flex sm:hidden items-center justify-center w-8 h-8 rounded-full bg-blue-50/50 border border-blue-100/60 opacity-80 animate-pulse shadow-sm pointer-events-none">
-                    <ChevronsRight className={`h-4 w-4 text-blue-500 ${!isEn ? 'rotate-180' : ''}`} />
-                </div>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <Sparkles className="h-6 w-6 text-yellow-500 fill-yellow-500" />
+              {t('newest_title')}
+            </h2>
+
+            {/* موبایل: مشاهده همه محصولات + هینت اسکرول عرضی (جایگزین نوشته‌ی حذف‌شده) */}
+            <div className="flex sm:hidden items-center justify-between gap-4 mt-3">
+              <Link
+                href="/products"
+                className="inline-flex items-center gap-1.5 text-sm font-bold text-blue-600 hover:text-blue-800 transition-all group"
+              >
+                {t('view_all')}
+                <ArrowLeft className={`h-4 w-4 transition-transform ${isEn ? 'rotate-180 group-hover:translate-x-1' : 'group-hover:-translate-x-1'}`} />
+              </Link>
+
+              <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-blue-50/50 border border-blue-100/60 opacity-80 animate-pulse shadow-sm pointer-events-none">
+                <ChevronsRight className={`h-4 w-4 text-blue-500 ${!isEn ? 'rotate-180' : ''}`} />
+              </div>
             </div>
-            <p className="text-sm text-gray-500 mt-2 mr-4">
-               {t('newest_desc')}
-            </p>
           </div>
           
           <Link href="/products" className="inline-flex items-center gap-2 text-sm font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-4 py-2 rounded-xl transition-all group hidden md:flex">
@@ -126,37 +132,20 @@ export default async function Home({
             })}
           </div>
         )}
-        
-        <div className="text-center mt-10 md:hidden">
-          <Link href="/products" className="inline-flex items-center justify-center w-full bg-white border border-gray-200 text-gray-700 font-bold py-4 rounded-2xl hover:bg-gray-50 transition-colors shadow-sm">
-             {t('view_archive')}
-          </Link>
-        </div>
       </section>
 
       {/* 4. Category Sections */}
       {categorySections.length > 0 && (
         <section className="container mx-auto px-4 mb-14 md:mb-20">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2 tracking-tight flex items-center justify-center gap-2 md:gap-3">
-              <Layers className="h-6 w-6 md:h-7 md:w-7 text-blue-600" />
-              {t('categories_title')}
-            </h2>
-            <p className="text-gray-500 font-medium">{t('categories_subtitle')}</p>
-          </div>
-
-          <div className="flex flex-col gap-6 md:gap-8">
+          <div className="flex flex-col">
             {categorySections.map(({ category: cat, items }, index) => {
               const catName = isEn ? (cat.name_en || cat.name) : cat.name;
-              const isTinted = index % 2 === 1;
+              const isLast = index === categorySections.length - 1;
 
               return (
                 <div
                   key={cat.id}
-                  className={`
-                    rounded-3xl p-5 md:p-8 border transition-colors
-                    ${isTinted ? 'bg-white border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)]' : 'bg-transparent border-transparent'}
-                  `}
+                  className={`pb-8 md:pb-10 ${!isLast ? 'mb-8 md:mb-10 border-b border-gray-100' : ''}`}
                 >
                   <div className="flex items-center justify-between gap-4 mb-6">
                     <div className="flex items-center gap-3 min-w-0">
@@ -176,23 +165,17 @@ export default async function Home({
                       </h3>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                         <div className="flex sm:hidden items-center justify-center w-8 h-8 rounded-full bg-blue-50/50 border border-blue-100/60 opacity-80 animate-pulse shadow-sm pointer-events-none">
-                            <ChevronsRight className={`h-4 w-4 text-blue-500 ${!isEn ? 'rotate-180' : ''}`} />
-                         </div>
-
-                        <Link
-                        href={`/products?category=${cat.slug}`}
-                        className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs md:text-sm font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-2 rounded-xl transition-all group"
-                        >
-                        <span className="hidden sm:inline">{t('view_all')}</span>
-                        <span className="sm:hidden">{t('view_category')}</span>
-                        <ArrowLeft className={`h-4 w-4 transition-transform ${isEn ? 'rotate-180 group-hover:translate-x-1' : 'group-hover:-translate-x-1'}`} />
-                        </Link>
-                    </div>
+                    <Link
+                      href={`/products?category=${cat.slug}`}
+                      className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs md:text-sm font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-2 rounded-xl transition-all group"
+                    >
+                      <span className="hidden sm:inline">{t('view_all')}</span>
+                      <span className="sm:hidden">{t('view_category')}</span>
+                      <ArrowLeft className={`h-4 w-4 transition-transform ${isEn ? 'rotate-180 group-hover:translate-x-1' : 'group-hover:-translate-x-1'}`} />
+                    </Link>
                   </div>
 
-                  <div className="flex gap-4 items-stretch overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-smooth -mx-5 px-5 pb-1 md:-mx-8 md:px-8 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:snap-none sm:mx-0 sm:px-0 sm:pb-0 md:gap-6 lg:grid-cols-4">
+                  <div className="flex gap-4 items-stretch overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-smooth -mx-4 px-4 pb-1 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:snap-none sm:mx-0 sm:px-0 sm:pb-0 md:gap-6 lg:grid-cols-4">
                     {items.map((product) => (
                       <div
                         key={product.id}
