@@ -60,7 +60,6 @@ export default function ProductClientView({ product, categoryName, categorySlug,
     }
   }, [quantity, product.pricing_type]);
 
-  // یکپارچه سازی کارت سبد خرید: هوشمند برای تمام اسکرین‌ها بدون Floating 
   const AddToCartButtons = () => {
       
       if (product.pricing_type === 'currency') {
@@ -172,7 +171,6 @@ export default function ProductClientView({ product, categoryName, categorySlug,
         
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-12 animate-in fade-in slide-in-from-bottom-4 duration-500 items-start">
         
-            {/* تصویر محصول */}
             <div className="md:col-span-5 relative">
                 <div className="relative aspect-square bg-gray-50 md:bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm md:sticky md:top-24 group">
                     <img src={product.image} alt={product.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
@@ -185,10 +183,8 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                 </div>
             </div>
 
-            {/* جزئیات و خرید (Action Column) */}
             <div className="md:col-span-7 flex flex-col">
                 
-                {/* دسته‌بندی و ریویو */}
                 <div className="mb-4 flex items-center justify-between px-1 md:px-0">
                     <Link 
                         href={`/products?category=${categorySlug}`} 
@@ -212,9 +208,8 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                     {product.title}
                 </h1>
 
-                {/* THE GOLDEN FIX: Buy Box is now elegantly injected into the page flow for both Desktop and Mobile! */}
+                {/* THE GOLDEN FIX: Box Addition on screen flow */}
                 <div className="bg-white p-5 md:p-6 lg:p-8 rounded-[2rem] border border-blue-50/60 shadow-[0_4px_30px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_35px_rgba(37,99,235,0.06)] transition-all mb-8 relative overflow-hidden">
-                    {/* جلوه‌ی بصری (نور ملایم بکگراند باکس خرید) */}
                     <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full blur-[40px] pointer-events-none"></div>
 
                     {product.pricing_type !== 'currency' && (
@@ -226,7 +221,6 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                                 </div>
                             </div>
                             
-                            {/* آیکون‌های اعتماد در سمت چپ باکس */}
                             <div className="text-right flex flex-col items-end gap-1.5 opacity-90">
                                 <div className="text-xs md:text-sm text-emerald-600 font-bold flex items-center gap-1.5 bg-emerald-50/50 px-2.5 py-1 rounded-md">
                                     <ShieldCheck className="h-4 w-4 md:h-5 md:w-5"/> 
@@ -241,11 +235,9 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                     )}
                     
                     <div className="relative z-10">
-                        {/* فقط یک خط و آن هم استدعای متد دکمه */}
                         <AddToCartButtons />
                     </div>
 
-                    {/* بنر تضمین پرداختی پایین باکس دکمه */}
                     <div className="mt-5 p-3 md:p-4 bg-gradient-to-r from-emerald-50/60 to-teal-50/30 border border-emerald-100/50 rounded-xl flex items-start gap-3 relative z-10">
                         <ShieldCheck className="h-5 w-5 md:h-6 md:w-6 text-emerald-600 flex-shrink-0" />
                         <div>
@@ -259,7 +251,6 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                     </div>
                 </div>
 
-                {/* ویژگی‌ها (Features) */}
                 {product.features && product.features.length > 0 && (
                     <div className="mb-8 grid grid-cols-1 gap-2.5 px-1 md:px-0">
                         {product.features.map((feat, index) => (
@@ -276,7 +267,6 @@ export default function ProductClientView({ product, categoryName, categorySlug,
             </div>
         </div>
 
-        {/* توضیحات کالا */}
         {product.description && (
             <div className="mt-8 md:mt-12 pt-10 border-t border-gray-100">
                 <h3 className="font-black text-gray-900 mb-6 text-xl md:text-2xl flex items-center gap-3">
@@ -302,27 +292,34 @@ export default function ProductClientView({ product, categoryName, categorySlug,
             </div>
         )}
 
-        {/* محصولات مرتبط */}
+        {/* محصولات مرتبط (Carousel Swipe-able در موبایل / گرید در دسکتاپ) */}
         {relatedProducts.length > 0 && (
             <div className="mt-16 md:mt-20 pt-10 border-t border-gray-100">
                 <h3 className="text-xl md:text-2xl font-black text-gray-900 mb-6 flex items-center gap-2">
                     <LayoutGrid className="h-6 w-6 text-blue-600" />
                     {t('similar_products')}
                 </h3>
-                {/* تغییر چیدمان گرید محصولات مرتبط برای موبایل تا دو ستون به هم فشرده نشود و شیک به نظر برسد */}
-                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+
+                {/* استایل سوایپر ریلی برای موبایل (overflow-x-auto، اسنپ، عرض اختصاصی کارت‌ها) */}
+                {/* و برای تبلت و دسکتاپ (sm:grid) کاملا ساختار شبکه‌ای پیدا می‌کند */}
+                <div className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-smooth pt-1 pb-4 px-1 sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 sm:overflow-visible sm:snap-none sm:px-0">
                     {relatedProducts.map((item) => (
-                        <ProductCard 
-                            key={item.id}
-                            id={item.id}
-                            title={item.title}
-                            title_en={item.title_en}
-                            price={item.price}
-                            image={item.image}
-                            slug={item.slug}
-                            pricing_type={item.pricing_type}
-                            weight={item.weight}
-                       />
+                        <div 
+                           key={item.id}
+                           // تنظیم اندازه برای کشیده شدن (اسلاید در موبایل) و انعطاف در گرید دسکتاپ
+                           className="w-[50%] min-w-[155px] max-w-[210px] flex-shrink-0 snap-start sm:w-auto sm:flex-none sm:contents"
+                        >
+                            <ProductCard 
+                                id={item.id}
+                                title={item.title}
+                                title_en={item.title_en}
+                                price={item.price}
+                                image={item.image}
+                                slug={item.slug}
+                                pricing_type={item.pricing_type}
+                                weight={item.weight}
+                            />
+                        </div>
                     ))}
                 </div>
             </div>
