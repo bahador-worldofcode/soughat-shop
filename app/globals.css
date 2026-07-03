@@ -34,4 +34,14 @@
   .animate-sheet-panel {
     animation: soughat-sheet-up 0.28s cubic-bezier(0.16, 1, 0.3, 1);
   }
+
+  /* ===== نوار پیشرفت نامعین لودینگ عمومی (app/[locale]/loading.tsx) ===== */
+  @keyframes soughat-loading-bar {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(250%); }
+  }
+
+  .animate-loading-bar {
+    animation: soughat-loading-bar 1.1s ease-in-out infinite;
+  }
 }

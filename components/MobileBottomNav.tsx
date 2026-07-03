@@ -158,7 +158,7 @@ export default function MobileBottomNav() {
               <h3 className="font-bold text-gray-900 text-lg">{tNav('menu')}</h3>
               <button
                 onClick={() => setIsMenuOpen(false)}
-                aria-label={isEn ? 'Close menu' : 'بستن منو'}
+                aria-label={tNav('close_menu')}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               >
                 <X className="h-5 w-5 text-gray-500" />
@@ -186,7 +186,7 @@ export default function MobileBottomNav() {
                 <span>
                   {isLangPending
                     ? tHeader('switchingLanguage')
-                    : (isEn ? 'فارسی' : 'English')}
+                    : (isEn ? tHeader('lang_name_fa') : tHeader('lang_name_en'))}
                 </span>
               </div>
             </button>

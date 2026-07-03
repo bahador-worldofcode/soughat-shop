@@ -76,7 +76,7 @@ export default function Hero({ banner, title, subtitle }: HeroProps) {
                  />
                ) : (
                  <div className="relative z-10 w-64 h-64 flex items-center justify-center border-2 border-dashed border-white/20 rounded-3xl bg-white/5 text-white/50 p-4 text-center text-sm">
-                    Upload Hero Image in Admin Panel
+                    {t('hero_upload_placeholder')}
                  </div>
                )}
           </div>

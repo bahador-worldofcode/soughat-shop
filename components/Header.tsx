@@ -237,7 +237,7 @@ export default function Header() {
               disabled={isLangPending}
               aria-busy={isLangPending}
               className="flex items-center gap-2 bg-gray-50 hover:bg-white border border-gray-200 hover:border-blue-200 px-4 py-1.5 rounded-xl transition-all shadow-sm hover:shadow group min-w-[80px] justify-center disabled:opacity-70 disabled:cursor-wait"
-              title={!isEn ? 'Switch to English' : 'تغییر به فارسی'}
+              title={!isEn ? t('switch_to_english') : t('switch_to_farsi')}
             >
               {isLangPending ? (
                 <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
@@ -246,7 +246,7 @@ export default function Header() {
               )}
               {/* نمایش زبان مقصد: اگر انگلیسی هستیم دکمه فارسی را نشان بده و برعکس */}
               <span className="text-sm font-bold text-gray-600 group-hover:text-blue-700 pt-0.5">
-                {isLangPending ? t('switchingLanguage') : (isEn ? 'فارسی' : 'English')}
+                {isLangPending ? t('switchingLanguage') : (isEn ? t('lang_name_fa') : t('lang_name_en'))}
               </span>
             </button>
 

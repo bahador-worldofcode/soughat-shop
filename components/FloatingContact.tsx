@@ -87,7 +87,7 @@ export default function FloatingContact() {
       setFormData({ contact: '', content: '' });
     } catch (error) {
       console.error(error);
-      setSendError(isEn ? 'Something went wrong. Please try again.' : 'مشکلی پیش اومد. لطفاً دوباره امتحان کنید.');
+      setSendError(t('error_generic'));
     } finally {
       setSending(false);
     }

@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { Calendar, ArrowRight, ArrowLeft, User, Tag, Folder } from 'lucide-react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 
 // --- تنظیمات کش ---
 export const revalidate = 60;
@@ -161,6 +162,7 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
   const { slug, locale } = await params;
   const decodedSlug = decodeURIComponent(slug);
   const isEn = locale === 'en';
+  const t = await getTranslations('Blog');
 
   const { data: post } = await supabase
     .from('posts')
@@ -240,7 +242,7 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
             </span>
             <span className="flex items-center gap-2">
               <User className="h-4 w-4 text-blue-500" />
-              {isEn ? 'Author: Soughat Shop Team' : 'نویسنده: تیم محتوای سوغات شاپ'}
+              {t('author')}
             </span>
           </div>
           
@@ -251,7 +253,7 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
           {displayTags && displayTags.length > 0 && (
             <div className="mt-12 pt-8 border-t border-gray-100" dir={isEn ? 'ltr' : 'rtl'}>
                 <div className="flex items-center gap-2 mb-4 text-gray-700 font-bold text-sm">
-                   <Tag className="h-4 w-4" /> {isEn ? 'Tags:' : 'برچسب‌ها:'}
+                   <Tag className="h-4 w-4" /> {t('tags')}
                 </div>
                 <div className="flex flex-wrap gap-2">
                     {displayTags.map((tag: string, idx: number) => (
@@ -267,11 +269,11 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
              <Link href="/blog" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-bold transition-colors group">
                  {isEn ? (
                     <>
-                       <ArrowRight className="mr-2 h-4 w-4 rotate-180 group-hover:mr-3 transition-all" /> Back to Blog
+                       <ArrowRight className="mr-2 h-4 w-4 rotate-180 group-hover:mr-3 transition-all" /> {t('back_to_blog')}
                     </>
                  ) : (
                     <>
-                       <ArrowRight className="ml-2 h-4 w-4 group-hover:mr-1 transition-all" /> بازگشت به لیست مقالات
+                       <ArrowRight className="ml-2 h-4 w-4 group-hover:mr-1 transition-all" /> {t('back_to_blog')}
                     </>
                  )}
             </Link>

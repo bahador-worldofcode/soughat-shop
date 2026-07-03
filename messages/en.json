@@ -15,7 +15,11 @@
     "brand": "Soughat Shop",
     "switchingLanguage": "Switching language...",
     "languageChanged": "Language changed to English",
-    "currencyChanged": "Currency changed to {currency}"
+    "currencyChanged": "Currency changed to {currency}",
+    "switch_to_english": "Switch to English",
+    "switch_to_farsi": "تغییر به فارسی",
+    "lang_name_fa": "فارسی",
+    "lang_name_en": "English"
   },
   "NotFound": {
     "title": "Page not found",
@@ -23,11 +27,21 @@
     "backHome": "Back to home",
     "viewProducts": "Browse products"
   },
+  "Error": {
+    "title": "Something went wrong",
+    "description": "An unexpected error occurred while loading this page. You can try again, or head back to the homepage.",
+    "retry": "Try again",
+    "backHome": "Back to home",
+    "errorCode": "Error code"
+  },
   "MobileNav": {
     "cart": "Cart",
     "menu": "Menu",
     "quickLinks": "Quick Links",
-    "contactCtaSubtitle": "Have a question? Reach us anytime"
+    "contactCtaSubtitle": "Have a question? Reach us anytime",
+    "close_menu": "Close menu",
+    "lang_name_fa": "فارسی",
+    "lang_name_en": "English"
   },
   "Footer": {
     "brand_desc": "The first specialized platform for sending gifts to Iran. By eliminating banking intermediaries and using secure blockchain networks, we enable fast, sanction-free payments via Tether (USDT) and Solana.",
@@ -75,7 +89,9 @@
     "review3_text": "The support is 10/10. I made a mistake in the address, contacted them on WhatsApp, and they fixed it instantly. The Saffron quality was top-notch.",
     "review3_name": "Ali Rezaei",
     "admin_reply_label": "Soughat Shop Support:",
-    "review3_loc": "🇬🇧 London, UK"
+    "review3_loc": "🇬🇧 London, UK",
+    "write_review": "Write a Review",
+    "hero_upload_placeholder": "Upload Hero Image in Admin Panel"
   },
   "ProductCard": {
     "instant_delivery": "Instant delivery to Tehran & Cities",
@@ -172,7 +188,17 @@
     "loading": "Loading products...",
     "empty": "No products found",
     "page": "Page",
-    "from": "of"
+    "from": "of",
+    "filter_sort": "Filter & Sort",
+    "filters": "Filters",
+    "sort_by": "Sort By",
+    "sort_by_colon": "Sort By:",
+    "category_label": "Category",
+    "categories_label": "Categories",
+    "clear": "Clear",
+    "show_results": "Show Results",
+    "empty_desc": "Try adjusting your search or filter to find what you are looking for.",
+    "clear_all_filters": "Clear All Filters"
   },
   "About": {
     "title": "About Us | Sending Gifts to Iran",
@@ -378,7 +404,16 @@
     "note": "* Please save this code for future tracking.",
     "btn_track": "Track Order",
     "btn_home": "Back to Home",
-    "loading": "Loading receipt..."
+    "loading": "Loading receipt...",
+    "invalid_title": "Invalid Order",
+    "invalid_desc": "No order information found. Your cart might be empty.",
+    "invalid_back_btn": "Back to Store",
+    "registered_title": "Order Registered Successfully",
+    "registered_desc": "Your order has been registered in our system. To receive the wallet address and finalize the payment, please click the button below to connect with us on WhatsApp.",
+    "tracking_code_label": "Order Tracking Code",
+    "copied_label": "Copied",
+    "whatsapp_get_address_btn": "Get Wallet Address via WhatsApp",
+    "whatsapp_order_msg": "Hello, I placed order #{code}. Please provide the wallet address for payment."
   },
   "CryptoGuide": {
     "title": "Crypto Payment Guide",
@@ -417,7 +452,8 @@
     "success_desc": "Our team will contact you shortly via WhatsApp or this number.",
     "btn_back": "Back to Menu",
     "footer": "Powered by Soughat Shop",
-    "whatsapp_msg": "Hello, I am messaging from Soughat Shop and need assistance."
+    "whatsapp_msg": "Hello, I am messaging from Soughat Shop and need assistance.",
+    "error_generic": "Something went wrong. Please try again."
   },
   "HomeSEO": {
     "main_title": "Soughat Shop: Reliable Gift Delivery to Iran Worldwide",

@@ -262,8 +262,8 @@ function ProductList() {
                     <SlidersHorizontal className="h-4 w-4 text-blue-600 flex-shrink-0" />
                     <span className="truncate">
                         {currentCategory === 'all'
-                            ? (isEn ? 'Filter & Sort' : 'فیلتر و مرتب‌سازی')
-                            : (isEn ? (activeCategoryInfo?.name_en || activeCategoryInfo?.name || 'Category') : (activeCategoryInfo?.name || 'دسته‌بندی'))
+                            ? t('filter_sort')
+                            : (isEn ? (activeCategoryInfo?.name_en || activeCategoryInfo?.name || t('category_label')) : (activeCategoryInfo?.name || t('category_label')))
                         }
                     </span>
                     {currentCategory !== 'all' && (
@@ -285,7 +285,7 @@ function ProductList() {
                     <div className="flex items-center justify-between p-4 border-b border-gray-100 flex-shrink-0">
                         <h3 className="font-bold text-gray-900 flex items-center gap-2">
                             <SlidersHorizontal className="h-5 w-5 text-blue-600" />
-                            {isEn ? 'Filters' : 'فیلترها'}
+                            {t('filters')}
                         </h3>
                         <button onClick={() => setIsFilterSheetOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                             <XCircle className="h-5 w-5 text-gray-400" />
@@ -295,7 +295,7 @@ function ProductList() {
                     <div className="overflow-y-auto p-4 flex-1">
                         {/* Sort */}
                         <div className="mb-6">
-                            <h4 className="text-xs font-bold text-gray-400 uppercase mb-3 tracking-wide">{isEn ? 'Sort By' : 'مرتب‌سازی'}</h4>
+                            <h4 className="text-xs font-bold text-gray-400 uppercase mb-3 tracking-wide">{t('sort_by')}</h4>
                             <div className="flex flex-col gap-2">
                                 {[
                                     { value: 'newest', label: t('sort_newest') },
@@ -320,7 +320,7 @@ function ProductList() {
 
                         {/* Categories */}
                         <div>
-                            <h4 className="text-xs font-bold text-gray-400 uppercase mb-3 tracking-wide">{isEn ? 'Category' : 'دسته‌بندی'}</h4>
+                            <h4 className="text-xs font-bold text-gray-400 uppercase mb-3 tracking-wide">{t('category_label')}</h4>
                             {categories.length === 0 ? (
                                 <div className="grid grid-cols-2 gap-2">
                                     {[...Array(6)].map((_, i) => (
@@ -363,13 +363,13 @@ function ProductList() {
                             onClick={() => { clearFilters(); setIsFilterSheetOpen(false); }}
                             className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-colors"
                         >
-                            {isEn ? 'Clear' : 'پاک کردن'}
+                            {t('clear')}
                         </button>
                         <button 
                             onClick={() => setIsFilterSheetOpen(false)}
                             className="flex-[2] py-3 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 transition-colors"
                         >
-                            {isEn ? 'Show Results' : 'مشاهده نتایج'}
+                            {t('show_results')}
                         </button>
                     </div>
                 </div>
@@ -407,7 +407,7 @@ function ProductList() {
                         <div className="p-1.5 bg-gray-100 rounded-lg text-gray-600">
                              <ArrowDownUp className="h-4 w-4" />
                         </div>
-                        <span>{isEn ? 'Sort By:' : 'مرتب‌سازی:'}</span>
+                        <span>{t('sort_by_colon')}</span>
                     </span>
                     <select 
                         value={sortOrder}
@@ -424,7 +424,7 @@ function ProductList() {
                     <div className="p-4 border-b border-gray-100 bg-gray-50/50 backdrop-blur-sm sticky top-0 z-10">
                         <h3 className="font-bold text-gray-800 flex items-center gap-2">
                             <Layers className="h-5 w-5 text-blue-600" />
-                            {isEn ? 'Categories' : 'دسته‌بندی‌ها'}
+                            {t('categories_label')}
                         </h3>
                     </div>
                     
@@ -499,13 +499,13 @@ function ProductList() {
                             <ShoppingBag className="h-12 w-12 text-gray-400" />
                         </div>
                         <p className="text-xl text-gray-800 font-bold mb-2">{t('empty')}</p>
-                        <p className="text-gray-500 text-sm mb-6 max-w-xs">{isEn ? 'Try adjusting your search or filter to find what you are looking for.' : 'لطفا جستجو یا فیلترهای خود را تغییر دهید تا نتیجه‌ای پیدا کنید.'}</p>
+                        <p className="text-gray-500 text-sm mb-6 max-w-xs">{t('empty_desc')}</p>
                         <button 
                             onClick={clearFilters} 
                             className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200"
                         >
                             <SlidersHorizontal className="h-4 w-4" />
-                            {isEn ? 'Clear All Filters' : 'پاک کردن تمام فیلترها'}
+                            {t('clear_all_filters')}
                         </button>
                     </div>
                 ) : (
@@ -519,7 +519,7 @@ function ProductList() {
                                     >
                                         {activeCategoryInfo
                                             ? (isEn ? (activeCategoryInfo.name_en || activeCategoryInfo.name) : activeCategoryInfo.name)
-                                            : (isEn ? 'Category' : 'دسته‌بندی')
+                                            : t('category_label')
                                         }
                                         <XCircle className="h-3.5 w-3.5" />
                                     </button>
