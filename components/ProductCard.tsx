@@ -23,7 +23,16 @@ export default function ProductCard({ id, title, title_en, price, image, slug, p
   const locale = useLocale();
   const isEn = locale === 'en';
 
-  const { convertPrice, getSymbol, addToCart } = useStore();
+  // نکته‌ی مهندسی (رفع لگ اسکرول): قبلاً اینجا `useStore()` بدون سلکتور صدا زده
+  // می‌شد، یعنی این کارت به کل استور گوش می‌داد. نتیجه‌اش این بود که با هر
+  // تغییر جزئی در استور (مثلاً وقتی هدر نرخ ارزها را در پس‌زمینه fetch می‌کند،
+  // یا وقتی یک آیتم دیگر به سبد خرید اضافه می‌شود) تمام کارت‌های محصول توی
+  // صفحه — حتی آن‌هایی که ربطی به آن تغییر نداشتند — یک‌باره ری‌رندر می‌شدند؛
+  // دقیقاً همان لحظه‌ای که کاربر داشت اسکرول می‌کرد. با گرفتن هر مقدار با
+  // سلکتور جدا، این کارت فقط زمانی ری‌رندر می‌شود که خودِ همان مقدار عوض شود.
+  const convertPrice = useStore((s) => s.convertPrice);
+  const getSymbol = useStore((s) => s.getSymbol);
+  const addToCart = useStore((s) => s.addToCart);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {

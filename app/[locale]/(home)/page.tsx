@@ -132,10 +132,17 @@ export default async function Home({
         )}
       </section>
 
-      {/* 4. Category Sections — کمی پایین‌تر از دید اولیه؛ فقط وقتی کاربر
-          به این نقطه نزدیک می‌شود مانت می‌شود تا اسکرول اولیه سبک بماند */}
+      {/* 4. Category Sections — کمی پایین‌تر از دید اولیه.
+          نکته‌ی مهندسی (رفع لگ اسکرول): قبلاً همه‌ی دسته‌بندی‌ها (که ممکن است
+          ده‌ها تا باشند) داخل یک LazySection واحد بودند؛ یعنی وقتی کاربر به
+          این ناحیه نزدیک می‌شد، همه‌ی آن‌ها با هم و در یک لحظه ساخته می‌شدند —
+          دقیقاً همان لحظه‌ای که کاربر در حال اسکرول‌کردن بود، که باعث لگ
+          می‌شد. الان هر دسته‌بندی LazySection مستقل خودش را دارد؛ فقط همان
+          دسته‌ای که کاربر بهش نزدیک می‌شود ساخته می‌شود، نه همه با هم. بار
+          سنگین بین چند لحظه‌ی مجزا (هر بار یک دسته) پخش می‌شود و اسکرول
+          همیشه روان می‌ماند. */}
       {categorySections.length > 0 && (
-        <LazySection minHeight={600}>
+        <LazySection minHeight={categorySections.length * 420}>
           <section className="container mx-auto px-4 mb-14 md:mb-20">
             <div className="flex flex-col">
               {categorySections.map(({ category: cat, items }, index) => {
@@ -143,8 +150,10 @@ export default async function Home({
                 const isLast = index === categorySections.length - 1;
 
                 return (
-                  <div
+                  <LazySection
                     key={cat.id}
+                    minHeight={380}
+                    rootMargin="600px 0px"
                     className={`pb-8 md:pb-10 ${!isLast ? 'mb-8 md:mb-10 border-b border-gray-100' : ''}`}
                   >
                     <div className="flex items-center justify-between gap-4 mb-6">
@@ -198,7 +207,7 @@ export default async function Home({
                         </div>
                       ))}
                     </div>
-                  </div>
+                  </LazySection>
                 );
               })}
             </div>
