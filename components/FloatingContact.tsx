@@ -9,7 +9,6 @@ import { isMobileNavHidden } from '@/lib/navVisibility';
 
 type ViewState = 'menu' | 'form' | 'success';
 
-// آیا ویوپورت در بازه‌ی موبایل است؟ (هم‌راستا با بریک‌پوینت md در بقیه‌ی پروژه)
 const isMobileViewport = () =>
   typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
 
@@ -29,25 +28,16 @@ export default function FloatingContact() {
   const [sendError, setSendError] = useState('');
 
   const isProductPage = pathname?.startsWith('/products/') && pathname !== '/products';
-  const isHome = pathname === '/';
-
-  // در صفحاتی که نوار پایین موبایل نمایش داده می‌شود (اکثر صفحات سایت)،
-  // دکمه شناور باید بالاتر از آن نوار بنشیند تا رویش نیفتد
   const hasBottomNav = !isMobileNavHidden(pathname);
 
-  // در صفحه‌ی اصلی موبایل، تا وقتی بخش Hero (و دکمه‌ی «شروع خرید» داخل آن)
-  // هنوز روی صفحه دیده می‌شود، دکمه‌ی شناور را مخفی نگه می‌داریم تا رویش
-  // نیفتد؛ به‌محض اینکه کاربر کمی اسکرول کند و از Hero عبور کند، دکمه با
-  // یک فید نرم ظاهر می‌شود. مقدار اولیه به‌صورت هم‌گام (sync) محاسبه می‌شود
-  // تا هیچ پرش/چشمک‌زدنی در لحظه‌ی لود دیده نشود.
-  const [hideForHero, setHideForHero] = useState(() => isHome && isMobileViewport());
+  const [hideForHero, setHideForHero] = useState(() => pathname === '/' && isMobileViewport());
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    if (!isHome || !isMobileViewport()) {
+    if (pathname !== '/' || !isMobileViewport()) {
       setHideForHero(false);
       return;
     }
@@ -65,7 +55,7 @@ export default function FloatingContact() {
     );
     observer.observe(heroEl);
     return () => observer.disconnect();
-  }, [pathname, isHome]);
+  }, [pathname]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,11 +104,19 @@ export default function FloatingContact() {
   if (!mounted) return null;
   if (pathname?.startsWith('/admin')) return null;
 
+  // محاسبه هوشمند جایگاه دکمه شناور 
+  let bottomPosClass = 'bottom-6';
+  if (isProductPage) {
+     // در صفحه محصول باید بیاد بالاتر از (نوار اصلی منو + نوار افزودن به سبد)
+     bottomPosClass = 'bottom-[9.5rem] md:bottom-6'; 
+  } else if (hasBottomNav) {
+     // در بقیه صفحات فقط باید بیاد بالاتر از نوار منو
+     bottomPosClass = 'bottom-24 md:bottom-6'; 
+  }
+
   return (
     <div
-      className={`fixed right-6 z-50 flex flex-col items-end font-[family-name:var(--font-vazir)] transition-all duration-300 ${
-        isProductPage || hasBottomNav ? 'bottom-24 md:bottom-6' : 'bottom-6'
-      } ${hideForHero ? 'opacity-0 translate-y-3 pointer-events-none' : 'opacity-100 translate-y-0'}`}
+      className={`fixed right-6 z-50 flex flex-col items-end font-[family-name:var(--font-vazir)] transition-all duration-300 ${bottomPosClass} ${hideForHero ? 'opacity-0 translate-y-3 pointer-events-none' : 'opacity-100 translate-y-0'}`}
       dir={isEn ? 'ltr' : 'rtl'}
     >
       

@@ -168,7 +168,8 @@ export default function ProductClientView({ product, categoryName, categorySlug,
   };
 
   return (
-    <div className="pb-24 md:pb-0 relative font-[family-name:var(--font-vazir)]">
+    // پدینگ پایین (pb-40) رو زیاد کردم که با روشن شدن دوتا نوار، ته محتوا زیرشون گیر نکنه
+    <div className="pb-40 md:pb-0 relative font-[family-name:var(--font-vazir)]">
         
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 animate-in fade-in slide-in-from-bottom-4 duration-500 items-start">
         
@@ -279,7 +280,13 @@ export default function ProductClientView({ product, categoryName, categorySlug,
             </div>
         )}
 
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 z-[100] md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.1)] animate-in slide-in-from-bottom-full duration-300">
+        {/* 
+            اصلاح استراتژیک (The Golden Fix):
+            قبلاً bottom-0 بود. حالا با استفاده از calc می‌گیم دقیقاً به اندازه 
+            نوار منوی اصلی موبایل (که حدود 4rem + فضای امن گوشی هست) بیاد بالا. 
+            اینجوری هر دو نوار بدون تداخل به کاربر سرویس میدن.
+        */}
+        <div className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] left-0 right-0 bg-white border-t border-gray-200 p-3 z-[40] md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.1)] animate-in slide-in-from-bottom-full duration-300">
             <div className="flex items-center gap-4 max-w-md mx-auto">
                 {product.pricing_type !== 'currency' && (
                     <div className="flex flex-col flex-1">
