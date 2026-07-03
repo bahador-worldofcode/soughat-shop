@@ -82,27 +82,24 @@ export default async function Home({
               <Sparkles className="h-6 w-6 text-yellow-500 fill-yellow-500" />
               {t('newest_title')}
             </h2>
+          </div>
 
-            {/* موبایل: مشاهده همه محصولات + هینت اسکرول عرضی (جایگزین نوشته‌ی حذف‌شده) */}
-            <div className="flex sm:hidden items-center justify-between gap-4 mt-3">
-              <Link
-                href="/products"
-                className="inline-flex items-center gap-1.5 text-sm font-bold text-blue-600 hover:text-blue-800 transition-all group"
-              >
-                {t('view_all')}
-                <ArrowLeft className={`h-4 w-4 transition-transform ${isEn ? 'rotate-180 group-hover:translate-x-1' : 'group-hover:-translate-x-1'}`} />
-              </Link>
+          {/* یک لینک واحد «مشاهده همه محصولات» که فقط با کلاس‌های ریسپانسیو ظاهرش (نه تعدادش) تغییر می‌کند؛
+              همین طراحی از تکرار المان در DOM جلوگیری می‌کند تا هیچ‌وقت دوتایی دیده نشود */}
+          <div className="flex items-center justify-between md:justify-end gap-4 mt-1 md:mt-0">
+            <Link
+              href="/products"
+              className="inline-flex items-center gap-1.5 md:gap-2 text-sm font-bold text-blue-600 hover:text-blue-800 md:hover:bg-blue-50 md:px-4 md:py-2 md:rounded-xl transition-all group"
+            >
+              {t('view_all')}
+              <ArrowLeft className={`h-4 w-4 transition-transform ${isEn ? 'rotate-180 group-hover:translate-x-1' : 'group-hover:-translate-x-1'}`} />
+            </Link>
 
-              <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-blue-50/50 border border-blue-100/60 opacity-80 animate-pulse shadow-sm pointer-events-none">
-                <ChevronsRight className={`h-4 w-4 text-blue-500 ${!isEn ? 'rotate-180' : ''}`} />
-              </div>
+            {/* هینت اسکرول عرضی، فقط زیر sm (موبایل واقعی) */}
+            <div className="flex-shrink-0 flex sm:hidden items-center justify-center w-8 h-8 rounded-full bg-blue-50/50 border border-blue-100/60 opacity-80 animate-pulse shadow-sm pointer-events-none">
+              <ChevronsRight className={`h-4 w-4 text-blue-500 ${!isEn ? 'rotate-180' : ''}`} />
             </div>
           </div>
-          
-          <Link href="/products" className="inline-flex items-center gap-2 text-sm font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-4 py-2 rounded-xl transition-all group hidden md:flex">
-             {t('view_all')} 
-             <ArrowLeft className={`h-4 w-4 transition-transform ${isEn ? 'rotate-180 group-hover:translate-x-1' : 'group-hover:-translate-x-1'}`} />
-          </Link>
         </div>
 
         {(!products || products.length === 0) ? (
@@ -110,12 +107,12 @@ export default async function Home({
             <p className="text-gray-400 text-lg">{t('products_loading')}</p>
           </div>
         ) : (
-          <div className="flex gap-4 items-stretch overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-smooth -mx-4 px-4 pb-1 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:snap-none sm:mx-0 sm:px-0 sm:pb-0 lg:grid-cols-4">
+          <div className="flex gap-4 items-stretch overflow-x-auto no-scrollbar overscroll-x-contain [-webkit-overflow-scrolling:touch] -mx-4 px-4 pb-1 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:mx-0 sm:px-0 sm:pb-0 lg:grid-cols-4">
             {products.map((product) => {
                 return (
                   <div
                     key={product.id}
-                    className="w-[65%] min-w-[240px] max-w-[290px] flex-shrink-0 snap-start sm:w-auto sm:flex-none sm:contents"
+                    className="w-[65%] min-w-[240px] max-w-[290px] flex-shrink-0 sm:w-auto sm:flex-none sm:contents"
                   >
                     <ProductCard
                       id={product.id}
@@ -175,11 +172,11 @@ export default async function Home({
                     </Link>
                   </div>
 
-                  <div className="flex gap-4 items-stretch overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-smooth -mx-4 px-4 pb-1 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:snap-none sm:mx-0 sm:px-0 sm:pb-0 md:gap-6 lg:grid-cols-4">
+                  <div className="flex gap-4 items-stretch overflow-x-auto no-scrollbar overscroll-x-contain [-webkit-overflow-scrolling:touch] -mx-4 px-4 pb-1 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:mx-0 sm:px-0 sm:pb-0 md:gap-6 lg:grid-cols-4">
                     {items.map((product) => (
                       <div
                         key={product.id}
-                        className="w-[65%] min-w-[240px] max-w-[290px] flex-shrink-0 snap-start sm:w-auto sm:flex-none sm:contents"
+                        className="w-[65%] min-w-[240px] max-w-[290px] flex-shrink-0 sm:w-auto sm:flex-none sm:contents"
                       >
                         <ProductCard
                           id={product.id}
