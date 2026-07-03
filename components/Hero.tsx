@@ -1,6 +1,7 @@
 import { Link } from '@/i18n/navigation';
 import { ArrowLeft, Gift, ShieldCheck } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
+import Image from 'next/image';
 
 interface HeroProps {
   banner?: string;
@@ -69,11 +70,16 @@ export default function Hero({ banner, title, subtitle }: HeroProps) {
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200px] h-[200px] md:w-[400px] md:h-[400px] bg-blue-500/30 blur-[70px] rounded-full pointer-events-none"></div>
             
             {hasBanner ? (
-                 <img 
-                    src={banner} 
-                    alt={t('hero_gift_alt')} 
-                    className="relative w-auto h-auto max-w-[250px] md:max-w-[450px] max-h-[300px] md:max-h-[500px] object-contain drop-shadow-2xl animate-in fade-in zoom-in duration-700 hover:scale-105 transition-transform"
-                 />
+                 <div className="relative w-[250px] h-[300px] md:w-[450px] md:h-[500px] drop-shadow-2xl animate-in fade-in zoom-in duration-700">
+                   <Image
+                      src={banner!}
+                      alt={t('hero_gift_alt')}
+                      fill
+                      priority
+                      sizes="(max-width: 768px) 250px, 450px"
+                      className="object-contain hover:scale-105 transition-transform"
+                   />
+                 </div>
                ) : (
                  <div className="relative z-10 w-64 h-64 flex items-center justify-center border-2 border-dashed border-white/20 rounded-3xl bg-white/5 text-white/50 p-4 text-center text-sm">
                     {t('hero_upload_placeholder')}

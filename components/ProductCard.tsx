@@ -5,6 +5,7 @@ import { useStore } from '@/lib/store';
 import { useEffect, useState } from 'react';
 import { Link } from '@/i18n/navigation'; 
 import { useTranslations, useLocale } from 'next-intl'; 
+import Image from 'next/image';
 
 interface ProductCardProps {
   id: string;
@@ -43,10 +44,12 @@ export default function ProductCard({ id, title, title_en, price, image, slug, p
     <div className="group relative flex flex-col h-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md">
       
       <Link href={`/products/${slug}`} className="relative aspect-square overflow-hidden bg-gray-100 block flex-shrink-0">
-        <img
+        <Image
           src={image}
           alt={displayTitle}
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          fill
+          sizes="(max-width: 640px) 65vw, (max-width: 1024px) 45vw, 23vw"
+          className="object-cover transition-transform duration-300 group-hover:scale-105"
         />
       </Link>
 

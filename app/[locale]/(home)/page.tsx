@@ -5,10 +5,12 @@ import CurrencyRatesBanner from "@/components/CurrencyRatesBanner";
 import FAQ from "@/components/FAQ"; 
 import HomeSEOContent from "@/components/HomeSEOContent";
 import ReviewsFeed from "@/components/ReviewsFeed"; 
+import LazySection from "@/components/LazySection";
 import { supabase } from '@/lib/supabase';
 import { ArrowLeft, Layers, Sparkles, ChevronsRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { getTranslations } from 'next-intl/server';
+import Image from 'next/image';
 
 export const revalidate = 60;
 
@@ -73,7 +75,7 @@ export default async function Home({
 
       <MarketRates />
       
-      {/* 3. Newest Products */}
+      {/* 3. Newest Products — همین بالای صفحه‌ست، بلافاصله نمایش داده می‌شود */}
       <section className="container mx-auto px-4 mb-14 md:mb-20">
         
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -131,104 +133,122 @@ export default async function Home({
         )}
       </section>
 
-      {/* 4. Category Sections */}
+      {/* 4. Category Sections — کمی پایین‌تر از دید اولیه؛ فقط وقتی کاربر
+          به این نقطه نزدیک می‌شود مانت می‌شود تا اسکرول اولیه سبک بماند */}
       {categorySections.length > 0 && (
-        <section className="container mx-auto px-4 mb-14 md:mb-20">
-          <div className="flex flex-col">
-            {categorySections.map(({ category: cat, items }, index) => {
-              const catName = isEn ? (cat.name_en || cat.name) : cat.name;
-              const isLast = index === categorySections.length - 1;
+        <LazySection minHeight={600}>
+          <section className="container mx-auto px-4 mb-14 md:mb-20">
+            <div className="flex flex-col">
+              {categorySections.map(({ category: cat, items }, index) => {
+                const catName = isEn ? (cat.name_en || cat.name) : cat.name;
+                const isLast = index === categorySections.length - 1;
 
-              return (
-                <div
-                  key={cat.id}
-                  className={`pb-8 md:pb-10 ${!isLast ? 'mb-8 md:mb-10 border-b border-gray-100' : ''}`}
-                >
-                  <div className="flex items-center justify-between gap-4 mb-6">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="flex-shrink-0 w-11 h-11 md:w-12 md:h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center overflow-hidden">
-                        {cat.icon_url ? (
-                          <img
-                            src={cat.icon_url}
-                            alt={catName}
-                            className="w-7 h-7 md:w-8 md:h-8 object-contain"
-                          />
-                        ) : (
-                          <Layers className="w-5 h-5 md:w-6 md:h-6 text-blue-500" />
-                        )}
+                return (
+                  <div
+                    key={cat.id}
+                    className={`pb-8 md:pb-10 ${!isLast ? 'mb-8 md:mb-10 border-b border-gray-100' : ''}`}
+                  >
+                    <div className="flex items-center justify-between gap-4 mb-6">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex-shrink-0 w-11 h-11 md:w-12 md:h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center overflow-hidden">
+                          {cat.icon_url ? (
+                            <Image
+                              src={cat.icon_url}
+                              alt={catName}
+                              width={32}
+                              height={32}
+                              className="w-7 h-7 md:w-8 md:h-8 object-contain"
+                            />
+                          ) : (
+                            <Layers className="w-5 h-5 md:w-6 md:h-6 text-blue-500" />
+                          )}
+                        </div>
+                        <h3 className="text-lg md:text-xl font-bold text-gray-900 truncate">
+                          {catName}
+                        </h3>
                       </div>
-                      <h3 className="text-lg md:text-xl font-bold text-gray-900 truncate">
-                        {catName}
-                      </h3>
+
+                      <Link
+                        href={`/products?category=${cat.slug}`}
+                        className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs md:text-sm font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-2 rounded-xl transition-all group"
+                      >
+                        <span className="hidden sm:inline">{t('view_all')}</span>
+                        <span className="sm:hidden">{t('view_category')}</span>
+                        <ArrowLeft className={`h-4 w-4 transition-transform ${isEn ? 'rotate-180 group-hover:translate-x-1' : 'group-hover:-translate-x-1'}`} />
+                      </Link>
                     </div>
 
-                    <Link
-                      href={`/products?category=${cat.slug}`}
-                      className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs md:text-sm font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-2 rounded-xl transition-all group"
-                    >
-                      <span className="hidden sm:inline">{t('view_all')}</span>
-                      <span className="sm:hidden">{t('view_category')}</span>
-                      <ArrowLeft className={`h-4 w-4 transition-transform ${isEn ? 'rotate-180 group-hover:translate-x-1' : 'group-hover:-translate-x-1'}`} />
-                    </Link>
+                    <div className="flex gap-4 items-stretch overflow-x-auto no-scrollbar overscroll-x-contain [-webkit-overflow-scrolling:touch] -mx-4 px-4 pb-1 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:mx-0 sm:px-0 sm:pb-0 md:gap-6 lg:grid-cols-4">
+                      {items.map((product) => (
+                        <div
+                          key={product.id}
+                          className="w-[65%] min-w-[240px] max-w-[290px] flex-shrink-0 sm:w-auto sm:flex-none sm:contents"
+                        >
+                          <ProductCard
+                            id={product.id}
+                            title={product.title}
+                            title_en={product.title_en}
+                            price={product.price}
+                            image={product.image}
+                            slug={product.slug}
+                            pricing_type={product.pricing_type}
+                            weight={product.weight}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
-
-                  <div className="flex gap-4 items-stretch overflow-x-auto no-scrollbar overscroll-x-contain [-webkit-overflow-scrolling:touch] -mx-4 px-4 pb-1 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:mx-0 sm:px-0 sm:pb-0 md:gap-6 lg:grid-cols-4">
-                    {items.map((product) => (
-                      <div
-                        key={product.id}
-                        className="w-[65%] min-w-[240px] max-w-[290px] flex-shrink-0 sm:w-auto sm:flex-none sm:contents"
-                      >
-                        <ProductCard
-                          id={product.id}
-                          title={product.title}
-                          title_en={product.title_en}
-                          price={product.price}
-                          image={product.image}
-                          slug={product.slug}
-                          pricing_type={product.pricing_type}
-                          weight={product.weight}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+                );
+              })}
+            </div>
+          </section>
+        </LazySection>
       )}
 
-      <div className="bg-white py-12 border-t border-gray-200">
-        <div className="container mx-auto px-4 mb-8 text-center">
-             <h2 className="text-2xl font-bold text-gray-900">{t('rates_title')}</h2>
-             <p className="text-gray-500 mt-2 max-w-2xl mx-auto leading-7">{t('rates_desc')}</p>
-        </div>
-        <div>
-            <CurrencyRatesBanner />
-        </div>
-      </div>
-
-      <section className="bg-gradient-to-br from-slate-900 to-blue-900 py-16 mt-12">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-black text-white mb-4">
-              {t('reviews_title')}
-            </h2>
-            <p className="text-blue-200 text-sm mb-6">
-              {t('reviews_subtitle')}
-            </p>
-            <Link href="/review" className="inline-block bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-bold px-8 py-3 rounded-full transition-all backdrop-blur-sm shadow-lg hover:-translate-y-1">
-                {t('write_review')}
-            </Link>
+      {/* 5. نرخ لحظه‌ای ارزها — پایین‌تر از دسته‌بندی‌ها */}
+      <LazySection minHeight={400}>
+        <div className="bg-white py-12 border-t border-gray-200">
+          <div className="container mx-auto px-4 mb-8 text-center">
+               <h2 className="text-2xl font-bold text-gray-900">{t('rates_title')}</h2>
+               <p className="text-gray-500 mt-2 max-w-2xl mx-auto leading-7">{t('rates_desc')}</p>
           </div>
-
-          <ReviewsFeed />
-          
+          <div>
+              <CurrencyRatesBanner />
+          </div>
         </div>
-      </section>
+      </LazySection>
 
-      <FAQ />
-      <HomeSEOContent />
+      {/* 6. نظرات کاربران */}
+      <LazySection minHeight={500}>
+        <section className="bg-gradient-to-br from-slate-900 to-blue-900 py-16 mt-12">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-black text-white mb-4">
+                {t('reviews_title')}
+              </h2>
+              <p className="text-blue-200 text-sm mb-6">
+                {t('reviews_subtitle')}
+              </p>
+              <Link href="/review" className="inline-block bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-bold px-8 py-3 rounded-full transition-all backdrop-blur-sm shadow-lg hover:-translate-y-1">
+                  {t('write_review')}
+              </Link>
+            </div>
+
+            <ReviewsFeed />
+            
+          </div>
+        </section>
+      </LazySection>
+
+      {/* 7. سوالات متداول */}
+      <LazySection minHeight={700}>
+        <FAQ />
+      </LazySection>
+
+      {/* 8. متن سئوی صفحه اصلی — پایین‌ترین بخش صفحه */}
+      <LazySection minHeight={500}>
+        <HomeSEOContent />
+      </LazySection>
 
     </main>
   );
