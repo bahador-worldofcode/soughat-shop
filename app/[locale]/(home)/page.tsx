@@ -10,7 +10,6 @@ import { supabase } from '@/lib/supabase';
 import { ArrowLeft, Layers, Sparkles, ChevronsRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { getTranslations } from 'next-intl/server';
-import Image from 'next/image';
 
 export const revalidate = 60;
 
@@ -152,11 +151,13 @@ export default async function Home({
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="flex-shrink-0 w-11 h-11 md:w-12 md:h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center overflow-hidden">
                           {cat.icon_url ? (
-                            <Image
+                            // توجه: عمداً از next/image استفاده نشده. آدرس آیکون توسط ادمین
+                            // به‌صورت متن آزاد وارد می‌شود (می‌تواند هر دامنه یا فرمتی، از جمله
+                            // SVG، باشد) و next/image برای دامنه‌های ناشناس/SVG خطای رانتایم
+                            // می‌دهد. چون آیکون خیلی کوچک است، سود بهینه‌سازی ارزش این ریسک را ندارد.
+                            <img
                               src={cat.icon_url}
                               alt={catName}
-                              width={32}
-                              height={32}
                               className="w-7 h-7 md:w-8 md:h-8 object-contain"
                             />
                           ) : (
