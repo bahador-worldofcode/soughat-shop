@@ -42,9 +42,10 @@ export default function ProductCard({ id, title, title_en, price, image, slug, p
   };
 
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md">
+    // با اعمال h-full تضمین می‌شود تمامی کارت‌های چیده شده کنار هم ارتفاعی صد در صد هم‌اندازه پیدا کنند
+    <div className="group relative flex flex-col h-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md">
       
-      <Link href={`/products/${slug}`} className="relative aspect-square overflow-hidden bg-gray-100 block">
+      <Link href={`/products/${slug}`} className="relative aspect-square overflow-hidden bg-gray-100 block flex-shrink-0">
         <img
           src={image}
           alt={displayTitle}
@@ -79,7 +80,7 @@ export default function ProductCard({ id, title, title_en, price, image, slug, p
           
           <button 
             onClick={handleAddToCart}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white transition-colors hover:bg-blue-700 shadow-lg active:scale-95 cursor-pointer z-10"
+            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-white transition-colors hover:bg-blue-700 shadow-lg active:scale-95 cursor-pointer z-10"
           >
             <Plus className="h-6 w-6" />
           </button>

@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
-import { ShoppingBag, Check, ShieldCheck, Truck, Star, Plus, Minus, Trash2, Tag, LayoutGrid, FileText, ChevronDown, Wallet } from 'lucide-react';
+import { ShoppingBag, Check, ShieldCheck, Truck, Star, Plus, Minus, Trash2, Tag, LayoutGrid, FileText, ChevronDown, Wallet, ArrowRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import ProductCard from './ProductCard';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface Product {
   id: string;
@@ -41,7 +41,9 @@ interface Props {
 
 export default function ProductClientView({ product, categoryName, categorySlug, categoryIcon, relatedProducts }: Props) {
   const t = useTranslations('Product');
-  
+  const locale = useLocale(); 
+  const isEn = locale === 'en';
+
   const { convertPrice, getSymbol, addToCart, decreaseFromCart, removeFromCart, cart } = useStore();
   const [mounted, setMounted] = useState(false);
   const [currencyAmount, setCurrencyAmount] = useState<number>(1);
@@ -208,7 +210,6 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                     {product.title}
                 </h1>
 
-                {/* THE GOLDEN FIX: Box Addition on screen flow */}
                 <div className="bg-white p-5 md:p-6 lg:p-8 rounded-[2rem] border border-blue-50/60 shadow-[0_4px_30px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_35px_rgba(37,99,235,0.06)] transition-all mb-8 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full blur-[40px] pointer-events-none"></div>
 
@@ -295,19 +296,26 @@ export default function ProductClientView({ product, categoryName, categorySlug,
         {/* محصولات مرتبط (Carousel Swipe-able در موبایل / گرید در دسکتاپ) */}
         {relatedProducts.length > 0 && (
             <div className="mt-16 md:mt-20 pt-10 border-t border-gray-100">
-                <h3 className="text-xl md:text-2xl font-black text-gray-900 mb-6 flex items-center gap-2">
-                    <LayoutGrid className="h-6 w-6 text-blue-600" />
-                    {t('similar_products')}
-                </h3>
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl md:text-2xl font-black text-gray-900 flex items-center gap-2">
+                        <LayoutGrid className="h-6 w-6 text-blue-600" />
+                        {t('similar_products')}
+                    </h3>
 
-                {/* استایل سوایپر ریلی برای موبایل (overflow-x-auto، اسنپ، عرض اختصاصی کارت‌ها) */}
-                {/* و برای تبلت و دسکتاپ (sm:grid) کاملا ساختار شبکه‌ای پیدا می‌کند */}
-                <div className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-smooth pt-1 pb-4 px-1 sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 sm:overflow-visible sm:snap-none sm:px-0">
+                    {/* دکمه انیمیشنی نبض دار، نشان دهنده اسلاید، فقط در سایزهای کوچکتر نمایش داده می شود */}
+                    <div className="flex sm:hidden items-center gap-1.5 bg-blue-50/80 border border-blue-100 px-3 py-1.5 rounded-lg text-blue-600 text-[10px] font-bold animate-pulse cursor-default">
+                        <span>{isEn ? 'Swipe for more' : 'برای ادامه بکشید'}</span>
+                        <ArrowRight className={`h-3.5 w-3.5 ${!isEn ? 'rotate-180' : ''}`} />
+                    </div>
+                </div>
+
+                {/* با کاهش درصد به w-[44%] و اضافه شدنِ کشیدگی اجباری items-stretch ساختار کاملا هم ارتفاع با درک دیداری کامل (بیرون زدگی کارت بعدی) است */}
+                <div className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-smooth pt-1 pb-4 px-1 items-stretch sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 sm:overflow-visible sm:snap-none sm:px-0">
                     {relatedProducts.map((item) => (
                         <div 
                            key={item.id}
-                           // تنظیم اندازه برای کشیده شدن (اسلاید در موبایل) و انعطاف در گرید دسکتاپ
-                           className="w-[50%] min-w-[155px] max-w-[210px] flex-shrink-0 snap-start sm:w-auto sm:flex-none sm:contents"
+                           // اینجا روی ۴۴ درصد قرار داده شد که ۲ تا کارت کامل بیافتد توی تصویر و مقداری هم کارت سوم نمایان باشد و از صفحه بزنه بیرون که ناخوداگاه مخاطب به اسکرول ترغیب شود.
+                           className="w-[44%] min-w-[155px] max-w-[210px] flex-shrink-0 snap-start sm:w-auto sm:flex-none sm:contents"
                         >
                             <ProductCard 
                                 id={item.id}
