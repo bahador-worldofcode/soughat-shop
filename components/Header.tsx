@@ -1,6 +1,6 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
-import { ShoppingBag, Globe, Search, X } from 'lucide-react';
+import { useState, useEffect, useRef, useTransition } from 'react';
+import { ShoppingBag, Globe, Search, X, Loader2 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link, useRouter, usePathname } from '@/i18n/navigation';
@@ -23,6 +23,16 @@ export default function Header() {
   // آیا سرچ موبایل (باز شونده با تپ روی آیکون) باز است؟
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
+
+  // isLangPending یعنی «سوییچ زبان در حال انجام است» — دقیقاً همان الگوی
+  // MobileBottomNav.tsx (useTransition به‌جای useState دستی)، تا رفتار
+  // دکمه‌ی زبان دسکتاپ و موبایل کاملاً یکسان باشد.
+  const [isLangPending, startLangTransition] = useTransition();
+
+  // isSearchPending یعنی «جستجو در حال ریدایرکت‌شدن به صفحه‌ی محصولات است»؛
+  // چون router.push یک ناوبری است نه یک state محلی، useTransition دقیقاً
+  // همان لحظه‌ای که React واقعاً منتظر رندر مسیر مقصد است true می‌شود.
+  const [isSearchPending, startSearchTransition] = useTransition();
 
   const router = useRouter();
   const pathname = usePathname();
@@ -50,15 +60,20 @@ export default function Header() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/products?q=${encodeURIComponent(searchQuery)}`);
+    if (searchQuery.trim() && !isSearchPending) {
+      startSearchTransition(() => {
+        router.push(`/products?q=${encodeURIComponent(searchQuery)}`);
+      });
       setMobileSearchOpen(false);
     }
   };
 
   const toggleLanguage = () => {
+    if (isLangPending) return; // از تپ چندباره در حین سوییچ جلوگیری می‌کند
     const newLocale = isEn ? 'fa' : 'en';
-    router.replace(pathname, { locale: newLocale });
+    startLangTransition(() => {
+      router.replace(pathname, { locale: newLocale });
+    });
   };
 
   return (
@@ -89,14 +104,19 @@ export default function Header() {
               className="col-span-3 flex items-center gap-2"
             >
               <div className="flex-1 flex items-center bg-gray-100 rounded-xl px-3 py-2 border border-transparent focus-within:border-blue-400 focus-within:bg-white transition-all">
-                <Search className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                {isSearchPending ? (
+                  <Loader2 className="h-4 w-4 text-blue-500 flex-shrink-0 animate-spin" />
+                ) : (
+                  <Search className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                )}
                 <input
                   ref={mobileSearchInputRef}
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t('searchPlaceholder')}
-                  className={`bg-transparent border-none outline-none text-sm w-full text-gray-700 placeholder-gray-400 ${!isEn ? 'mr-3' : 'ml-3'}`}
+                  disabled={isSearchPending}
+                  className={`bg-transparent border-none outline-none text-sm w-full text-gray-700 placeholder-gray-400 disabled:opacity-60 ${!isEn ? 'mr-3' : 'ml-3'}`}
                 />
               </div>
               <button
@@ -176,13 +196,18 @@ export default function Header() {
 
           {/* Search Bar */}
           <form onSubmit={handleSearch} className="flex flex-1 max-w-md items-center bg-gray-100 rounded-xl px-4 py-2 mx-4 border border-transparent focus-within:border-blue-400 focus-within:bg-white focus-within:shadow-sm transition-all">
-            <Search className="h-4 w-4 text-gray-400" />
+            {isSearchPending ? (
+              <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
+            ) : (
+              <Search className="h-4 w-4 text-gray-400" />
+            )}
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('searchPlaceholder')}
-              className={`bg-transparent border-none outline-none text-sm w-full text-gray-700 placeholder-gray-400 ${!isEn ? 'mr-3' : 'ml-3'}`}
+              disabled={isSearchPending}
+              className={`bg-transparent border-none outline-none text-sm w-full text-gray-700 placeholder-gray-400 disabled:opacity-60 ${!isEn ? 'mr-3' : 'ml-3'}`}
             />
           </form>
 
@@ -205,16 +230,23 @@ export default function Header() {
           {/* Actions */}
           <div className="flex items-center gap-3 flex-shrink-0">
 
-            {/* Language Switcher Button */}
+            {/* Language Switcher Button — الگوی useTransition + آیکون در حال
+                چرخش، دقیقاً هماهنگ با نسخه‌ی موبایل در MobileBottomNav.tsx */}
             <button
               onClick={toggleLanguage}
-              className="flex items-center gap-2 bg-gray-50 hover:bg-white border border-gray-200 hover:border-blue-200 px-4 py-1.5 rounded-xl transition-all shadow-sm hover:shadow group min-w-[80px] justify-center"
+              disabled={isLangPending}
+              aria-busy={isLangPending}
+              className="flex items-center gap-2 bg-gray-50 hover:bg-white border border-gray-200 hover:border-blue-200 px-4 py-1.5 rounded-xl transition-all shadow-sm hover:shadow group min-w-[80px] justify-center disabled:opacity-70 disabled:cursor-wait"
               title={!isEn ? 'Switch to English' : 'تغییر به فارسی'}
             >
-              <Globe className="h-4 w-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
+              {isLangPending ? (
+                <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
+              ) : (
+                <Globe className="h-4 w-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
+              )}
               {/* نمایش زبان مقصد: اگر انگلیسی هستیم دکمه فارسی را نشان بده و برعکس */}
               <span className="text-sm font-bold text-gray-600 group-hover:text-blue-700 pt-0.5">
-                {isEn ? 'فارسی' : 'English'}
+                {isLangPending ? t('switchingLanguage') : (isEn ? 'فارسی' : 'English')}
               </span>
             </button>
 
