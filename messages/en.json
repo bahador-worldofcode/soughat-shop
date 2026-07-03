@@ -17,6 +17,12 @@
     "languageChanged": "Language changed to English",
     "currencyChanged": "Currency changed to {currency}"
   },
+  "NotFound": {
+    "title": "Page not found",
+    "description": "The page you're looking for doesn't exist, may have been removed, or the link is broken. Explore our products or head back to the homepage.",
+    "backHome": "Back to home",
+    "viewProducts": "Browse products"
+  },
   "MobileNav": {
     "cart": "Cart",
     "menu": "Menu",
@@ -87,7 +93,7 @@
       "SEK": "Swedish Krona"
     }
   },
- "FAQ": {
+  "FAQ": {
     "title": "Frequently Asked Questions",
     "subtitle": "Find your answer here, or contact our WhatsApp support if you need help.",
     "items": {
@@ -443,8 +449,7 @@
     "cta_card_title": "Feeling Reassured?",
     "cta_card_desc": "Place your first order right now.",
     "cta_card_btn": "Start Shopping"
-  }
-  ,
+  },
   "Blog": {
     "title": "Soughat Shop Blog",
     "subtitle": "Latest guides on sending gifts, money transfer, and diaspora lifestyle",
@@ -459,7 +464,6 @@
     "page": "Page",
     "of": "of"
   },
-  
   "Review": {
     "title": "Share Your Experience",
     "subtitle": "Help others make a better decision by sharing your experience.",
@@ -472,15 +476,21 @@
     "success_desc": "Your review has been successfully submitted and will be displayed on the website after review.",
     "back_home": "Back to Home",
     "error": "Failed to submit review. Please check your Order ID."
-  }
-  ,
+  },
   "Metadata": {
     "title": "Soughat Shop | Send Gifts to Iran with Crypto",
     "title_template": "%s | Soughat Shop",
     "description": "The first specialized platform for sending gifts, souvenirs, and money to Iran for Iranians abroad. Buy pistachio, saffron, and gifts with secure Tether (USDT) and Solana payment. Instant delivery.",
-    "keywords": ["Send gift to Iran", "Iranian souvenirs", "Send money with Tether", "Soughat Shop", "Buy Iranian pistachio", "Iran gift shop", "Crypto payment"]
-  }
-  ,
+    "keywords": [
+      "Send gift to Iran",
+      "Iranian souvenirs",
+      "Send money with Tether",
+      "Soughat Shop",
+      "Buy Iranian pistachio",
+      "Iran gift shop",
+      "Crypto payment"
+    ]
+  },
   "MarketRates": {
     "title": "Live Market Rates",
     "live_badge": "Live Market",
@@ -505,8 +515,5 @@
       "uk": "UK",
       "uae": "UAE"
     }
-    
   }
-
-  
 }

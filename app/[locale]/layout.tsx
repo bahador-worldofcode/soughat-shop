@@ -4,6 +4,7 @@ import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import type { Metadata } from "next";
 import { Vazirmatn } from 'next/font/google';
+import NextTopLoader from 'nextjs-toploader';
 
 // ایمپورت کامپوننت‌های اصلی
 import Header from "@/components/Header";
@@ -117,7 +118,15 @@ export default async function LocaleLayout({
     <html lang={locale} dir={direction}>
       <body className={`${vazir.className} antialiased bg-gray-50 flex flex-col min-h-screen w-full`}>
         <NextIntlClientProvider messages={messages}>
-          
+
+          {/* نوار پیشرفت سراسری بالای صفحه — فاز ۴ */}
+          <NextTopLoader
+            color="#2563eb"
+            height={3}
+            showSpinner={false}
+            shadow="0 0 10px #2563eb, 0 0 5px #2563eb"
+          />
+
           {/* تزریق اسکریپت جیسون برای گوگل */}
           <script
             type="application/ld+json"
