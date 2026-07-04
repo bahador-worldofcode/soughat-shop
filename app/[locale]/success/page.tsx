@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Package, ArrowRight, Copy, AlertCircle, MessageCircle, ClipboardCheck, Check } from 'lucide-react';
+import { Package, ArrowRight, Copy, AlertCircle, MessageCircle, ClipboardCheck, Check, Loader2 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { Link } from '@/i18n/navigation';
 import { useTranslations, useLocale } from 'next-intl';
@@ -13,21 +13,54 @@ function SuccessContent() {
   const isEn = locale === 'en';
 
   const { clearCart } = useStore();
-  const searchParams = useSearchParams(); 
-  const orderId = searchParams.get('id'); 
+  const searchParams = useSearchParams();
+  const orderId = searchParams.get('id');
   const [trackingCode, setTrackingCode] = useState('');
   const [isValid, setIsValid] = useState(true);
 
+  // قبل از این اصلاح، این صفحه به هر orderId توی آدرس اعتماد می‌کرد؛ حتی اگر
+  // کسی مستقیم یک لینک ساختگی (یا حتی pending_order_id خودِ کاربر که هنوز
+  // پرداخت نشده) را باز می‌کرد، سبد خریدش پاک و پیام «پرداخت موفق» نشانش
+  // داده می‌شد. حالا قبل از هر اقدامی، وجود واقعی سفارش را از سرور می‌پرسیم.
+  const [checking, setChecking] = useState(true);
+
   useEffect(() => {
-    // اگر آیدی سفارش وجود داشت، سبد خرید را پاک کن و کد را نمایش بده
-    if (orderId) {
-      setTrackingCode(orderId);
-      clearCart(); 
-    } else {
-      // جلوگیری از تولید کدهای فیک
-      setIsValid(false); 
+    let cancelled = false;
+
+    async function verifyOrder() {
+      if (!orderId) {
+        setIsValid(false);
+        setChecking(false);
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/orders/verify?id=${encodeURIComponent(orderId)}`);
+        const data = await res.json();
+
+        if (cancelled) return;
+
+        if (data?.exists) {
+          setTrackingCode(orderId);
+          clearCart();
+          setIsValid(true);
+        } else {
+          setIsValid(false);
+        }
+      } catch (e) {
+        console.error('Order verification failed', e);
+        if (!cancelled) setIsValid(false);
+      } finally {
+        if (!cancelled) setChecking(false);
+      }
     }
-  }, [clearCart, orderId]);
+
+    verifyOrder();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderId]);
 
   const [copied, setCopied] = useState(false);
 
@@ -37,7 +70,17 @@ function SuccessContent() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // --- اگر کاربر بدون سفارش وارد صفحه شد ---
+  // --- در حال بررسی اعتبار سفارش از سرور ---
+  if (checking) {
+    return (
+      <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center min-h-[60vh] text-center font-[family-name:var(--font-vazir)]">
+        <Loader2 className="h-8 w-8 text-blue-600 animate-spin mb-4" />
+        <p className="text-gray-500">{t('loading')}</p>
+      </div>
+    );
+  }
+
+  // --- اگر کاربر بدون سفارش معتبر وارد صفحه شد ---
   if (!isValid) {
     return (
         <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center min-h-[60vh] text-center animate-in fade-in duration-700 font-[family-name:var(--font-vazir)]">

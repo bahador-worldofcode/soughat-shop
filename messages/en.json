@@ -295,6 +295,8 @@
   "Checkout": {
     "title": "Complete Order Details",
     "clear_form": "Clear Form",
+    "resumed_notice": "You're continuing an order you started earlier. To edit your shipping details, tap \"Back & Edit Details\".",
+    "cart_changed_notice": "Your cart has changed since you last filled this form. Please review the details below and submit again.",
     "steps": {
       "info": "Shipping Info",
       "payment": "Payment"

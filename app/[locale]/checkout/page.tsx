@@ -1,10 +1,23 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { MapPin, ShoppingCart, ChevronLeft, ChevronRight, Loader2, Globe, FileText, ShieldCheck, ArrowLeft, AlertTriangle, Trash2, XCircle } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { MapPin, ShoppingCart, ChevronLeft, ChevronRight, Loader2, Globe, FileText, ShieldCheck, ArrowLeft, AlertTriangle, Trash2, XCircle, Info } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import CryptoPayment from '@/components/CryptoPayment';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link, useRouter } from '@/i18n/navigation';
+
+// امضای یکتای وضعیت فعلی سبد خرید (کدام محصولات، با چه تعدادی).
+// این امضا در لحظه‌ی ثبت سفارش ذخیره می‌شود تا بعداً بتوانیم بفهمیم آیا
+// سبد خرید از آن لحظه تغییر کرده یا نه. اگر تغییر کرده باشد، یعنی سفارشِ
+// در انتظار پرداختِ قبلی دیگر با سبد خرید فعلی هم‌خوانی ندارد و نباید
+// کاربر را مستقیم به صفحه‌ی پرداخت با مبلغ قدیمی برد.
+function getCartSignature(items: { id: string; quantity: number }[]) {
+  if (!items || items.length === 0) return '';
+  return items
+    .map((item) => `${item.id}:${item.quantity}`)
+    .sort()
+    .join('|');
+}
 
 export default function CheckoutPage() {
   const t = useTranslations('Checkout');
@@ -26,6 +39,13 @@ export default function CheckoutPage() {
   const [orderId, setOrderId] = useState('');
   const [showClearModal, setShowClearModal] = useState(false);
 
+  // آیا در حال ادامه‌ی سفارشی هستیم که پیش‌تر (قبل از این بازدید) ثبت شده بود؟
+  const [resumedOrder, setResumedOrder] = useState(false);
+  // آیا سفارش قبلی به‌خاطر تغییر سبد خرید نامعتبر شد و کنار گذاشته شد؟
+  const [cartChangedNotice, setCartChangedNotice] = useState(false);
+  // برای اینکه منطق بازیابی سفارش معلق فقط یک بار به‌ازای هر تصمیم قطعی اجرا شود
+  const pendingResolvedRef = useRef(false);
+
   // استیت‌های جدید برای مدیریت خطاهای فرم
   const [formErrors, setFormErrors] = useState<Record<string, boolean>>({});
   const [globalError, setGlobalError] = useState('');
@@ -41,7 +61,7 @@ export default function CheckoutPage() {
     notes: '', 
   });
 
-  // حل مشکل Race Condition و بازیابی وضعیت بعد از رفرش
+  // بازیابی پیش‌نویس فرم بعد از رفرش یا بازگشت به این صفحه
   useEffect(() => {
     const savedData = localStorage.getItem('checkout_draft');
     if (savedData) {
@@ -51,16 +71,47 @@ export default function CheckoutPage() {
             console.error('Error loading draft', e);
         }
     }
-
-    // بررسی اینکه آیا سفارشی از قبل ثبت شده و منتظر پرداخت است؟
-    const pendingOrder = localStorage.getItem('pending_order_id');
-    if (pendingOrder) {
-        setOrderId(pendingOrder);
-        setStep(2);
-    }
-    
     setMounted(true);
   }, []);
+
+  // تصمیم‌گیری درباره‌ی سفارش معلق (pending_order_id):
+  // این افکت به‌عمد به «cart» وابسته است و فقط یک بار run نمی‌شود، چون سبد
+  // خرید از localStorage به‌صورت async هیدریت می‌شود و ممکن است در همان
+  // اولین رندر هنوز آماده نباشد. وقتی currentSig هنوز خالی است (یعنی هنوز
+  // معلوم نیست سبد واقعاً خالی است یا هنوز هیدریت نشده) صبر می‌کنیم و کاری
+  // انجام نمی‌دهیم؛ به‌محض این‌که سبد واقعی در دسترس باشد، همین افکت دوباره
+  // اجرا و تصمیم قطعی گرفته می‌شود.
+  useEffect(() => {
+    if (!mounted || pendingResolvedRef.current) return;
+
+    const pendingOrderId = localStorage.getItem('pending_order_id');
+    if (!pendingOrderId) {
+      pendingResolvedRef.current = true;
+      return;
+    }
+
+    const currentSig = getCartSignature(cart);
+    if (!currentSig) return; // سبد هنوز هیدریت نشده؛ در تیک بعدی دوباره امتحان می‌کنیم
+
+    const pendingSig = localStorage.getItem('pending_order_cart_sig') || '';
+
+    if (pendingSig === currentSig) {
+      // سبد خرید همان چیزی است که موقع ثبت این سفارش بود؛ ادامه‌ی امن به مرحله پرداخت
+      setOrderId(pendingOrderId);
+      setStep(2);
+      setResumedOrder(true);
+    } else {
+      // سبد خرید از آخرین ثبت تغییر کرده (یا خالی شده)؛ این سفارش معلق دیگر
+      // معتبر نیست چون مبلغش با سبد فعلی هم‌خوانی ندارد. آن را کنار می‌گذاریم
+      // تا کاربر با اطلاعات فعلی دوباره ثبت کند، به‌جای این‌که ناخواسته
+      // مبلغ قدیمی را در صفحه پرداخت ببیند.
+      localStorage.removeItem('pending_order_id');
+      localStorage.removeItem('pending_order_cart_sig');
+      setCartChangedNotice(true);
+    }
+
+    pendingResolvedRef.current = true;
+  }, [mounted, cart]);
 
   useEffect(() => {
     if (mounted) {
@@ -91,7 +142,11 @@ export default function CheckoutPage() {
 
   const handleGoBack = () => {
     // اگر کاربر خواست برگرده اطلاعات رو اصلاح کنه، سفارش قبلی رو از لوکال پاک می‌کنیم
+    // توجه: عمداً «checkout_draft» را پاک نمی‌کنیم، چون همان اطلاعاتی است که
+    // کاربر قرار است الان ویرایش کند؛ پاک کردنش دقیقاً همان باگ گم‌شدن اطلاعات بود.
     localStorage.removeItem('pending_order_id');
+    localStorage.removeItem('pending_order_cart_sig');
+    setResumedOrder(false);
     setStep(1);
   };
 
@@ -143,10 +198,16 @@ export default function CheckoutPage() {
       }
 
       if (result.id) {
-        localStorage.removeItem('checkout_draft');
-        localStorage.setItem('pending_order_id', result.id); // ذخیره آیدی برای جلوگیری از پریدن با رفرش
+        // توجه: عمداً «checkout_draft» را اینجا پاک نمی‌کنیم. این دقیقاً همان
+        // خطی بود که باعث می‌شد اگر کاربر بعداً به سبد خرید برگردد و دوباره
+        // به این صفحه بیاید، فرم خالی نشانش داده شود. پیش‌نویس فقط وقتی پاک
+        // می‌شود که پرداخت واقعاً نهایی شود (در کامپوننت پرداخت کریپتو).
+        localStorage.setItem('pending_order_id', result.id);
+        localStorage.setItem('pending_order_cart_sig', getCartSignature(cart));
         setOrderId(result.id);
         setStep(2);
+        setResumedOrder(false);
+        setCartChangedNotice(false);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
 
@@ -257,6 +318,14 @@ export default function CheckoutPage() {
                     {t('clear_form')}
                   </button>
               </div>
+
+              {/* اطلاع‌رسانی وقتی سفارشِ در انتظار پرداخت قبلی، به‌خاطر تغییر سبد خرید کنار گذاشته شده */}
+              {cartChangedNotice && (
+                <div className="mb-6 bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-xl flex items-start gap-3 animate-in fade-in">
+                    <Info className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm font-bold leading-6">{t('cart_changed_notice')}</span>
+                </div>
+              )}
 
               {/* باکس نمایش خطای سراسری */}
               {globalError && (
@@ -419,6 +488,14 @@ export default function CheckoutPage() {
                   {t('btn_back')}
                 </button>
               </div>
+
+              {/* وقتی کاربر با «ادامه‌ی سفارش قبلی» به این مرحله رسیده (نه با ثبت تازه) */}
+              {resumedOrder && (
+                <div className="mb-6 bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-xl flex items-start gap-3 animate-in fade-in">
+                    <Info className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm font-bold leading-6">{t('resumed_notice')}</span>
+                </div>
+              )}
               
               <CryptoPayment orderId={orderId} />
             </>
@@ -427,7 +504,7 @@ export default function CheckoutPage() {
         </div>
 
         <div className="lg:col-span-1">
-          <div className="rounded-xl border border-blue-100 bg-blue-50 p-6 sticky top-24">
+          <div className="rounded-xl border border-blue-100 bg-blue-50 p-6 lg:sticky lg:top-24">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-blue-900">{t('cart_summary.title')}</h3>
               {step === 1 && (

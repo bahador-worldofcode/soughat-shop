@@ -49,19 +49,35 @@ export default function CartPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-10 font-[family-name:var(--font-vazir)]">
-      <h1 className="text-2xl font-bold text-gray-900 mb-8">{t('title')}</h1>
+    // پدینگ پایین موبایل عمداً بزرگ‌تر است تا نوار شناور جمع‌کل (پایین صفحه)
+    // آخرین آیتم سبد را نپوشاند. در دسکتاپ آن نوار اصلاً رندر نمی‌شود، پس نیازی نیست.
+    <div className="container mx-auto px-4 py-8 lg:py-10 pb-40 lg:pb-10 font-[family-name:var(--font-vazir)]">
+      <div className="flex items-center justify-between mb-6 lg:mb-8">
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        <span className="text-sm text-gray-400 font-medium">
+          {t('total_items')}: {cart.length}
+        </span>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-3">
           {cart.map((item) => {
             const displayTitle = isEn ? (item.title_en || item.title) : item.title;
 
             return (
-              <div key={item.id} className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                
-                <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 border border-gray-200 mx-auto sm:mx-0">
+              <div key={item.id} className="relative flex gap-3 bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-sm">
+
+                <button 
+                  onClick={() => removeFromCart(item.id)}
+                  className="absolute top-2.5 end-2.5 h-8 w-8 flex items-center justify-center rounded-full text-gray-300 hover:text-red-500 hover:bg-red-50 active:scale-95 transition-colors"
+                  title={t('remove_tooltip')}
+                  aria-label={t('remove_tooltip')}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+
+                <div className="h-20 w-20 sm:h-24 sm:w-24 flex-shrink-0 overflow-hidden rounded-xl bg-gray-100 border border-gray-200">
                   <img 
                     src={item.image} 
                     alt={displayTitle} 
@@ -69,19 +85,19 @@ export default function CartPage() {
                   />
                 </div>
 
-                <div className="flex flex-1 flex-col justify-between">
+                <div className="flex flex-1 min-w-0 flex-col justify-between pe-8">
                   <div>
-                    <h3 className="text-base font-semibold text-gray-900 line-clamp-1 text-center sm:text-start">
+                    <h3 className="text-sm sm:text-base font-semibold text-gray-900 line-clamp-2 text-start leading-snug">
                         {displayTitle}
                     </h3>
                     {item.pricing_type !== 'currency' && (
-                        <p className="mt-1 text-xs text-gray-500 text-center sm:text-start">
+                        <p className="mt-1 text-xs text-gray-500 text-start">
                           {t('unit_price')}: {symbol} {convertPrice(item.price).toFixed(2)}
                         </p>
                     )}
                   </div>
                   
-                  <div className="flex flex-col sm:flex-row items-center justify-between mt-4 gap-4 sm:gap-0">
+                  <div className="flex items-center justify-between mt-3 gap-3">
                     
                     <div className="flex items-center">
                       {item.pricing_type === 'currency' ? (
@@ -89,7 +105,7 @@ export default function CartPage() {
                               <select
                                   value={item.quantity}
                                   onChange={(e) => updateItemQuantity(item.id, Number(e.target.value))}
-                                  className="appearance-none bg-blue-50 border border-blue-200 text-blue-900 font-bold text-sm rounded-lg h-10 pl-3 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer dir-ltr"
+                                  className="appearance-none bg-blue-50 border border-blue-200 text-blue-900 font-bold text-sm rounded-lg h-9 ps-3 pe-8 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer dir-ltr"
                                   style={{ textAlign: 'center' }}
                               >
                                   {currencyAmounts.map((amt) => (
@@ -98,7 +114,7 @@ export default function CartPage() {
                                       </option>
                                   ))}
                               </select>
-                              <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-blue-500">
+                              <div className="absolute inset-y-0 end-0 flex items-center px-2 pointer-events-none text-blue-500">
                                   <ChevronDown className="h-4 w-4" />
                               </div>
                           </div>
@@ -106,7 +122,7 @@ export default function CartPage() {
                           <div className="flex items-center bg-gray-50 rounded-lg border border-gray-200 p-1">
                               <button 
                                   onClick={() => decreaseFromCart(item.id)}
-                                  className="w-8 h-8 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-600 hover:text-red-500 hover:bg-red-50 transition-colors"
+                                  className="w-9 h-9 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-600 hover:text-red-500 hover:bg-red-50 active:scale-95 transition-colors"
                               >
                                   {item.quantity === 1 ? <Trash2 className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
                               </button>
@@ -115,7 +131,7 @@ export default function CartPage() {
                               
                               <button 
                                   onClick={() => addToCart(item)}
-                                  className="w-8 h-8 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-600 hover:text-green-600 hover:bg-green-50 transition-colors"
+                                  className="w-9 h-9 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-600 hover:text-green-600 hover:bg-green-50 active:scale-95 transition-colors"
                               >
                                   <Plus className="h-4 w-4" />
                               </button>
@@ -123,19 +139,9 @@ export default function CartPage() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-4">
-                        <span className="font-bold text-blue-600 text-lg">
-                          {symbol} {convertPrice(item.price * item.quantity).toFixed(2)}
-                        </span>
-                        
-                        <button 
-                          onClick={() => removeFromCart(item.id)}
-                          className="text-gray-400 hover:text-red-500 transition-colors p-2"
-                          title={t('remove_tooltip')}
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </button>
-                    </div>
+                    <span className="font-bold text-blue-600 text-base sm:text-lg whitespace-nowrap">
+                      {symbol} {convertPrice(item.price * item.quantity).toFixed(2)}
+                    </span>
 
                   </div>
                 </div>
@@ -145,7 +151,7 @@ export default function CartPage() {
         </div>
 
         <div className="lg:col-span-1">
-          <div className="rounded-xl border border-gray-200 bg-gray-50 p-6 shadow-sm sticky top-24">
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-6 shadow-sm lg:sticky lg:top-24">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('bill_title')}</h2>
             
             <div className="space-y-2 mb-4">
@@ -181,9 +187,12 @@ export default function CartPage() {
                 </div>
             )}
 
+            {/* روی دسکتاپ دکمه اصلی همین‌جاست. روی موبایل، نوار شناور پایین صفحه
+                (که همیشه در معرض دید است) همین نقش را ایفا می‌کند، برای همین
+                این دکمه را در موبایل مخفی می‌کنیم تا تکراری و شلوغ نشود. */}
             <Link 
               href={isBelowMinimum ? '#' : '/checkout'}
-              className={`w-full inline-flex items-center justify-center rounded-lg px-6 py-4 text-base font-bold text-white shadow-md transition-all gap-2 ${
+              className={`hidden lg:inline-flex w-full items-center justify-center rounded-lg px-6 py-4 text-base font-bold text-white shadow-md transition-all gap-2 ${
                   isBelowMinimum 
                   ? 'bg-gray-400 cursor-not-allowed shadow-none pointer-events-none' 
                   : 'bg-green-600 hover:bg-green-700 hover:shadow-lg'
@@ -194,12 +203,45 @@ export default function CartPage() {
             </Link>
             
             {!isBelowMinimum && (
-                <p className="mt-4 text-center text-xs text-gray-400">
+                <p className="mt-4 text-center text-xs text-gray-400 hidden lg:block">
                 {t('secure_payment')}
                 </p>
             )}
           </div>
         </div>
+      </div>
+
+      {/* ===== نوار شناور موبایل: جمع‌کل + دکمه ادامه، همیشه در دسترس، دقیقاً بالای نوار پیمایش پایین ===== */}
+      <div
+        className="lg:hidden fixed inset-x-0 z-40 bg-white border-t border-gray-200 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] px-4 pt-3 pb-3"
+        style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom))' }}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] text-gray-400 font-medium leading-none mb-1">{t('payable_amount')}</p>
+            <p className="text-lg font-bold text-blue-600 leading-none whitespace-nowrap">
+              {symbol} {displayTotal.toFixed(2)}
+            </p>
+          </div>
+
+          <Link
+            href={isBelowMinimum ? '#' : '/checkout'}
+            className={`flex-1 max-w-[65%] inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-bold text-white shadow-md transition-all ${
+              isBelowMinimum
+                ? 'bg-gray-400 cursor-not-allowed shadow-none pointer-events-none'
+                : 'bg-green-600 hover:bg-green-700 active:scale-[0.98]'
+            }`}
+          >
+            <span className="truncate">{t('checkout_btn')}</span>
+            {!isBelowMinimum && <ArrowLeft className={`h-4 w-4 flex-shrink-0 ${isEn ? 'rotate-180' : ''}`} />}
+          </Link>
+        </div>
+
+        {isBelowMinimum && (
+          <p className="mt-2 text-[11px] text-amber-700 text-center leading-5">
+            {t('min_order_title', { amount: `${symbol} ${minOrderDisplay.toFixed(2)}` })}
+          </p>
+        )}
       </div>
     </div>
   );
