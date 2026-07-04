@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from "next";
 import { Vazirmatn } from 'next/font/google';
 import NextTopLoader from 'nextjs-toploader';
+import Script from 'next/script';
 
 // ایمپورت کامپوننت‌های اصلی
 import Header from "@/components/Header";
@@ -15,6 +16,9 @@ import WebMCPProvider from "@/components/WebMCPProvider";
 
 // کانفیگ فونت برای خوانایی بهتر سایت
 const vazir = Vazirmatn({ subsets: ['arabic', 'latin'] });
+
+// شناسه‌ی اندازه‌گیری گوگل آنالیتیکس (GA4)
+const GA_MEASUREMENT_ID = 'G-E6M9G3032G';
 
 // --- تنظیمات متادیتا (سئو) ---
 // تبدیل به تابع برای اینکه بتوانیم زبان را داینامیک از آدرس بگیریم
@@ -117,6 +121,21 @@ export default async function LocaleLayout({
     // ✅ اصلاح ۳: اضافه شدن تگ html و body به جای div
     <html lang={locale} dir={direction}>
       <body className={`${vazir.className} antialiased bg-gray-50 flex flex-col min-h-screen w-full`}>
+
+        {/* اسکریپت ردیابی گوگل آنالیتیکس (GA4) - باید در همه‌ی صفحات عمومی سایت بارگذاری شود */}
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GA_MEASUREMENT_ID}');
+          `}
+        </Script>
+
         <NextIntlClientProvider messages={messages}>
 
           {/* نوار پیشرفت سراسری بالای صفحه — فاز ۴ */}
