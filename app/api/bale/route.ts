@@ -6,17 +6,22 @@ export async function POST(request: Request) {
     const { type, data } = body;
 
     const token = process.env.BALE_BOT_TOKEN;
-    
+
     // فقط برای تیکت‌ها از این مسیر استفاده می‌کنیم
     // (سفارشات رو بردیم توی یک API اختصاصی که بعد از پرداخت صدا زده بشه)
     if (type === 'TICKET') {
       const chatId = process.env.BALE_TICKET_GROUP_ID;
       if (!token || !chatId) return NextResponse.json({ error: 'Config Error' }, { status: 500 });
 
+      // ✅ فرم تیکت حالا از صفحه‌ی «تماس با ما» ارسال می‌شود و همیشه هم
+      // شماره تماس و هم ایمیل را همراه دارد (هر دو ضروری‌اند)، به‌علاوه‌ی
+      // نام (اختیاری). پیام ارسالی به گروه بله هم بر همین اساس کامل‌تر شده.
+      const nameLine = data.name ? `👤 *نام:* ${data.name}\n` : '';
       const messageText = `
-📩 *پیام جدید از مشتری*
+📩 *تیکت جدید از مشتری*
 ➖➖➖➖➖➖➖➖
-👤 *فرستنده:* ${data.contact}
+${nameLine}📱 *شماره تماس:* ${data.phone}
+📧 *ایمیل:* ${data.email}
 📝 *متن پیام:*
 ${data.content}
 ➖➖➖➖➖➖➖➖

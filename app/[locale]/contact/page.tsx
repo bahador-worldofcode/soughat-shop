@@ -2,6 +2,7 @@ import { MapPin, Phone, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
+import TicketForm from '@/components/TicketForm';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -53,6 +54,13 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
             <span className="text-gray-700 text-sm block">{t('address_line')}</span>
           </div>
 
+        </div>
+
+        {/* فرم تیکت: جایگزین بخش «تیکت» که قبلاً در ویجت شناور بود.
+            حالا هرکسی (چه ایرانی چه خارجی، چه واتساپ داشته باشد چه نه) می‌تواند
+            همین‌جا هم شماره تماس و هم ایمیلش را بدهد تا از هر دو طریق قابل پیگیری باشد. */}
+        <div className="mb-16">
+          <TicketForm />
         </div>
 
         {/* FAQ Teaser */}

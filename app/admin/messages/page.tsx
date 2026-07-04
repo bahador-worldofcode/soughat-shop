@@ -10,6 +10,12 @@ interface Message {
   content: string;
   created_at: string;
   is_read: boolean;
+  // ✅ فیلدهای جدید (از فرم تیکت صفحه‌ی تماس با ما). پیام‌های قدیمی که از
+  // ویجت شناور ثبت شده بودند این فیلدها را نخواهند داشت، برای همین همه‌جا
+  // با فال‌بک به‌سمت user_contact نمایش داده می‌شوند تا چیزی خراب نشود.
+  name?: string | null;
+  phone?: string | null;
+  email?: string | null;
 }
 
 export default function MessagesPage() {
@@ -45,11 +51,9 @@ export default function MessagesPage() {
     }
   };
 
-  // تشخیص اینکه تماس ایمیل است یا شماره
-  const getContactLink = (contact: string) => {
-    if (contact.includes('@')) return `mailto:${contact}`;
-    return `tel:${contact}`;
-  };
+  // شماره‌ی تماس نهایی برای نمایش/تماس: تیکت‌های جدید فیلد phone دارند،
+  // پیام‌های قدیمی فقط user_contact را دارند.
+  const getPhone = (msg: Message) => msg.phone || msg.user_contact;
 
   if (loading) return <div className="p-10 text-center">در حال بارگذاری صندوق پیام...</div>;
 
@@ -59,7 +63,7 @@ export default function MessagesPage() {
       <div className="flex justify-between items-center">
         <div>
            <h2 className="text-2xl font-bold text-gray-800">پیام‌های مشتریان</h2>
-           <p className="text-sm text-gray-500">لیست تیکت‌ها و پیام‌های ارسالی از ویجت پشتیبانی</p>
+           <p className="text-sm text-gray-500">لیست تیکت‌های ارسالی از صفحه‌ی تماس با ما</p>
         </div>
         <div className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-bold">
             {messages.length} پیام دریافت شده
@@ -80,17 +84,31 @@ export default function MessagesPage() {
                 
                 {/* Header: Contact Info */}
                 <div className="flex items-center gap-3 border-b border-gray-100 pb-3 mb-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 flex-shrink-0">
                         <User className="h-5 w-5" />
                     </div>
-                    <div className="overflow-hidden">
-                        <span className="text-xs text-gray-500 block">ارسال کننده:</span>
-                        <a 
-                            href={getContactLink(msg.user_contact)} 
-                            className="font-bold text-gray-900 hover:text-blue-600 truncate block dir-ltr text-right"
-                        >
-                            {msg.user_contact}
-                        </a>
+                    <div className="overflow-hidden flex-1">
+                        <span className="text-xs text-gray-500 block">
+                          {msg.name ? msg.name : 'ارسال کننده:'}
+                        </span>
+                        <div className="flex flex-col gap-0.5 mt-0.5">
+                          <a
+                              href={`tel:${getPhone(msg)}`}
+                              className="font-bold text-gray-900 hover:text-blue-600 truncate flex items-center gap-1.5 dir-ltr text-right text-sm"
+                          >
+                              <Phone className="h-3.5 w-3.5 flex-shrink-0" />
+                              {getPhone(msg)}
+                          </a>
+                          {msg.email && (
+                            <a
+                                href={`mailto:${msg.email}`}
+                                className="font-bold text-gray-900 hover:text-blue-600 truncate flex items-center gap-1.5 dir-ltr text-right text-sm"
+                            >
+                                <Mail className="h-3.5 w-3.5 flex-shrink-0" />
+                                {msg.email}
+                            </a>
+                          )}
+                        </div>
                     </div>
                 </div>
 
@@ -111,14 +129,25 @@ export default function MessagesPage() {
                     </div>
 
                     <div className="flex gap-2">
-                        {/* دکمه پاسخ سریع */}
+                        {/* دکمه پاسخ سریع (تلفن) */}
                         <a 
-                            href={getContactLink(msg.user_contact)}
+                            href={`tel:${getPhone(msg)}`}
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="پاسخ دادن"
+                            title="تماس تلفنی"
                         >
-                            {msg.user_contact.includes('@') ? <Mail className="h-4 w-4"/> : <Phone className="h-4 w-4"/>}
+                            <Phone className="h-4 w-4"/>
                         </a>
+
+                        {/* دکمه پاسخ سریع (ایمیل) — فقط اگر ایمیل موجود باشد */}
+                        {msg.email && (
+                          <a
+                              href={`mailto:${msg.email}`}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              title="پاسخ با ایمیل"
+                          >
+                              <Mail className="h-4 w-4"/>
+                          </a>
+                        )}
 
                         {/* دکمه حذف */}
                         <button 
