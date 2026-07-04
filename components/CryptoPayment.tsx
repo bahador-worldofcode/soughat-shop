@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { useStore } from '@/lib/store';
-import { Loader2, CheckCircle, Info, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Loader2, CheckCircle, Info, RefreshCw, ShieldCheck, Calculator } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
@@ -21,7 +21,7 @@ interface Props {
 
 export default function CryptoPayment({ orderId }: Props) {
   const t = useTranslations('CryptoPayment');
-  const { cart, convertPrice, getSymbol } = useStore();
+  const { cart, convertPrice, getSymbol, currency, rates } = useStore();
   const router = useRouter();
 
   const totalBaseUSD = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -114,6 +114,44 @@ export default function CryptoPayment({ orderId }: Props) {
     return `https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/${symbol.toLowerCase().trim()}.png`;
   };
 
+  // ===== باکس راهنمای زنده و شفاف محاسبه قیمت (فیات -> دلار -> کریپتو) =====
+  // نام‌های ارز فیات از دیکشنری ترجمه خوانده می‌شوند تا با بقیه پروژه هماهنگ باشند
+  const currencyNames: Record<string, string> = {
+    USD: t('currencies.USD'),
+    EUR: t('currencies.EUR'),
+    GBP: t('currencies.GBP'),
+    SEK: t('currencies.SEK'),
+  };
+
+  const fiatName = currencyNames[currency] || currency;
+
+  // rates[currency] یعنی «۱ دلار معادل چند واحد از آن ارز است»، پس عکس آن نرخ همان ارز به دلار است
+  const currentFiatRate = rates[currency];
+  const fiatRateToUsd = currentFiatRate ? 1 / currentFiatRate : 1;
+
+  // آماده بودن داده‌ها برای نمایش باکس راهنما: باید مبلغ نهایی از سرور رسیده باشد
+  // و در حالت سولانا، نرخ لحظه‌ای هم از API دریافت شده باشد
+  const isHintReady =
+    !loadingCalc &&
+    payableAmount !== '...' &&
+    (selectedMethod?.symbol !== 'SOL' || serverRate !== null);
+
+  const hintText = selectedMethod
+    ? selectedMethod.symbol === 'USDT'
+      ? t('hint_usdt', {
+          fiatName,
+          fiatCode: currency,
+          fiatRate: fiatRateToUsd.toFixed(4),
+          usdAmount: totalBaseUSD.toFixed(2),
+          cryptoAmount: payableAmount,
+        })
+      : t('hint_sol', {
+          usdAmount: totalBaseUSD.toFixed(2),
+          solRate: serverRate ? serverRate.toFixed(2) : '0',
+          cryptoAmount: payableAmount,
+        })
+    : '';
+
   if (loadingMethods) return <div className="p-10 text-center flex flex-col items-center"><Loader2 className="animate-spin mb-2" /> {t('loading')}</div>;
   if (methods.length === 0) return <div className="p-10 text-center text-red-500">{t('error_inactive')}</div>;
 
@@ -187,6 +225,26 @@ export default function CryptoPayment({ orderId }: Props) {
              </div>
            </div>
         </div>
+
+        {/* باکس راهنمای زنده و شفاف نحوه محاسبه قیمت */}
+        {selectedMethod && (
+          <div className="mb-8 bg-yellow-50 border border-yellow-300 rounded-xl p-4 text-yellow-900 shadow-sm">
+            <div className="flex items-center gap-2 mb-2 font-bold text-sm text-yellow-800">
+              <Calculator className="h-4 w-4 flex-shrink-0" />
+              <span>{t('hint_title')}</span>
+            </div>
+            {isHintReady ? (
+              <p className="text-xs leading-6 text-justify opacity-90">
+                {hintText}
+              </p>
+            ) : (
+              <p className="text-xs leading-6 flex items-center gap-2 opacity-70">
+                <Loader2 className="h-3 w-3 animate-spin flex-shrink-0" />
+                {t('hint_loading')}
+              </p>
+            )}
+          </div>
+        )}
 
         {selectedMethod && (
             <div className="flex flex-col items-center animate-in fade-in duration-500">
