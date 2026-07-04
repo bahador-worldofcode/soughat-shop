@@ -6,7 +6,27 @@ import type { Metadata } from 'next';
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({locale, namespace: 'Terms'});
-  return { title: t('title') };
+  const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat.shop';
+
+  return {
+    title: t('title'),
+    description: t('header_desc'),
+    alternates: {
+      canonical: `${siteUrl}/${locale}/terms`,
+      languages: {
+        'fa': `${siteUrl}/fa/terms`,
+        'en': `${siteUrl}/en/terms`,
+        'x-default': `${siteUrl}/fa/terms`,
+      },
+    },
+    openGraph: {
+      title: t('title'),
+      description: t('header_desc'),
+      url: `${siteUrl}/${locale}/terms`,
+      locale: locale === 'fa' ? 'fa_IR' : 'en_US',
+      type: 'website',
+    },
+  };
 }
 
 export default async function TermsPage({ params }: { params: Promise<{ locale: string }> }) {

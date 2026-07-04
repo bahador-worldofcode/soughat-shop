@@ -6,9 +6,26 @@ import type { Metadata } from 'next';
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({locale, namespace: 'CryptoGuide'});
+  const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat.shop';
+
   return {
     title: t('title'),
     description: t('meta_desc'),
+    alternates: {
+      canonical: `${siteUrl}/${locale}/crypto-guide`,
+      languages: {
+        'fa': `${siteUrl}/fa/crypto-guide`,
+        'en': `${siteUrl}/en/crypto-guide`,
+        'x-default': `${siteUrl}/fa/crypto-guide`,
+      },
+    },
+    openGraph: {
+      title: t('title'),
+      description: t('meta_desc'),
+      url: `${siteUrl}/${locale}/crypto-guide`,
+      locale: locale === 'fa' ? 'fa_IR' : 'en_US',
+      type: 'website',
+    },
   };
 }
 

@@ -6,8 +6,26 @@ import type { Metadata } from 'next';
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({locale, namespace: 'Trust'});
+  const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat.shop';
+
   return {
     title: t('title'),
+    description: t('hero_desc'),
+    alternates: {
+      canonical: `${siteUrl}/${locale}/trust`,
+      languages: {
+        'fa': `${siteUrl}/fa/trust`,
+        'en': `${siteUrl}/en/trust`,
+        'x-default': `${siteUrl}/fa/trust`,
+      },
+    },
+    openGraph: {
+      title: t('title'),
+      description: t('hero_desc'),
+      url: `${siteUrl}/${locale}/trust`,
+      locale: locale === 'fa' ? 'fa_IR' : 'en_US',
+      type: 'website',
+    },
   };
 }
 

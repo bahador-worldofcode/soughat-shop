@@ -7,7 +7,27 @@ import TicketForm from '@/components/TicketForm';
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({locale, namespace: 'Contact'});
-  return { title: t('title') };
+  const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat.shop';
+
+  return {
+    title: t('title'),
+    description: t('header_desc'),
+    alternates: {
+      canonical: `${siteUrl}/${locale}/contact`,
+      languages: {
+        'fa': `${siteUrl}/fa/contact`,
+        'en': `${siteUrl}/en/contact`,
+        'x-default': `${siteUrl}/fa/contact`,
+      },
+    },
+    openGraph: {
+      title: t('title'),
+      description: t('header_desc'),
+      url: `${siteUrl}/${locale}/contact`,
+      locale: locale === 'fa' ? 'fa_IR' : 'en_US',
+      type: 'website',
+    },
+  };
 }
 
 export default async function ContactPage({ params }: { params: Promise<{ locale: string }> }) {

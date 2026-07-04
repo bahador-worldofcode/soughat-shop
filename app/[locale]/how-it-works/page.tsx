@@ -6,7 +6,27 @@ import type { Metadata } from 'next';
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({locale, namespace: 'HowItWorks'});
-  return { title: t('title') };
+  const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat.shop';
+
+  return {
+    title: t('title'),
+    description: t('header_desc'),
+    alternates: {
+      canonical: `${siteUrl}/${locale}/how-it-works`,
+      languages: {
+        'fa': `${siteUrl}/fa/how-it-works`,
+        'en': `${siteUrl}/en/how-it-works`,
+        'x-default': `${siteUrl}/fa/how-it-works`,
+      },
+    },
+    openGraph: {
+      title: t('title'),
+      description: t('header_desc'),
+      url: `${siteUrl}/${locale}/how-it-works`,
+      locale: locale === 'fa' ? 'fa_IR' : 'en_US',
+      type: 'website',
+    },
+  };
 }
 
 export default async function HowItWorksPage({ params }: { params: Promise<{ locale: string }> }) {

@@ -51,10 +51,15 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       follow: true,
     },
 
+    // ✅ این بخش فقط برای صفحه اصلی (هوم‌پیج) صحیح است.
+    // صفحات داخلی (about, contact, crypto-guide, how-it-works, terms, trust, ...)
+    // خودشان در generateMetadata مخصوص خودشان این مقدار را override می‌کنند
+    // تا آدرس alternate درست (متناظر با همان صفحه) به گوگل اعلام شود.
     alternates: {
       languages: {
-        'fa': '/fa', 
-        'en': '/en', 
+        'fa': '/fa',
+        'en': '/en',
+        'x-default': '/fa',
       },
     },
 
