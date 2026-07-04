@@ -117,12 +117,13 @@ export async function GET(request: Request) {
         metrics: [{ name: 'activeUsers' }],
       }),
 
-      // ۴) جزئیات کاربران آنلاین: الان دقیقاً در چه صفحه‌ای، از کدام کشور و با چه دستگاهی هستند
+      // ۴) جزئیات کاربران آنلاین: الان دقیقاً در چه صفحه‌ای، از کدام کشور (+ کد کشور برای پرچم) و با چه دستگاهی هستند
       analyticsDataClient.runRealtimeReport({
         property,
         dimensions: [
           { name: 'unifiedScreenName' },
           { name: 'country' },
+          { name: 'countryId' },
           { name: 'deviceCategory' },
         ],
         metrics: [{ name: 'activeUsers' }],
@@ -147,11 +148,12 @@ export async function GET(request: Request) {
 
     const activeUsersNow = Number(realtimeResponse.rows?.[0]?.metricValues?.[0]?.value ?? 0);
 
-    // جزئیات هر کاربر آنلاین: نام صفحه، کشور، دستگاه و تعداد
+    // جزئیات هر ردیف: نام صفحه، کشور، کد کشور (برای پرچم)، دستگاه و تعداد
     const activeUsersDetail = (realtimeDetailResponse.rows ?? []).map((row) => ({
       page: row.dimensionValues?.[0]?.value || 'نامشخص',
       country: row.dimensionValues?.[1]?.value || 'نامشخص',
-      device: row.dimensionValues?.[2]?.value || 'unknown',
+      countryId: row.dimensionValues?.[2]?.value || '',
+      device: row.dimensionValues?.[3]?.value || 'unknown',
       users: Number(row.metricValues?.[0]?.value ?? 0),
     }));
 

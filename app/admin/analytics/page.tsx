@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Users, Eye, Smartphone, Monitor, Tablet, Loader2, AlertTriangle, RefreshCw, Radio, Globe } from 'lucide-react';
 
 type DeviceStat = { device: string; users: number };
-type ActiveUserDetail = { page: string; country: string; device: string; users: number };
+type ActiveUserDetail = { page: string; country: string; countryId: string; device: string; users: number };
 
 type AnalyticsData = {
   totalUsers: number;
@@ -19,9 +19,9 @@ type AnalyticsData = {
 // آیکون مناسب برای هر نوع دستگاه
 function deviceIcon(device: string) {
   const d = device.toLowerCase();
-  if (d === 'mobile') return <Smartphone className="h-4 w-4" />;
-  if (d === 'tablet') return <Tablet className="h-4 w-4" />;
-  return <Monitor className="h-4 w-4" />;
+  if (d === 'mobile') return <Smartphone className="h-3.5 w-3.5" />;
+  if (d === 'tablet') return <Tablet className="h-3.5 w-3.5" />;
+  return <Monitor className="h-3.5 w-3.5" />;
 }
 
 // نام فارسی مناسب برای هر نوع دستگاه
@@ -30,7 +30,17 @@ function deviceLabel(device: string) {
   if (d === 'mobile') return 'موبایل';
   if (d === 'tablet') return 'تبلت';
   if (d === 'desktop') return 'دسکتاپ';
-  return device;
+  return device || 'نامشخص';
+}
+
+// تبدیل کد دو حرفی کشور (مثل DE، US) به ایموجی پرچم
+function countryFlag(countryId: string): string | null {
+  if (!countryId || countryId.length !== 2) return null;
+  const codePoints = countryId
+    .toUpperCase()
+    .split('')
+    .map((char) => 127397 + char.charCodeAt(0));
+  return String.fromCodePoint(...codePoints);
 }
 
 // هر چند ثانیه یک‌بار عدد «آنلاین الان» به‌صورت خودکار به‌روزرسانی شود
@@ -135,29 +145,39 @@ export default function AnalyticsPage() {
               </div>
             </div>
 
-            {/* جزئیات: هر کاربر آنلاین الان دقیقاً در چه صفحه‌ای است */}
+            {/* جزئیات: هر ردیف یعنی «این صفحه الان توسط این تعداد نفر دیده می‌شود» */}
             {data.activeUsersDetail.length > 0 && (
               <div className="mt-5 pt-5 border-t border-white/20 space-y-2.5">
-                {data.activeUsersDetail.map((u, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between bg-white/10 rounded-xl px-4 py-2.5 text-sm"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-emerald-100 shrink-0">{deviceIcon(u.device)}</span>
-                      <span className="font-medium truncate">{u.page}</span>
+                {data.activeUsersDetail.map((u, i) => {
+                  const flag = countryFlag(u.countryId);
+                  return (
+                    <div key={i} className="bg-white/10 rounded-xl px-4 py-3 text-sm">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="font-medium truncate">{u.page}</span>
+                        <span className="bg-white/20 rounded-full px-2.5 py-0.5 text-xs font-bold shrink-0">
+                          {u.users.toLocaleString('fa-IR')} نفر
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3 text-emerald-100 text-xs mt-1.5">
+                        <span className="flex items-center gap-1">
+                          {deviceIcon(u.device)}
+                          {deviceLabel(u.device)}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          {flag ? (
+                            <span className="text-sm leading-none">{flag}</span>
+                          ) : (
+                            <Globe className="h-3.5 w-3.5" />
+                          )}
+                          {u.country}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3 text-emerald-100 shrink-0 pr-3">
-                      <span className="flex items-center gap-1 text-xs">
-                        <Globe className="h-3.5 w-3.5" />
-                        {u.country}
-                      </span>
-                      <span className="bg-white/20 rounded-full px-2 py-0.5 text-xs font-bold">
-                        {u.users.toLocaleString('fa-IR')} نفر
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
+                <p className="text-[11px] text-emerald-100/80 pt-1">
+                  اگر یک کاربر در همین بازه چند صفحه دیده باشد، ممکن است در چند ردیف جدا نشان داده شود؛ عدد بالا (آنلاین همین الان) تعداد واقعیِ افراد یکتاست.
+                </p>
               </div>
             )}
           </div>
@@ -194,7 +214,9 @@ export default function AnalyticsPage() {
             <h3 className="text-gray-800 font-bold mb-5">کاربران به تفکیک دستگاه</h3>
 
             {data.devices.length === 0 && (
-              <p className="text-sm text-gray-400">داده‌ای برای نمایش وجود ندارد.</p>
+              <p className="text-sm text-gray-400">
+                داده‌ای برای نمایش وجود ندارد. (طبیعیه — تا ۲۴ تا ۴۸ ساعت طول می‌کشه گزارش‌های استاندارد گوگل کامل بشن.)
+              </p>
             )}
 
             <div className="space-y-4">
