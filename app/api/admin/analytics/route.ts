@@ -28,15 +28,11 @@ async function verifyAdmin(request: Request) {
 function sanitizePrivateKey(rawKey: string): string {
   let key = rawKey.trim();
 
-  // اگر کل مقدار داخل یک جفت گیومه‌ی دوبل ذخیره شده باشد، آن‌ها را حذف کن
   if (key.startsWith('"') && key.endsWith('"')) {
     key = key.slice(1, -1);
   }
 
-  // تبدیل \n نوشتاری (بک‌اسلش + حرف n) به خط جدید واقعی
   key = key.replace(/\\n/g, '\n');
-
-  // حذف کاراکترهای \r (Windows line endings)
   key = key.replace(/\r/g, '');
 
   return key.trim();
@@ -57,7 +53,6 @@ function getAnalyticsClient() {
 
   const privateKey = sanitizePrivateKey(rawPrivateKey);
 
-  // بررسی سریع اینکه فرمت کلید درست است (کمک به عیب‌یابی سریع‌تر در آینده)
   if (!privateKey.startsWith('-----BEGIN PRIVATE KEY-----')) {
     throw new Error(
       'فرمت GA4_PRIVATE_KEY نامعتبر است. مقدار باید دقیقاً با -----BEGIN PRIVATE KEY----- شروع شود (بدون گیومه‌ی اضافه).'
@@ -98,8 +93,8 @@ export async function GET(request: Request) {
     // بازه‌ی زمانی گزارش عادی: ۲۸ روز اخیر (همان بازه‌ی پیش‌فرض خود گوگل آنالیتیکس)
     const dateRanges = [{ startDate: '28daysAgo', endDate: 'today' }];
 
-    // هر سه درخواست را همزمان به گوگل می‌فرستیم تا سریع‌تر جواب بیاید
-    const [summaryResult, deviceResult, realtimeResult] = await Promise.all([
+    // هر چهار درخواست را همزمان به گوگل می‌فرستیم تا سریع‌تر جواب بیاید
+    const [summaryResult, deviceResult, realtimeResult, realtimeDetailResult] = await Promise.all([
       // ۱) آمار کلی: تعداد کل کاربران + تعداد بازدید صفحات (۲۸ روز اخیر)
       analyticsDataClient.runReport({
         property,
@@ -116,16 +111,30 @@ export async function GET(request: Request) {
         orderBys: [{ metric: { metricName: 'totalUsers' }, desc: true }],
       }),
 
-      // ۳) کاربران آنلاین همین الان (۳۰ دقیقه‌ی اخیر) - گزارش Realtime
+      // ۳) تعداد کاربران آنلاین همین الان (۳۰ دقیقه‌ی اخیر) - گزارش Realtime
       analyticsDataClient.runRealtimeReport({
         property,
         metrics: [{ name: 'activeUsers' }],
+      }),
+
+      // ۴) جزئیات کاربران آنلاین: الان دقیقاً در چه صفحه‌ای، از کدام کشور و با چه دستگاهی هستند
+      analyticsDataClient.runRealtimeReport({
+        property,
+        dimensions: [
+          { name: 'unifiedScreenName' },
+          { name: 'country' },
+          { name: 'deviceCategory' },
+        ],
+        metrics: [{ name: 'activeUsers' }],
+        orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
+        limit: 10,
       }),
     ]);
 
     const summaryResponse = summaryResult[0];
     const deviceResponse = deviceResult[0];
     const realtimeResponse = realtimeResult[0];
+    const realtimeDetailResponse = realtimeDetailResult[0];
 
     const summaryRow = summaryResponse.rows?.[0];
     const totalUsers = Number(summaryRow?.metricValues?.[0]?.value ?? 0);
@@ -138,11 +147,20 @@ export async function GET(request: Request) {
 
     const activeUsersNow = Number(realtimeResponse.rows?.[0]?.metricValues?.[0]?.value ?? 0);
 
+    // جزئیات هر کاربر آنلاین: نام صفحه، کشور، دستگاه و تعداد
+    const activeUsersDetail = (realtimeDetailResponse.rows ?? []).map((row) => ({
+      page: row.dimensionValues?.[0]?.value || 'نامشخص',
+      country: row.dimensionValues?.[1]?.value || 'نامشخص',
+      device: row.dimensionValues?.[2]?.value || 'unknown',
+      users: Number(row.metricValues?.[0]?.value ?? 0),
+    }));
+
     return NextResponse.json({
       totalUsers,
       pageViews,
       devices,
       activeUsersNow,
+      activeUsersDetail,
       period: 'آخرین ۲۸ روز',
     });
   } catch (error: any) {

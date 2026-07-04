@@ -2,24 +2,26 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Users, Eye, Smartphone, Monitor, Tablet, Loader2, AlertTriangle, RefreshCw, Radio } from 'lucide-react';
+import { Users, Eye, Smartphone, Monitor, Tablet, Loader2, AlertTriangle, RefreshCw, Radio, Globe } from 'lucide-react';
 
 type DeviceStat = { device: string; users: number };
+type ActiveUserDetail = { page: string; country: string; device: string; users: number };
 
 type AnalyticsData = {
   totalUsers: number;
   pageViews: number;
   devices: DeviceStat[];
   activeUsersNow: number;
+  activeUsersDetail: ActiveUserDetail[];
   period: string;
 };
 
 // آیکون مناسب برای هر نوع دستگاه
 function deviceIcon(device: string) {
   const d = device.toLowerCase();
-  if (d === 'mobile') return <Smartphone className="h-5 w-5" />;
-  if (d === 'tablet') return <Tablet className="h-5 w-5" />;
-  return <Monitor className="h-5 w-5" />;
+  if (d === 'mobile') return <Smartphone className="h-4 w-4" />;
+  if (d === 'tablet') return <Tablet className="h-4 w-4" />;
+  return <Monitor className="h-4 w-4" />;
 }
 
 // نام فارسی مناسب برای هر نوع دستگاه
@@ -115,21 +117,49 @@ export default function AnalyticsPage() {
       {!loading && !error && data && (
         <>
           {/* کارت ویژه: کاربران آنلاین همین الان */}
-          <div className="bg-gradient-to-l from-emerald-600 to-emerald-500 p-6 rounded-2xl shadow-sm flex items-center justify-between text-white">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
-                </span>
-                <span className="text-sm font-medium text-emerald-50">آنلاین همین الان</span>
+          <div className="bg-gradient-to-l from-emerald-600 to-emerald-500 p-6 rounded-2xl shadow-sm text-white">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
+                  </span>
+                  <span className="text-sm font-medium text-emerald-50">آنلاین همین الان</span>
+                </div>
+                <h3 className="text-4xl font-bold mt-2">{data.activeUsersNow.toLocaleString('fa-IR')}</h3>
+                <span className="text-xs text-emerald-100">نفر در ۳۰ دقیقه‌ی اخیر فعال بوده‌اند</span>
               </div>
-              <h3 className="text-4xl font-bold mt-2">{data.activeUsersNow.toLocaleString('fa-IR')}</h3>
-              <span className="text-xs text-emerald-100">نفر در ۳۰ دقیقه‌ی اخیر فعال بوده‌اند</span>
+              <div className="h-14 w-14 bg-white/20 rounded-xl flex items-center justify-center">
+                <Radio className="h-7 w-7" />
+              </div>
             </div>
-            <div className="h-14 w-14 bg-white/20 rounded-xl flex items-center justify-center">
-              <Radio className="h-7 w-7" />
-            </div>
+
+            {/* جزئیات: هر کاربر آنلاین الان دقیقاً در چه صفحه‌ای است */}
+            {data.activeUsersDetail.length > 0 && (
+              <div className="mt-5 pt-5 border-t border-white/20 space-y-2.5">
+                {data.activeUsersDetail.map((u, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between bg-white/10 rounded-xl px-4 py-2.5 text-sm"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-emerald-100 shrink-0">{deviceIcon(u.device)}</span>
+                      <span className="font-medium truncate">{u.page}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-emerald-100 shrink-0 pr-3">
+                      <span className="flex items-center gap-1 text-xs">
+                        <Globe className="h-3.5 w-3.5" />
+                        {u.country}
+                      </span>
+                      <span className="bg-white/20 rounded-full px-2 py-0.5 text-xs font-bold">
+                        {u.users.toLocaleString('fa-IR')} نفر
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* کارت‌های آمار کلی */}
