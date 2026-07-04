@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@google-analytics/data": "^6.1.0",
     "@solana/pay": "^0.2.6",
     "@solana/web3.js": "^1.98.4",
     "@supabase/supabase-js": "^2.86.0",
