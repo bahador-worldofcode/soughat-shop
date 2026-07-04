@@ -381,6 +381,7 @@
     "hint_title": "Price Transparency: How was this amount calculated?",
     "hint_loading": "Calculating the exact amount based on the live rate...",
     "hint_usdt": "Dear customer, our system's base pricing is set in US Dollars ($). Since you selected {fiatName}, your invoice amount was first converted to USD using our live rate (<ltr>1 {fiatCode} ≈ {fiatRate}$</ltr>), which equals <ltr>{usdAmount}$</ltr>. Then, based on the fixed rate (<ltr>1 USDT = 1 USD</ltr>), your final payable amount is exactly <ltr>{cryptoAmount} USDT</ltr>.",
+    "hint_usdt_usd": "Dear customer, our system's base pricing is set in US Dollars ($), and since you selected the same currency, no conversion is needed. Your invoice amount is exactly <ltr>{usdAmount}$</ltr>. Based on the fixed rate (<ltr>1 USDT = 1 USD</ltr>), your final payable amount is exactly <ltr>{cryptoAmount} USDT</ltr>.",
     "hint_sol": "Dear customer, our system's base pricing is set in US Dollars ($). Your invoice amount was converted to USD using our live rate, which equals <ltr>{usdAmount}$</ltr>. Since the current market rate for 1 Solana (SOL) is <ltr>{solRate}$</ltr>, your final payable amount is exactly <ltr>{cryptoAmount} SOL</ltr>.",
     "currencies": {
       "USD": "US Dollar",

@@ -144,14 +144,20 @@ export default function CryptoPayment({ orderId }: Props) {
 
   const hintText = selectedMethod
     ? selectedMethod.symbol === 'USDT'
-      ? t.rich('hint_usdt', {
-          fiatName,
-          fiatCode: currency,
-          fiatRate: fiatRateToUsd.toFixed(4),
-          usdAmount: totalBaseUSD.toFixed(2),
-          cryptoAmount: payableAmount,
-          ltr: ltrIsolate,
-        })
+      ? currency === 'USD'
+        ? t.rich('hint_usdt_usd', {
+            usdAmount: totalBaseUSD.toFixed(2),
+            cryptoAmount: payableAmount,
+            ltr: ltrIsolate,
+          })
+        : t.rich('hint_usdt', {
+            fiatName,
+            fiatCode: currency,
+            fiatRate: fiatRateToUsd.toFixed(4),
+            usdAmount: totalBaseUSD.toFixed(2),
+            cryptoAmount: payableAmount,
+            ltr: ltrIsolate,
+          })
       : t.rich('hint_sol', {
           usdAmount: totalBaseUSD.toFixed(2),
           solRate: serverRate ? serverRate.toFixed(2) : '0',
