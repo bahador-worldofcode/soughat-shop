@@ -136,7 +136,7 @@
       "q11": "Can I reserve an order for a specific day (e.g., a birthday)?",
       "a11": "Yes. Just write the exact date in the order notes. We plan the shipment so it arrives on that day (or the nearest business day).",
       "q12": "Which cryptocurrencies do you accept?",
-      "a12": "Currently Tether (USDT on TRC20/BEP20 networks) and Solana (SOL). These have the lowest transfer fees.",
+      "a12": "Currently we only accept Tether (USDT) and Solana (SOL) through the Solana (SPL) network. Please make sure your deposit is sent via the Solana network — sending from other networks such as TRC20 or ERC20 will result in permanent loss of funds.",
       "q13": "What if the recipient is not home?",
       "a13": "Our courier makes up to 2 free delivery attempts. If still unsuccessful, we will contact you or the recipient to arrange another time.",
       "q14": "Is my and the recipient's information confidential?",
@@ -152,7 +152,9 @@
       "q19": "Are there customs limits for sending Saffron?",
       "a19": "Since the shipping is done domestically (from inside Iran to inside Iran), there are absolutely no customs limitations.",
       "q20": "What if the payment failed but money was deducted?",
-      "a20": "Don't worry. Send the Transaction Hash (TXID) to us on WhatsApp. We will check it manually and confirm the order."
+      "a20": "Don't worry. Send the Transaction Hash (TXID) to us on WhatsApp. We will check it manually and confirm the order.",
+      "q21": "Can I send money, a gift, or a souvenir to Iran using cryptocurrency?",
+      "a21": "Yes, absolutely. Soughat Shop lets you pay directly on our website with Tether (USDT) and Solana (SOL). If you'd like to pay with another cryptocurrency, such as Bitcoin or any other coin, that's no problem either — just reach out to our online support (WhatsApp or Telegram) and we'll arrange a secure manual payment for you. This way, without needing a bank card and without being blocked by sanctions, you can send money, a gift, or a souvenir to your loved ones in Tehran, Mashhad, Isfahan, Shiraz, Tabriz, and anywhere across Iran."
     }
   },
   "Product": {

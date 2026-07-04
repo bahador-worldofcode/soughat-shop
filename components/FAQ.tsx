@@ -12,14 +12,36 @@ export default function FAQ() {
     setOpenIndex(openIndex === index ? null : index);
   };
 
-  // تغییر مهم: ساخت آرایه اعداد از 1 تا 20 برای خواندن تمام سوالات از فایل json
-  const faqs = Array.from({ length: 20 }, (_, i) => i + 1).map(num => ({
+  // تغییر مهم: ساخت آرایه اعداد از 1 تا 21 برای خواندن تمام سوالات از فایل json
+  // (سوال 21 مخصوص سئو: پرداخت با سایر ارزهای دیجیتال از طریق پشتیبانی)
+  const faqs = Array.from({ length: 21 }, (_, i) => i + 1).map(num => ({
     q: t(`items.q${num}`),
     a: t(`items.a${num}`)
   }));
 
+  // Schema.org FAQPage — برای اینکه گوگل و بات‌های جستجو بتوانند
+  // این سوال‌وجواب‌ها را مستقیماً در نتایج جستجو (Rich Snippet) نمایش دهند.
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map(item => ({
+      '@type': 'Question',
+      name: item.q,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.a
+      }
+    }))
+  };
+
   return (
     <section className="bg-white py-16 border-t border-gray-100 font-[family-name:var(--font-vazir)]">
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+
       <div className="container mx-auto px-4 max-w-4xl">
         
         <div className="text-center mb-12">
