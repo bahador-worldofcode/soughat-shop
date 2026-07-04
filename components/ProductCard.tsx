@@ -23,13 +23,28 @@ export default function ProductCard({ id, title, title_en, price, image, slug, p
   const locale = useLocale();
   const isEn = locale === 'en';
 
-  // نکته‌ی مهندسی (رفع لگ اسکرول): قبلاً اینجا `useStore()` بدون سلکتور صدا زده
-  // می‌شد، یعنی این کارت به کل استور گوش می‌داد. نتیجه‌اش این بود که با هر
-  // تغییر جزئی در استور (مثلاً وقتی هدر نرخ ارزها را در پس‌زمینه fetch می‌کند،
-  // یا وقتی یک آیتم دیگر به سبد خرید اضافه می‌شود) تمام کارت‌های محصول توی
-  // صفحه — حتی آن‌هایی که ربطی به آن تغییر نداشتند — یک‌باره ری‌رندر می‌شدند؛
-  // دقیقاً همان لحظه‌ای که کاربر داشت اسکرول می‌کرد. با گرفتن هر مقدار با
-  // سلکتور جدا، این کارت فقط زمانی ری‌رندر می‌شود که خودِ همان مقدار عوض شود.
+  // نکته‌ی مهندسی (رفع لگ اسکرول + رفع باگِ کند/عدم‌آپدیت‌شدنِ قیمت هنگام تغییر ارز):
+  // قبلاً اینجا `useStore()` بدون سلکتور صدا زده می‌شد، یعنی این کارت به کل
+  // استور گوش می‌داد و با هر تغییر جزئی در استور (مثلاً وقتی هدر نرخ ارزها را
+  // در پس‌زمینه fetch می‌کند، یا وقتی یک آیتم دیگر به سبد خرید اضافه می‌شود)
+  // تمام کارت‌های محصول توی صفحه — حتی آن‌هایی که ربطی به آن تغییر نداشتند —
+  // یک‌باره ری‌رندر می‌شدند؛ دقیقاً همان لحظه‌ای که کاربر داشت اسکرول می‌کرد.
+  //
+  // برای رفع آن، فقط توابع convertPrice/getSymbol/addToCart با سلکتور جدا
+  // گرفته شده بودند. اما همین‌جا یک باگ جدید ایجاد شده بود: رفرنسِ این توابع
+  // در استور هیچ‌وقت عوض نمی‌شود (خودِ تابع فقط لحظه‌ی اجرا شدن، مقدار جدید
+  // currency را از استور می‌خواند)، پس از نگاه Zustand خروجیِ این سلکتورها
+  // هیچ تغییری نمی‌کرد و این کارت اصلاً هنگام تغییر ارز توسط کاربر ری‌رندر
+  // نمی‌شد — دقیقاً همان چیزی که فقط با رفرش کامل صفحه (یعنی mount دوباره‌ی
+  // کامپوننت) درست می‌شد و در صفحه‌ی جزئیات محصول (که آنجا کل استور گرفته
+  // می‌شود) دیده نمی‌شد.
+  //
+  // راه‌حل: علاوه بر توابع، خودِ مقدار currency (که یک مقدار ساده/primitive
+  // است) هم با یک سلکتور جداگانه گرفته می‌شود. چون این مقدار فقط زمانی که
+  // کاربر واقعاً ارز را عوض کند تغییر می‌کند، هم مشکلِ ری‌رندرهای بی‌مورد در
+  // حین اسکرول حل‌شده باقی می‌ماند و هم قیمت بلافاصله و در همه‌ی بخش‌ها
+  // (صفحه‌ی اصلی، لیست محصولات، محصولات مرتبط) آپدیت می‌شود.
+  const currency = useStore((s) => s.currency);
   const convertPrice = useStore((s) => s.convertPrice);
   const getSymbol = useStore((s) => s.getSymbol);
   const addToCart = useStore((s) => s.addToCart);
@@ -50,7 +65,10 @@ export default function ProductCard({ id, title, title_en, price, image, slug, p
   };
 
   return (
-    <div className="group relative flex flex-col h-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md">
+    <div
+      className="group relative flex flex-col h-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md"
+      data-currency={currency}
+    >
       
       <Link href={`/products/${slug}`} className="relative aspect-square overflow-hidden bg-gray-100 block flex-shrink-0">
         <Image
