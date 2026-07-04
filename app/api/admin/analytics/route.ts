@@ -17,6 +17,32 @@ async function verifyAdmin(request: Request) {
 }
 
 // ---------------------------------------------------------------------------
+// تمیزکاری Private Key
+// این تابع چند حالت رایج خرابی کلید را که باعث خطای
+// "DECODER routines::unsupported" می‌شوند اصلاح می‌کند:
+//  ۱) گیومه‌ی دوبل اضافه در ابتدا/انتهای مقدار (رایج‌ترین دلیل در Vercel)
+//  ۲) کاراکترهای \n نوشتاری که باید به خط جدید واقعی تبدیل شوند
+//  ۳) کاراکترهای \r اضافه (رایج در فایل‌های کپی‌شده از ویندوز)
+//  ۴) فاصله‌ی خالی اضافه در ابتدا/انتهای مقدار
+// ---------------------------------------------------------------------------
+function sanitizePrivateKey(rawKey: string): string {
+  let key = rawKey.trim();
+
+  // اگر کل مقدار داخل یک جفت گیومه‌ی دوبل ذخیره شده باشد، آن‌ها را حذف کن
+  if (key.startsWith('"') && key.endsWith('"')) {
+    key = key.slice(1, -1);
+  }
+
+  // تبدیل \n نوشتاری (بک‌اسلش + حرف n) به خط جدید واقعی
+  key = key.replace(/\\n/g, '\n');
+
+  // حذف کاراکترهای \r (Windows line endings)
+  key = key.replace(/\r/g, '');
+
+  return key.trim();
+}
+
+// ---------------------------------------------------------------------------
 // ساخت کلاینت گوگل آنالیتیکس با استفاده از Service Account
 // ---------------------------------------------------------------------------
 function getAnalyticsClient() {
@@ -25,13 +51,18 @@ function getAnalyticsClient() {
 
   if (!clientEmail || !rawPrivateKey) {
     throw new Error(
-      'متغیرهای GA4_CLIENT_EMAIL یا GA4_PRIVATE_KEY در .env.local تنظیم نشده‌اند.'
+      'متغیرهای GA4_CLIENT_EMAIL یا GA4_PRIVATE_KEY تنظیم نشده‌اند.'
     );
   }
 
-  // چون در فایل .env.local کلید خصوصی به‌صورت یک خط با \n نوشته می‌شود،
-  // اینجا آن را به شکل چندخطی واقعی که گوگل نیاز دارد برمی‌گردانیم.
-  const privateKey = rawPrivateKey.replace(/\\n/g, '\n');
+  const privateKey = sanitizePrivateKey(rawPrivateKey);
+
+  // بررسی سریع اینکه فرمت کلید درست است (کمک به عیب‌یابی سریع‌تر در آینده)
+  if (!privateKey.startsWith('-----BEGIN PRIVATE KEY-----')) {
+    throw new Error(
+      'فرمت GA4_PRIVATE_KEY نامعتبر است. مقدار باید دقیقاً با -----BEGIN PRIVATE KEY----- شروع شود (بدون گیومه‌ی اضافه).'
+    );
+  }
 
   return new BetaAnalyticsDataClient({
     credentials: {
@@ -56,7 +87,7 @@ export async function GET(request: Request) {
     const propertyId = process.env.GA4_PROPERTY_ID;
     if (!propertyId) {
       return NextResponse.json(
-        { error: 'GA4_PROPERTY_ID در .env.local تنظیم نشده است.' },
+        { error: 'GA4_PROPERTY_ID تنظیم نشده است.' },
         { status: 500 }
       );
     }
