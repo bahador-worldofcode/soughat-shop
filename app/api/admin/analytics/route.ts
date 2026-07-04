@@ -117,14 +117,20 @@ export async function GET(request: Request) {
         metrics: [{ name: 'activeUsers' }],
       }),
 
-      // ۴) جزئیات کاربران آنلاین: الان دقیقاً در چه صفحه‌ای، از کدام کشور (+ کد کشور برای پرچم) و با چه دستگاهی هستند
+      // ۴) جزئیات کاربران آنلاین: عنوان صفحه، کشور و شهر (+ کد کشور برای پرچم)،
+      // پلتفرم (وب/اپلیکیشن) و نوع دستگاه.
+      // نکته‌ی مهم: گزارش Realtime گوگل، آدرس دقیق صفحه (URL/Path) را در اختیار
+      // نمی‌گذارد؛ فقط «عنوان صفحه» (unifiedScreenName) را می‌دهد. این محدودیتِ
+      // خودِ سرویس گوگل آنالیتیکس است، نه چیزی که از این کد قابل تغییر باشد.
       analyticsDataClient.runRealtimeReport({
         property,
         dimensions: [
           { name: 'unifiedScreenName' },
           { name: 'country' },
           { name: 'countryId' },
+          { name: 'city' },
           { name: 'deviceCategory' },
+          { name: 'platform' },
         ],
         metrics: [{ name: 'activeUsers' }],
         orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
@@ -148,12 +154,14 @@ export async function GET(request: Request) {
 
     const activeUsersNow = Number(realtimeResponse.rows?.[0]?.metricValues?.[0]?.value ?? 0);
 
-    // جزئیات هر ردیف: نام صفحه، کشور، کد کشور (برای پرچم)، دستگاه و تعداد
+    // جزئیات هر ردیف: عنوان صفحه، کشور، شهر، کد کشور (برای پرچم)، پلتفرم، دستگاه و تعداد
     const activeUsersDetail = (realtimeDetailResponse.rows ?? []).map((row) => ({
       page: row.dimensionValues?.[0]?.value || 'نامشخص',
       country: row.dimensionValues?.[1]?.value || 'نامشخص',
       countryId: row.dimensionValues?.[2]?.value || '',
-      device: row.dimensionValues?.[3]?.value || 'unknown',
+      city: row.dimensionValues?.[3]?.value || '',
+      device: row.dimensionValues?.[4]?.value || 'unknown',
+      platform: row.dimensionValues?.[5]?.value || '',
       users: Number(row.metricValues?.[0]?.value ?? 0),
     }));
 

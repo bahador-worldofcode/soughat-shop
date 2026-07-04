@@ -5,7 +5,15 @@ import { supabase } from '@/lib/supabase';
 import { Users, Eye, Smartphone, Monitor, Tablet, Loader2, AlertTriangle, RefreshCw, Radio, Globe } from 'lucide-react';
 
 type DeviceStat = { device: string; users: number };
-type ActiveUserDetail = { page: string; country: string; countryId: string; device: string; users: number };
+type ActiveUserDetail = {
+  page: string;
+  country: string;
+  countryId: string;
+  city: string;
+  device: string;
+  platform: string;
+  users: number;
+};
 
 type AnalyticsData = {
   totalUsers: number;
@@ -145,11 +153,12 @@ export default function AnalyticsPage() {
               </div>
             </div>
 
-            {/* جزئیات: هر ردیف یعنی «این صفحه الان توسط این تعداد نفر دیده می‌شود» */}
+            {/* جزئیات: هر ردیف یعنی «این عنوان صفحه الان توسط این تعداد نفر دیده می‌شود» */}
             {data.activeUsersDetail.length > 0 && (
               <div className="mt-5 pt-5 border-t border-white/20 space-y-2.5">
                 {data.activeUsersDetail.map((u, i) => {
                   const flag = countryFlag(u.countryId);
+                  const locationLabel = [u.city, u.country].filter(Boolean).join('، ');
                   return (
                     <div key={i} className="bg-white/10 rounded-xl px-4 py-3 text-sm">
                       <div className="flex items-center justify-between gap-3">
@@ -169,14 +178,28 @@ export default function AnalyticsPage() {
                           ) : (
                             <Globe className="h-3.5 w-3.5" />
                           )}
-                          {u.country}
+                          {locationLabel || 'نامشخص'}
                         </span>
+                        {u.platform && (
+                          <span className="bg-white/15 rounded-full px-2 py-0.5">
+                            {u.platform}
+                          </span>
+                        )}
                       </div>
                     </div>
                   );
                 })}
-                <p className="text-[11px] text-emerald-100/80 pt-1">
-                  اگر یک کاربر در همین بازه چند صفحه دیده باشد، ممکن است در چند ردیف جدا نشان داده شود؛ عدد بالا (آنلاین همین الان) تعداد واقعیِ افراد یکتاست.
+                <p className="text-[11px] text-emerald-100/80 pt-1 leading-5">
+                  عبارتی که بالای هر ردیف می‌بینید «عنوان صفحه» است (چیزی که گوگل به‌عنوان
+                  Screen Name گزارش می‌دهد)، نه آدرس دقیق لینک — گزارش لحظه‌ای گوگل آنالیتیکس
+                  اصلاً آدرس دقیق صفحه را نمی‌دهد و این محدودیتِ خودِ سرویس گوگل است. اگر یک
+                  کاربر در همین بازه چند صفحه دیده باشد، ممکن است در چند ردیف جدا نشان داده
+                  شود؛ عدد «آنلاین همین الان» بالای کارت، تعداد واقعیِ افراد یکتاست. اگر همه‌ی
+                  ردیف‌ها دقیقاً یک کشور، یک دستگاه و یک عنوان صفحه‌ی یکسان نشان بدهند، لزوماً
+                  به‌معنای ربات‌بودن نیست (ممکن است مثلاً همه از یک لینک مشترک وارد صفحه‌ی اصلی
+                  شده باشند)، اما نشانه‌ای است که ارزش بررسیِ دقیق‌تر را دارد — بهترین راه، نگاه
+                  کردن به گزارش «Realtime» در خودِ سایت analytics.google.com است که منبع ورود
+                  (Source/Medium) هر کاربر را هم نشان می‌دهد.
                 </p>
               </div>
             )}
