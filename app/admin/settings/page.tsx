@@ -11,7 +11,9 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState({
     hero_banner: '',
     hero_title: '',
-    hero_subtitle: ''
+    hero_subtitle: '',
+    hero_title_en: '',
+    hero_subtitle_en: ''
   });
 
   useEffect(() => {
@@ -41,6 +43,8 @@ export default function SettingsPage() {
         { key: 'hero_banner', value: settings.hero_banner },
         { key: 'hero_title', value: settings.hero_title },
         { key: 'hero_subtitle', value: settings.hero_subtitle },
+        { key: 'hero_title_en', value: settings.hero_title_en },
+        { key: 'hero_subtitle_en', value: settings.hero_subtitle_en },
       ];
 
       for (const item of updates) {
@@ -118,6 +122,35 @@ export default function SettingsPage() {
                         onChange={(e) => setSettings({...settings, hero_subtitle: e.target.value})}
                         className="w-full p-3 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500"
                     />
+                </div>
+            </div>
+
+            {/* جداکننده برای نسخه انگلیسی */}
+            <div className="pt-4 mt-2 border-t border-dashed border-gray-200">
+                <p className="text-xs font-medium text-blue-600 mb-3">
+                    این دو فیلد فقط برای نسخه‌ی انگلیسی سایت (soughat.shop/en) استفاده می‌شوند. اگر خالی بمانند، همان متن فارسی به‌جای آن‌ها نمایش داده خواهد شد.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">تیتر اصلی - نسخه انگلیسی (Hero Title EN)</label>
+                        <input 
+                            type="text" 
+                            dir="ltr"
+                            value={settings.hero_title_en}
+                            onChange={(e) => setSettings({...settings, hero_title_en: e.target.value})}
+                            className="w-full p-3 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">زیرعنوان - نسخه انگلیسی (Hero Subtitle EN)</label>
+                        <input 
+                            type="text" 
+                            dir="ltr"
+                            value={settings.hero_subtitle_en}
+                            onChange={(e) => setSettings({...settings, hero_subtitle_en: e.target.value})}
+                            className="w-full p-3 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500"
+                        />
+                    </div>
                 </div>
             </div>
         </div>
