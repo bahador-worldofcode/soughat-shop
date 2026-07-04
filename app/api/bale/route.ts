@@ -5,17 +5,17 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { type, data } = body;
 
-    const token = process.env.BALE_BOT_TOKEN;
+    const token = process.env.TELEGRAM_BOT_TOKEN;
 
     // فقط برای تیکت‌ها از این مسیر استفاده می‌کنیم
     // (سفارشات رو بردیم توی یک API اختصاصی که بعد از پرداخت صدا زده بشه)
     if (type === 'TICKET') {
-      const chatId = process.env.BALE_TICKET_GROUP_ID;
+      const chatId = process.env.TELEGRAM_TICKETS_CHAT_ID;
       if (!token || !chatId) return NextResponse.json({ error: 'Config Error' }, { status: 500 });
 
       // ✅ فرم تیکت حالا از صفحه‌ی «تماس با ما» ارسال می‌شود و همیشه هم
       // شماره تماس و هم ایمیل را همراه دارد (هر دو ضروری‌اند)، به‌علاوه‌ی
-      // نام (اختیاری). پیام ارسالی به گروه بله هم بر همین اساس کامل‌تر شده.
+      // نام (اختیاری). پیام ارسالی به گروه تلگرام هم بر همین اساس کامل‌تر شده.
       const nameLine = data.name ? `👤 *نام:* ${data.name}\n` : '';
       const messageText = `
 📩 *تیکت جدید از مشتری*
@@ -27,7 +27,7 @@ ${data.content}
 ➖➖➖➖➖➖➖➖
 `.trim();
 
-      await fetch(`https://tapi.bale.ai/bot${token}/sendMessage`, {
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: chatId, text: messageText }),

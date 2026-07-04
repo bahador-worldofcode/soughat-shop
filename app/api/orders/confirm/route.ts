@@ -15,9 +15,9 @@ export async function POST(request: Request) {
 
     if (error || !order) throw new Error('Order not found');
 
-    // 2. ارسال به بله (فقط الان که پرداخت تایید شده)
-    const token = process.env.BALE_BOT_TOKEN;
-    const chatId = process.env.BALE_ORDER_GROUP_ID;
+    // 2. ارسال به تلگرام (فقط الان که پرداخت تایید شده)
+    const token = process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.TELEGRAM_ORDERS_CHAT_ID;
 
     if (token && chatId) {
         const itemsList = order.items.map((item: any) => 
@@ -53,7 +53,7 @@ ${order.order_notes || 'ندارد'}
 ➖➖➖➖➖➖➖➖
 `.trim();
 
-      await fetch(`https://tapi.bale.ai/bot${token}/sendMessage`, {
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: chatId, text: messageText }),
