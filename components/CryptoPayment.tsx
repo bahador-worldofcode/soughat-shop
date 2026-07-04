@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useStore } from '@/lib/store';
 import { Loader2, CheckCircle, Info, RefreshCw, ShieldCheck, Calculator } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -136,19 +136,27 @@ export default function CryptoPayment({ orderId }: Props) {
     payableAmount !== '...' &&
     (selectedMethod?.symbol !== 'SOL' || serverRate !== null);
 
+  // این تابع بخش‌های عددی/لاتین (نرخ‌ها، ارقام، نام رمزارز) را داخل یک «جزیره LTR» ایزوله می‌کند
+  // تا موتور bidi مرورگر آن‌ها را با متن فارسی اطرافشان قاطی نکند و به‌هم‌ریخته نمایش ندهد
+  const ltrIsolate = (chunks: ReactNode) => (
+    <span dir="ltr" className="inline-block whitespace-nowrap">{chunks}</span>
+  );
+
   const hintText = selectedMethod
     ? selectedMethod.symbol === 'USDT'
-      ? t('hint_usdt', {
+      ? t.rich('hint_usdt', {
           fiatName,
           fiatCode: currency,
           fiatRate: fiatRateToUsd.toFixed(4),
           usdAmount: totalBaseUSD.toFixed(2),
           cryptoAmount: payableAmount,
+          ltr: ltrIsolate,
         })
-      : t('hint_sol', {
+      : t.rich('hint_sol', {
           usdAmount: totalBaseUSD.toFixed(2),
           solRate: serverRate ? serverRate.toFixed(2) : '0',
           cryptoAmount: payableAmount,
+          ltr: ltrIsolate,
         })
     : '';
 

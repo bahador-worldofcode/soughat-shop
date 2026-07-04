@@ -380,8 +380,8 @@
     "whatsapp_message_template": "Hello, I have placed order #{orderId} on the website and I am messaging to get the wallet address for payment.",
     "hint_title": "Price Transparency: How was this amount calculated?",
     "hint_loading": "Calculating the exact amount based on the live rate...",
-    "hint_usdt": "Dear customer, our system's base pricing is set in US Dollars ($). Since you selected {fiatName}, your invoice amount was first converted to USD using our live rate (1 {fiatCode} ≈ ${fiatRate}), which equals ${usdAmount}. Then, based on the fixed rate (1 USDT = 1 USD), your final payable amount is exactly {cryptoAmount} USDT.",
-    "hint_sol": "Dear customer, our system's base pricing is set in US Dollars ($). Your invoice amount was converted to USD using our live rate, which equals ${usdAmount}. Since the current market rate for 1 Solana (SOL) is ${solRate}, your final payable amount is exactly {cryptoAmount} SOL.",
+    "hint_usdt": "Dear customer, our system's base pricing is set in US Dollars ($). Since you selected {fiatName}, your invoice amount was first converted to USD using our live rate (<ltr>1 {fiatCode} ≈ {fiatRate}$</ltr>), which equals <ltr>{usdAmount}$</ltr>. Then, based on the fixed rate (<ltr>1 USDT = 1 USD</ltr>), your final payable amount is exactly <ltr>{cryptoAmount} USDT</ltr>.",
+    "hint_sol": "Dear customer, our system's base pricing is set in US Dollars ($). Your invoice amount was converted to USD using our live rate, which equals <ltr>{usdAmount}$</ltr>. Since the current market rate for 1 Solana (SOL) is <ltr>{solRate}$</ltr>, your final payable amount is exactly <ltr>{cryptoAmount} SOL</ltr>.",
     "currencies": {
       "USD": "US Dollar",
       "EUR": "Euro",
