@@ -30,6 +30,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     ? (post.seo_desc_en || post.summary_en || post.content_en?.substring(0, 160))
     : (post.seo_desc || post.summary || post.content.substring(0, 160));
 
+  // ✅ انتخاب تصویر بر اساس زبان: اگر image_en ست نشده بود، به image اصلی برمی‌گردیم
+  const displayImage = isEn ? (post.image_en || post.image) : post.image;
+
   const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat.shop';
 
   return {
@@ -39,7 +42,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       title: pageTitle,
       description: pageDesc,
       type: 'article',
-      images: post.image ? [{ url: post.image }] : [],
+      images: displayImage ? [{ url: displayImage }] : [],
       // ✅ اصلاح مهم: حذف IR و US برای تارگت جهانی
       locale: isEn ? 'en' : 'fa',
     },
@@ -47,7 +50,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       card: 'summary_large_image',
       title: pageTitle,
       description: pageDesc,
-      images: post.image ? [post.image] : [],
+      images: displayImage ? [displayImage] : [],
     },
     // ✅ اصلاح مهم: اضافه کردن Hreflang برای سئوی بین‌المللی
     alternates: {
@@ -180,12 +183,14 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
   
   const displayCategory = isEn ? (post.category_en || post.category) : post.category;
   const displayTags = isEn ? (post.tags_en || post.tags) : post.tags;
+  // ✅ تصویر انگلیسی با بازگشت خودکار به تصویر اصلی در صورت خالی بودن image_en
+  const displayImage = isEn ? (post.image_en || post.image) : post.image;
 
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
     headline: displayTitle,
-    image: post.image ? [post.image] : [],
+    image: displayImage ? [displayImage] : [],
     datePublished: post.created_at,
     author: {
       '@type': 'Organization',
@@ -206,9 +211,9 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
 
       {/* 1. Header Image */}
       <div className="relative h-[300px] md:h-[450px] w-full bg-gray-900">
-        {post.image ? (
+        {displayImage ? (
           <img 
-            src={post.image} 
+            src={displayImage} 
             alt={displayTitle} 
             className="w-full h-full object-cover opacity-60"
           />

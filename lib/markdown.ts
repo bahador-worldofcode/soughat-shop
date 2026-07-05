@@ -42,6 +42,8 @@ export function postToMarkdown(post: any, locale: string) {
   const title = isEn ? (post.title_en || post.title) : post.title;
   const content = isEn ? (post.content_en || post.content) : post.content;
   const summary = isEn ? (post.summary_en || post.summary) : post.summary;
+  // ✅ تصویر بر اساس زبان، با بازگشت خودکار به تصویر اصلی اگر image_en خالی بود
+  const image = isEn ? (post.image_en || post.image) : post.image;
   const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat.shop';
 
   const lines: string[] = [];
@@ -51,8 +53,8 @@ export function postToMarkdown(post: any, locale: string) {
     lines.push(`> ${summary}`);
     lines.push('');
   }
-  if (post.image) {
-    lines.push(`![${title}](${post.image})`);
+  if (image) {
+    lines.push(`![${title}](${image})`);
     lines.push('');
   }
   lines.push(content || '');

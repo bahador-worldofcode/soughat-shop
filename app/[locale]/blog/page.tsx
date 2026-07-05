@@ -61,13 +61,15 @@ export default async function BlogIndex({ searchParams, params }: BlogPageProps)
                 // انتخاب هوشمند زبان (اگر انگلیسی نبود، فارسی را نشان بده)
                 const displayTitle = isEn ? (post.title_en || post.title) : post.title;
                 const displaySummary = isEn ? (post.summary_en || post.summary || post.content.substring(0, 150)) : (post.summary || post.content.substring(0, 150));
+                // ✅ تصویر بر اساس زبان، با بازگشت خودکار به تصویر اصلی اگر image_en خالی بود
+                const displayImage = isEn ? (post.image_en || post.image) : post.image;
 
                 return (
                   <article key={post.id} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col group">
                     <Link href={`/blog/${post.slug}`} className="block relative h-56 bg-gray-200 overflow-hidden">
-                      {post.image ? (
+                      {displayImage ? (
                         <img 
-                          src={post.image} 
+                          src={displayImage} 
                           alt={displayTitle} 
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                         />

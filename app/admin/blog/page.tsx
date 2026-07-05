@@ -11,6 +11,7 @@ interface Post {
   slug: string;
   content: string;
   image: string;
+  image_en?: string;
   created_at: string;
   seo_title?: string;
   seo_desc?: string;
@@ -59,7 +60,7 @@ export default function BlogPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [formData, setFormData] = useState({ 
-    title: '', slug: '', content: '', image: '',
+    title: '', slug: '', content: '', image: '', image_en: '',
     summary: '', category: '', seo_title: '', seo_desc: '', tags: ''
   });
 
@@ -69,6 +70,8 @@ export default function BlogPage() {
   const [loadingMedia, setLoadingMedia] = useState(false);
   const [mediaLoadingMore, setMediaLoadingMore] = useState(false);
   const [mediaHasMore, setMediaHasMore] = useState(true);
+  // کدام فیلد (تصویر فارسی یا انگلیسی) توسط گالری پر می‌شود
+  const [galleryTarget, setGalleryTarget] = useState<'image' | 'image_en'>('image');
 
   // Category/Tag Management States
   const [newItemName, setNewItemName] = useState('');
@@ -220,6 +223,7 @@ export default function BlogPage() {
         slug: post.slug, 
         content: post.content, 
         image: post.image,
+        image_en: post.image_en || '',
         summary: post.summary || '',
         category: post.category || defaultCat,
         seo_title: post.seo_title || '',
@@ -229,7 +233,7 @@ export default function BlogPage() {
     } else {
       setEditingPost(null);
       setFormData({ 
-        title: '', slug: '', content: '', image: '', 
+        title: '', slug: '', content: '', image: '', image_en: '',
         summary: '', category: defaultCat, seo_title: '', seo_desc: '', tags: '' 
       });
     }
@@ -250,6 +254,7 @@ export default function BlogPage() {
         slug: finalSlug,
         content: formData.content,
         image: formData.image,
+        image_en: formData.image_en || null,
         summary: formData.summary,
         category: formData.category,
         seo_title: formData.seo_title,
@@ -306,8 +311,13 @@ export default function BlogPage() {
     }
   };
 
-  const openGallery = () => { setIsGalleryOpen(true); fetchMedia(true); };
-  const selectImage = (url: string) => { setFormData({ ...formData, image: url }); setIsGalleryOpen(false); };
+  // ✅ حالا openGallery مشخص می‌کند که تصویر انتخاب‌شده برای کدام فیلد است (فارسی یا انگلیسی)
+  const openGallery = (target: 'image' | 'image_en' = 'image') => {
+    setGalleryTarget(target);
+    setIsGalleryOpen(true);
+    fetchMedia(true);
+  };
+  const selectImage = (url: string) => { setFormData({ ...formData, [galleryTarget]: url }); setIsGalleryOpen(false); };
 
   if (loadingPosts && posts.length === 0) return <div className="p-10 text-center flex justify-center"><Loader2 className="animate-spin h-8 w-8 text-blue-600" /></div>;
 
@@ -375,6 +385,11 @@ export default function BlogPage() {
                                 {post.category && (
                                     <span className="absolute bottom-2 right-2 bg-black/50 text-white text-[10px] px-2 py-1 rounded backdrop-blur-sm">
                                         {post.category}
+                                    </span>
+                                )}
+                                {post.image_en && (
+                                    <span className="absolute bottom-2 left-2 bg-blue-600/90 text-white text-[10px] px-2 py-1 rounded backdrop-blur-sm">
+                                        EN ✓
                                     </span>
                                 )}
                             </div>
@@ -488,30 +503,51 @@ export default function BlogPage() {
                  </div>
               </div>
 
-              {/* بخش ۲: محتوا */}
+              {/* بخش ۲: محتوا و تصاویر */}
               <div className="space-y-4">
                  <h4 className="font-bold text-blue-800 text-sm border-b pb-2 flex items-center gap-2">
-                    <FileText className="h-4 w-4"/> ۲. محتوا و تصویر
+                    <FileText className="h-4 w-4"/> ۲. محتوا و تصاویر
                  </h4>
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div className="md:col-span-2">
                         <label className="block text-xs font-bold text-gray-700 mb-1">متن مقاله</label>
                         <textarea required className="w-full h-64 p-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500 resize-none" value={formData.content} onChange={(e) => setFormData({...formData, content: e.target.value})} placeholder="متن خود را اینجا بنویسید..." />
                     </div>
+
+                    {/* تصویر شاخص (فارسی) */}
                     <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1">تصویر شاخص</label>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">تصویر شاخص (فارسی)</label>
                         {formData.image ? (
                         <div className="relative h-40 w-full rounded-lg overflow-hidden border border-gray-200 group">
                             <img src={formData.image} className="w-full h-full object-cover" />
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                <button type="button" onClick={openGallery} className="bg-white text-blue-600 px-3 py-1 rounded-full text-sm">تغییر</button>
+                                <button type="button" onClick={() => openGallery('image')} className="bg-white text-blue-600 px-3 py-1 rounded-full text-sm">تغییر</button>
                                 <button type="button" onClick={() => setFormData({...formData, image: ''})} className="bg-red-500 text-white p-1 rounded-full"><X className="h-4 w-4"/></button>
                             </div>
                         </div>
                         ) : (
-                        <button type="button" onClick={openGallery} className="w-full h-40 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-all">
+                        <button type="button" onClick={() => openGallery('image')} className="w-full h-40 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-all">
                             <ImageIcon className="h-8 w-8 mb-2"/>
                             <span className="text-xs">انتخاب تصویر</span>
+                        </button>
+                        )}
+                    </div>
+
+                    {/* ✅ تصویر انگلیسی (اختیاری) - در صورت خالی بودن، همان تصویر فارسی نمایش داده می‌شود */}
+                    <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">تصویر انگلیسی (اختیاری)</label>
+                        {formData.image_en ? (
+                        <div className="relative h-40 w-full rounded-lg overflow-hidden border border-gray-200 group">
+                            <img src={formData.image_en} className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                <button type="button" onClick={() => openGallery('image_en')} className="bg-white text-blue-600 px-3 py-1 rounded-full text-sm">تغییر</button>
+                                <button type="button" onClick={() => setFormData({...formData, image_en: ''})} className="bg-red-500 text-white p-1 rounded-full"><X className="h-4 w-4"/></button>
+                            </div>
+                        </div>
+                        ) : (
+                        <button type="button" onClick={() => openGallery('image_en')} className="w-full h-40 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-all p-2">
+                            <ImageIcon className="h-8 w-8 mb-2"/>
+                            <span className="text-[11px] text-center leading-4">بدون تصویر جدا؛<br/>تصویر فارسی نمایش داده می‌شود</span>
                         </button>
                         )}
                     </div>
@@ -564,7 +600,10 @@ export default function BlogPage() {
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in zoom-in duration-200">
            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl h-[80vh] flex flex-col overflow-hidden">
              <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                <h3 className="font-bold text-gray-900 flex items-center gap-2"><ImageIcon className="h-5 w-5 text-blue-600" />انتخاب تصویر</h3>
+                <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                    <ImageIcon className="h-5 w-5 text-blue-600" />
+                    انتخاب تصویر {galleryTarget === 'image_en' ? '(نسخه انگلیسی)' : '(نسخه فارسی)'}
+                </h3>
                 <button onClick={() => setIsGalleryOpen(false)}><X className="h-6 w-6 text-gray-400" /></button>
              </div>
              <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50">
