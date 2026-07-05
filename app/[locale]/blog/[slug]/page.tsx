@@ -5,6 +5,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import PostContent from '@/components/PostContent';
+import ShareButtons from '@/components/ShareButtons';
 
 // --- تنظیمات کش ---
 export const revalidate = 60;
@@ -13,7 +14,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug, locale } = await params;
   const decodedSlug = decodeURIComponent(slug);
   const isEn = locale === 'en';
-  
+
   const { data: post } = await supabase
     .from('posts')
     .select('*')
@@ -23,8 +24,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!post) return { title: 'Post Not Found' };
 
   // انتخاب هوشمند متا تگ‌ها
-  const pageTitle = isEn 
-    ? (post.seo_title_en || post.title_en || post.title) 
+  const pageTitle = isEn
+    ? (post.seo_title_en || post.title_en || post.title)
     : (post.seo_title || post.title);
 
   const pageDesc = isEn
@@ -34,16 +35,24 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   // ✅ تصویر انگلیسی با بازگشت خودکار به تصویر اصلی در صورت خالی بودن image_en
   const displayImage = isEn ? (post.image_en || post.image) : post.image;
 
+  // ✅ تگ‌ها هم برای متای سئو و هم برای اشتراک‌گذاری خودکار (Open Graph) لازم‌اند
+  const pageTags: string[] = isEn ? (post.tags_en || post.tags || []) : (post.tags || []);
+
   const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat.shop';
+  const pageUrl = `${siteUrl}/${locale}/blog/${decodedSlug}`;
 
   return {
     title: pageTitle,
     description: pageDesc,
+    keywords: pageTags,
     openGraph: {
       title: pageTitle,
       description: pageDesc,
+      url: pageUrl,
+      siteName: 'Soughat Shop',
       type: 'article',
-      images: displayImage ? [{ url: displayImage }] : [],
+      images: displayImage ? [{ url: displayImage, width: 1200, height: 630, alt: pageTitle }] : [],
+      tags: pageTags,
       // ✅ اصلاح مهم: حذف IR و US برای تارگت جهانی
       locale: isEn ? 'en' : 'fa',
     },
@@ -55,7 +64,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     },
     // ✅ اصلاح مهم: اضافه کردن Hreflang برای سئوی بین‌المللی
     alternates: {
-      canonical: `${siteUrl}/${locale}/blog/${decodedSlug}`,
+      canonical: pageUrl,
       languages: {
         'fa': `${siteUrl}/fa/blog/${decodedSlug}`,
         'en': `${siteUrl}/en/blog/${decodedSlug}`,
@@ -83,11 +92,14 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
   // --- انتخاب محتوای مناسب بر اساس زبان ---
   const displayTitle = isEn ? (post.title_en || post.title) : post.title;
   const displayContent = isEn ? (post.content_en || post.content) : post.content;
-  
+
   const displayCategory = isEn ? (post.category_en || post.category) : post.category;
   const displayTags = isEn ? (post.tags_en || post.tags) : post.tags;
   // ✅ تصویر انگلیسی با بازگشت خودکار به تصویر اصلی در صورت خالی بودن image_en
   const displayImage = isEn ? (post.image_en || post.image) : post.image;
+
+  const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat.shop';
+  const pageUrl = `${siteUrl}/${locale}/blog/${decodedSlug}`;
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -106,43 +118,59 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 font-[family-name:var(--font-vazir)]">
-      
+
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      {/* 1. Header Image */}
-      <div className="relative h-[300px] md:h-[450px] w-full bg-gray-900">
+      {/* 1. Header Image — بدون کراپ. کل عکس (حتی کشیده/عریض) همیشه کامل دیده می‌شود،
+          چون به‌جای object-cover روی یک باکس با ارتفاع ثابت، اینجا از یک لایه‌ی
+          بلورشده به‌عنوان پس‌زمینه + خود عکس با object-contain استفاده شده */}
+      <div className="relative w-full h-[240px] sm:h-[320px] md:h-[420px] lg:h-[480px] bg-gray-900 overflow-hidden">
         {displayImage ? (
-          <img 
-            src={displayImage} 
-            alt={displayTitle} 
-            className="w-full h-full object-cover opacity-60"
-          />
+          <>
+            {/* پس‌زمینه: نسخه‌ی بلورشده‌ی همون عکس، برای پر کردن فضای خالی اطراف
+                بدون نوار سیاه زشت */}
+            <img
+              src={displayImage}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl brightness-75"
+            />
+            <div className="absolute inset-0 bg-black/10" />
+            {/* لایه‌ی اصلی: کل عکس با object-contain — هیچ‌وقت از بالا/پایین یا
+                چپ/راست بریده نمی‌شود، فارغ از نسبت ابعادش */}
+            <div className="absolute inset-0 p-3 sm:p-6 md:p-8">
+              <img
+                src={displayImage}
+                alt={displayTitle}
+                className="w-full h-full object-contain rounded-xl md:rounded-2xl shadow-2xl"
+              />
+            </div>
+          </>
         ) : (
-          <div className="w-full h-full flex items-center justify-center opacity-20">
+          <div className="absolute inset-0 flex items-center justify-center opacity-20">
              <span className="text-6xl font-black text-white">BLOG</span>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent" />
-        
-        <div className="absolute bottom-0 left-0 right-0 p-6 md:p-12 container mx-auto">
-            {displayCategory && (
-                <span className="inline-flex items-center gap-1 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold mb-4">
-                     <Folder className="h-3 w-3" /> {displayCategory}
-                </span>
-            )}
-            <h1 className="text-3xl md:text-5xl font-extrabold text-white leading-tight drop-shadow-lg max-w-4xl" dir={isEn ? 'ltr' : 'rtl'}>
-                {displayTitle}
-            </h1>
-        </div>
       </div>
 
       {/* 2. Main Content */}
       <div className="container mx-auto px-4 relative z-10 -mt-10">
         <div className="bg-white rounded-3xl shadow-xl p-6 md:p-12 max-w-4xl mx-auto border border-gray-100">
-          
+
+          {/* عنوان و دسته‌بندی حالا داخل کارت سفید و در جریان عادی صفحه هستند
+              (دیگه روی عکس اورلی نمی‌شن)، پس توی هیچ سایزی زیر چیزی گم یا بریده نمی‌شن */}
+          {displayCategory && (
+              <span className="inline-flex items-center gap-1 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold mb-4">
+                   <Folder className="h-3 w-3" /> {displayCategory}
+              </span>
+          )}
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-extrabold text-gray-900 leading-tight mb-6" dir={isEn ? 'ltr' : 'rtl'}>
+              {displayTitle}
+          </h1>
+
           <div className="flex flex-wrap items-center gap-6 text-gray-500 text-sm font-medium mb-10 pb-6 border-b border-gray-100" dir={isEn ? 'ltr' : 'rtl'}>
             <span className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-blue-500" />
@@ -153,7 +181,7 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
               {t('author')}
             </span>
           </div>
-          
+
           <article className="max-w-none" dir={isEn ? 'ltr' : 'rtl'}>
              <PostContent content={displayContent} dir={isEn ? 'ltr' : 'rtl'} />
           </article>
@@ -172,6 +200,13 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
                 </div>
             </div>
           )}
+
+          {/* اشتراک‌گذاری — چون عنوان/توضیحات/عکس/تگ‌ها بالاتر توی Open Graph
+              ست شدن، وقتی فقط لینک شِر بشه، خودِ شبکه‌ی اجتماعی این‌ها رو خودکار
+              از صفحه می‌خونه؛ نیازی به تایپ دستی متن یا تایتل نیست */}
+          <div className="mt-10 pt-8 border-t border-gray-100">
+            <ShareButtons url={pageUrl} title={displayTitle} isEn={isEn} />
+          </div>
 
           <div className="mt-10" dir={isEn ? 'ltr' : 'rtl'}>
              <Link href="/blog" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-bold transition-colors group">
