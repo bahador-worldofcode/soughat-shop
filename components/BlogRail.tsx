@@ -33,7 +33,7 @@ export default async function BlogRail() {
   const durationSec = Math.max(22, Math.round(railPosts.length * 3.5));
 
   return (
-    <section className="relative py-14 md:py-20 bg-gradient-to-b from-white to-blue-50/40 border-t border-gray-100 overflow-hidden font-[family-name:var(--font-vazir)]">
+    <section className="relative w-full max-w-full py-14 md:py-20 bg-gradient-to-b from-white to-blue-50/40 border-t border-gray-100 overflow-x-hidden font-[family-name:var(--font-vazir)]">
       <div className="container mx-auto px-4 mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
@@ -53,12 +53,18 @@ export default async function BlogRail() {
       </div>
 
       {/* ریل قطاری — یک نوار افقی که کارت‌ها روش پیوسته و بی‌نهایت حرکت می‌کنن */}
-      <div className="relative soughat-blog-rail">
+      {/* نکته‌ی مهم رفع باگ: این دیو الان هم overflow-hidden و هم w-full/max-w-full
+          داره (قبلاً فقط "relative" بود). به‌علاوه "contain: layout paint" توی
+          استایل پایین، یه مرز سخت‌گیرانه می‌سازه که هیچ‌چیز داخلش — نه در چیدمان
+          و نه در رندر — از این باکس بیرون نمی‌زنه. این دقیقاً همون چیزیه که روی
+          موبایل نبود و باعث می‌شد ریل از سمت چپ از کادر صفحه خارج بشه و صفحه
+          به‌صورت افقی قابل‌اسکرول شه. */}
+      <div className="relative w-full max-w-full overflow-hidden soughat-blog-rail">
         {/* محو شدن لبه‌ها، برای حس حرفه‌ای‌تر (کارت‌ها انگار از دل صفحه میان و میرن) */}
         <div className="pointer-events-none absolute inset-y-0 left-0 w-10 sm:w-24 md:w-32 bg-gradient-to-r from-blue-50/60 md:from-white to-transparent z-10" />
         <div className="pointer-events-none absolute inset-y-0 right-0 w-10 sm:w-24 md:w-32 bg-gradient-to-l from-blue-50/60 md:from-white to-transparent z-10" />
 
-        <div className="overflow-hidden">
+        <div className="overflow-hidden w-full max-w-full">
           <div
             dir="ltr"
             className="flex gap-5 md:gap-6 w-max blog-rail-track"
@@ -117,13 +123,20 @@ export default async function BlogRail() {
 
       <style>{`
         @keyframes soughatBlogRailScroll {
-          from { transform: translateX(0); }
-          to { transform: translateX(-50%); }
+          from { transform: translate3d(0, 0, 0); }
+          to { transform: translate3d(-50%, 0, 0); }
+        }
+        .soughat-blog-rail {
+          /* مرز سخت‌گیرانه‌ی چیدمان/رندر — نمی‌گذارد ترک داخلی روی هیچ مرورگری
+             (به‌خصوص موبایل) از این باکس بیرون بزند یا روی عرض صفحه اثر بگذارد. */
+          contain: layout paint;
         }
         .blog-rail-track {
           animation-name: soughatBlogRailScroll;
           animation-timing-function: linear;
           animation-iteration-count: infinite;
+          will-change: transform;
+          backface-visibility: hidden;
         }
         .soughat-blog-rail:hover .blog-rail-track {
           animation-play-state: paused;
