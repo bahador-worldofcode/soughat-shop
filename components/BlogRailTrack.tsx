@@ -78,6 +78,14 @@ export default function BlogRailTrack({
     let rafId: number;
     let lastTime: number | null = null;
 
+    // جهت حرکت ریل: چون trackRef همیشه با dir="ltr"/"rtl" پویا رندر می‌شود،
+    // در حالت LTR، setA سمت چپ و setB سمت راستِ آن قرار می‌گیرد، پس برای
+    // اینکه setB وارد کادر شود باید ریل به چپ (مقدار منفی) حرکت کند.
+    // در حالت RTL، جهت داخلی ریل با dir="rtl" برعکس می‌شود: setB سمت چپِ
+    // setA قرار می‌گیرد، پس برای اینکه setB وارد کادر شود، ریل باید به
+    // راست (مقدار مثبت) حرکت کند.
+    const direction = isEn ? -1 : 1;
+
     const step = (time: number) => {
       if (lastTime === null) lastTime = time;
       const deltaSec = (time - lastTime) / 1000;
@@ -88,7 +96,7 @@ export default function BlogRailTrack({
         // نقطه‌ی چرخ‌وفلک: به‌جای اینکه به انتها برسه و بایسته، همین که به
         // اندازه‌ی یک ست کامل جلو رفت، بی هیچ پرشی برمی‌گرده به صفر
         offsetRef.current = offsetRef.current % singleSetWidthRef.current;
-        track.style.transform = `translate3d(${-offsetRef.current}px, 0, 0)`;
+        track.style.transform = `translate3d(${offsetRef.current * direction}px, 0, 0)`;
       }
 
       rafId = requestAnimationFrame(step);
@@ -101,7 +109,7 @@ export default function BlogRailTrack({
       resizeObserver.disconnect();
       window.removeEventListener('resize', measure);
     };
-  }, [reducedMotion]);
+  }, [reducedMotion, isEn]);
 
   // رندر یک کارت — هم برای «ست اصلی» و هم برای «ست کپی» ازش استفاده می‌کنیم
   const renderCard = (post: RailPost, idx: number, isDuplicateSet: boolean) => {
@@ -169,7 +177,7 @@ export default function BlogRailTrack({
             از روی صفحه اندازه بگیریم (توضیح کامل در useEffect بالا). */}
         <div
           ref={trackRef}
-          dir="ltr"
+          dir={isEn ? 'ltr' : 'rtl'}
           className="flex gap-5 md:gap-6 w-max"
           style={{ willChange: 'transform' }}
         >
