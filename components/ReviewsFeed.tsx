@@ -5,42 +5,67 @@ import { supabase } from '@/lib/supabase';
 import { Star, Package, User, Reply, Loader2 } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 
+// ⚠️ این عدد باید همیشه دقیقاً با REVIEWS_BATCH_SIZE داخل
+// app/[locale]/(home)/page.tsx یکی باشد. اگر یکی را عوض کردی، آن یکی
+// را هم عوض کن؛ وگرنه شماره‌گذاری صفحه‌بندی (offset) به‌هم می‌ریزد.
 const BATCH_SIZE = 6;
 
-export default function ReviewsFeed() {
+interface ReviewsFeedProps {
+  /**
+   * دسته‌ی اول نظرات که از سرور (Server Component) آماده رسیده.
+   * وقتی این پر باشد، دیگر لازم نیست مرورگر همان دسته‌ی اول را دوباره
+   * از سوپابیس بگیرد — و مهم‌تر: HTML خامی که به گوگل/ربات‌های هوش
+   * مصنوعی فرستاده می‌شود از همان اول شامل متن نظرات است، نه یک
+   * آیکون در حال چرخش.
+   */
+  initialReviews?: any[];
+  /** آیا احتمالاً بعد از این دسته‌ی اول، نظر بیشتری هم برای لود کردن هست؟ */
+  initialHasMore?: boolean;
+}
+
+export default function ReviewsFeed({
+  initialReviews = [],
+  initialHasMore = true,
+}: ReviewsFeedProps) {
   const t = useTranslations('Home');
   const locale = useLocale();
   const isEn = locale === 'en';
 
-  const [reviews, setReviews] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [reviews, setReviews] = useState<any[]>(initialReviews);
+  // اگر سرور از قبل نظرات را فرستاده باشد، دیگر نیازی به نمایش لودینگ نیست.
+  const [loading, setLoading] = useState(initialReviews.length === 0);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState(initialHasMore);
 
   const observer = useRef<IntersectionObserver | null>(null);
 
   const lastReviewElementRef = useCallback((node: HTMLDivElement) => {
     if (loading || loadingMore) return;
     if (observer.current) observer.current.disconnect();
-    
+
     observer.current = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting && hasMore) {
-        fetchReviews(false);
+        fetchReviews();
       }
     });
-    
+
     if (node) observer.current.observe(node);
   }, [loading, loadingMore, hasMore]);
 
+  // این فقط برای حالت پشتیبان (fallback) است: اگر به هر دلیلی سرور
+  // نتوانست نظرات را از قبل بفرستد (initialReviews خالی بود)، همینجا
+  // در مرورگر دسته‌ی اول را می‌گیریم — دقیقاً مثل قبل.
   useEffect(() => {
-    fetchReviews(true);
+    if (initialReviews.length === 0) {
+      fetchReviews();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fetchReviews = async (isInitial = true) => {
-    if (isInitial) setLoading(true);
+  const fetchReviews = async () => {
+    const currentOffset = reviews.length;
+    if (currentOffset === 0) setLoading(true);
     else setLoadingMore(true);
-
-    const currentOffset = isInitial ? 0 : reviews.length;
 
     const { data } = await supabase
       .from('reviews')
@@ -51,9 +76,9 @@ export default function ReviewsFeed() {
 
     if (data) {
       if (data.length < BATCH_SIZE) setHasMore(false);
-      setReviews(prev => isInitial ? data : [...prev, ...data]);
+      setReviews(prev => [...prev, ...data]);
     }
-    
+
     setLoading(false);
     setLoadingMore(false);
   };

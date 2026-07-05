@@ -14,6 +14,11 @@ import { getTranslations } from 'next-intl/server';
 
 export const revalidate = 60;
 
+// ⚠️ این عدد باید همیشه دقیقاً با BATCH_SIZE داخل components/ReviewsFeed.tsx
+// یکی باشد (همون تعداد نظری که هر بار لود می‌شود). اگر یکی را عوض کردی،
+// آن یکی را هم عوض کن.
+const REVIEWS_BATCH_SIZE = 6;
+
 export default async function Home({
   params
 }: {
@@ -63,6 +68,79 @@ export default async function Home({
 
   const heroTitle = isEn ? (settings['hero_title_en'] || settings['hero_title']) : settings['hero_title'];
   const heroSubtitle = isEn ? (settings['hero_subtitle_en'] || settings['hero_subtitle']) : settings['hero_subtitle'];
+
+  // ================================================================
+  // 🆕 نظرات مشتریان — حالا دسته‌ی اول همینجا (سمت سرور) خوانده می‌شود،
+  // نه فقط داخل مرورگر بعد از لود صفحه. با این تغییر:
+  //  ۱) گوگل و ربات‌های هوش مصنوعی که جاوااسکریپت اجرا نمی‌کنند
+  //     (مثل ChatGPT، Perplexity و بسیاری خزنده‌های دیگر) هم متن
+  //     واقعی نظرات مشتریان را در HTML خام صفحه می‌بینند، نه یک
+  //     آیکون در حال چرخش.
+  //  ۲) یک AggregateRating (میانگین امتیاز) به‌صورت داده‌ی ساخت‌یافته
+  //     (JSON-LD) به گوگل و موتورهای جست‌وجوی هوش مصنوعی داده می‌شود؛
+  //     همان چیزی که باعث نمایش ستاره‌ی امتیاز کنار نتیجه‌ی گوگل
+  //     می‌شود و به‌عنوان یک سیگنال اعتماد (Trust Signal) برای
+  //     خلاصه‌سازهای هوش مصنوعی هم عمل می‌کند.
+  // «بارگذاری بیشتر» (اسکرول بی‌نهایت، بعد از دسته‌ی اول) هنوز کاملاً
+  // داخل مرورگر و سمت کلاینت انجام می‌شود — این بخش دینامیک و
+  // کم‌اهمیت‌تر برای سئو باقی می‌ماند، دقیقاً طبق همان منطق قبلی.
+  // ================================================================
+  const { data: initialReviews } = await supabase
+    .from('reviews')
+    .select('*')
+    .eq('is_approved', true)
+    .order('created_at', { ascending: false })
+    .range(0, REVIEWS_BATCH_SIZE - 1);
+
+  // فقط ستون rating را برای همه‌ی نظرات تاییدشده می‌گیریم (سبک و سریع)
+  // تا میانگین امتیاز و تعداد کل نظرات محاسبه شود. اگر یک روز تعداد
+  // نظرات خیلی زیاد شد (چند هزارتا)، بهتره این محاسبه با یک RPC/View
+  // داخل خود دیتابیس سوپابیس انجام بشه؛ فعلاً برای حجم فعلی سایت این
+  // روش کاملاً کافی و سبک است.
+  const { data: allApprovedRatings } = await supabase
+    .from('reviews')
+    .select('rating')
+    .eq('is_approved', true);
+
+  const reviewCount = allApprovedRatings?.length || 0;
+  const averageRating = allApprovedRatings && allApprovedRatings.length > 0
+    ? allApprovedRatings.reduce((sum, r) => sum + (r.rating || 0), 0) / allApprovedRatings.length
+    : 0;
+
+  const reviewsInitialHasMore = (initialReviews?.length || 0) === REVIEWS_BATCH_SIZE;
+
+  const reviewsJsonLd = reviewCount > 0 ? {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Soughat Shop',
+    url: 'https://soughat.shop',
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: averageRating.toFixed(1),
+      reviewCount: reviewCount,
+      bestRating: '5',
+      worstRating: '1',
+    },
+    review: (initialReviews || []).slice(0, 5).map((r: any) => ({
+      '@type': 'Review',
+      author: { '@type': 'Person', name: r.sender_name || 'مشتری' },
+      reviewRating: {
+        '@type': 'Rating',
+        ratingValue: r.rating,
+        bestRating: '5',
+        worstRating: '1',
+      },
+      reviewBody: r.comment,
+      datePublished: r.created_at,
+    })),
+  } : null;
+
+  // چون متن نظرات را خود مشتری می‌نویسد (نه ادمین، برخلاف محتوای بلاگ)،
+  // قبل از تزریق به تگ <script>، هر دنباله‌ی "</script>" را بی‌خطر
+  // می‌کنیم تا هیچ متن نظری نتواند از تگ اسکریپت خارج شده و کد اجرا کند.
+  const reviewsJsonLdString = reviewsJsonLd
+    ? JSON.stringify(reviewsJsonLd).replace(/<\/script/gi, '<\\/script')
+    : null;
 
   return (
     <main className="flex flex-col min-h-screen font-[family-name:var(--font-vazir)] bg-gray-50/50">
@@ -233,6 +311,18 @@ export default async function Home({
       <LazySection minHeight={500}>
         <section className="bg-gradient-to-br from-slate-900 to-blue-900 py-16 mt-12">
           <div className="container mx-auto px-4">
+
+            {/* 🆕 داده‌ی ساخت‌یافته (JSON-LD): میانگین امتیاز + چند نمونه نظر،
+                برای گوگل و موتورهای هوش مصنوعی. چیزی که کاربر روی صفحه
+                می‌بیند هیچ تغییری نمی‌کند — این فقط یک لایه‌ی نامرئی
+                اضافه‌ست. */}
+            {reviewsJsonLdString && (
+              <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: reviewsJsonLdString }}
+              />
+            )}
+
             <div className="text-center mb-12">
               <h2 className="text-3xl font-black text-white mb-4">
                 {t('reviews_title')}
@@ -245,7 +335,10 @@ export default async function Home({
               </Link>
             </div>
 
-            <ReviewsFeed />
+            <ReviewsFeed
+              initialReviews={initialReviews || []}
+              initialHasMore={reviewsInitialHasMore}
+            />
             
           </div>
         </section>
