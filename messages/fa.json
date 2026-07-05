@@ -95,7 +95,10 @@
   },
   "ProductCard": {
     "instant_delivery": "ارسال فوری به تهران و شهرستان‌ها",
-    "final_price": "قیمت نهایی"
+    "final_price": "قیمت نهایی",
+    "add_to_cart": "افزودن به سبد خرید",
+    "increase_quantity": "افزایش تعداد",
+    "decrease_quantity": "کاهش تعداد"
   },
   "CurrencyBanner": {
     "title": "تابلوی شفافیت نرخ ارز",

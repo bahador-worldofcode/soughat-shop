@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus } from 'lucide-react';
+import { Plus, Minus, Trash2 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useEffect, useState } from 'react';
 import { Link } from '@/i18n/navigation'; 
@@ -48,6 +48,18 @@ export default function ProductCard({ id, title, title_en, price, image, slug, p
   const convertPrice = useStore((s) => s.convertPrice);
   const getSymbol = useStore((s) => s.getSymbol);
   const addToCart = useStore((s) => s.addToCart);
+  const decreaseFromCart = useStore((s) => s.decreaseFromCart);
+
+  // 🔧 رفع باگ اصلی این تغییرات: قبلاً این کارت هیچ ایده‌ای از تعداد این
+  // محصول در سبد خرید نداشت، برای همین همیشه فقط یک دکمه‌ی «+» ثابت نشان
+  // می‌داد؛ حتی اگر کاربر چند بار روی آن زده بود. با یک سلکتور جدا فقط
+  // quantity همین آیتم (نه کل آرایه‌ی cart) از استور خوانده می‌شود؛ یعنی:
+  //  ۱) با اضافه/کم‌شدنِ همین محصول، خودِ همین کارت بلافاصله ری‌رندر و آیکون
+  //     درست (پلاس/مینوس + تعداد) را نشان می‌دهد.
+  //  ۲) با تغییرِ محصولات دیگر در سبد، این کارت (چون quantity خودش عوض
+  //     نشده) دوباره بی‌دلیل ری‌رندر نمی‌شود.
+  const quantity = useStore((s) => s.cart.find((item) => item.id === id)?.quantity ?? 0);
+
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -61,8 +73,20 @@ export default function ProductCard({ id, title, title_en, price, image, slug, p
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     addToCart({ id, title, title_en, price, image, pricing_type, weight });
   };
+
+  const handleDecrease = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    decreaseFromCart(id);
+  };
+
+  // آیا این محصول همین الان توی سبد خریدِ کاربر هست؟ (فقط بعد از mount شدن
+  // در کلاینت این را حساب می‌کنیم تا با نسخه‌ی سرور یکی باشد و React خطای
+  // hydration ندهد)
+  const inCart = mounted && quantity > 0;
 
   return (
     <div
@@ -105,13 +129,41 @@ export default function ProductCard({ id, title, title_en, price, image, slug, p
               )}
             </span>
           </div>
-          
-          <button 
-            onClick={handleAddToCart}
-            className="flex h-9 w-9 md:h-10 md:w-10 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-white transition-colors hover:bg-blue-700 shadow-lg active:scale-95 cursor-pointer z-10"
-          >
-            <Plus className="h-5 w-5" />
-          </button>
+
+          {/* اگر این محصول از قبل توی سبد خرید باشد، به‌جای دکمه‌ی ثابتِ «+»
+              یک استپر کوچک (کم / تعداد / زیاد) نشان داده می‌شود؛ دقیقاً همان
+              رفتاری که در فروشگاه‌های حرفه‌ای می‌بینید. */}
+          {inCart ? (
+            <div className="flex items-center gap-0.5 h-9 md:h-10 flex-shrink-0 rounded-full bg-gray-50 border border-gray-200 p-1 z-10">
+              <button
+                onClick={handleDecrease}
+                aria-label={t('decrease_quantity')}
+                className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-full bg-white text-gray-600 shadow-sm transition-colors hover:text-red-500 hover:bg-red-50 active:scale-95 cursor-pointer"
+              >
+                {quantity === 1 ? <Trash2 className="h-3.5 w-3.5" /> : <Minus className="h-3.5 w-3.5" />}
+              </button>
+
+              <span className="w-5 text-center font-bold text-gray-800 text-xs md:text-sm tabular-nums">
+                {quantity}
+              </span>
+
+              <button
+                onClick={handleAddToCart}
+                aria-label={t('increase_quantity')}
+                className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm transition-colors hover:bg-blue-700 active:scale-95 cursor-pointer"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button 
+              onClick={handleAddToCart}
+              aria-label={t('add_to_cart')}
+              className="flex h-9 w-9 md:h-10 md:w-10 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-white transition-colors hover:bg-blue-700 shadow-lg active:scale-95 cursor-pointer z-10"
+            >
+              <Plus className="h-5 w-5" />
+            </button>
+          )}
         </div>
       </div>
     </div>

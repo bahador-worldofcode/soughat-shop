@@ -95,7 +95,10 @@
   },
   "ProductCard": {
     "instant_delivery": "Instant delivery to Tehran & Cities",
-    "final_price": "Final Price"
+    "final_price": "Final Price",
+    "add_to_cart": "Add to cart",
+    "increase_quantity": "Increase quantity",
+    "decrease_quantity": "Decrease quantity"
   },
   "CurrencyBanner": {
     "title": "Currency Rate Transparency Board",
