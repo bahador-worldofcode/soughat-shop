@@ -219,6 +219,9 @@ export default function Header() {
             <Link href="/products" className="text-sm font-bold text-gray-600 hover:text-blue-600 transition-colors">
               {t('products')}
             </Link>
+            <Link href="/send-money-to-iran" className="text-sm font-bold text-gray-600 hover:text-blue-600 transition-colors">
+              {t('remit')}
+            </Link>
             <Link href="/track" className="text-sm font-bold text-gray-600 hover:text-blue-600 transition-colors">
               {t('track')}
             </Link>

@@ -12,6 +12,7 @@
     "currency": "Currency",
     "language": "Change Language",
     "review": "Write Review",
+    "remit": "Send Money to Iran",
     "brand": "Soughat Shop",
     "switchingLanguage": "Switching language...",
     "languageChanged": "Language changed to English",
@@ -61,7 +62,8 @@
     "crypto_friendly": "Crypto Friendly",
     "design_by": "Design & Engineering by",
     "review": "Write a Review",
-    "partners": "Partners"
+    "partners": "Partners",
+    "remit": "Send Money to Iran"
   },
   "Home": {
     "hero_start": "Start Shopping",

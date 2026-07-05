@@ -1,4 +1,4 @@
-import { Instagram, Twitter, Mail, Heart, Lock, ShieldCheck, HelpCircle, ShoppingBag, BookOpen, Package, Info, Phone, Code2, Library, Star } from 'lucide-react';
+import { Instagram, Twitter, Mail, Heart, Lock, ShieldCheck, HelpCircle, ShoppingBag, BookOpen, Package, Info, Phone, Code2, Library, Star, DollarSign } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 
@@ -84,6 +84,11 @@ export default function Footer() {
           <div>
             <h3 className="font-bold text-gray-900 mb-4 text-lg">{t('links_access')}</h3>
             <ul className="space-y-3 text-sm text-gray-500 font-medium">
+              <li>
+                <Link href="/send-money-to-iran" className="hover:text-blue-600 hover:pr-2 transition-all flex items-center gap-2">
+                    <DollarSign className="h-4 w-4" /> {t('remit')}
+                </Link>
+              </li>
               <li>
                 <Link href="/how-it-works" className="hover:text-blue-600 hover:pr-2 transition-all flex items-center gap-2">
                     <HelpCircle className="h-4 w-4" /> {t('guide')}

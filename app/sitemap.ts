@@ -22,6 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/blog',
     '/track',
     '/how-it-works',
+    '/send-money-to-iran',
   ];
 
   let sitemapEntries: MetadataRoute.Sitemap = [];

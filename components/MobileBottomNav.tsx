@@ -16,6 +16,7 @@ import {
   Mail,
   Loader2,
   ArrowUpRight,
+  DollarSign,
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useTranslations, useLocale } from 'next-intl';
@@ -27,8 +28,9 @@ import Toast from '@/components/Toast';
 // «تماس با ما» عمداً این‌جا نیست چون به‌صورت یک دکمه‌ی برجسته‌ی جدا رندر می‌شود؛
 // این تصمیم بر این اساس است که «تماس با ما» پرکاربردترین و حیاتی‌ترین اکشن برای
 // کاربری‌ست که با پرداخت ارزی/بین‌مرزی کار می‌کند و بیشترین نیاز به اطمینان‌خاطر را دارد،
-// در حالی که بقیه (وبلاگ، راهنما، ثبت نظر، درباره ما) اکشن‌های کم‌تکرارتر و اطلاعاتی‌اند.
+// در حالی که بقیه (ارسال پول، وبلاگ، راهنما، ثبت نظر، درباره ما) اکشن‌های کم‌تکرارتر و اطلاعاتی‌اند.
 const QUICK_LINKS = [
+  { href: '/send-money-to-iran', key: 'remit', icon: DollarSign },
   { href: '/blog', key: 'blog', icon: BookOpen },
   { href: '/how-it-works', key: 'guide', icon: HelpCircle },
   { href: '/review', key: 'review', icon: Star },
