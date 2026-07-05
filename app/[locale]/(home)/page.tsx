@@ -6,6 +6,7 @@ import FAQ from "@/components/FAQ";
 import HomeSEOContent from "@/components/HomeSEOContent";
 import ReviewsFeed from "@/components/ReviewsFeed"; 
 import LazySection from "@/components/LazySection";
+import BlogRail from "@/components/BlogRail";
 import { supabase } from '@/lib/supabase';
 import { ArrowLeft, Layers, Sparkles, ChevronsRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
@@ -255,9 +256,17 @@ export default async function Home({
         <FAQ />
       </LazySection>
 
-      {/* 8. متن سئوی صفحه اصلی — پایین‌ترین بخش صفحه */}
+      {/* 8. متن سئوی صفحه اصلی */}
       <LazySection minHeight={500}>
         <HomeSEOContent />
+      </LazySection>
+
+      {/* 9. وبلاگ — پایین‌ترین بخش صفحه، درست بالای فوتر.
+          یک نوار افقی از کارت‌های بلاگ که مثل قطار روی ریل، پیوسته و بی‌نهایت
+          حرکت می‌کنند؛ با نگه‌داشتن ماوس روش، حرکت مکث می‌کند تا بشه راحت
+          کلیک کرد و پست مدنظر رو باز کرد. */}
+      <LazySection minHeight={480}>
+        <BlogRail />
       </LazySection>
 
     </main>
