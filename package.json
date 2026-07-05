@@ -8,6 +8,12 @@
     "start": "next start",
     "lint": "next lint"
   },
+  "overrides": {
+    "jsdom": {
+      ".": "25.0.1",
+      "parse5": "7.3.0"
+    }
+  },
   "dependencies": {
     "@google-analytics/data": "^6.1.0",
     "@solana/pay": "^0.2.6",
