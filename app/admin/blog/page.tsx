@@ -2,22 +2,30 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Plus, Trash2, Edit2, Search, X, ImageIcon, Check, BookOpen, Loader2, Tag, Layers, FileText } from 'lucide-react';
+import { Plus, Trash2, Edit2, Search, X, ImageIcon, Check, BookOpen, Loader2, Tag, Layers, FileText, Eye, Code2 } from 'lucide-react';
+import { sanitizePostHtml } from '@/lib/sanitizeHtml';
 
 // --- Types ---
 interface Post {
   id: string;
   title: string;
+  title_en?: string;
   slug: string;
   content: string;
+  content_en?: string;
   image: string;
   image_en?: string;
   created_at: string;
   seo_title?: string;
+  seo_title_en?: string;
   seo_desc?: string;
+  seo_desc_en?: string;
   summary?: string;
+  summary_en?: string;
   category?: string;
+  category_en?: string;
   tags?: string[];
+  tags_en?: string[];
 }
 
 interface CategoryItem {
@@ -37,6 +45,18 @@ interface MediaFile {
 }
 
 const BATCH_SIZE = 20;
+
+const EMPTY_FORM = {
+  title: '', title_en: '',
+  slug: '',
+  content: '', content_en: '',
+  image: '', image_en: '',
+  summary: '', summary_en: '',
+  category: '', category_en: '',
+  seo_title: '', seo_title_en: '',
+  seo_desc: '', seo_desc_en: '',
+  tags: '', tags_en: '',
+};
 
 export default function BlogPage() {
   // --- States ---
@@ -59,10 +79,12 @@ export default function BlogPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
-  const [formData, setFormData] = useState({ 
-    title: '', slug: '', content: '', image: '', image_en: '',
-    summary: '', category: '', seo_title: '', seo_desc: '', tags: ''
-  });
+  const [formData, setFormData] = useState(EMPTY_FORM);
+
+  // ✅ کدام زبان در حال ویرایش است (فارسی یا انگلیسی)
+  const [contentLang, setContentLang] = useState<'fa' | 'en'>('fa');
+  // ✅ نمایش کد HTML خام یا پیش‌نمایش رندر شده‌ی آن
+  const [showPreview, setShowPreview] = useState(false);
 
   // Media Gallery States (Smart Loading)
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
@@ -215,27 +237,33 @@ export default function BlogPage() {
   // --- Post Logic ---
   const openModal = (post?: Post) => {
     const defaultCat = categories.length > 0 ? categories[0].name : '';
-    
+    setContentLang('fa');
+    setShowPreview(false);
+
     if (post) {
       setEditingPost(post);
-      setFormData({ 
-        title: post.title, 
-        slug: post.slug, 
-        content: post.content, 
+      setFormData({
+        title: post.title,
+        title_en: post.title_en || '',
+        slug: post.slug,
+        content: post.content,
+        content_en: post.content_en || '',
         image: post.image,
         image_en: post.image_en || '',
         summary: post.summary || '',
+        summary_en: post.summary_en || '',
         category: post.category || defaultCat,
+        category_en: post.category_en || '',
         seo_title: post.seo_title || '',
+        seo_title_en: post.seo_title_en || '',
         seo_desc: post.seo_desc || '',
-        tags: post.tags ? post.tags.join(', ') : '' 
+        seo_desc_en: post.seo_desc_en || '',
+        tags: post.tags ? post.tags.join(', ') : '',
+        tags_en: post.tags_en ? post.tags_en.join(', ') : '',
       });
     } else {
       setEditingPost(null);
-      setFormData({ 
-        title: '', slug: '', content: '', image: '', image_en: '',
-        summary: '', category: defaultCat, seo_title: '', seo_desc: '', tags: '' 
-      });
+      setFormData({ ...EMPTY_FORM, category: defaultCat });
     }
     setIsModalOpen(true);
   };
@@ -249,17 +277,26 @@ export default function BlogPage() {
         finalSlug = formData.title.trim().toLowerCase().replace(/\s+/g, '-');
       }
       const tagsArray = formData.tags.split(',').map(t => t.trim()).filter(t => t !== '');
-      const postData = { 
+      const tagsEnArray = formData.tags_en.split(',').map(t => t.trim()).filter(t => t !== '');
+
+      const postData = {
         title: formData.title,
+        title_en: formData.title_en || null,
         slug: finalSlug,
         content: formData.content,
+        content_en: formData.content_en || null,
         image: formData.image,
         image_en: formData.image_en || null,
         summary: formData.summary,
+        summary_en: formData.summary_en || null,
         category: formData.category,
+        category_en: formData.category_en || null,
         seo_title: formData.seo_title,
+        seo_title_en: formData.seo_title_en || null,
         seo_desc: formData.seo_desc,
-        tags: tagsArray
+        seo_desc_en: formData.seo_desc_en || null,
+        tags: tagsArray,
+        tags_en: tagsEnArray,
       };
       if (editingPost) {
         const { error } = await supabase.from('posts').update(postData).eq('id', editingPost.id);
@@ -318,6 +355,15 @@ export default function BlogPage() {
     fetchMedia(true);
   };
   const selectImage = (url: string) => { setFormData({ ...formData, [galleryTarget]: url }); setIsGalleryOpen(false); };
+
+  // --- کمک‌کننده‌های دوزبانه (فارسی/انگلیسی) برای فیلدهای محتوا ---
+  const contentField = contentLang === 'fa' ? 'content' : 'content_en';
+  const titleField = contentLang === 'fa' ? 'title' : 'title_en';
+  const summaryField = contentLang === 'fa' ? 'summary' : 'summary_en';
+  const seoTitleField = contentLang === 'fa' ? 'seo_title' : 'seo_title_en';
+  const seoDescField = contentLang === 'fa' ? 'seo_desc' : 'seo_desc_en';
+  const tagsField = contentLang === 'fa' ? 'tags' : 'tags_en';
+  const categoryField = contentLang === 'fa' ? 'category' : 'category_en';
 
   if (loadingPosts && posts.length === 0) return <div className="p-10 text-center flex justify-center"><Loader2 className="animate-spin h-8 w-8 text-blue-600" /></div>;
 
@@ -387,7 +433,7 @@ export default function BlogPage() {
                                         {post.category}
                                     </span>
                                 )}
-                                {post.image_en && (
+                                {(post.image_en || post.title_en || post.content_en) && (
                                     <span className="absolute bottom-2 left-2 bg-blue-600/90 text-white text-[10px] px-2 py-1 rounded backdrop-blur-sm">
                                         EN ✓
                                     </span>
@@ -468,37 +514,89 @@ export default function BlogPage() {
                <h3 className="text-lg font-bold text-gray-900">{editingPost ? 'ویرایش مقاله' : 'نوشتن مقاله جدید'}</h3>
               <button onClick={() => setIsModalOpen(false)}><X className="h-5 w-5 text-gray-400 hover:text-red-500" /></button>
             </div>
-            
+
             <form onSubmit={handleSavePost} className="p-6 overflow-y-auto flex-1 space-y-8">
+
+              {/* آدرس (Slug) - مشترک بین دو زبان چون هر دو نسخه از یک آدرس با پیشوند fa/en استفاده می‌کنند */}
+              <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">آدرس (Slug) — مشترک برای هر دو زبان</label>
+                  <input type="text" className="w-full p-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500 dir-ltr text-left" value={formData.slug} onChange={(e) => setFormData({...formData, slug: e.target.value})} placeholder="send-pistachio-iran" />
+              </div>
+
+              {/* سوییچ زبان: از اینجا به بعد، عنوان/دسته/خلاصه/محتوا/سئو/تگ‌ها بسته به زبان انتخابی نمایش داده می‌شوند */}
+              <div className="flex items-center justify-between flex-wrap gap-2 bg-blue-50/60 border border-blue-100 rounded-xl p-3">
+                  <div className="flex items-center gap-2 bg-white p-1 rounded-lg border border-gray-200">
+                      <button
+                          type="button"
+                          onClick={() => setContentLang('fa')}
+                          className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${contentLang === 'fa' ? 'bg-blue-600 text-white shadow' : 'text-gray-600 hover:bg-gray-50'}`}
+                      >
+                          🇮🇷 فارسی
+                      </button>
+                      <button
+                          type="button"
+                          onClick={() => setContentLang('en')}
+                          className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${contentLang === 'en' ? 'bg-blue-600 text-white shadow' : 'text-gray-600 hover:bg-gray-50'}`}
+                      >
+                          🇬🇧 English
+                      </button>
+                  </div>
+                  <p className="text-[11px] text-gray-500 max-w-md">
+                      نسخه‌ی انگلیسی اختیاری است؛ اگر خالی بماند، برای بازدیدکننده‌ی انگلیسی‌زبان همان نسخه‌ی فارسی نمایش داده می‌شود.
+                  </p>
+              </div>
+
               {/* بخش ۱: اطلاعات اصلی */}
               <div className="space-y-4">
                  <h4 className="font-bold text-blue-800 text-sm border-b pb-2 flex items-center gap-2">
-                    <BookOpen className="h-4 w-4"/> ۱. اطلاعات اصلی
+                    <BookOpen className="h-4 w-4"/> ۱. اطلاعات اصلی ({contentLang === 'fa' ? 'فارسی' : 'English'})
                  </h4>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
                         <label className="block text-xs font-bold text-gray-700 mb-1">عنوان مقاله (H1)</label>
-                        <input type="text" required className="w-full p-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} placeholder="مثال: راهنمای جامع ارسال پسته" />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1">آدرس (Slug)</label>
-                        <input type="text" className="w-full p-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500 dir-ltr text-left" value={formData.slug} onChange={(e) => setFormData({...formData, slug: e.target.value})} placeholder="send-pistachio-iran" />
+                        <input
+                            type="text"
+                            required={contentLang === 'fa'}
+                            dir={contentLang === 'en' ? 'ltr' : 'rtl'}
+                            className="w-full p-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500"
+                            value={formData[titleField]}
+                            onChange={(e) => setFormData({...formData, [titleField]: e.target.value})}
+                            placeholder={contentLang === 'fa' ? 'مثال: راهنمای جامع ارسال پسته' : 'e.g. Complete Guide to Sending Pistachios'}
+                        />
                     </div>
                     <div>
                          <label className="block text-xs font-bold text-gray-700 mb-1">دسته‌بندی</label>
-                        <select 
-                            className="w-full p-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500 bg-white"
-                            value={formData.category}
-                            onChange={(e) => setFormData({...formData, category: e.target.value})}
-                        >
-                             {categories.map((cat) => (
-                                <option key={cat.id} value={cat.name}>{cat.name}</option>
-                            ))}
-                        </select>
+                         {contentLang === 'fa' ? (
+                            <select
+                                className="w-full p-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500 bg-white"
+                                value={formData.category}
+                                onChange={(e) => setFormData({...formData, category: e.target.value})}
+                            >
+                                 {categories.map((cat) => (
+                                    <option key={cat.id} value={cat.name}>{cat.name}</option>
+                                ))}
+                            </select>
+                         ) : (
+                            <input
+                                type="text"
+                                dir="ltr"
+                                className="w-full p-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500"
+                                value={formData.category_en}
+                                onChange={(e) => setFormData({...formData, category_en: e.target.value})}
+                                placeholder="e.g. General (optional, free text)"
+                            />
+                         )}
                     </div>
                    <div className="md:col-span-2">
                         <label className="block text-xs font-bold text-gray-700 mb-1">خلاصه‌ی مقاله (چکیده)</label>
-                        <textarea rows={2} className="w-full p-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500 resize-none" value={formData.summary} onChange={(e) => setFormData({...formData, summary: e.target.value})} placeholder="یک متن کوتاه ۲-۳ خطی..." />
+                        <textarea
+                            rows={2}
+                            dir={contentLang === 'en' ? 'ltr' : 'rtl'}
+                            className="w-full p-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500 resize-none"
+                            value={formData[summaryField]}
+                            onChange={(e) => setFormData({...formData, [summaryField]: e.target.value})}
+                            placeholder={contentLang === 'fa' ? 'یک متن کوتاه ۲-۳ خطی...' : 'A short 2-3 line summary...'}
+                        />
                    </div>
                  </div>
               </div>
@@ -506,12 +604,56 @@ export default function BlogPage() {
               {/* بخش ۲: محتوا و تصاویر */}
               <div className="space-y-4">
                  <h4 className="font-bold text-blue-800 text-sm border-b pb-2 flex items-center gap-2">
-                    <FileText className="h-4 w-4"/> ۲. محتوا و تصاویر
+                    <FileText className="h-4 w-4"/> ۲. محتوا و تصاویر ({contentLang === 'fa' ? 'فارسی' : 'English'})
                  </h4>
+
+                 {/* راهنمای تگ‌های HTML مجاز */}
+                 <details className="text-xs bg-blue-50 border border-blue-100 rounded-lg p-3 text-gray-700">
+                    <summary className="cursor-pointer font-bold text-blue-700 select-none">
+                       راهنمای نوشتن محتوا با HTML (برای رنگ، بولد و لینک) — کلیک کنید
+                    </summary>
+                    <ul className="mt-2 space-y-1.5 list-disc pr-4 dir-ltr text-left" dir="ltr">
+                        <li><code className="bg-white px-1 rounded border">&lt;p&gt;متن پاراگراف&lt;/p&gt;</code> — یک پاراگراف تازه</li>
+                        <li><code className="bg-white px-1 rounded border">&lt;b&gt;متن پررنگ&lt;/b&gt;</code> — بولد</li>
+                        <li><code className="bg-white px-1 rounded border">&lt;span style="color:#e11d48;"&gt;متن رنگی&lt;/span&gt;</code> — رنگی کردن متن</li>
+                        <li><code className="bg-white px-1 rounded border">&lt;a href="/fa/products/gaz-kermani"&gt;مشاهده محصول&lt;/a&gt;</code> — لینک به صفحه‌ی دیگر سایت</li>
+                        <li><code className="bg-white px-1 rounded border">&lt;h2&gt;عنوان بخش&lt;/h2&gt;</code> — تیتر (h2, h3, h4 هم پشتیبانی می‌شود)</li>
+                        <li><code className="bg-white px-1 rounded border">&lt;ul&gt;&lt;li&gt;مورد اول&lt;/li&gt;&lt;/ul&gt;</code> — لیست</li>
+                    </ul>
+                    <p className="mt-2 text-gray-500 dir-rtl text-right" dir="rtl">
+                        فقط تگ‌ها و ویژگی‌های امن رندر می‌شوند؛ کدهای مخرب مثل اسکریپت به‌طور خودکار حذف می‌شوند. برای دیدن نتیجه، از دکمه‌ی «پیش‌نمایش» زیر استفاده کنید.
+                    </p>
+                 </details>
+
                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div className="md:col-span-2">
-                        <label className="block text-xs font-bold text-gray-700 mb-1">متن مقاله</label>
-                        <textarea required className="w-full h-64 p-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500 resize-none" value={formData.content} onChange={(e) => setFormData({...formData, content: e.target.value})} placeholder="متن خود را اینجا بنویسید..." />
+                        <div className="flex items-center justify-between mb-1">
+                            <label className="block text-xs font-bold text-gray-700">متن مقاله (کد HTML)</label>
+                            <button
+                                type="button"
+                                onClick={() => setShowPreview(p => !p)}
+                                className="flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-800"
+                            >
+                                {showPreview ? <><Code2 className="h-3.5 w-3.5" /> نمایش کد</> : <><Eye className="h-3.5 w-3.5" /> پیش‌نمایش</>}
+                            </button>
+                        </div>
+
+                        {showPreview ? (
+                            <div
+                                className="post-content w-full h-64 p-3 rounded-lg border border-gray-300 overflow-y-auto bg-white text-sm"
+                                dir={contentLang === 'en' ? 'ltr' : 'rtl'}
+                                dangerouslySetInnerHTML={{ __html: sanitizePostHtml(formData[contentField]) || '<p class="text-gray-400">چیزی برای پیش‌نمایش نوشته نشده...</p>' }}
+                            />
+                        ) : (
+                            <textarea
+                                required={contentLang === 'fa'}
+                                dir="ltr"
+                                className="w-full h-64 p-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500 resize-none font-mono text-xs leading-6"
+                                value={formData[contentField]}
+                                onChange={(e) => setFormData({...formData, [contentField]: e.target.value})}
+                                placeholder={'<p>متن خود را اینجا بنویسید...</p>\n<p><b>پررنگ</b> و <span style="color:#e11d48;">رنگی</span> و <a href="/fa/products/xyz">لینک</a> هم می‌توانید اضافه کنید.</p>'}
+                            />
+                        )}
                     </div>
 
                     {/* تصویر شاخص (فارسی) */}
@@ -557,28 +699,51 @@ export default function BlogPage() {
               {/* بخش ۳: سئو */}
               <div className="bg-gray-50 p-4 rounded-xl space-y-4 border border-gray-200">
                  <h4 className="font-bold text-gray-800 text-sm border-b border-gray-200 pb-2 flex items-center gap-2">
-                    <Search className="h-4 w-4"/> ۳. تنظیمات سئو
+                    <Search className="h-4 w-4"/> ۳. تنظیمات سئو ({contentLang === 'fa' ? 'فارسی' : 'English'})
                  </h4>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
                         <label className="block text-xs font-bold text-gray-500 mb-1">عنوان سئو</label>
-                        <input type="text" className="w-full p-2 rounded border border-gray-300 text-sm" value={formData.seo_title} onChange={(e) => setFormData({...formData, seo_title: e.target.value})} placeholder="عنوان گوگل (۶۰ کاراکتر)" />
+                        <input
+                            type="text"
+                            dir={contentLang === 'en' ? 'ltr' : 'rtl'}
+                            className="w-full p-2 rounded border border-gray-300 text-sm"
+                            value={formData[seoTitleField]}
+                            onChange={(e) => setFormData({...formData, [seoTitleField]: e.target.value})}
+                            placeholder={contentLang === 'fa' ? 'عنوان گوگل (۶۰ کاراکتر)' : 'Google title (60 chars)'}
+                        />
                     </div>
                    <div className="md:col-span-2">
                         <label className="block text-xs font-bold text-gray-500 mb-1">توضیحات متا</label>
-                        <textarea rows={2} className="w-full p-2 rounded border border-gray-300 text-sm" value={formData.seo_desc} onChange={(e) => setFormData({...formData, seo_desc: e.target.value})} placeholder="توضیحات گوگل (۱۶۰ کاراکتر)" />
+                        <textarea
+                            rows={2}
+                            dir={contentLang === 'en' ? 'ltr' : 'rtl'}
+                            className="w-full p-2 rounded border border-gray-300 text-sm"
+                            value={formData[seoDescField]}
+                            onChange={(e) => setFormData({...formData, [seoDescField]: e.target.value})}
+                            placeholder={contentLang === 'fa' ? 'توضیحات گوگل (۱۶۰ کاراکتر)' : 'Google meta description (160 chars)'}
+                        />
                     </div>
                     <div className="md:col-span-2">
                         <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center gap-1"><Tag className="h-3 w-3"/> کلمات کلیدی</label>
-                        <input type="text" className="w-full p-2 rounded border border-gray-300 text-sm" value={formData.tags} onChange={(e) => setFormData({...formData, tags: e.target.value})} placeholder="با کاما جدا کنید..." />
-                        <div className="mt-2 flex flex-wrap gap-2">
-                            {/* پیشنهاد تگ‌ها از لیست موجود */}
-                            {tags.map(t => (
-                                <button type="button" key={t.id} onClick={() => setFormData({...formData, tags: formData.tags ? `${formData.tags}, ${t.name}` : t.name})} className="text-[10px] bg-white border border-gray-200 px-2 py-1 rounded-md hover:border-blue-400 transition-colors">
-                                    + {t.name}
-                                </button>
-                            ))}
-                        </div>
+                        <input
+                            type="text"
+                            dir={contentLang === 'en' ? 'ltr' : 'rtl'}
+                            className="w-full p-2 rounded border border-gray-300 text-sm"
+                            value={formData[tagsField]}
+                            onChange={(e) => setFormData({...formData, [tagsField]: e.target.value})}
+                            placeholder={contentLang === 'fa' ? 'با کاما جدا کنید...' : 'Comma separated...'}
+                        />
+                        {contentLang === 'fa' && (
+                            <div className="mt-2 flex flex-wrap gap-2">
+                                {/* پیشنهاد تگ‌ها از لیست موجود */}
+                                {tags.map(t => (
+                                    <button type="button" key={t.id} onClick={() => setFormData({...formData, tags: formData.tags ? `${formData.tags}, ${t.name}` : t.name})} className="text-[10px] bg-white border border-gray-200 px-2 py-1 rounded-md hover:border-blue-400 transition-colors">
+                                        + {t.name}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
                  </div>
               </div>

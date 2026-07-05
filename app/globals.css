@@ -45,3 +45,109 @@
     animation: soughat-loading-bar 1.1s ease-in-out infinite;
   }
 }
+
+/* ===== استایل محتوای HTML مقالات وبلاگ ===== */
+/* از این کلاس هم در صفحه‌ی عمومی مقاله (components/PostContent.tsx) و هم
+   در پیش‌نمایش پنل ادمین (app/admin/blog/page.tsx) استفاده می‌شود، تا
+   چیزی که ادمین در پیش‌نمایش می‌بیند دقیقاً همان چیزی باشد که مشتری می‌بیند. */
+.post-content {
+  color: #374151; /* gray-700 */
+  line-height: 1.9;
+}
+
+.post-content p {
+  margin-bottom: 0.75rem;
+  text-align: justify;
+}
+
+.post-content h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  border-inline-start: 4px solid #2563eb;
+  padding-inline-start: 1rem;
+  line-height: 1.4;
+}
+
+.post-content h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+  border-inline-start: 2px solid #bfdbfe;
+  padding-inline-start: 0.5rem;
+}
+
+.post-content h4 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #1f2937;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.post-content strong,
+.post-content b {
+  font-weight: 800;
+  color: #111827;
+}
+
+.post-content a {
+  color: #2563eb;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.post-content a:hover {
+  color: #1d4ed8;
+}
+
+.post-content ul,
+.post-content ol {
+  margin: 0.75rem 0;
+  padding-inline-start: 1.5rem;
+}
+
+.post-content ul {
+  list-style: disc;
+}
+
+.post-content ol {
+  list-style: decimal;
+}
+
+.post-content li {
+  margin-bottom: 0.4rem;
+}
+
+.post-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  margin: 1rem 0;
+}
+
+.post-content blockquote {
+  border-inline-start: 3px solid #d1d5db;
+  padding-inline-start: 1rem;
+  margin: 1rem 0;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.post-content code {
+  background: #f3f4f6;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.9em;
+}
+
+.post-content hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 1.5rem 0;
+}

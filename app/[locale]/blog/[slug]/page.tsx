@@ -4,6 +4,7 @@ import { Calendar, ArrowRight, ArrowLeft, User, Tag, Folder } from 'lucide-react
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import PostContent from '@/components/PostContent';
 
 // --- تنظیمات کش ---
 export const revalidate = 60;
@@ -30,7 +31,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     ? (post.seo_desc_en || post.summary_en || post.content_en?.substring(0, 160))
     : (post.seo_desc || post.summary || post.content.substring(0, 160));
 
-  // ✅ انتخاب تصویر بر اساس زبان: اگر image_en ست نشده بود، به image اصلی برمی‌گردیم
+  // ✅ تصویر انگلیسی با بازگشت خودکار به تصویر اصلی در صورت خالی بودن image_en
   const displayImage = isEn ? (post.image_en || post.image) : post.image;
 
   const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat.shop';
@@ -62,104 +63,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     },
   };
 }
-
-// --- موتور پردازش متن ---
-const parseInlineStyles = (text: string) => {
-  if (!text) return null;
-  const parts = text.split(/(\[.*?\]\(.*?\)|https?:\/\/[^\s]+|\*\*.*?\*\*)/g);
-
-  return parts.map((part, index) => {
-    // 1. بولد
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={index} className="font-extrabold text-gray-900">{part.slice(2, -2)}</strong>;
-    }
-    // 2. لینک مارک‌داون
-    const linkMatch = part.match(/^\[(.*?)\]\((.*?)\)$/);
-    if (linkMatch) {
-      return (
-        <a 
-          key={index} 
-          href={linkMatch[2]} 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="text-blue-600 font-bold hover:underline"
-        >
-          {linkMatch[1]}
-        </a>
-      );
-    }
-    // 3. لینک ساده
-    if (part.match(/^https?:\/\//)) {
-      return (
-        <a 
-          key={index} 
-          href={part} 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="text-blue-600 break-all hover:underline"
-        >
-          {part}
-        </a>
-      );
-    }
-    return part;
-  });
-};
-
-const renderContent = (text: string) => {
-  if (!text) return null;
-  return text.split('\n').map((line, index) => {
-    const trimmedLine = line.trim();
-    if (!trimmedLine) return <br key={index} />;
-
-    // H4 (####)
-    if (line.startsWith('#### ')) {
-        return (
-          <h4 key={index} className="text-base md:text-lg font-extrabold text-gray-800 mt-6 mb-2">
-            {parseInlineStyles(line.replace('#### ', ''))}
-          </h4>
-        );
-    }
-
-    // H3 (###)
-    if (line.startsWith('### ')) {
-      return (
-        <h3 key={index} className="text-lg md:text-xl font-bold text-gray-800 mt-8 mb-3 pr-2 border-r-2 border-blue-200">
-          {parseInlineStyles(line.replace('### ', ''))}
-        </h3>
-      );
-    }
-
-    // H2 (##)
-    if (line.startsWith('## ')) {
-      return (
-        <h2 key={index} className="text-xl md:text-2xl font-bold text-gray-900 mt-10 mb-4 border-r-4 border-blue-600 pr-4 leading-tight">
-          {parseInlineStyles(line.replace('## ', ''))}
-        </h2>
-      );
-    }
-
-    // Lists
-    const isList = line.match(/^(\d+\.|-)\s/);
-    if (isList) {
-        return (
-            <div key={index} className="flex gap-2 mb-2 pr-4 md:pr-8 items-start">
-                 <span className="text-blue-500 font-bold mt-1.5 text-xs">●</span>
-                 <p className="text-gray-700 leading-8 text-justify">
-                    {parseInlineStyles(line.replace(/^(\d+\.|-)\s/, ''))}
-                 </p>
-            </div>
-        )
-    }
-
-    // Paragraph
-    return (
-      <p key={index} className="mb-2 leading-7 text-justify text-gray-700">
-        {parseInlineStyles(line)}
-      </p>
-    );
-  });
-};
 
 export default async function BlogPost({ params }: { params: Promise<{ slug: string; locale: string }> }) {
   const { slug, locale } = await params;
@@ -252,7 +155,7 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
           </div>
           
           <article className="max-w-none" dir={isEn ? 'ltr' : 'rtl'}>
-             {renderContent(displayContent)}
+             <PostContent content={displayContent} dir={isEn ? 'ltr' : 'rtl'} />
           </article>
 
           {displayTags && displayTags.length > 0 && (
