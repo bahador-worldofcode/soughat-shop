@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useTransition } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import ProductCard from '@/components/ProductCard';
 import {
   Search,
@@ -107,16 +107,6 @@ export default function ProductsClientView({
   const debouncedSearch = useDebounce(searchTerm, 500);
 
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
-
-  // رفرنس دکمه‌های دسته‌بندی در سایدبار دسکتاپ، برای اسکرول خودکار به دسته‌ی فعال
-  const categoryButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-
-  useEffect(() => {
-    const el = categoryButtonRefs.current[currentCategory];
-    if (el) {
-      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    }
-  }, [currentCategory]);
 
   // اگر آدرس از بیرون تغییر کنه (مثلاً دکمه‌ی back مرورگر)، فیلد جستجو رو هم‌گام کن
   useEffect(() => {
@@ -361,46 +351,48 @@ export default function ProductsClientView({
             </select>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col overflow-hidden flex-1 transition-shadow hover:shadow-md">
-            <div className="p-4 border-b border-gray-100 bg-gray-50/50 backdrop-blur-sm sticky top-0 z-10">
-              <h3 className="font-bold text-gray-800 flex items-center gap-2">
-                <Layers className="h-5 w-5 text-blue-600" />
-                {t('categories_label')}
-              </h3>
-            </div>
+          {/* TASK-06 (ROADMAP.md): قبلاً این باکس یک لیست عمودی با اسکرول داخلی
+              مستقل بود (overflow-y-auto + maxHeight ثابت) که باعث «اسکرول
+              تودرتو» با اسکرول کلی صفحه می‌شد — همون چیزی که گیج‌کننده بود.
+              حالا دسته‌بندی‌ها به یک گرید از چیپ‌های فشرده تبدیل شدن (دقیقاً
+              همون الگویی که خودِ همین پروژه در HomeSEOContent.tsx برای
+              دسته‌بندی‌های هوم‌پیج و در نسخه‌ی موبایل همین صفحه برای Bottom
+              Sheet استفاده کرده)؛ چیپ‌ها با flex-wrap شکسته می‌شن، جای خیلی
+              کمتری می‌گیرن، و کل باکس با خودِ سایدبار/صفحه اسکرول می‌شه — بدون
+              نیاز به اسکرول جداگانه. */}
+          <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm transition-shadow hover:shadow-md">
+            <h3 className="font-bold text-gray-800 flex items-center gap-2 mb-4">
+              <Layers className="h-5 w-5 text-blue-600" />
+              {t('categories_label')}
+            </h3>
 
-            <div className="overflow-y-auto overflow-x-hidden p-2 gap-1 custom-scrollbar" style={{ maxHeight: 'calc(100vh - 400px)' }}>
+            <div className="flex flex-wrap gap-2">
               {categories.map((cat) => {
                 const catName = isEn ? cat.name_en || cat.name : cat.name;
                 const isActive = isCatActive(cat.slug);
                 return (
                   <button
                     key={cat.id}
-                    ref={(el) => {
-                      categoryButtonRefs.current[cat.slug] = el;
-                    }}
                     onClick={() => handleCategoryChange(cat.slug)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 mb-1 rounded-xl text-sm font-medium transition-all duration-200 group ${
+                    title={catName}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold border transition-all duration-200 ${
                       isActive
-                        ? 'bg-blue-50 text-blue-700 shadow-sm translate-x-1'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:translate-x-1'
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                        : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200'
                     }`}
                   >
                     {cat.slug === 'all' ? (
-                      <div className={`p-1.5 rounded-lg transition-colors ${isActive ? 'bg-blue-200 text-blue-700' : 'bg-gray-100 text-gray-500 group-hover:bg-white'}`}>
-                        <Filter className="h-4 w-4" />
-                      </div>
+                      <Filter className={`h-3.5 w-3.5 flex-shrink-0 ${isActive ? 'text-white' : 'text-gray-400'}`} />
+                    ) : cat.icon_url ? (
+                      <img
+                        src={cat.icon_url}
+                        alt=""
+                        className={`w-3.5 h-3.5 object-contain flex-shrink-0 ${isActive ? 'brightness-200' : ''}`}
+                      />
                     ) : (
-                      <div className={`p-1.5 rounded-lg flex items-center justify-center transition-colors ${isActive ? 'bg-blue-200' : 'bg-gray-100 group-hover:bg-white'}`}>
-                        {cat.icon_url ? (
-                          <img src={cat.icon_url} alt="" className="w-4 h-4 object-contain" />
-                        ) : (
-                          <Layers className={`h-4 w-4 ${isActive ? 'text-blue-700' : 'text-gray-400'}`} />
-                        )}
-                      </div>
+                      <Layers className={`h-3.5 w-3.5 flex-shrink-0 ${isActive ? 'text-white' : 'text-gray-400'}`} />
                     )}
-                    <span className="flex-1 text-start truncate">{catName}</span>
-                    {isActive && <div className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></div>}
+                    <span className="truncate max-w-[9rem]">{catName}</span>
                   </button>
                 );
               })}
