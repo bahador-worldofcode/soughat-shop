@@ -119,6 +119,9 @@ export default async function ProductsPage({ params, searchParams }: Props) {
   const sp = await searchParams;
   const isEn = locale === 'en';
   const t = await getTranslations('ProductsPage');
+  // TASK-07: برای متن «خانه» و «محصولات» در BreadcrumbList از همون کلیدهای
+  // موجود namespace هدر استفاده می‌کنیم — نیازی به کلید ترجمه‌ی جدید نیست.
+  const tHeader = await getTranslations('Header');
   const siteUrl = getSiteUrl();
 
   const currentCategory = sp.category ? decodeURIComponent(sp.category).trim() : 'all';
@@ -206,11 +209,38 @@ export default async function ProductsPage({ params, searchParams }: Props) {
     },
   };
 
+  // ۵. Structured Data — BreadcrumbList (TASK-07، ROADMAP.md)
+  // مسیر خانه › محصولات، و اگر دسته‌بندی خاصی فعال باشه، یک پله‌ی سوم هم
+  // برای همون دسته‌بندی اضافه می‌شه.
+  const breadcrumbItems: Array<{ '@type': string; position: number; name: string; item: string }> = [
+    { '@type': 'ListItem', position: 1, name: tHeader('home'), item: `${siteUrl}/${locale}` },
+    { '@type': 'ListItem', position: 2, name: tHeader('products'), item: `${siteUrl}/${locale}/products` },
+  ];
+
+  if (activeCategoryInfo) {
+    breadcrumbItems.push({
+      '@type': 'ListItem',
+      position: 3,
+      name: pageTitle,
+      item: `${siteUrl}/${locale}/products?category=${encodeURIComponent(currentCategory)}`,
+    });
+  }
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbItems,
+  };
+
   return (
     <div className="min-h-screen bg-gray-50/50 pb-20 font-[family-name:var(--font-vazir)]">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
 
       <div className="bg-white border-b border-gray-200 pt-12 pb-10 mb-2 shadow-sm relative overflow-hidden">

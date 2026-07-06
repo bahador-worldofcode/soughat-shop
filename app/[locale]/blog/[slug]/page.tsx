@@ -78,6 +78,9 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
   const decodedSlug = decodeURIComponent(slug);
   const isEn = locale === 'en';
   const t = await getTranslations('Blog');
+  // TASK-07: برای متن «خانه» و «وبلاگ» در BreadcrumbList از همون کلیدهای
+  // موجود namespace هدر استفاده می‌کنیم — نیازی به کلید ترجمه‌ی جدید نیست.
+  const tHeader = await getTranslations('Header');
 
   const { data: post } = await supabase
     .from('posts')
@@ -116,12 +119,42 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
     inLanguage: isEn ? 'en' : 'fa'
   };
 
+  // TASK-07 (ROADMAP.md): BreadcrumbList Schema — مسیر خانه › بلاگ › پست
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: tHeader('home'),
+        item: `${siteUrl}/${locale}`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: tHeader('blog'),
+        item: `${siteUrl}/${locale}/blog`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: displayTitle,
+        item: pageUrl,
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20 font-[family-name:var(--font-vazir)]">
 
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
 
       {/* 1. Header Image — بدون کراپ. کل عکس (حتی کشیده/عریض) همیشه کامل دیده می‌شود،

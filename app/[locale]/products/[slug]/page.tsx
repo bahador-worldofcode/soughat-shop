@@ -72,6 +72,10 @@ export default async function ProductPage({ params }: Props) {
   const decodedSlug = decodeURIComponent(slug);
   const isEn = locale === 'en';
   const t = await getTranslations('Product'); // دریافت ترجمه‌ها برای دکمه بازگشت
+  // TASK-07: برای متن «خانه» و «محصولات» در BreadcrumbList از همون کلیدهای
+  // موجود namespace هدر استفاده می‌کنیم — نیازی به کلید ترجمه‌ی جدید نیست.
+  const tHeader = await getTranslations('Header');
+  const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat.shop';
 
   // 1. دریافت خود محصول (همه فیلدها)
   const { data: product } = await supabase
@@ -137,9 +141,35 @@ export default async function ProductPage({ params }: Props) {
       priceCurrency: 'USD',
       price: product.price,
       availability: 'https://schema.org/InStock',
-      url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat.shop'}/${locale}/products/${product.slug}`,
+      url: `${siteUrl}/${locale}/products/${product.slug}`,
       seller: { '@type': 'Organization', name: 'Soughat Shop' }
     },
+  };
+
+  // TASK-07 (ROADMAP.md): BreadcrumbList Schema — مسیر خانه › دسته‌بندی › محصول
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: tHeader('home'),
+        item: `${siteUrl}/${locale}`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: categoryName,
+        item: `${siteUrl}/${locale}/products?category=${encodeURIComponent(product.category)}`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: localizedProduct.title,
+        item: `${siteUrl}/${locale}/products/${product.slug}`,
+      },
+    ],
   };
 
   return (
@@ -147,6 +177,10 @@ export default async function ProductPage({ params }: Props) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
 
       <div className="container mx-auto px-4 max-w-6xl">

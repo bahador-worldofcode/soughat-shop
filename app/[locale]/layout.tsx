@@ -123,6 +123,27 @@ export default async function LocaleLayout({
     ]
   };
 
+  // 5.۲ (TASK-07، ROADMAP.md): اسکیمای WebSite با SearchAction — تنها موردِ
+  // واقعاً خالیِ گزارش سئوی چت‌جی‌پی‌تی بعد از تطبیق با کد. به گوگل می‌گه که
+  // سرچ‌باکس سایت (همون که در Header.tsx و ProductsClientView.tsx هست) به
+  // `/products?q=...` می‌ره، تا در نتایج گوگل هم به‌صورت sitelinks search box
+  // نمایش داده بشه.
+  const websiteJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    'name': 'Soughat Shop',
+    'alternateName': 'سوغات شاپ',
+    'url': 'https://soughat.shop',
+    'potentialAction': {
+      '@type': 'SearchAction',
+      'target': {
+        '@type': 'EntryPoint',
+        'urlTemplate': `https://soughat.shop/${locale}/products?q={search_term_string}`
+      },
+      'query-input': 'required name=search_term_string'
+    }
+  };
+
   return (
     // ✅ اصلاح ۳: اضافه شدن تگ html و body به جای div
     <html lang={locale} dir={direction}>
@@ -156,6 +177,12 @@ export default async function LocaleLayout({
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          />
+
+          {/* TASK-07: اسکیمای WebSite + SearchAction */}
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
           />
 
           {/* هدر سایت */}
