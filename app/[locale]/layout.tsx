@@ -11,6 +11,7 @@ import Script from 'next/script';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FloatingContact from "@/components/FloatingContact";
+import FloatingCart from "@/components/FloatingCart";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import WebMCPProvider from "@/components/WebMCPProvider";
 
@@ -173,6 +174,10 @@ export default async function LocaleLayout({
 
           {/* دکمه شناور تماس */}
           <FloatingContact />
+
+          {/* نشانگر شناور سبد خرید در دسکتاپ (TASK-05) — گوشه‌ی مخالفِ دکمه‌ی
+              تماس، تا با آن روی هم نیفتد، و فقط وقتی سبد خرید آیتم دارد */}
+          <FloatingCart />
 
           {/* WebMCP: نمایش اکشن‌های فرانت‌اند به ایجنت‌های مبتنی بر مرورگر */}
           <WebMCPProvider locale={locale} />

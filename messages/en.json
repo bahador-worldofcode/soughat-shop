@@ -459,6 +459,10 @@
     "aria_label": "Chat with us on WhatsApp",
     "whatsapp_msg": "Hello, I am messaging from Soughat Shop and need assistance."
   },
+  "FloatingCart": {
+    "aria_label": "View shopping cart",
+    "cta": "View Cart"
+  },
   "TicketForm": {
     "section_title": "Or Send Us a Ticket",
     "section_desc": "No WhatsApp? No problem — fill out the form below and our team will get back to you by phone or email.",
