@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Search, Eye, X, Loader2, Trash2, User, Globe, Phone, FileText, MapPin, Calendar, DollarSign, Euro, PoundSterling, Landmark } from 'lucide-react';
+import { Search, Eye, X, Loader2, Trash2, User, Globe, Phone, FileText, MapPin, Calendar, DollarSign, Euro, PoundSterling, Landmark, Copy, CheckCircle2 } from 'lucide-react';
 
 interface Order {
   id: string;
@@ -32,10 +32,25 @@ export default function OrdersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [updating, setUpdating] = useState(false);
+  // کد سفارشی که همین الان کپی شده (برای نمایش موقت تیک سبز روی دکمه‌ی کپی)
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  // کپی کردن کد کامل (UUID) سفارش در کلیپ‌بورد؛ چون کد کوتاه‌شده‌ی داخل جدول
+  // (۸ کاراکتر اول + ...) برای جست‌وجو در صفحه‌ی پیگیری سفارش کافی نیست.
+  const handleCopyId = async (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(id);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId((cur) => (cur === id ? null : cur)), 2000);
+    } catch (err) {
+      alert('کپی خودکار ممکن نشد. کد سفارش: ' + id);
+    }
+  };
 
   const fetchOrders = async () => {
     // از آنجا که DB آپدیت شده، select('*') فیلدهای جدید را هم می‌آورد
@@ -157,7 +172,20 @@ export default function OrdersPage() {
               ) : filteredOrders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-6 py-4">
-                    <span className="block text-sm font-mono font-bold text-gray-700 dir-ltr text-right mb-1">{order.id.slice(0, 8)}...</span>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="text-sm font-mono font-bold text-gray-700 dir-ltr text-right">{order.id.slice(0, 8)}...</span>
+                      <button
+                        onClick={(e) => handleCopyId(order.id, e)}
+                        className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 p-1 rounded-md transition-colors flex-shrink-0"
+                        title="کپی کد کامل سفارش (برای پیگیری سفارش مشتری)"
+                      >
+                        {copiedId === order.id ? (
+                          <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                    </div>
                     <span className="block text-[10px] text-gray-400">{new Date(order.created_at).toLocaleDateString('fa-IR')}</span>
                   </td>
                   <td className="px-6 py-4">
@@ -205,7 +233,20 @@ export default function OrdersPage() {
                     <FileText className="h-5 w-5 text-blue-600" />
                     جزئیات سفارش
                   </h3>
-                  <span className="text-xs text-gray-400 font-mono mt-1 block">{selectedOrder.id}</span>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className="text-xs text-gray-400 font-mono">{selectedOrder.id}</span>
+                    <button
+                      onClick={(e) => handleCopyId(selectedOrder.id, e)}
+                      className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 p-1 rounded-md transition-colors"
+                      title="کپی کد کامل سفارش"
+                    >
+                      {copiedId === selectedOrder.id ? (
+                        <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  </div>
                </div>
               <button onClick={() => setSelectedOrder(null)}><X className="h-6 w-6 text-gray-400 hover:text-red-500" /></button>
             </div>

@@ -32,11 +32,20 @@ export default function TrackPage() {
     setError('');
     setOrder(null);
 
+    // پاکسازی ورودی: کاربر ممکن است فاصله‌ی اضافه در ابتدا/انتهای کد سفارش
+    // کپی/پیست کرده باشد (مثلاً از پنل ادمین).
+    const cleanId = orderId.trim();
+
     try {
+      // نکته‌ی مهم (رفع باگ): ستون id جدول orders از نوع UUID است.
+      // عملگر ilike (تطبیق الگوی متنی با wildcard) روی نوع UUID در
+      // Supabase/Postgres قابل اجرا نیست و همیشه با خطا مواجه می‌شود —
+      // یعنی قبلاً حتی با کپی/پیست دقیق کد سفارش هم نتیجه‌ای پیدا نمی‌شد.
+      // با eq (تطبیق دقیق) این مشکل کاملاً رفع می‌شود.
       const { data, error } = await supabase
         .from('orders')
         .select('id, status, customer_name, total_price, created_at')
-        .ilike('id', `${orderId}%`)
+        .eq('id', cleanId)
         .single();
 
       if (error || !data) {
@@ -45,6 +54,9 @@ export default function TrackPage() {
 
       setOrder(data);
     } catch (err: any) {
+      // اگر ورودی اصلاً فرمت UUID معتبری نداشته باشد (مثلاً کاربر چیز
+      // نامرتبطی تایپ کرده)، Supabase یک خطای فنی برمی‌گرداند؛ این هم
+      // باید safe-fail شود و همان پیام «یافت نشد» کاربرپسند را نشان دهد.
       setError(t('error_not_found'));
     } finally {
       setLoading(false);
