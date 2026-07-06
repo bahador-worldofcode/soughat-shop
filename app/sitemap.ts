@@ -10,6 +10,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 1. دریافت داده‌ها
   const { data: posts } = await supabase.from('posts').select('slug, created_at');
   const { data: products } = await supabase.from('products').select('slug, created_at');
+  const { data: categories } = await supabase.from('categories').select('slug');
 
   const routes = [
     '',
@@ -53,7 +54,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     })) || [];
 
-    sitemapEntries = [...sitemapEntries, ...staticEntries, ...blogEntries, ...productEntries];
+    // لیست محصولات به تفکیک دسته‌بندی (TASK-04) — چون بعد از این تسک هر دسته‌بندی
+    // یک generateMetadata و canonical مخصوص به خودش داره (?category=slug)، این
+    // آدرس‌ها هم برای ایندکس شدن به سایت‌مپ اضافه می‌شن.
+    const categoryEntries = categories?.map((cat) => ({
+      url: `${baseUrl}/${locale}/products?category=${encodeURIComponent(cat.slug)}`,
+      lastModified: new Date().toISOString(),
+      changeFrequency: 'daily' as const,
+      priority: 0.85,
+    })) || [];
+
+    sitemapEntries = [...sitemapEntries, ...staticEntries, ...blogEntries, ...productEntries, ...categoryEntries];
   }
 
   return sitemapEntries;
