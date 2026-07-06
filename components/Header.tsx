@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef, useTransition } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { ShoppingBag, Globe, Search, X, Loader2 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useTranslations, useLocale } from 'next-intl';
@@ -36,6 +37,9 @@ export default function Header() {
 
   const router = useRouter();
   const pathname = usePathname();
+  // next-intl's usePathname عمداً query string را برنمی‌گرداند؛ برای همین جدا
+  // از next/navigation می‌گیریمش تا هنگام سوییچ زبان بتوانیم آن را حفظ کنیم.
+  const searchParams = useSearchParams();
 
   // در موبایل، آیتم‌های اصلی ناوبری (خانه، محصولات، سبد خرید، پیگیری، منو)
   // به نوار پایین صفحه منتقل شده‌اند. آیکون سبد خرید هدر فقط در صفحاتی که
@@ -71,8 +75,13 @@ export default function Header() {
   const toggleLanguage = () => {
     if (isLangPending) return; // از تپ چندباره در حین سوییچ جلوگیری می‌کند
     const newLocale = isEn ? 'fa' : 'en';
+    // رفع باگ: قبلاً فقط pathname (بدون query string) پاس داده می‌شد، برای همین
+    // فیلترهایی مثل ?category=... یا ?q=... موقع سوییچ زبان پاک می‌شدند.
+    // حالا query string فعلی را عیناً به مسیر مقصد اضافه می‌کنیم تا حفظ شود.
+    const query = searchParams.toString();
+    const target = query ? `${pathname}?${query}` : pathname;
     startLangTransition(() => {
-      router.replace(pathname, { locale: newLocale });
+      router.replace(target, { locale: newLocale });
     });
   };
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Home,
   LayoutGrid,
@@ -79,6 +80,10 @@ export default function MobileBottomNav() {
 
   const router = useRouter();
   const pathname = usePathname();
+  // next-intl's usePathname عمداً query string را برنمی‌گرداند؛ برای همین جدا
+  // از next/navigation می‌گیریمش تا هنگام سوییچ زبان بتوانیم آن را حفظ کنیم
+  // (دقیقاً همان اصلاح Header.tsx، برای هماهنگی رفتار موبایل و دسکتاپ).
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     setMounted(true);
@@ -105,8 +110,13 @@ export default function MobileBottomNav() {
   const toggleLanguage = () => {
     if (isLangPending) return; // از تپ چندباره در حین سوییچ جلوگیری می‌کند
     const newLocale = isEn ? 'fa' : 'en';
+    // رفع باگ: قبلاً فقط pathname (بدون query string) پاس داده می‌شد، برای همین
+    // فیلترهایی مثل ?category=... یا ?q=... موقع سوییچ زبان پاک می‌شدند.
+    // حالا query string فعلی را عیناً به مسیر مقصد اضافه می‌کنیم تا حفظ شود.
+    const query = searchParams.toString();
+    const target = query ? `${pathname}?${query}` : pathname;
     startLangTransition(() => {
-      router.replace(pathname, { locale: newLocale });
+      router.replace(target, { locale: newLocale });
     });
   };
 
