@@ -1,6 +1,9 @@
 import { Link } from '@/i18n/navigation';
 import type { Metadata } from 'next';
-import { CheckCircle, ArrowLeft } from 'lucide-react';
+import { CheckCircle, ArrowLeft, Send, Zap } from 'lucide-react';
+
+// لینک صفحه‌ی محصولات (ارسال پول / طلا) — همون مقصدی که دکمه‌های CTA به اون میرن
+const CTA_LINK = '/products?category=gold-and-money';
 
 // =========================================================================
 // این فایل باید دقیقاً در مسیر زیر قرار بگیرد (پوشه‌ها را با همین اسم بساز):
@@ -279,8 +282,34 @@ export default async function SendMoneyToIranPage({ params }: { params: Promise<
               </>
             )}
           </p>
+
+          {/* Hero CTA button — دکمه‌ی اصلی داخل بنر */}
+          <div className="mt-8 flex flex-col items-center gap-3">
+            <Link
+              href={CTA_LINK}
+              className="inline-flex items-center bg-white text-blue-800 font-bold text-lg py-4 px-10 rounded-xl hover:bg-blue-50 transition-all transform hover:scale-105 shadow-2xl"
+            >
+              {isEn ? 'Send Money Now' : 'ارسال پول همین حالا'}
+              <Send className={`h-5 w-5 ${isEn ? 'ml-2' : 'mr-2'}`} />
+            </Link>
+            <span className="text-blue-200 text-sm">
+              {isEn ? 'Pay with Tether · Delivered in under 1 hour' : 'پرداخت با تتر · واریز در کمتر از ۱ ساعت'}
+            </span>
+          </div>
         </div>
       </div>
+
+      {/* Floating quick-access button — همیشه روی صفحه دیده میشه، هر جا اسکرول کنی */}
+      <Link
+        href={CTA_LINK}
+        className={`inline-flex fixed bottom-5 ${isEn ? 'right-5' : 'left-5'} z-50 items-center gap-2 bg-blue-600 text-white font-bold py-3 px-5 md:py-4 md:px-6 rounded-full shadow-2xl hover:bg-blue-700 hover:scale-105 transition-all`}
+      >
+        <span className="relative flex h-2.5 w-2.5">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-300 opacity-75" />
+          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-400" />
+        </span>
+        {isEn ? 'Send Money' : 'ارسال پول'}
+      </Link>
 
       <div className="container mx-auto px-4 py-12 max-w-4xl">
 
@@ -400,6 +429,25 @@ export default async function SendMoneyToIranPage({ params }: { params: Promise<
             </>
           )}
         </section>
+
+        {/* Mid-page CTA banner #1 */}
+        <div className="mb-12 bg-gradient-to-l from-indigo-700 to-blue-600 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-5 text-white shadow-lg">
+          <div className="flex items-center gap-3 text-center md:text-start">
+            <Zap className="h-8 w-8 text-yellow-300 flex-shrink-0 hidden md:block" />
+            <p className="font-bold text-lg leading-7">
+              {isEn
+                ? 'Ready to send money to your family in Iran? It only takes a few minutes.'
+                : 'آماده‌اید پول خود را برای خانواده در ایران ارسال کنید؟ فقط چند دقیقه زمان می‌برد.'}
+            </p>
+          </div>
+          <Link
+            href={CTA_LINK}
+            className="flex-shrink-0 inline-flex items-center bg-white text-blue-700 font-bold py-3 px-8 rounded-xl hover:bg-gray-100 transition-all transform hover:scale-105 shadow-lg whitespace-nowrap"
+          >
+            {isEn ? 'Start Your Transfer' : 'شروع ارسال پول'}
+            <ArrowLeft className={`h-5 w-5 ${isEn ? 'rotate-180 ml-2' : 'mr-2'}`} />
+          </Link>
+        </div>
 
         <figure className="mb-12 rounded-2xl overflow-hidden shadow-sm border border-gray-100">
           <img
@@ -575,6 +623,25 @@ export default async function SendMoneyToIranPage({ params }: { params: Promise<
             {isEn ? 'Fast and highly secure crypto payment process for remittance to Iran' : 'فرآیند پرداخت سریع و امن با تتر برای واریز به ایران'}
           </figcaption>
         </figure>
+
+        {/* Mid-page CTA banner #2 */}
+        <div className="mb-16 border-2 border-blue-600 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-5">
+          <div className="flex items-center gap-3 text-center md:text-start">
+            <CheckCircle className="h-8 w-8 text-blue-600 flex-shrink-0 hidden md:block" />
+            <p className="font-bold text-lg text-gray-900 leading-7">
+              {isEn
+                ? 'Secure, blockchain-verified transfers — your family receives the money in under an hour.'
+                : 'انتقال امن و تأییدشده روی بلاکچین — خانواده شما در کمتر از یک ساعت پول را دریافت می‌کند.'}
+            </p>
+          </div>
+          <Link
+            href={CTA_LINK}
+            className="flex-shrink-0 inline-flex items-center bg-blue-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-blue-700 transition-all transform hover:scale-105 shadow-lg whitespace-nowrap"
+          >
+            {isEn ? 'Send Money Securely' : 'ارسال امن پول'}
+            <ArrowLeft className={`h-5 w-5 ${isEn ? 'rotate-180 ml-2' : 'mr-2'}`} />
+          </Link>
+        </div>
 
         {/* FAQ */}
         <section>
