@@ -1,33 +1,37 @@
 // lib/useAuthState.ts
 // هوک سبک برای تشخیص اینکه آیا کاربر وارد سیستم شده یا خیر.
-// supabase-js نشست را در localStorage با کلیدی به فرم
-//   sb-<project-ref>-auth-token
-// ذخیره می‌کند؛ پس حضورِ چنین کلیدی یعنی کاربر لاگین کرده است.
-// این کار باعث می‌شود بدون درخواست اضافی به سرور، آیکون پروفایل
-// فقط برای کاربران واردشده نمایش داده شود.
+// به‌جای گوش‌دادن به رویداد storage (که فقط بین تب‌های مختلف کار
+// می‌کند)، مستقیماً از onAuthStateChange خودِ سوپابیس استفاده
+// می‌کنیم تا همان لحظه‌ای که لاگین/لاگ‌اوت در همین تب اتفاق می‌افتد
+// هم آیکون هدر آپدیت شود.
 
 'use client';
 
 import { useEffect, useState } from 'react';
-
-const SESSION_KEY_TEST = (key: string) =>
-  key.startsWith('sb-') && key.endsWith('-auth-token');
+import { supabaseBrowser } from '@/lib/supabase-browser';
 
 export function useAuthState(): boolean {
   const [isAuthed, setIsAuthed] = useState(false);
 
   useEffect(() => {
-    try {
-      const check = () =>
-        Object.keys(localStorage).some((k) => SESSION_KEY_TEST(k));
-      setIsAuthed(check());
+    let isMounted = true;
 
-      const onStorage = () => setIsAuthed(check());
-      window.addEventListener('storage', onStorage);
-      return () => window.removeEventListener('storage', onStorage);
-    } catch {
-      return;
-    }
+    // وضعیت فعلی سشن را همین اول چک کن
+    supabaseBrowser.auth.getSession().then(({ data }) => {
+      if (isMounted) setIsAuthed(!!data.session);
+    });
+
+    // و به هر تغییری در سشن (لاگین، لاگ‌اوت، تمدید توکن) گوش بده
+    const { data: listener } = supabaseBrowser.auth.onAuthStateChange(
+      (_event, session) => {
+        if (isMounted) setIsAuthed(!!session);
+      }
+    );
+
+    return () => {
+      isMounted = false;
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   return isAuthed;

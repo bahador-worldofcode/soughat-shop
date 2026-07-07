@@ -25,8 +25,14 @@ function getBrowserClient() {
       // PKCE: کدِ تایید را در localStorage ذخیره می‌کند تا پس از
       // بازگشت از گوگل، توکن را دریافت کنیم (بدون نیاز به سرور).
       flowType: 'pkce',
-      // تشخیص خودکارِ توکن/کد در URL بعد از بازگشت از گوگل
-      detectSessionInUrl: true,
+      // مهم: این گزینه را عمداً false گذاشتیم. صفحه‌ی
+      // app/[locale]/auth/callback/page.tsx خودش به‌صورت دستی
+      // exchangeCodeForSession را صدا می‌زند. اگر این گزینه true
+      // باشد، خودِ کتابخانه هم هم‌زمان و در پس‌زمینه سعی می‌کند
+      // همان کد را مبادله کند؛ چون هر کد فقط یک‌بار قابل استفاده
+      // است، این هم‌زمانی باعث خطای
+      // "PKCE code verifier not found in storage" می‌شد.
+      detectSessionInUrl: false,
       // ذخیرهٔ سِشن در مرورگر کاربر (تا صفحه را ببندد و باز کند باز هم لاگین بماند)
       persistSession: true,
       // تمدید خودکار توکن قبل از منقضی شدن
