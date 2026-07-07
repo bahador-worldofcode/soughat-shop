@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef, useTransition } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ShoppingBag, Globe, Search, X, Loader2, User } from 'lucide-react';
+import { ShoppingBag, Globe, Search, X, Loader2, User, LogIn } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link, useRouter, usePathname } from '@/i18n/navigation';
@@ -16,7 +16,7 @@ export default function Header() {
   // دریافت متد totalItems از استور (که اکنون هوشمند شده و حواله را ۱ عدد می‌شمارد)
   const { currency, setCurrency, totalItems, fetchRates } = useStore();
 
-  // آیا کاربر وارد سیستم شده؟ (برای نمایش آیکون پروفایل)
+  // آیا کاربر وارد سیستم شده؟ (برای نمایش آیکون پروفایل یا دکمه ورود)
   const isAuthed = useAuthState();
 
   // محاسبه تعداد آیتم‌های سبد خرید
@@ -281,11 +281,21 @@ export default function Header() {
               </select>
             </div>
 
-            {/* Profile Button — فقط برای کاربران واردشده نمایش داده می‌شود */}
-            {isAuthed && (
+            {/* Profile / Login Button — اگر کاربر وارد شده آیکون پروفایل،
+                در غیر این صورت یک دکمه‌ی واضح «ورود» نمایش داده می‌شود؛
+                قبلاً وقتی کاربر وارد نشده بود اصلاً هیچ راهی برای رسیدن
+                به صفحه‌ی ورود در هدر دسکتاپ وجود نداشت. */}
+            {isAuthed ? (
               <Link href="/profile" aria-label={t('profile_aria')}>
                 <button className="relative p-2.5 hover:bg-blue-50 rounded-xl transition-colors group border border-transparent hover:border-blue-100">
                   <User className="h-5 w-5 text-gray-600 group-hover:text-blue-600" />
+                </button>
+              </Link>
+            ) : (
+              <Link href="/login">
+                <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded-xl transition-colors shadow-sm">
+                  <LogIn className="h-4 w-4" />
+                  {t('login')}
                 </button>
               </Link>
             )}

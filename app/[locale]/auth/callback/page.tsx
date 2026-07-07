@@ -4,7 +4,7 @@
 // وقتی کاربر در گوگل تأیید می‌کند، گوگل او را به
 //   /fa/auth/callback?code=XXXX   (یا /en/auth/callback?code=XXXX)
 // هدایت می‌کند. این کامپوننت کد را می‌گیرد، توکن می‌سازد
-// و کاربر را به صفحهٔ داشبورد (placeholder) می‌فرستد.
+// و کاربر را به صفحهٔ پروفایل هدایت می‌کند.
 // --------------------------------------------------------------
 
 'use client';
@@ -33,10 +33,10 @@ export default function AuthCallback() {
         return;
       }
 
-      // ورود موفق — هدایت به داشبورد (موقت)
+      // ورود موفق — هدایت به صفحهٔ پروفایل کاربر.
       // useRouter از next-intl خودش زبان را به آدرس اضافه می‌کند:
-      // مثلاً '/dashboard' را به '/fa/dashboard' تبدیل می‌کند.
-      router.replace('/dashboard');
+      // مثلاً '/profile' را به '/fa/profile' تبدیل می‌کند.
+      router.replace('/profile');
     };
 
     handleCallback();

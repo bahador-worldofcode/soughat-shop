@@ -21,7 +21,8 @@
     "switch_to_farsi": "تغییر به فارسی",
     "lang_name_fa": "فارسی",
     "lang_name_en": "English",
-    "profile_aria": "پروفایل من"
+    "profile_aria": "پروفایل من",
+    "login": "ورود"
   },
   "NotFound": {
     "title": "صفحه مورد نظر پیدا نشد",

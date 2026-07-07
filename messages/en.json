@@ -20,7 +20,9 @@
     "switch_to_english": "Switch to English",
     "switch_to_farsi": "تغییر به فارسی",
     "lang_name_fa": "فارسی",
-    "lang_name_en": "English"
+    "lang_name_en": "English",
+    "profile_aria": "My Profile",
+    "login": "Login"
   },
   "NotFound": {
     "title": "Page not found",

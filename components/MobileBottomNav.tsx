@@ -18,11 +18,13 @@ import {
   Loader2,
   ArrowUpRight,
   DollarSign,
+  User,
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link, useRouter, usePathname } from '@/i18n/navigation';
 import { isMobileNavHidden } from '@/lib/navVisibility';
+import { useAuthState } from '@/lib/useAuthState';
 import Toast from '@/components/Toast';
 
 // آیتم‌های ثانویه (کم‌اهمیت‌تر) که به‌صورت فشرده و کوچک نمایش داده می‌شوند.
@@ -59,6 +61,9 @@ export default function MobileBottomNav() {
 
   const { currency, setCurrency, totalItems } = useStore();
   const cartCount = totalItems();
+
+  // آیا کاربر وارد سیستم شده؟ (برای نمایش لینک پروفایل یا ورود در شیت «بیشتر»)
+  const isAuthed = useAuthState();
 
   const [mounted, setMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -153,7 +158,7 @@ export default function MobileBottomNav() {
         />
       )}
 
-      {/* شیت کشویی «بیشتر»: زبان، ارز و لینک‌های ثانویه */}
+      {/* شیت کشویی «بیشتر»: حساب کاربری، زبان، ارز و لینک‌های ثانویه */}
       {isMenuOpen && (
         <div
           role="dialog"
@@ -176,6 +181,29 @@ export default function MobileBottomNav() {
                 <X className="h-5 w-5 text-gray-500" />
               </button>
             </div>
+
+            {/* حساب کاربری: اگر کاربر وارد شده، لینک به پروفایل؛ در غیر این
+                صورت دکمه‌ی ورود. قبلاً هیچ راهی برای رسیدن به پروفایل یا صفحه‌ی
+                ورود در نسخه‌ی موبایل سایت وجود نداشت. */}
+            {isAuthed ? (
+              <Link
+                href="/profile"
+                onClick={() => setIsMenuOpen(false)}
+                className="flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 mb-3 text-blue-700 active:bg-blue-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              >
+                <User className="h-4 w-4 flex-shrink-0" />
+                <span className="text-sm font-bold">{tHeader('profile_aria')}</span>
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                onClick={() => setIsMenuOpen(false)}
+                className="flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 mb-3 text-blue-700 active:bg-blue-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              >
+                <User className="h-4 w-4 flex-shrink-0" />
+                <span className="text-sm font-bold">{tHeader('login')}</span>
+              </Link>
+            )}
 
             {/* سوییچر زبان: در حین سوییچ، آیکون به لودینگ تبدیل و دکمه غیرفعال می‌شود
                 تا کاربر بلافاصله بفهمد تپش ثبت شده؛ تاییدیه‌ی نهایی هم به‌صورت

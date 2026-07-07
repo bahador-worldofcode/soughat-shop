@@ -18,6 +18,7 @@ import {
   User as UserIcon,
   AlertCircle,
   UserCircle2,
+  LogOut,
 } from 'lucide-react';
 
 interface Profile {
@@ -30,6 +31,7 @@ interface Profile {
 
 export default function ProfilePage() {
   const t = useTranslations('Profile');
+  const tAuth = useTranslations('Auth');
   const locale = useLocale();
   const router = useRouter();
 
@@ -105,6 +107,11 @@ export default function ProfilePage() {
     setToast({ show: true, message: `${t('saved_title')} — ${t('saved_desc')}` });
   };
 
+  const handleLogout = async () => {
+    await supabaseBrowser.auth.signOut();
+    router.replace('/login');
+  };
+
   const formatMemberSince = (iso: string) => {
     try {
       const loc = locale === 'fa' ? 'fa-IR' : 'en-US';
@@ -137,7 +144,7 @@ export default function ProfilePage() {
           <h1 className="text-xl font-bold text-gray-900 mb-2">{t('not_logged_in')}</h1>
           <p className="text-sm text-gray-500 mb-6">{t('not_logged_in_desc')}</p>
           <button
-            onClick={() => router.push('/auth?next=/profile')}
+            onClick={() => router.push('/login')}
             className="w-full inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition-colors"
           >
             {t('login')}
@@ -281,6 +288,15 @@ export default function ProfilePage() {
               ) : (
                 t('save')
               )}
+            </button>
+
+            {/* دکمه خروج از حساب */}
+            <button
+              onClick={handleLogout}
+              className="w-full inline-flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-3 px-4 rounded-xl transition-all"
+            >
+              <LogOut className="h-4 w-4" />
+              {tAuth('logout')}
             </button>
           </div>
         </div>

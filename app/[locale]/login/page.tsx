@@ -44,12 +44,12 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false); // هنگام کلیک روی دکمه
   const [checking, setChecking] = useState(true); // بررسی اولیهٔ سِشن
 
-  // اگر کاربر قبلاً لاگین بود، مستقیم ببرش داشبورد
+  // اگر کاربر قبلاً لاگین بود، مستقیم ببرش پروفایل
   useEffect(() => {
     const checkSession = async () => {
       const { data } = await supabaseBrowser.auth.getSession();
       if (data.session) {
-        router.replace('/dashboard');
+        router.replace('/profile');
       } else {
         setChecking(false);
       }
