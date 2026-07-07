@@ -20,6 +20,7 @@ import {
 import { useSearchParams } from 'next/navigation';
 import { useRouter, usePathname } from '@/i18n/navigation';
 import { useTranslations, useLocale } from 'next-intl';
+import { sanitizePostHtml } from '@/lib/sanitizeHtml';
 
 interface Product {
   id: string;
@@ -154,9 +155,9 @@ export default function ProductsClientView({
   };
 
   const activeDescription = activeCategoryInfo
-    ? isEn
-      ? activeCategoryInfo.description_en
-      : activeCategoryInfo.description
+    ? sanitizePostHtml(
+        (isEn ? activeCategoryInfo.description_en : activeCategoryInfo.description) || ''
+      ) || null
     : null;
 
   return (

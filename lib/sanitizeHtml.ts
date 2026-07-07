@@ -84,3 +84,24 @@ export function containsHtmlTags(content: string): boolean {
   if (!content) return false;
   return /<\/?[a-z][\s\S]*?>/i.test(content);
 }
+
+/**
+ * محتوای HTML را به متن ساده (بدون تگ) تبدیل می‌کند — برای جاهایی که باید
+ * فقط متنِ خام نمایش داده بشه (زیرتیتر صفحه، متا-دیسکریپشن و ...) و نه HTML.
+ * بدون این تابع، اگر فیلدی مثل description حاوی تگ‌های واقعی HTML باشه
+ * (مثلاً <h2>...</h2><p>...</p>)، چون این مکان‌ها HTML رو رندر نمی‌کنن (فقط
+ * متن ساده نشون می‌دن)، خودِ تگ‌ها به صورت کد خام روی صفحه دیده می‌شن.
+ */
+export function stripHtmlToText(html: string): string {
+  if (!html) return '';
+  return html
+    .replace(/<\/?[a-z][\s\S]*?>/gi, ' ') // حذف تگ‌ها
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#0?39;/gi, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}

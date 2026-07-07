@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import ProductsClientView from '@/components/ProductsClientView';
+import { stripHtmlToText } from '@/lib/sanitizeHtml';
 
 // این صفحه چون بر اساس searchParams (دسته‌بندی/جستجو/مرتب‌سازی/صفحه) فیلتر می‌شه،
 // همیشه به‌صورت داینامیک روی سرور رندر می‌شه (نه استاتیک) — دقیقاً چیزی که برای
@@ -80,8 +81,8 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 
   const description = activeCategory
     ? (isEn
-        ? (activeCategory.seo_desc || activeCategory.description_en?.substring(0, 160) || activeCategory.description?.substring(0, 160))
-        : (activeCategory.seo_desc || activeCategory.description?.substring(0, 160)))
+        ? (activeCategory.seo_desc || stripHtmlToText(activeCategory.description_en || activeCategory.description || '').substring(0, 160))
+        : (activeCategory.seo_desc || stripHtmlToText(activeCategory.description || '').substring(0, 160)))
     : (isEn
         ? 'Browse every Soughat Shop product: Iranian sweets, handicrafts, gold, jewelry and gift cards. Pay with USDT, Bitcoin or Solana — delivered anywhere in Iran.'
         : 'همه‌ی محصولات سوغات شاپ را ببینید: شیرینی، صنایع‌دستی، طلا، جواهر و کارت هدیه ایرانی. پرداخت با تتر، بیت‌کوین یا سولانا و تحویل در سراسر ایران.');
@@ -188,7 +189,7 @@ export default async function ProductsPage({ params, searchParams }: Props) {
     ? (isEn ? (activeCategoryInfo.name_en || activeCategoryInfo.name) : activeCategoryInfo.name)
     : t('title');
   const pageSubtitle = activeCategoryInfo
-    ? (isEn ? activeCategoryInfo.description_en : activeCategoryInfo.description)?.substring(0, 200) || t('subtitle')
+    ? stripHtmlToText((isEn ? activeCategoryInfo.description_en : activeCategoryInfo.description) || '').substring(0, 200) || t('subtitle')
     : t('subtitle');
 
   // ۴. Structured Data — ItemList/CollectionPage برای گوگل و بات‌های هوش مصنوعی
