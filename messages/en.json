@@ -328,7 +328,10 @@
       "city": "Province & City",
       "city_ph": "e.g., Tehran, West Town",
       "address": "Full Address",
-      "address_ph": "Street, Alley, No..."
+      "address_ph": "Street, Alley, No...",
+      "saved_addresses_hint": "Pick one of your saved addresses, or enter new details",
+      "save_for_next_time": "Save this address for next time",
+      "save_label_ph": "Give it a name, e.g. \"Mom's house\""
     },
     "note": {
       "title": "3. Order Notes (Optional)",

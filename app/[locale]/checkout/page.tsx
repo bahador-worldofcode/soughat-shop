@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { MapPin, ShoppingCart, ChevronLeft, ChevronRight, Loader2, Globe, FileText, ShieldCheck, ArrowLeft, AlertTriangle, Trash2, XCircle, Info } from 'lucide-react';
+import { MapPin, ShoppingCart, ChevronLeft, ChevronRight, Loader2, Globe, FileText, ShieldCheck, ArrowLeft, AlertTriangle, Trash2, XCircle, Info, Star } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import CryptoPayment from '@/components/CryptoPayment';
 import { useTranslations, useLocale } from 'next-intl';
@@ -12,6 +12,16 @@ import { supabaseBrowser } from '@/lib/supabase-browser';
 // سبد خرید از آن لحظه تغییر کرده یا نه. اگر تغییر کرده باشد، یعنی سفارشِ
 // در انتظار پرداختِ قبلی دیگر با سبد خرید فعلی هم‌خوانی ندارد و نباید
 // کاربر را مستقیم به صفحه‌ی پرداخت با مبلغ قدیمی برد.
+interface SavedAddress {
+  id: string;
+  label: string;
+  receiver_name: string;
+  receiver_phone: string;
+  city: string;
+  address: string;
+  is_default: boolean;
+}
+
 function getCartSignature(items: { id: string; quantity: number }[]) {
   if (!items || items.length === 0) return '';
   return items
@@ -51,6 +61,13 @@ export default function CheckoutPage() {
   const [formErrors, setFormErrors] = useState<Record<string, boolean>>({});
   const [globalError, setGlobalError] = useState('');
 
+  // آدرس‌های ذخیره‌شده‌ی کاربر (فقط اگر لاگین باشد) — برای انتخاب سریع مثل اسنپ
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[] | null>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [saveNewAddress, setSaveNewAddress] = useState(false);
+  const [newAddressLabel, setNewAddressLabel] = useState('');
+
   const [formData, setFormData] = useState({
     senderName: '',
     senderPhone: '',
@@ -74,6 +91,58 @@ export default function CheckoutPage() {
     }
     setMounted(true);
   }, []);
+
+  // اگر کاربر لاگین باشد، آدرس‌های ذخیره‌شده‌اش را می‌خوانیم تا بتواند
+  // به‌جای تایپ دوباره، فقط یکی را از بین آدرس‌های قبلی انتخاب کند.
+  useEffect(() => {
+    const loadSavedAddresses = async () => {
+      const {
+        data: { session },
+      } = await supabaseBrowser.auth.getSession();
+
+      if (!session?.user) return;
+      setIsLoggedIn(true);
+
+      const { data } = await (supabaseBrowser.from('saved_addresses') as any)
+        .select('id, label, receiver_name, receiver_phone, city, address, is_default')
+        .order('is_default', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      if (data) setSavedAddresses(data as SavedAddress[]);
+    };
+    loadSavedAddresses();
+  }, []);
+
+  const applySavedAddress = (addr: SavedAddress) => {
+    setSelectedAddressId(addr.id);
+    setSaveNewAddress(false);
+    setFormData((prev) => ({
+      ...prev,
+      receiverName: addr.receiver_name,
+      receiverPhone: addr.receiver_phone,
+      city: addr.city,
+      address: addr.address,
+    }));
+    setFormErrors((prev) => ({
+      ...prev,
+      receiverName: false,
+      receiverPhone: false,
+      city: false,
+      address: false,
+    }));
+  };
+
+  // وقتی هم آدرس‌های ذخیره‌شده لود شدند و هم پیش‌نویس فرم بررسی شد، اگر فرم
+  // هنوز خالی بود (یعنی کاربر قبلاً چیزی تایپ نکرده)، آدرس پیش‌فرض را خودکار
+  // پر می‌کنیم — دقیقاً همان حسی که در اسنپ موقع باز کردن صفحه سفارش داری.
+  useEffect(() => {
+    if (!mounted || !savedAddresses || savedAddresses.length === 0) return;
+    const alreadyFilled = formData.receiverName.trim() || formData.address.trim();
+    if (alreadyFilled) return;
+    const defaultAddr = savedAddresses.find((a) => a.is_default) || savedAddresses[0];
+    applySavedAddress(defaultAddr);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, savedAddresses]);
 
   // تصمیم‌گیری درباره‌ی سفارش معلق (pending_order_id):
   // این افکت به‌عمد به «cart» وابسته است و فقط یک بار run نمی‌شود، چون سبد
@@ -127,6 +196,12 @@ export default function CheckoutPage() {
     if (formErrors[name]) {
         setFormErrors((prev) => ({ ...prev, [name]: false }));
     }
+    // اگر کاربر بعد از انتخاب یک آدرس ذخیره‌شده، دستی یکی از فیلدهای گیرنده
+    // را ویرایش کند، دیگر آن چیپ را انتخاب‌شده نشان نمی‌دهیم (چون دیگر دقیقاً
+    // همان آدرس نیست).
+    if (['receiverName', 'receiverPhone', 'city', 'address'].includes(name) && selectedAddressId) {
+      setSelectedAddressId(null);
+    }
   };
 
   const clearForm = () => {
@@ -137,6 +212,9 @@ export default function CheckoutPage() {
     setFormData(emptyState);
     setFormErrors({});
     setGlobalError('');
+    setSelectedAddressId(null);
+    setSaveNewAddress(false);
+    setNewAddressLabel('');
     localStorage.removeItem('checkout_draft');
     setShowClearModal(false);
   };
@@ -216,6 +294,25 @@ export default function CheckoutPage() {
         // می‌شود که پرداخت واقعاً نهایی شود (در کامپوننت پرداخت کریپتو).
         localStorage.setItem('pending_order_id', result.id);
         localStorage.setItem('pending_order_cart_sig', getCartSignature(cart));
+
+        // اگر کاربر لاگین بود و تیک «ذخیره این آدرس» را زده بود، آدرس گیرنده
+        // را در دفترچه آدرسش ذخیره می‌کنیم تا دفعه‌ی بعد نیازی به تایپ دوباره نباشد.
+        if (isLoggedIn && saveNewAddress && newAddressLabel.trim() && session?.user) {
+          (supabaseBrowser.from('saved_addresses') as any)
+            .insert([
+              {
+                user_id: session.user.id,
+                label: newAddressLabel.trim(),
+                receiver_name: formData.receiverName,
+                receiver_phone: formData.receiverPhone,
+                city: formData.city,
+                address: formData.address,
+                is_default: !savedAddresses || savedAddresses.length === 0,
+              },
+            ])
+            .then(() => {});
+        }
+
         setOrderId(result.id);
         setStep(2);
         setResumedOrder(false);
@@ -397,6 +494,36 @@ export default function CheckoutPage() {
                         <MapPin className="h-5 w-5 text-red-500" />
                         {t('receiver.title')}
                     </h3>
+
+                    {/* انتخاب سریع از آدرس‌های ذخیره‌شده — فقط برای کاربر لاگین‌شده */}
+                    {savedAddresses && savedAddresses.length > 0 && (
+                      <div className="mb-5">
+                        <p className="text-xs text-gray-500 mb-2">{t('receiver.saved_addresses_hint')}</p>
+                        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+                          {savedAddresses.map((addr) => (
+                            <button
+                              type="button"
+                              key={addr.id}
+                              onClick={() => applySavedAddress(addr)}
+                              className={`flex-shrink-0 text-right rounded-xl border px-3.5 py-2.5 transition-colors min-w-[150px] max-w-[220px] ${
+                                selectedAddressId === addr.id
+                                  ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
+                                  : 'border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/50'
+                              }`}
+                            >
+                              <span className="flex items-center gap-1 text-xs font-bold text-gray-800 whitespace-nowrap">
+                                {addr.is_default && <Star className="h-3 w-3 text-amber-500 fill-current flex-shrink-0" />}
+                                <span className="truncate">{addr.label}</span>
+                              </span>
+                              <span className="block text-[11px] text-gray-500 mt-0.5 truncate">
+                                {addr.city} — {addr.address}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-1">
                             <label className="text-xs text-gray-600">{t('receiver.name')} <span className="text-red-500">*</span></label>
@@ -444,6 +571,31 @@ export default function CheckoutPage() {
                             />
                         </div>
                     </div>
+
+                    {/* ذخیره‌ی این آدرس برای دفعه‌ی بعد — فقط اگر لاگین باشد و از یک
+                        آدرس ذخیره‌شده‌ی قبلی استفاده نکرده باشد (چون آن یکی از قبل ذخیره است) */}
+                    {isLoggedIn && !selectedAddressId && (
+                      <div className="mt-4 pt-4 border-t border-gray-100">
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={saveNewAddress}
+                            onChange={(e) => setSaveNewAddress(e.target.checked)}
+                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-700">{t('receiver.save_for_next_time')}</span>
+                        </label>
+                        {saveNewAddress && (
+                          <input
+                            type="text"
+                            value={newAddressLabel}
+                            onChange={(e) => setNewAddressLabel(e.target.value)}
+                            placeholder={t('receiver.save_label_ph')}
+                            className="mt-3 w-full rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
+                          />
+                        )}
+                      </div>
+                    )}
                 </div>
 
                 <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
