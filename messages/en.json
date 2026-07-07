@@ -593,5 +593,17 @@
       "uk": "UK",
       "uae": "UAE"
     }
+  },
+  "Auth": {
+    "title": "Login / Sign Up",
+    "subtitle": "Continue to Soughat Shop with your Google account",
+    "google_button": "Continue with Google",
+    "signing_in": "Redirecting to Google…",
+    "terms_note": "By continuing you agree to Soughat Shop's Terms & Guarantee.",
+    "welcome": "Welcome to your dashboard",
+    "welcome_subtitle": "You are successfully logged in with Google.",
+    "logged_in_as": "Logged in as",
+    "dashboard_placeholder": "The full Customer Dashboard will be built in the next phase.",
+    "logout": "Log out"
   }
 }
