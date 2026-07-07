@@ -14,6 +14,7 @@ import FloatingContact from "@/components/FloatingContact";
 import FloatingCart from "@/components/FloatingCart";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import WebMCPProvider from "@/components/WebMCPProvider";
+import AuthSessionHandler from "@/components/AuthSessionHandler";
 
 // کانفیگ فونت برای خوانایی بهتر سایت
 const vazir = Vazirmatn({ subsets: ['arabic', 'latin'] });
@@ -164,6 +165,10 @@ export default async function LocaleLayout({
         </Script>
 
         <NextIntlClientProvider messages={messages}>
+
+          {/* شبکهٔ ایمنی احراز هویت: اگر گوگل کاربر را با ?code= به
+              ریشه برگرداند، سِشن را می‌سازد و به داشبورد هدایت می‌کند */}
+          <AuthSessionHandler />
 
           {/* نوار پیشرفت سراسری بالای صفحه — فاز ۴ */}
           <NextTopLoader

@@ -1,7 +1,7 @@
 # Google OAuth Login — Complete Setup Guide (Soughat Shop)
 
 This guide explains **exactly** how to wire up "Sign Up / Log In with Google"
-for the Soughat Shop Next.js app (Supabase + Render). Follow it click-by-click.
+for the Soughat Shop Next.js app (Supabase + Vercel). Follow it click-by-click.
 
 The code is **already added** to the project. You only need to do the
 dashboard/console configuration below and set the environment variables.
@@ -16,7 +16,7 @@ dashboard/console configuration below and set the environment variables.
 3. Copy these two values — you will need them later:
    - **Project URL** → use as `NEXT_PUBLIC_SUPABASE_URL`
    - **anon public** key → use as `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   (These should already exist in your project; if not, add them — see Render section.)
+    (These should already exist in your project; if not, add them — see Vercel section.)
 
 ---
 
@@ -70,6 +70,60 @@ dashboard/console configuration below and set the environment variables.
 6. Click **Save**.
 
 That's it for the backend. Google login now works through Supabase.
+
+---
+
+## 3.5 ⚠️ CRITICAL — Supabase Auth → URL Configuration (the part that breaks live redirects)
+
+This is the **most common cause** of "after Google login I land on
+`http://localhost:3000/?code=...` instead of the profile/dashboard page" on the
+live site. It happens when Supabase does **not** recognise the callback URL the
+app sends, so it falls back to the **Site URL** (which is often still set to
+`http://localhost:3000` from local development).
+
+### 3.5.1 Set the Site URL
+
+1. In the Supabase dashboard → **Authentication → URL Configuration**.
+2. **Site URL** → set it to the live origin (no trailing slash):
+   ```
+   https://soughat.shop
+   ```
+   (Keep `http://localhost:3000` only if you also test locally; prefer setting it
+   to the live URL in production.)
+
+### 3.5.2 Add the locale callback URLs to "Redirect URLs"
+
+1. Still in **Authentication → URL Configuration**.
+2. Under **Redirect URLs**, add **both** locale-prefixed callbacks the app sends
+   (the app passes `https://soughat.shop/<locale>/auth/callback` as `redirectTo`):
+   ```
+   https://soughat.shop/fa/auth/callback
+   https://soughat.shop/en/auth/callback
+   ```
+   - For local testing also add `http://localhost:3000/fa/auth/callback` and
+     `http://localhost:3000/en/auth/callback`.
+   - Alternatively you may use the wildcard form (Supabase supports `*`) to
+     cover both languages at once:
+     ```
+     https://soughat.shop/*/auth/callback
+     ```
+3. Click **Save**.
+
+> Why this matters: when the app calls `signInWithOAuth` it passes
+> `redirectTo = https://soughat.shop/<locale>/auth/callback`. Supabase only
+> forwards the browser there if that exact URL (or a matching wildcard) is in the
+> **Redirect URLs** allowlist. If it is NOT listed, Supabase silently redirects to
+> the **Site URL** instead — which is why you saw
+> `http://localhost:3000/?code=...`. Once the entries above are saved, Google
+> will return the user to `/fa/auth/callback` (or `/en/auth/callback`) where the
+> session is exchanged and the user is sent to the dashboard.
+>
+> Note: there is also a global client-side safety net component
+> (`components/AuthSessionHandler.tsx`, mounted in `app/[locale]/layout.tsx`)
+> that catches a stray `?code=` on any page and finishes the login. But the
+> proper fix is the URL Configuration above — the safety net cannot recover the
+> PKCE verifier when Supabase bounces the user to a *different* origin
+> (e.g. `localhost:3000`), because the verifier is stored on `soughat.shop`.
 
 ---
 
@@ -147,6 +201,6 @@ automatically.
   in Google Cloud exactly match `https://soughat.shop/auth/v1/callback`
   (and localhost for dev).
 - **Login loops back to /login:** Make sure `NEXT_PUBLIC_SUPABASE_URL` and
-  `NEXT_PUBLIC_SUPABASE_ANON_KEY` are set on Render and match your project.
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY` are set on Vercel and match your project.
 - **"Access blocked" from Google:** Add your Gmail under **OAuth consent
   screen → Test users** (while the app is in Testing mode).
