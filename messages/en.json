@@ -606,5 +606,23 @@
     "dashboard_placeholder": "The full Customer Dashboard will be built in the next phase.",
     "logout": "Log out",
     "member_since": "Member since"
+  },
+  "Profile": {
+    "title": "My Profile",
+    "subtitle": "Manage your account information",
+    "avatar": "Profile photo",
+    "full_name": "Full Name",
+    "full_name_ph": "Your full name",
+    "email": "Email",
+    "email_readonly": "Your email is linked to your Google account and cannot be changed",
+    "member_since": "Member since",
+    "save": "Save Changes",
+    "saving": "Saving…",
+    "saved_title": "Profile Updated",
+    "saved_desc": "Your information has been saved successfully.",
+    "not_logged_in": "You are not logged in",
+    "not_logged_in_desc": "Please sign in with Google to view your profile.",
+    "login": "Sign in with Google",
+    "load_error": "Failed to load your profile"
   }
 }

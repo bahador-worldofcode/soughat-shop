@@ -20,7 +20,8 @@
     "switch_to_english": "Switch to English",
     "switch_to_farsi": "تغییر به فارسی",
     "lang_name_fa": "فارسی",
-    "lang_name_en": "English"
+    "lang_name_en": "English",
+    "profile_aria": "پروفایل من"
   },
   "NotFound": {
     "title": "صفحه مورد نظر پیدا نشد",
@@ -607,5 +608,23 @@
     "dashboard_placeholder": "پنل کامل مشتری در فاز بعدی ساخته خواهد شد.",
     "logout": "خروج از حساب",
     "member_since": "عضویت از"
+  },
+  "Profile": {
+    "title": "پروفایل من",
+    "subtitle": "اطلاعات حساب کاربری خود را مدیریت کنید",
+    "avatar": "عکس پروفایل",
+    "full_name": "نام و نام خانوادگی",
+    "full_name_ph": "نام کامل شما",
+    "email": "ایمیل",
+    "email_readonly": "ایمیل شما به حساب گوگل متصل است و قابل تغییر نیست",
+    "member_since": "عضویت از",
+    "save": "ذخیره تغییرات",
+    "saving": "در حال ذخیره…",
+    "saved_title": "پروفایل به‌روزرسانی شد",
+    "saved_desc": "اطلاعات شما با موفقیت ذخیره شد.",
+    "not_logged_in": "شما وارد نشده‌اید",
+    "not_logged_in_desc": "لطفاً برای مشاهده پروفایل با گوگل وارد شوید.",
+    "login": "ورود با گوگل",
+    "load_error": "بارگذاری پروفایل با خطا مواجه شد"
   }
 }

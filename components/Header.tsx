@@ -1,11 +1,12 @@
 'use client';
 import { useState, useEffect, useRef, useTransition } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ShoppingBag, Globe, Search, X, Loader2 } from 'lucide-react';
+import { ShoppingBag, Globe, Search, X, Loader2, User } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link, useRouter, usePathname } from '@/i18n/navigation';
 import { isMobileNavHidden } from '@/lib/navVisibility';
+import { useAuthState } from '@/lib/useAuthState';
 
 export default function Header() {
   const t = useTranslations('Header');
@@ -14,6 +15,9 @@ export default function Header() {
 
   // دریافت متد totalItems از استور (که اکنون هوشمند شده و حواله را ۱ عدد می‌شمارد)
   const { currency, setCurrency, totalItems, fetchRates } = useStore();
+
+  // آیا کاربر وارد سیستم شده؟ (برای نمایش آیکون پروفایل)
+  const isAuthed = useAuthState();
 
   // محاسبه تعداد آیتم‌های سبد خرید
   const cartCount = totalItems();
@@ -276,6 +280,15 @@ export default function Header() {
                 <option value="SEK">SEK (kr)</option>
               </select>
             </div>
+
+            {/* Profile Button — فقط برای کاربران واردشده نمایش داده می‌شود */}
+            {isAuthed && (
+              <Link href="/profile" aria-label={t('profile_aria')}>
+                <button className="relative p-2.5 hover:bg-blue-50 rounded-xl transition-colors group border border-transparent hover:border-blue-100">
+                  <User className="h-5 w-5 text-gray-600 group-hover:text-blue-600" />
+                </button>
+              </Link>
+            )}
 
             {/* Cart Button */}
             <Link href="/cart">
