@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Search, Package, Truck, CheckCircle, Clock, XCircle, Loader2, ArrowLeft } from 'lucide-react';
 import { Link } from '@/i18n/navigation'; // لینک هوشمند
@@ -14,19 +15,31 @@ interface Order {
   created_at: string;
 }
 
+// Next.js از هر کامپوننتی که در سطح صفحه از useSearchParams استفاده می‌کند
+// می‌خواهد داخل یک Suspense boundary باشد، وگرنه build خطا می‌دهد؛
+// به همین خاطر منطق اصلی را به یک کامپوننت داخلی منتقل کردیم.
 export default function TrackPage() {
+  return (
+    <Suspense fallback={null}>
+      <TrackPageInner />
+    </Suspense>
+  );
+}
+
+function TrackPageInner() {
   const t = useTranslations('Track');
   const locale = useLocale(); // تشخیص زبان برای فرمت تاریخ
   const isEn = locale === 'en';
+
+  const searchParams = useSearchParams();
 
   const [orderId, setOrderId] = useState('');
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleTrack = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!orderId) return;
+  const runTrack = async (rawId: string) => {
+    if (!rawId) return;
 
     setLoading(true);
     setError('');
@@ -34,7 +47,7 @@ export default function TrackPage() {
 
     // پاکسازی ورودی: کاربر ممکن است فاصله‌ی اضافه در ابتدا/انتهای کد سفارش
     // کپی/پیست کرده باشد (مثلاً از پنل ادمین).
-    const cleanId = orderId.trim();
+    const cleanId = rawId.trim();
 
     try {
       // نکته‌ی مهم (رفع باگ): ستون id جدول orders از نوع UUID است.
@@ -62,6 +75,23 @@ export default function TrackPage() {
       setLoading(false);
     }
   };
+
+  const handleTrack = (e: React.FormEvent) => {
+    e.preventDefault();
+    runTrack(orderId);
+  };
+
+  // وقتی کاربر از تب «سفارش‌های من» در پروفایل روی «پیگیری» یک سفارش
+  // کلیک می‌کند، به همین صفحه با ?id=<order-id> می‌آید؛ اینجا خودکار
+  // همان کد سفارش را در فیلد جستجو می‌گذاریم و بی‌درنگ نتیجه را نشان می‌دهیم.
+  useEffect(() => {
+    const idFromUrl = searchParams.get('id');
+    if (idFromUrl) {
+      setOrderId(idFromUrl);
+      runTrack(idFromUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // وضعیت‌های سفارش (ترجمه شده)
   const steps = [

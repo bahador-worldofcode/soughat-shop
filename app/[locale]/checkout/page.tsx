@@ -5,6 +5,7 @@ import { useStore } from '@/lib/store';
 import CryptoPayment from '@/components/CryptoPayment';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link, useRouter } from '@/i18n/navigation';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 
 // امضای یکتای وضعیت فعلی سبد خرید (کدام محصولات، با چه تعدادی).
 // این امضا در لحظه‌ی ثبت سفارش ذخیره می‌شود تا بعداً بتوانیم بفهمیم آیا
@@ -173,9 +174,20 @@ export default function CheckoutPage() {
 
     setIsSubmitting(true);
     try {
+      // اگر کاربر با گوگل لاگین کرده، توکنش را می‌فرستیم تا سرور بتواند
+      // این سفارش را به حسابش وصل کند (برای تب «سفارش‌های من» در پروفایل).
+      // اگر لاگین نکرده باشد (مهمان)، این مقدار خالی می‌ماند و سفارش
+      // دقیقاً مثل قبل و بدون هیچ مشکلی ثبت می‌شود.
+      const {
+        data: { session },
+      } = await supabaseBrowser.auth.getSession();
+
       const response = await fetch('/api/orders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({
           senderName: formData.senderName,
           senderPhone: formData.senderPhone,

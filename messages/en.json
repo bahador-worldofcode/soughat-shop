@@ -612,9 +612,21 @@
   "Profile": {
     "title": "My Profile",
     "subtitle": "Manage your account information",
+    "tabs": {
+      "account": "Account",
+      "addresses": "Addresses",
+      "orders": "My Orders"
+    },
     "avatar": "Profile photo",
+    "avatar_change": "Change photo",
+    "avatar_remove": "Remove photo",
+    "avatar_hint": "Max 100KB — JPG, PNG or WebP",
+    "avatar_updated": "Profile photo updated",
+    "avatar_error_generic": "Couldn't upload this photo. Please try another one.",
     "full_name": "Full Name",
     "full_name_ph": "Your full name",
+    "phone": "Phone number",
+    "phone_ph": "e.g. +1 555 123 4567",
     "email": "Email",
     "email_readonly": "Your email is linked to your Google account and cannot be changed",
     "member_since": "Member since",
@@ -625,6 +637,39 @@
     "not_logged_in": "You are not logged in",
     "not_logged_in_desc": "Please sign in with Google to view your profile.",
     "login": "Sign in with Google",
-    "load_error": "Failed to load your profile"
+    "load_error": "Failed to load your profile",
+    "addresses": {
+      "title": "Saved Addresses",
+      "subtitle": "Save a recipient's address once, reuse it on your next order",
+      "add_new": "Add address",
+      "empty": "You haven't saved any addresses yet",
+      "label": "Address label",
+      "label_ph": "e.g. Mom's house, Brother's office",
+      "receiver_name": "Recipient name",
+      "receiver_phone": "Recipient phone",
+      "city": "City",
+      "address": "Full address",
+      "address_ph": "Street, alley, building, unit...",
+      "set_default": "Set as default",
+      "default_badge": "Default",
+      "edit": "Edit",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "save_address": "Save address",
+      "saved": "Address saved",
+      "deleted": "Address deleted",
+      "delete_confirm_title": "Delete this address?",
+      "delete_confirm_desc": "This can't be undone.",
+      "confirm_delete": "Yes, delete"
+    },
+    "orders": {
+      "title": "My Orders",
+      "subtitle": "Order history for orders placed while signed in to this account",
+      "empty": "No orders yet on this account",
+      "empty_desc": "Orders placed as a guest (without signing in) won't appear here.",
+      "order_number": "Order ID",
+      "track_btn": "Track order",
+      "load_error": "Couldn't load your orders. Please try again."
+    }
   }
 }

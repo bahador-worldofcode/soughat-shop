@@ -17,6 +17,18 @@ export async function POST(request: Request) {
       );
     }
 
+    // اگر کاربر لاگین کرده بود، صفحه‌ی چک‌اوت توکنش را در هدر Authorization
+    // می‌فرستد. این کاملاً اختیاری است: مهمان (بدون لاگین) هم مثل قبل
+    // می‌تواند سفارش ثبت کند، فقط user_id سفارشش خالی می‌ماند و در
+    // تب «سفارش‌های من» ظاهر نمی‌شود.
+    let userId: string | null = null;
+    const authHeader = request.headers.get('authorization') || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+    if (token) {
+      const { data: userData } = await supabaseAdmin.auth.getUser(token);
+      if (userData?.user) userId = userData.user.id;
+    }
+
     const { data, error } = await supabaseAdmin
       .from('orders')
       .insert([
@@ -33,7 +45,8 @@ export async function POST(request: Request) {
           total_price: body.totalPrice,
           display_fiat_amount: body.displayFiatAmount,
           display_currency: body.displayCurrency,
-          status: 'pending'
+          status: 'pending',
+          user_id: userId,
         }
       ])
       .select('id')
