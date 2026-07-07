@@ -5,6 +5,7 @@ import { usePathname, Link } from '@/i18n/navigation';
 import { ShoppingBag } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useTranslations, useLocale } from 'next-intl';
+import { isFloatingCartHidden } from '@/lib/navVisibility';
 
 // TASK-05 (ROADMAP.md): نشانگر شناور سبد خرید در دسکتاپ.
 // نکته‌ی مهم: این یک «باگ» نبود — آیکون سبد خرید داخل هدر از قبل وجود داشت
@@ -25,6 +26,12 @@ import { useTranslations, useLocale } from 'next-intl';
 //      محتوای صفحه نشود؛ با هاور یا اسکرول به سمت بالا دوباره کامل واضح
 //      می‌شود — الگوی fade مشابه چیزی که در ROADMAP برای FloatingContact هم
 //      توضیح داده شده.
+//   ۵) (آپدیت) در صفحاتی که کاربر از قبل خودِ سبد خرید را می‌بیند (/cart) یا
+//      خلاصه‌ی آن را برای تایید نهایی جلوی چشم دارد (/checkout)، این دکمه
+//      کاملاً بی‌فایده و تکراری است، پس مخفی می‌شود. این منطق در
+//      lib/navVisibility.ts (تابع isFloatingCartHidden) نگه‌داری می‌شود، دقیقاً
+//      همان الگوی isMobileNavHidden که برای نوار پایین موبایل استفاده شده،
+//      تا قوانین «کجا این عنصر دیده شود» همه یک‌جا و قابل نگهداری باشند.
 export default function FloatingCart() {
   const t = useTranslations('FloatingCart');
   const locale = useLocale();
@@ -69,8 +76,8 @@ export default function FloatingCart() {
   }, []);
 
   if (!mounted) return null;
-  // پنل ادمین محیط کاملاً جدایی دارد؛ این کامپوننت مخصوص ویترین فروشگاه است.
-  if (pathname?.startsWith('/admin')) return null;
+  // مسیرهایی که این دکمه نباید در آن‌ها دیده شود (پنل ادمین، /cart، /checkout).
+  if (isFloatingCartHidden(pathname)) return null;
   // طبق تسک: فقط وقتی سبد خرید حداقل یک آیتم دارد نمایش داده شود.
   if (cartCount === 0) return null;
 
