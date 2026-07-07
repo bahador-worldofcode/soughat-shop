@@ -13,31 +13,56 @@ import { useRouter } from '@/i18n/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { Loader2, LogOut, UserCircle2 } from 'lucide-react';
 
+// ساختارِ ردیفِ جدول public.profiles
+type Profile = {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  avatar_url: string | null;
+  created_at: string;
+};
+
 export default function DashboardPage() {
   const locale = useLocale();
   const t = useTranslations('Auth');
   const router = useRouter();
 
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadUser = async () => {
-      const { data, error } = await supabaseBrowser.auth.getUser();
+      // ۱) ابتدا چک می‌کنیم کاربر لاگین کرده یا نه
+      const { data: authData, error: authError } =
+        await supabaseBrowser.auth.getUser();
 
-      // اگر کاربر وارد نشده بود، برگردانش به صفحهٔ ورود
-      if (error || !data.user) {
+      if (authError || !authData.user) {
         router.replace('/login');
         return;
       }
 
-      setEmail(data.user.email || '');
-      setName(
-        (data.user.user_metadata?.full_name as string) ||
-          (data.user.user_metadata?.name as string) ||
-          ''
-      );
+      // ۲) داده‌های پروفایل را از جدول public.profiles می‌خوانیم
+      //    (این جدول توسط تریگر هنگام ثبت‌نام با گوگل پر می‌شود)
+      const { data: profileData, error: profileError } = await supabaseBrowser
+        .from('profiles')
+        .select('id, email, full_name, avatar_url, created_at')
+        .eq('id', authData.user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Profile fetch error:', profileError.message);
+        // اگر ردیف پروفایل هنوز ساخته نشده بود، حداقل ایمیلِ auth را نمایش بده
+        setProfile({
+          id: authData.user.id,
+          email: authData.user.email ?? null,
+          full_name: null,
+          avatar_url: null,
+          created_at: '',
+        });
+      } else {
+        setProfile(profileData as Profile);
+      }
+
       setLoading(false);
     };
 
@@ -57,21 +82,44 @@ export default function DashboardPage() {
     );
   }
 
+  // مقادیر نمایشی (از جدول profiles)
+  const displayName = profile?.full_name || '';
+  const displayEmail = profile?.email || '';
+  const avatar = profile?.avatar_url || '';
+  const joinedAt = profile?.created_at
+    ? new Date(profile.created_at).toLocaleDateString(locale === 'fa' ? 'fa-IR' : 'en-US')
+    : '—';
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 font-[family-name:var(--font-vazir)]">
       <div className="max-w-lg w-full bg-white p-8 rounded-2xl shadow-xl border border-gray-200 text-center">
         <div className="flex justify-center mb-4">
-          <UserCircle2 className="h-16 w-16 text-blue-600" />
+          {avatar ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={avatar}
+              alt={displayName || displayEmail}
+              className="h-16 w-16 rounded-full object-cover border-2 border-blue-100"
+            />
+          ) : (
+            <UserCircle2 className="h-16 w-16 text-blue-600" />
+          )}
         </div>
 
         <h1 className="text-2xl font-bold text-gray-900">{t('welcome')}</h1>
         <p className="mt-1 text-sm text-gray-500">{t('welcome_subtitle')}</p>
 
-        <div className="mt-6 bg-gray-50 border border-gray-100 rounded-xl p-4 text-left">
-          <p className="text-xs text-gray-400 mb-1">{t('logged_in_as')}</p>
-          <p className="text-sm font-semibold text-gray-800 truncate">
-            {name ? `${name} (${email})` : email}
-          </p>
+        <div className="mt-6 bg-gray-50 border border-gray-100 rounded-xl p-4 text-left space-y-3">
+          <div>
+            <p className="text-xs text-gray-400 mb-1">{t('logged_in_as')}</p>
+            <p className="text-sm font-semibold text-gray-800 truncate">
+              {displayName ? `${displayName} (${displayEmail})` : displayEmail}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-400 mb-1">{t('member_since')}</p>
+            <p className="text-sm font-semibold text-gray-800">{joinedAt}</p>
+          </div>
         </div>
 
         <p className="mt-6 text-xs text-gray-400">{t('dashboard_placeholder')}</p>

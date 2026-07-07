@@ -73,9 +73,10 @@ That's it for the backend. Google login now works through Supabase.
 
 ---
 
-## 4. Render — Environment Variables
+## 4. Vercel — Environment Variables
 
-In your **Render dashboard → Web Service → Environment**:
+In your **Vercel dashboard → Project → Settings → Environment Variables**:
+(add them for `Production`, `Preview`, and `Development` as needed)
 
 | Key | Value |
 |-----|-------|
@@ -84,7 +85,7 @@ In your **Render dashboard → Web Service → Environment**:
 | `NEXT_PUBLIC_SITE_URL` | `https://soughat.shop` (optional, used for absolute links) |
 
 - These are **public** (browser-exposed) variables — safe to be public.
-- Render auto-redeploys on save. No secret key is needed for Google OAuth
+- Vercel auto-redeploys on save. No secret key is needed for Google OAuth
   because Supabase handles the secret server-side.
 
 If you test locally, create a file named **`.env.local`** in the project root:

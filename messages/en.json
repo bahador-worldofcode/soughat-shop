@@ -604,6 +604,7 @@
     "welcome_subtitle": "You are successfully logged in with Google.",
     "logged_in_as": "Logged in as",
     "dashboard_placeholder": "The full Customer Dashboard will be built in the next phase.",
-    "logout": "Log out"
+    "logout": "Log out",
+    "member_since": "Member since"
   }
 }
