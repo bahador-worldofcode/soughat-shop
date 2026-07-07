@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { MapPin, ShoppingCart, ChevronLeft, ChevronRight, Loader2, Globe, FileText, ShieldCheck, ArrowLeft, AlertTriangle, Trash2, XCircle, Info, Star } from 'lucide-react';
+import { MapPin, ShoppingCart, ChevronLeft, ChevronRight, Loader2, Globe, FileText, ShieldCheck, ArrowLeft, AlertTriangle, Trash2, XCircle, Info, Star, Wand2 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import CryptoPayment from '@/components/CryptoPayment';
 import { useTranslations, useLocale } from 'next-intl';
@@ -68,6 +68,13 @@ export default function CheckoutPage() {
   const [saveNewAddress, setSaveNewAddress] = useState(false);
   const [newAddressLabel, setNewAddressLabel] = useState('');
 
+  // اطلاعات پروفایل کاربر (نام/تلفن/کشور) — برای پرکردن خودکار بخش «فرستنده»
+  const [profileInfo, setProfileInfo] = useState<{
+    full_name: string | null;
+    phone: string | null;
+    country: string | null;
+  } | null>(null);
+
   const [formData, setFormData] = useState({
     senderName: '',
     senderPhone: '',
@@ -94,8 +101,10 @@ export default function CheckoutPage() {
 
   // اگر کاربر لاگین باشد، آدرس‌های ذخیره‌شده‌اش را می‌خوانیم تا بتواند
   // به‌جای تایپ دوباره، فقط یکی را از بین آدرس‌های قبلی انتخاب کند.
+  // همزمان اطلاعات خودِ کاربر (نام/تلفن/کشور) را هم می‌خوانیم تا بخش
+  // «فرستنده» بتواند با یک کلیک از روی پروفایلش پر شود.
   useEffect(() => {
-    const loadSavedAddresses = async () => {
+    const loadUserData = async () => {
       const {
         data: { session },
       } = await supabaseBrowser.auth.getSession();
@@ -103,15 +112,45 @@ export default function CheckoutPage() {
       if (!session?.user) return;
       setIsLoggedIn(true);
 
-      const { data } = await (supabaseBrowser.from('saved_addresses') as any)
-        .select('id, label, receiver_name, receiver_phone, city, address, is_default')
-        .order('is_default', { ascending: false })
-        .order('created_at', { ascending: false });
+      const [{ data: addresses }, { data: profileData }] = await Promise.all([
+        (supabaseBrowser.from('saved_addresses') as any)
+          .select('id, label, receiver_name, receiver_phone, city, address, is_default')
+          .order('is_default', { ascending: false })
+          .order('created_at', { ascending: false }),
+        (supabaseBrowser.from('profiles') as any)
+          .select('full_name, phone, country')
+          .eq('id', session.user.id)
+          .single(),
+      ]);
 
-      if (data) setSavedAddresses(data as SavedAddress[]);
+      if (addresses) setSavedAddresses(addresses as SavedAddress[]);
+      if (profileData) setProfileInfo(profileData);
     };
-    loadSavedAddresses();
+    loadUserData();
   }, []);
+
+  const fillSenderFromProfile = () => {
+    if (!profileInfo) return;
+    setFormData((prev) => ({
+      ...prev,
+      senderName: profileInfo.full_name || prev.senderName,
+      senderPhone: profileInfo.phone || prev.senderPhone,
+      senderCountry: profileInfo.country || prev.senderCountry,
+    }));
+    setFormErrors((prev) => ({ ...prev, senderName: false, senderPhone: false, senderCountry: false }));
+  };
+
+  // همین که اطلاعات پروفایل رسید، اگر بخش «فرستنده» هنوز خالی بود (یعنی
+  // پیش‌نویسی از قبل نداشت)، خودکار با اطلاعات خودِ کاربر پر می‌شود —
+  // حتی سریع‌تر از یک کلیک.
+  useEffect(() => {
+    if (!mounted || !profileInfo) return;
+    const alreadyFilled =
+      formData.senderName.trim() || formData.senderPhone.trim() || formData.senderCountry.trim();
+    if (alreadyFilled) return;
+    fillSenderFromProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, profileInfo]);
 
   const applySavedAddress = (addr: SavedAddress) => {
     setSelectedAddressId(addr.id);
@@ -447,10 +486,22 @@ export default function CheckoutPage() {
               <form onSubmit={handleSubmit} noValidate className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 
                 <div className="bg-blue-50/50 p-6 rounded-xl border border-blue-100">
-                    <h3 className="font-bold text-blue-800 mb-4 flex items-center gap-2 border-b border-blue-200 pb-2">
-                        <Globe className="h-5 w-5" />
-                        {t('sender.title')}
-                    </h3>
+                    <div className="flex items-center justify-between gap-3 mb-4 border-b border-blue-200 pb-2">
+                      <h3 className="font-bold text-blue-800 flex items-center gap-2">
+                          <Globe className="h-5 w-5" />
+                          {t('sender.title')}
+                      </h3>
+                      {isLoggedIn && profileInfo && (profileInfo.full_name || profileInfo.phone || profileInfo.country) && (
+                        <button
+                          type="button"
+                          onClick={fillSenderFromProfile}
+                          className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 bg-blue-100 hover:bg-blue-200 px-2.5 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                        >
+                          <Wand2 className="h-3.5 w-3.5" />
+                          {t('sender.fill_from_profile')}
+                        </button>
+                      )}
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-1">
                             <label className="text-xs text-gray-600">{t('sender.name')} <span className="text-red-500">*</span></label>

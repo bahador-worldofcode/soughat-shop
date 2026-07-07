@@ -312,6 +312,7 @@
     },
     "sender": {
       "title": "1. Sender Information (You)",
+      "fill_from_profile": "Fill with my info",
       "name": "Your Name",
       "name_ph": "Full Name",
       "country": "Country of Residence",
@@ -630,6 +631,9 @@
     "full_name_ph": "Your full name",
     "phone": "Phone number",
     "phone_ph": "e.g. +1 555 123 4567",
+    "country": "Country of residence",
+    "country_ph": "e.g. Germany, Canada",
+    "country_hint": "Used to auto-fill the sender info at checkout",
     "email": "Email",
     "email_readonly": "Your email is linked to your Google account and cannot be changed",
     "member_since": "Member since",

@@ -36,6 +36,7 @@ import {
   Truck,
   XCircle,
   ExternalLink,
+  Globe,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------
@@ -47,6 +48,7 @@ interface Profile {
   full_name: string | null;
   avatar_url: string | null;
   phone: string | null;
+  country: string | null;
   created_at: string;
 }
 
@@ -101,6 +103,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
+  const [country, setCountry] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -137,7 +140,7 @@ export default function ProfilePage() {
       }
 
       const { data, error } = await (supabaseBrowser.from('profiles') as any)
-        .select('id, email, full_name, avatar_url, phone, created_at')
+        .select('id, email, full_name, avatar_url, phone, country, created_at')
         .eq('id', session.user.id)
         .single();
 
@@ -150,6 +153,7 @@ export default function ProfilePage() {
       setProfile(data as Profile);
       setFullName(data.full_name ?? '');
       setPhone(data.phone ?? '');
+      setCountry(data.country ?? '');
       setAvatarUrl(data.avatar_url ?? null);
       setLoading(false);
     };
@@ -214,6 +218,7 @@ export default function ProfilePage() {
       .update({
         full_name: fullName.trim() || null,
         phone: phone.trim() || null,
+        country: country.trim() || null,
       })
       .eq('id', profile.id);
 
@@ -225,7 +230,9 @@ export default function ProfilePage() {
     }
 
     setProfile((prev) =>
-      prev ? { ...prev, full_name: fullName.trim() || null, phone: phone.trim() || null } : prev
+      prev
+        ? { ...prev, full_name: fullName.trim() || null, phone: phone.trim() || null, country: country.trim() || null }
+        : prev
     );
     setToast({ show: true, message: `${t('saved_title')} — ${t('saved_desc')}` });
   };
@@ -627,6 +634,24 @@ export default function ProfilePage() {
                     className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm text-gray-900 text-left"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1.5">
+                  {t('country')}
+                </label>
+                <div className="relative">
+                  <Globe className="h-4 w-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    id="country"
+                    type="text"
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    placeholder={t('country_ph')}
+                    className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm text-gray-900"
+                  />
+                </div>
+                <p className="text-xs text-gray-400 mt-1.5">{t('country_hint')}</p>
               </div>
 
               <div>
