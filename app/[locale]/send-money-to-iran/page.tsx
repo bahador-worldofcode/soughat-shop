@@ -2,8 +2,8 @@ import { Link } from '@/i18n/navigation';
 import type { Metadata } from 'next';
 import { CheckCircle, ArrowLeft, Send, Zap } from 'lucide-react';
 
-// لینک صفحه‌ی محصولات (ارسال پول / طلا) — همون مقصدی که دکمه‌های CTA به اون میرن
-const CTA_LINK = '/products?category=gold-and-money';
+// لینک صفحه‌ی محصول «ارسال پول نقد» — همون مقصدی که دکمه‌های CTA اصلی (ارسال پول) به اون میرن
+const CTA_LINK = '/products/send-money-cash-iran-remittance-card-to-card';
 
 // =========================================================================
 // این فایل باید دقیقاً در مسیر زیر قرار بگیرد (پوشه‌ها را با همین اسم بساز):
@@ -28,7 +28,7 @@ const faqFa: FaqItem[] = [
     ),
   },
   { q: 'مدت زمان طول می‌کشد تا پول به کارت بانکی در ایران واریز شود؟', a: 'پس از اینکه پرداخت تتر شما در شبکه بلاکچین تأیید شد (معمولاً بین ۵ تا ۱۰ دقیقه بسته به شبکه انتخابی مانند TRC20)، مبلغ ریالی بلافاصله و در کمتر از یک ساعت به کارت بانکی گیرنده در ایران واریز می‌شود.' },
-  { q: 'آیا برای استفاده از این سرویس باید احراز هویت (KYC) انجام دهم؟', a: 'خیر. یکی از مزایای اصلی سوغات شاپ احترام به حریم خصوصی کاربران است. شما نیازی به آپلود مدارک هویتی ندارید. تنها چیزی که نیاز دارید یک کیف پول دیجیتال حاوی تتر و اطلاعات کارت بانکی گیرنده در ایران است.' },
+  { q: 'آیا برای استفاده از این سرویس باید احراز هویت (KYC) انجام دهم؟', a: 'خیر. یکی از مزایای اصلی سوغات شاپ احترام به حریم خصوصی کاربران است. شما نیازی به آپلود مدارک هویتی ندارید. تنها چیزی که نیاز دارید یک کیف پول دیجیتال حاوی ارز دیجیتال مدنظرتان (تتر، بیت‌کوین، اتریوم، سولانا و...) و اطلاعات کارت بانکی گیرنده در ایران است.' },
   { q: 'کارمزد شبکه برای ارسال تتر به چه صورت است؟', a: 'کارمزد شبکه بسته به بلاکچینی که انتخاب می‌کنید متفاوت است. پیشنهاد ما استفاده از شبکه TRC20 (ترون) برای انتقال تتر است، زیرا کارمزد آن بسیار ناچیز (کمتر از ۱ دلار) و سرعت تراکنش آن بسیار بالا است.' },
   {
     q: 'آیا می‌توانم علاوه بر پول نقد، سکه طلا هم بفرستم؟',
@@ -43,11 +43,11 @@ const faqFa: FaqItem[] = [
     ),
   },
   { q: 'نرخ تبدیل تتر به ریال در سوغات شاپ چگونه محاسبه می‌شود؟', a: 'ما نرخ تبدیل را بر اساس نرخ روز بازار آزاد ایران و با بیشترین ارزش ممکن برای مشتریانمان تنظیم می‌کنیم. نرخ نهایی پیش از پرداخت در صفحه محصول به شما نمایش داده می‌شود تا با اطمینان کامل خرید خود را نهایی کنید.' },
-  { q: 'آیا سرویس شما از اروپا و انگلیس هم پشتیبانی می‌کند؟', a: 'بله، سوغات شاپ یک پلتفرم جهانی است. شما می‌توانید از هر کشوری در جهان (آمریکا، کانادا، اروپا، استرالیا، انگلیس و...) به راحتی با استفاده از رمز ارز تتر، پول یا هدیه خود را به ایران ارسال کنید.' },
+  { q: 'آیا سرویس شما از اروپا و انگلیس هم پشتیبانی می‌کند؟', a: 'بله، سوغات شاپ یک پلتفرم جهانی است. شما می‌توانید از هر کشوری در جهان (آمریکا، کانادا، اروپا، استرالیا، انگلیس و...) به راحتی با استفاده از ارزهای دیجیتال مانند تتر، بیت‌کوین، اتریوم و سولانا، پول یا هدیه خود را به ایران ارسال کنید.' },
   { q: 'اگر اشتباه در شماره کارت گیرنده وارد کنم چه می‌شود؟', a: 'ما پیش از واریز نهایی، اطلاعات را به دقت بررسی می‌کنیم. اما مسئولیت وارد کردن صحیح اطلاعات بر عهده خریدار است. لطفاً پیش از ثبت نهایی سفارش، شماره کارت و نام گیرنده را مجدداً چک کنید.' },
   { q: 'آیا برای ارسال سکه طلا، محصول فیزیکی برای گیرنده ارسال می‌شود؟', a: 'بله، در صورت خرید طلا، سکه‌های فیزیکی استاندارد و باکیفیت از طریق پست پیشتاز یا تیپاکس به آدرس گیرنده در سراسر ایران ارسال می‌شوند. کد رهگیری پستی نیز برای شما ارسال خواهد شد.' },
   { q: 'تفاوت ارسال پول با کریپتو و حواله بانکی چیست؟', a: 'حواله‌های بانکی معمولاً محدودیت‌های سخت‌گیرانه، کارمزدهای بالا و زمان انتقال چند روزه تا چند هفته‌ای دارند. اما ارسال با کریپتو در چند دقیقه انجام می‌شود، بدون محدودیت جغرافیایی است و کارمزد آن بسیار پایین‌تر است.' },
-  { q: 'آیا می‌توانم بیت‌کوین یا اتریوم به جای تتر بفرستم؟', a: 'در حال حاضر تمرکز ما بر تتر (USDT) به دلیل ثبات قیمت آن است. اما در صورت تمایل به پرداخت با ارزهای دیگر مانند بیت‌کوین، می‌توانید با پشتیبانی سایت تماس بگیرید تا راهنمایی شما را ارائه دهند.' },
+  { q: 'آیا می‌توانم بیت‌کوین یا اتریوم به جای تتر بفرستم؟', a: 'بله، حتماً. سوغات شاپ محدود به تتر نیست و پرداخت با بیت‌کوین (BTC)، اتریوم (ETH)، سولانا (SOL) و سایر ارزهای دیجیتال معتبر نیز به صورت مستقیم و بدون نیاز به هماهنگی جداگانه امکان‌پذیر است. کافیست هنگام ثبت سفارش، ارز دیجیتال مدنظر خود را انتخاب کنید.' },
   { q: 'آیا اطلاعات تراکنش‌های من نزد شما محفوظ می‌ماند؟', a: 'بله، امنیت اطلاعات شما برای ما در بالاترین اولویت قرار دارد. ما هیچ‌گونه اطلاعات شخصی اضافی از شما درخواست نمی‌کنیم و تراکنش‌های کریپتویی به صورت غیرمتمرکز انجام می‌شوند.' },
   {
     q: (
@@ -116,7 +116,7 @@ const faqEn: FaqItem[] = [
     ),
   },
   { q: 'How long does it take for the money to be deposited into an Iranian bank card?', a: 'Once your Tether payment is confirmed on the blockchain network (usually between 5 to 10 minutes depending on the chosen network like TRC20), the Rial amount is immediately deposited into the recipient\u2019s bank card in Iran in less than an hour.' },
-  { q: 'Do I need to complete a KYC (Know Your Customer) verification to use this service?', a: 'No. One of the main advantages of Soughat.shop is respecting users\u2019 privacy. You do not need to upload identity documents. All you need is a digital wallet containing Tether and the recipient\u2019s bank card information in Iran.' },
+  { q: 'Do I need to complete a KYC (Know Your Customer) verification to use this service?', a: 'No. One of the main advantages of Soughat.shop is respecting users\u2019 privacy. You do not need to upload identity documents. All you need is a digital wallet containing your preferred cryptocurrency (Tether, Bitcoin, Ethereum, Solana, etc.) and the recipient\u2019s bank card information in Iran.' },
   { q: 'How much is the network fee for sending Tether?', a: 'The network fee varies depending on the blockchain you choose. We highly recommend using the TRC20 (Tron) network for transferring Tether, as its fee is negligible (less than $1) and its transaction speed is extremely high.' },
   {
     q: 'Can I send gold coins in addition to cash?',
@@ -131,11 +131,11 @@ const faqEn: FaqItem[] = [
     ),
   },
   { q: 'How is the Tether to Rial exchange rate calculated at Soughat.shop?', a: 'We set the conversion rate based on the daily free market rate in Iran, offering the best possible value for our customers. The final rate is displayed on the product page before payment, so you can complete your purchase with full confidence.' },
-  { q: 'Does your service support transfers from Europe and the UK?', a: 'Yes, Soughat.shop is a global platform. You can easily send your money or gifts to Iran using Tether cryptocurrency from anywhere in the world (USA, Canada, Europe, Australia, UK, etc.).' },
+  { q: 'Does your service support transfers from Europe and the UK?', a: 'Yes, Soughat.shop is a global platform. You can easily send your money or gifts to Iran using cryptocurrencies such as Tether, Bitcoin, Ethereum, and Solana from anywhere in the world (USA, Canada, Europe, Australia, UK, etc.).' },
   { q: 'What happens if I enter the wrong recipient card number?', a: 'We carefully verify information before making the final deposit. However, the responsibility for entering correct information lies with the buyer. Please double-check the card number and recipient\u2019s name before finalizing the order.' },
   { q: 'For sending gold coins, is a physical product shipped to the recipient?', a: 'Yes, upon purchasing gold, standard and high-quality physical coins are shipped to the recipient\u2019s address anywhere in Iran via fast post or Tipax. The postal tracking code will also be provided to you.' },
   { q: 'What is the difference between sending money with crypto and a bank transfer?', a: 'Bank transfers usually have strict restrictions, high fees, and transfer times ranging from a few days to weeks. Crypto transfers are done in minutes, have no geographical restrictions, and incur much lower fees.' },
-  { q: 'Can I send Bitcoin or Ethereum instead of Tether?', a: 'Currently, our focus is on Tether (USDT) due to its price stability. However, if you wish to pay with other cryptocurrencies like Bitcoin, please contact our support team for guidance.' },
+  { q: 'Can I send Bitcoin or Ethereum instead of Tether?', a: 'Yes, absolutely. Soughat.shop is not limited to Tether — you can pay directly with Bitcoin (BTC), Ethereum (ETH), Solana (SOL), and other major cryptocurrencies with no need to coordinate separately. Simply select your preferred cryptocurrency when placing your order.' },
   { q: 'Is my transaction information kept secure with you?', a: 'Yes, your information security is our top priority. We do not request any extra personal information from you, and crypto transactions are conducted in a decentralized manner.' },
   {
     q: (
@@ -293,7 +293,7 @@ export default async function SendMoneyToIranPage({ params }: { params: Promise<
               <Send className={`h-5 w-5 ${isEn ? 'ml-2' : 'mr-2'}`} />
             </Link>
             <span className="text-blue-200 text-sm">
-              {isEn ? 'Pay with Tether · Delivered in under 1 hour' : 'پرداخت با تتر · واریز در کمتر از ۱ ساعت'}
+              {isEn ? 'Pay with Tether, Bitcoin, Ethereum, Solana & more · Delivered in under 1 hour' : 'پرداخت با تتر، بیت‌کوین، اتریوم، سولانا و سایر ارزهای دیجیتال · واریز در کمتر از ۱ ساعت'}
             </span>
           </div>
         </div>
