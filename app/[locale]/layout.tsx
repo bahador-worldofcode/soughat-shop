@@ -118,8 +118,8 @@ export default async function LocaleLayout({
       'availableLanguage': ['en', 'fa']
     },
     'sameAs': [
-      'https://www.instagram.com/soughatshop',
-      'https://twitter.com/soughatshop'
+      'https://x.com/Soughatshop',
+      'https://www.facebook.com/share/14eJwCenVjC/'
     ]
   };
 

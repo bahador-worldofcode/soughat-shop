@@ -1,6 +1,24 @@
-import { Instagram, Twitter, Mail, Heart, Lock, ShieldCheck, HelpCircle, ShoppingBag, BookOpen, Package, Info, Phone, Code2, Library, Star, DollarSign } from 'lucide-react';
+import { Mail, Heart, Lock, ShieldCheck, HelpCircle, ShoppingBag, BookOpen, Package, Info, Phone, Code2, Library, Star, DollarSign } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
+
+// آیکون شبکه اجتماعی X (توییتر سابق) — نسخه مدرن لوگوی X
+function XIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.045 4.126H5.078z"/>
+    </svg>
+  );
+}
+
+// آیکون فیسبوک
+function FacebookIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+      <path d="M22 12.06C22 6.505 17.523 2 12 2S2 6.505 2 12.06c0 5.02 3.657 9.184 8.438 9.94v-7.03H7.898v-2.91h2.54V9.845c0-2.508 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.462h-1.26c-1.243 0-1.63.771-1.63 1.562v1.876h2.773l-.443 2.91h-2.33V22c4.78-.756 8.437-4.92 8.437-9.94z"/>
+    </svg>
+  );
+}
 
 export default function Footer() {
   const t = useTranslations('Footer');
@@ -27,6 +45,16 @@ export default function Footer() {
               {t('brand_desc')}
             </p>
 
+            {/* ایمیل رسمی سوغات شاپ */}
+            <a
+              href="mailto:info@soughat.shop"
+              className="mt-4 inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition-colors font-mono"
+              dir="ltr"
+            >
+              <Mail className="h-4 w-4" />
+              info@soughat.shop
+            </a>
+
             {/* نوار آیکون‌های کریپتو */}
             <div className="flex items-center gap-3 mt-4 opacity-90">
                 <img src="https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/usdt.png" className="w-6 h-6 hover:scale-110 transition-transform cursor-help" alt="Tether" title="USDT" />
@@ -38,8 +66,8 @@ export default function Footer() {
             
             {/* Socials */}
             <div className="flex items-center gap-4 mt-6">
-                <a href="#" className="bg-gray-50 p-2 rounded-lg text-gray-400 hover:text-pink-600 hover:bg-pink-50 transition-all"><Instagram className="h-5 w-5" /></a>
-                <a href="#" className="bg-gray-50 p-2 rounded-lg text-gray-400 hover:text-blue-400 hover:bg-blue-50 transition-all"><Twitter className="h-5 w-5" /></a>
+                <a href="https://x.com/Soughatshop" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)" className="bg-gray-50 p-2 rounded-lg text-gray-400 hover:text-black hover:bg-gray-100 transition-all"><XIcon /></a>
+                <a href="https://www.facebook.com/share/14eJwCenVjC/" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="bg-gray-50 p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"><FacebookIcon /></a>
                 <Link href="/contact" className="bg-gray-50 p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"><Mail className="h-5 w-5" /></Link>
                 
                 {/* لینک همکاران (Partners) */}
