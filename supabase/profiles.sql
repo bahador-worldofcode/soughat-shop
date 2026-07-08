@@ -70,3 +70,9 @@ create policy "Profiles are updatable by owner"
 -- create policy "Service role can insert"
 --   on public.profiles for insert
 --   with check (true);
+
+
+alter table public.profiles
+  add column if not exists is_admin boolean not null default false,
+  add column if not exists phone text,
+  add column if not exists country text;

@@ -24,6 +24,7 @@
 'use client';
 
 import { createBrowserClient } from '@supabase/ssr';
+import { migrateLegacyLocalStorageSession } from './authMigration';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -57,3 +58,23 @@ function getBrowserClient() {
 }
 
 export const supabaseBrowser = getBrowserClient();
+
+// --------------------------------------------------------------
+// مهاجرتِ خاموشِ سشن قدیمی (localStorage → کوکی)
+// --------------------------------------------------------------
+// این خط همین الان، به‌محضِ اینکه این فایل برای اولین‌بار در کل
+// اپلیکیشن import شود (که خیلی زود، قبل از رندر شدنِ اولین
+// کامپوننت اتفاق می‌افتد)، شروع به بررسی می‌کند. اگر کاربر کلید
+// قدیمیِ localStorage را نداشته باشد (اکثریتِ قریب‌به‌اتفاق
+// بازدیدها)، این promise تقریباً فوری resolve می‌شود.
+//
+// هر صفحه‌ای که قبل از تکیه‌کردن به‌ getSession()/getUser() نیاز
+// به اطمینان از تمام‌شدنِ این مهاجرت دارد (مثلاً صفحهٔ پروفایل)،
+// باید قبل از آن این خط را بنویسد:
+//
+//   await legacySessionReady;
+//
+export const legacySessionReady: Promise<boolean> =
+  typeof window !== 'undefined'
+    ? migrateLegacyLocalStorageSession(supabaseBrowser)
+    : Promise.resolve(false);

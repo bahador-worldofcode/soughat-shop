@@ -15,7 +15,7 @@
 import { useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
-import { supabaseBrowser } from '@/lib/supabase-browser';
+import { supabaseBrowser, legacySessionReady } from '@/lib/supabase-browser';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 // آیکون رسمی گوگل (G) — بدون وابستگی به فایل خارجی
@@ -71,6 +71,8 @@ export default function LoginPage() {
   // اگر کاربر قبلاً لاگین بود، مستقیم ببرش پروفایل
   useEffect(() => {
     const checkSession = async () => {
+      // صبر کن مهاجرتِ خاموشِ سشنِ قدیمی (اگر وجود داشته باشد) تمام شود
+      await legacySessionReady;
       const { data } = await supabaseBrowser.auth.getSession();
       if (data.session) {
         router.replace('/profile');

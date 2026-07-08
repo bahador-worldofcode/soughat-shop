@@ -1,6 +1,19 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { verifyAdmin } from '@/lib/verifyAdmin';
+
+const LOCALES = ['fa', 'en'] as const;
+
+// بعد از هر ساخت/ویرایش/حذفِ محصول، کشِ صفحاتِ عمومیِ مربوط به
+// محصولات را خودکار خالی می‌کنیم (هم لیست، هم جزئیات هر محصول)،
+// تا ادمین برای دیدنِ تغییرش مجبور نباشد به صفحه‌ی «مدیریت کش»
+// برود و دستی دکمه بزند.
+function revalidateProductsCache() {
+  LOCALES.forEach((locale) => {
+    revalidatePath(`/${locale}/products`, 'layout');
+  });
+}
 
 // 1. افزودن محصول جدید (POST)
 export async function POST(request: Request) {
@@ -18,6 +31,9 @@ export async function POST(request: Request) {
       .select();
 
     if (error) throw error;
+
+    revalidateProductsCache();
+
     return NextResponse.json(data);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -43,6 +59,9 @@ export async function PUT(request: Request) {
       .select();
 
     if (error) throw error;
+
+    revalidateProductsCache();
+
     return NextResponse.json(data);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -67,6 +86,9 @@ export async function DELETE(request: Request) {
       .eq('id', id);
 
     if (error) throw error;
+
+    revalidateProductsCache();
+
     return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

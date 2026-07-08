@@ -1,4 +1,3 @@
-// app/[locale]/profile/page.tsx
 // --------------------------------------------------------------
 // صفحهٔ پروفایل کاربری (Customer Profile) — نسخهٔ کامل و حرفه‌ای
 // شامل ۳ تب:
@@ -13,7 +12,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
-import { supabaseBrowser } from '@/lib/supabase-browser';
+import { supabaseBrowser, legacySessionReady } from '@/lib/supabase-browser';
 import { compressAvatarImage, ImageCompressError } from '@/lib/imageCompress';
 import Toast from '@/components/Toast';
 import {
@@ -129,6 +128,12 @@ export default function ProfilePage() {
       setLoading(true);
       setLoadError(false);
 
+      // اگر کاربر سشنِ قدیمی (از قبل از مهاجرت به کوکی) در
+      // localStorage داشته باشد، صبر می‌کنیم تا خاموش/سایلنت به
+      // کوکیِ جدید منتقل شود؛ در غیر این‌صورت این خط فوراً (بدون
+      // تأخیر) تمام می‌شود.
+      await legacySessionReady;
+
       const {
         data: { session },
       } = await supabaseBrowser.auth.getSession();
@@ -191,6 +196,8 @@ export default function ProfilePage() {
     setOrdersLoading(true);
     setOrdersError(false);
     try {
+      await legacySessionReady;
+
       const {
         data: { session },
       } = await supabaseBrowser.auth.getSession();
