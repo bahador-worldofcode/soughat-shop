@@ -2,6 +2,12 @@
 // --------------------------------------------------------------
 // صفحهٔ ورود / ثبت‌نام (Sign Up / Log In)
 // شامل یک دکمهٔ تمیز «ادامه با گوگل» (Continue with Google)
+//
+// تغییر نسبت به نسخهٔ قبلی: چون تبادلِ کد حالا در
+// app/[locale]/auth/callback/route.ts (سمتِ سرور) انجام می‌شود،
+// در صورتِ خطا، آن Route Handler کاربر را با
+// /login?error=... به همین صفحه برمی‌گرداند. این صفحه حالا آن
+// پارامتر را می‌خواند و پیام خطا را نشان می‌دهد.
 // --------------------------------------------------------------
 
 'use client';
@@ -10,7 +16,7 @@ import { useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 
 // آیکون رسمی گوگل (G) — بدون وابستگی به فایل خارجی
 function GoogleIcon() {
@@ -43,6 +49,24 @@ export default function LoginPage() {
 
   const [loading, setLoading] = useState(false); // هنگام کلیک روی دکمه
   const [checking, setChecking] = useState(true); // بررسی اولیهٔ سِشن
+  const [errorMsg, setErrorMsg] = useState(''); // خطای برگشتی از auth/callback/route.ts
+
+  // اگر آدرس شامل ?error=... بود (یعنی Route Handlerِ callback با خطا
+  // برگشت داده)، آن را از URL بخوان و نشان بده.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const err = params.get('error');
+    if (err) {
+      setErrorMsg(
+        err === 'missing_code'
+          ? t('missing_code_error') || 'Login was cancelled or the code was missing.'
+          : err
+      );
+      // پارامتر را از نوارِ آدرس پاک کن تا با رفرش دوباره نمایش داده نشود
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, '', cleanUrl);
+    }
+  }, [t]);
 
   // اگر کاربر قبلاً لاگین بود، مستقیم ببرش پروفایل
   useEffect(() => {
@@ -59,6 +83,7 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
+    setErrorMsg('');
 
     // آدرسی که گوگل پس از تأیید کاربر به آن برمی‌گرداند.
     // حتماً زبان (locale) را هم می‌چسبانیم تا کاربر در همان زبان بماند.
@@ -76,6 +101,7 @@ export default function LoginPage() {
 
     if (error) {
       console.error('Google login error:', error.message);
+      setErrorMsg(error.message);
       setLoading(false);
     }
     // در صورت موفقیت، مرورگر خودبه‌خود به گوگل هدایت می‌شود
@@ -101,6 +127,16 @@ export default function LoginPage() {
           <h2 className="text-3xl font-bold text-gray-900">{t('title')}</h2>
           <p className="mt-2 text-sm text-gray-500">{t('subtitle')}</p>
         </div>
+
+        {errorMsg && (
+          <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold mb-1">Login failed</p>
+              <p className="text-sm break-words">{errorMsg}</p>
+            </div>
+          </div>
+        )}
 
         <button
           type="button"

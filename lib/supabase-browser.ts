@@ -5,33 +5,46 @@
 // در کامپوننت‌های سمت کلاینت ('use client') باید حتماً از این
 // فایل استفاده کنید — نه از lib/supabase.ts که برای سرور است.
 //
-// از فرآیند PKCE استفاده می‌کنیم که امن‌ترین روش برای
-// OAuth در اپلیکیشن‌های بدونِ Backend اختصاصی (مثل Next.js) است.
+// تغییر مهم نسبت به نسخهٔ قبلی: به‌جای createClient خامِ
+// @supabase/supabase-js (که کد تایید PKCE را در localStorage
+// ذخیره می‌کرد)، اینجا از createBrowserClient در @supabase/ssr
+// استفاده می‌کنیم. این کلاینت وریفایر PKCE و توکن‌های سشن را در
+// کوکی‌های خودِ دامنه ذخیره می‌کند، نه در localStorage.
+//
+// چرا این تغییر خطای
+//   "PKCE code verifier not found in storage"
+// را حل می‌کند: تبادل نهاییِ کد حالا در سمت سرور
+// (app/[locale]/auth/callback/route.ts) با همین کوکی‌ها انجام
+// می‌شود، درست در همان درخواستِ HTTP که مرورگر خودش کوکی‌ها را
+// می‌فرستد — بدون وابستگی به اینکه آیا افزونه‌ای، حالت خصوصی
+// مرورگر، یا ری‌رندرِ زودهنگامِ React، localStorage را قبل از
+// رسیدن به آن دست‌نخورده نگه داشته یا نه.
 // --------------------------------------------------------------
 
-import { createClient } from '@supabase/supabase-js';
+'use client';
+
+import { createBrowserClient } from '@supabase/ssr';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 // جلوگیری از ساختِ چندین کلاینت در حین Hot-Reload در زمانِ توسعه
-let browserClient: ReturnType<typeof createClient> | undefined;
+let browserClient: ReturnType<typeof createBrowserClient> | undefined;
 
 function getBrowserClient() {
   if (browserClient) return browserClient;
 
-  browserClient = createClient(supabaseUrl, supabaseKey, {
+  browserClient = createBrowserClient(supabaseUrl, supabaseKey, {
     auth: {
-      // PKCE: کدِ تایید را در localStorage ذخیره می‌کند تا پس از
-      // بازگشت از گوگل، توکن را دریافت کنیم (بدون نیاز به سرور).
+      // PKCE: همچنان همان روش امنِ قبلی است، فقط محل ذخیره‌سازیِ
+      // وریفایر عوض شده (کوکی به‌جای localStorage).
       flowType: 'pkce',
-      // مهم: این گزینه را عمداً false گذاشتیم. صفحه‌ی
-      // app/[locale]/auth/callback/page.tsx خودش به‌صورت دستی
-      // exchangeCodeForSession را صدا می‌زند. اگر این گزینه true
-      // باشد، خودِ کتابخانه هم هم‌زمان و در پس‌زمینه سعی می‌کند
-      // همان کد را مبادله کند؛ چون هر کد فقط یک‌بار قابل استفاده
-      // است، این هم‌زمانی باعث خطای
-      // "PKCE code verifier not found in storage" می‌شد.
+      // مهم: همچنان false. تبادلِ کد حالا در Route Handler سمتِ
+      // سرور (auth/callback/route.ts) انجام می‌شود، قبل از اینکه
+      // اصلاً جاوااسکریپتِ کلاینت اجرا شود. اگر این گزینه true
+      // باشد، کلاینت مرورگر هم هم‌زمان سعی می‌کند همان کد را
+      // مصرف کند؛ چون هر کد فقط یک‌بار قابل استفاده است، همین
+      // هم‌زمانی دقیقاً همان خطای قبلی را دوباره ایجاد می‌کرد.
       detectSessionInUrl: false,
       // ذخیرهٔ سِشن در مرورگر کاربر (تا صفحه را ببندد و باز کند باز هم لاگین بماند)
       persistSession: true,
