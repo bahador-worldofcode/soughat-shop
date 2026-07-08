@@ -39,6 +39,16 @@ export default function OrdersPage() {
     fetchOrders();
   }, []);
 
+  // چون جدول orders حالا کاملاً قفل است (RLS بدون هیچ policy عمومی)، دیگر
+  // نمی‌شود مستقیم با کلاینت anon این جدول را خواند/نوشت. به‌جایش توکن
+  // سشن ادمین را می‌گیریم و به API امن سمت سرور می‌فرستیم.
+  const getAuthHeader = async (): Promise<Record<string, string>> => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
+  };
+
   // کپی کردن کد کامل (UUID) سفارش در کلیپ‌بورد؛ چون کد کوتاه‌شده‌ی داخل جدول
   // (۸ کاراکتر اول + ...) برای جست‌وجو در صفحه‌ی پیگیری سفارش کافی نیست.
   const handleCopyId = async (id: string, e?: React.MouseEvent) => {
@@ -53,21 +63,31 @@ export default function OrdersPage() {
   };
 
   const fetchOrders = async () => {
-    // از آنجا که DB آپدیت شده، select('*') فیلدهای جدید را هم می‌آورد
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (data) setOrders(data as Order[]);
-    setLoading(false);
+    try {
+      const headers = await getAuthHeader();
+      const res = await fetch('/api/admin/orders', { headers });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'خطا در دریافت سفارش‌ها');
+      setOrders(json as Order[]);
+    } catch (err: any) {
+      alert(err.message || 'خطای ناشناخته در دریافت سفارش‌ها');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleStatusChange = async (newStatus: string) => {
     if (!selectedOrder) return;
     setUpdating(true);
     try {
-      const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', selectedOrder.id);
-      if (error) throw error;
+      const headers = await getAuthHeader();
+      const res = await fetch('/api/admin/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...headers },
+        body: JSON.stringify({ id: selectedOrder.id, status: newStatus }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'خطا در تغییر وضعیت');
 
       const updatedOrders = orders.map(o => o.id === selectedOrder.id ? { ...o, status: newStatus } : o);
       setOrders(updatedOrders);
@@ -84,9 +104,11 @@ export default function OrdersPage() {
     if (!confirm('آیا از حذف این سفارش مطمئن هستید؟ این عملیات غیرقابل بازگشت است.')) return;
 
     try {
-      const { error } = await supabase.from('orders').delete().eq('id', id);
-      if (error) throw new Error('خطا در حذف (مجوز دسترسی ندارید یا ارتباط قطع است)');
-      
+      const headers = await getAuthHeader();
+      const res = await fetch(`/api/admin/orders?id=${id}`, { method: 'DELETE', headers });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'خطا در حذف (مجوز دسترسی ندارید یا ارتباط قطع است)');
+
       setOrders(orders.filter(o => o.id !== id));
       if (selectedOrder?.id === id) setSelectedOrder(null);
     } catch (err: any) {

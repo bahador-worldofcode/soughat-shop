@@ -1,29 +1,17 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { supabase } from '@/lib/supabase';
-
-// بررسی احراز هویت (قفل امنیتی جدید)
-async function verifyAdmin(request: Request) {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader) return false;
-  
-  const token = authHeader.replace('Bearer ', '');
-  const { data: { user }, error } = await supabase.auth.getUser(token);
-  
-  if (error || !user) return false;
-  return true;
-}
+import { verifyAdmin } from '@/lib/verifyAdmin';
 
 // 1. افزودن محصول جدید (POST)
 export async function POST(request: Request) {
   try {
-    // چک کردن قفل امنیتی
+    // چک کردن قفل امنیتی (حالا واقعاً چک می‌کند که کاربر ادمین است، نه هر کاربر لاگین‌شده)
     if (!(await verifyAdmin(request))) {
       return NextResponse.json({ error: 'عدم دسترسی! لطفاً وارد پنل شوید.' }, { status: 401 });
     }
 
     const body = await request.json();
-    
+
     const { data, error } = await supabaseAdmin
       .from('products')
       .insert([body])

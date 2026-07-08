@@ -1,14 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { supabase } from '@/lib/supabase';
-
-async function verifyAdmin(request: Request) {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader) return false;
-  const token = authHeader.split('Bearer ')[1];
-  const { data: { user }, error } = await supabase.auth.getUser(token);
-  return !error && user;
-}
+import { verifyAdmin } from '@/lib/verifyAdmin';
 
 export async function PUT(request: Request) {
   try {

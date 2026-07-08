@@ -2,7 +2,6 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 import { Search, Package, Truck, CheckCircle, Clock, XCircle, Loader2, ArrowLeft } from 'lucide-react';
 import { Link } from '@/i18n/navigation'; // لینک هوشمند
 import { useTranslations, useLocale } from 'next-intl';
@@ -50,22 +49,17 @@ function TrackPageInner() {
     const cleanId = rawId.trim();
 
     try {
-      // نکته‌ی مهم (رفع باگ): ستون id جدول orders از نوع UUID است.
-      // عملگر ilike (تطبیق الگوی متنی با wildcard) روی نوع UUID در
-      // Supabase/Postgres قابل اجرا نیست و همیشه با خطا مواجه می‌شود —
-      // یعنی قبلاً حتی با کپی/پیست دقیق کد سفارش هم نتیجه‌ای پیدا نمی‌شد.
-      // با eq (تطبیق دقیق) این مشکل کاملاً رفع می‌شود.
-      const { data, error } = await supabase
-        .from('orders')
-        .select('id, status, customer_name, total_price, created_at')
-        .eq('id', cleanId)
-        .single();
+      // نکته: چون جدول orders حالا کاملاً قفل است (بدون هیچ policy عمومی)،
+      // دیگر نمی‌شود مستقیم از مرورگر این جدول را خواند. به‌جایش از یک
+      // API امن سمت سرور استفاده می‌کنیم که فقط همین یک سفارش را برمی‌گرداند.
+      const res = await fetch(`/api/track?id=${encodeURIComponent(cleanId)}`);
+      const json = await res.json();
 
-      if (error || !data) {
+      if (!res.ok || !json.order) {
         throw new Error('Not Found');
       }
 
-      setOrder(data);
+      setOrder(json.order);
     } catch (err: any) {
       // اگر ورودی اصلاً فرمت UUID معتبری نداشته باشد (مثلاً کاربر چیز
       // نامرتبطی تایپ کرده)، Supabase یک خطای فنی برمی‌گرداند؛ این هم

@@ -1,20 +1,6 @@
 import { NextResponse } from 'next/server';
 import { BetaAnalyticsDataClient } from '@google-analytics/data';
-import { supabase } from '@/lib/supabase';
-
-// ---------------------------------------------------------------------------
-// بررسی احراز هویت (دقیقاً همان الگویی که بقیه API روت‌های ادمین پروژه استفاده می‌کنند)
-// ---------------------------------------------------------------------------
-async function verifyAdmin(request: Request) {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader) return false;
-
-  const token = authHeader.replace('Bearer ', '');
-  const { data: { user }, error } = await supabase.auth.getUser(token);
-
-  if (error || !user) return false;
-  return true;
-}
+import { verifyAdmin } from '@/lib/verifyAdmin';
 
 // ---------------------------------------------------------------------------
 // تمیزکاری Private Key
