@@ -1,4 +1,4 @@
-import { Mail, Heart, Lock, ShieldCheck, HelpCircle, ShoppingBag, BookOpen, Package, Info, Phone, Code2, Library, Star, DollarSign } from 'lucide-react';
+import { Mail, Heart, Lock, ShieldCheck, HelpCircle, ShoppingBag, BookOpen, Package, Info, Phone, Code2, Library, Star, DollarSign, Bug } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 
@@ -135,6 +135,12 @@ export default function Footer() {
               <li>
                 <Link href="/contact" className="hover:text-blue-600 hover:pr-2 transition-all flex items-center gap-2">
                     <Phone className="h-4 w-4" /> {t('contact')}
+                </Link>
+              </li>
+              {/* 🆕 لینک گزارش باگ یا مشکل */}
+              <li>
+                <Link href="/report-bug" className="hover:text-red-600 hover:pr-2 transition-all flex items-center gap-2">
+                    <Bug className="h-4 w-4" /> {t('report_bug')}
                 </Link>
               </li>
             </ul>

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { Calendar, ArrowLeft, ArrowRight } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+import type { Metadata } from 'next';
 
 // کش کردن دیتا برای سرعت بالا (ISR) - هر ۶۰ ثانیه
 export const revalidate = 60;
@@ -12,6 +13,58 @@ const POSTS_PER_PAGE = 9;
 interface BlogPageProps {
   searchParams: Promise<{ page?: string }>;
   params: Promise<{ locale: string }>;
+}
+
+function getSiteUrl() {
+  return process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat.shop';
+}
+
+// ✅ رفع باگ hreflang: قبلاً این صفحه generateMetadata مخصوص به خودش نداشت،
+// پس alternates.languages رو از app/[locale]/layout.tsx به ارث می‌برد که
+// به‌صورت پیش‌فرض به «/fa» و «/en» (هوم‌پیج) اشاره می‌کنه، نه به خودِ
+// «/fa/blog» و «/en/blog». یعنی گوگل می‌دید که hreflang صفحه‌ی وبلاگ به
+// صفحه‌ی اصلی اشاره می‌کنه — یک سیگنال گمراه‌کننده. اینجا دقیقاً مثل
+// app/[locale]/products/page.tsx یک override مخصوص همین صفحه اضافه شده که
+// alternates رو به آدرس واقعیِ خودِ «/blog» (و در صورت وجود صفحه‌بندی،
+// «/blog?page=N») اشاره می‌ده.
+export async function generateMetadata({ searchParams, params }: BlogPageProps): Promise<Metadata> {
+  const { locale } = await params;
+  const sp = await searchParams;
+  const isEn = locale === 'en';
+  const siteUrl = getSiteUrl();
+  const t = await getTranslations({ locale, namespace: 'Blog' });
+
+  const currentPage = Math.max(1, Number(sp?.page) || 1);
+  const canonicalPath = currentPage > 1 ? `/blog?page=${currentPage}` : '/blog';
+
+  const title = t('title');
+  const description = t('subtitle');
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: `${siteUrl}/${locale}${canonicalPath}`,
+      languages: {
+        fa: `${siteUrl}/fa${canonicalPath}`,
+        en: `${siteUrl}/en${canonicalPath}`,
+        'x-default': `${siteUrl}/fa${canonicalPath}`,
+      },
+    },
+    openGraph: {
+      title,
+      description,
+      url: `${siteUrl}/${locale}${canonicalPath}`,
+      type: 'website',
+      locale: isEn ? 'en' : 'fa',
+      siteName: 'Soughat Shop',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+    },
+  };
 }
 
 export default async function BlogIndex({ searchParams, params }: BlogPageProps) {

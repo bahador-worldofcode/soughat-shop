@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, ShoppingCart, Package, LogOut, Image as ImageIcon, BookOpen, Wallet, RefreshCw, MessageSquare, Layers, Settings, Calculator, Loader2, Star, BarChart3, Users, Database } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, LogOut, Image as ImageIcon, BookOpen, Wallet, RefreshCw, MessageSquare, Layers, Settings, Calculator, Loader2, Star, BarChart3, Users, Database, Bug } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useEffect, useState } from 'react';
 
@@ -66,6 +66,7 @@ export default function AdminWrapper({ children }: { children: React.ReactNode }
     { name: 'دسته‌بندی‌ها', href: '/admin/categories', icon: Layers },
     { name: 'قیمت‌گذاری', href: '/admin/pricing', icon: Calculator }, 
     { name: 'پیام‌ها', href: '/admin/messages', icon: MessageSquare },
+    { name: 'گزارش باگ‌ها', href: '/admin/bug-reports', icon: Bug },
     { name: 'درگاه پرداخت', href: '/admin/payments', icon: Wallet },
     { name: 'نظرات مشتریان', href: '/admin/reviews', icon: Star },
     { name: 'نرخ ارز', href: '/admin/currencies', icon: RefreshCw },
