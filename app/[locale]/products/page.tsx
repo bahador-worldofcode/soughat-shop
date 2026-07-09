@@ -3,6 +3,8 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import ProductsClientView from '@/components/ProductsClientView';
+import ProductsSEOContent from '@/components/ProductsSEOContent';
+import LazySection from '@/components/LazySection';
 import { stripHtmlToText } from '@/lib/sanitizeHtml';
 
 // این صفحه چون بر اساس searchParams (دسته‌بندی/جستجو/مرتب‌سازی/صفحه) فیلتر می‌شه،
@@ -273,6 +275,15 @@ export default async function ProductsPage({ params, searchParams }: Props) {
           activeCategoryInfo={activeCategoryInfo}
         />
       </Suspense>
+
+      {/* بخش محتوای متنی سئو: بنر تصویری با Overlay + متن غنی + سوالات متداول.
+          دقیقاً زیر کانتینر محصولات و کاملاً جدا از Hero و گرید محصولات بالا.
+          با LazySection رندر می‌شه (همون الگویی که برای FAQ و HomeSEOContent
+          در صفحه اصلی استفاده شده) تا هزینه‌ی رندرش تا قبل از دیده شدن به
+          تعویق بیفته، بدون اینکه از HTML اولیه‌ی صفحه حذف بشه. */}
+      <LazySection minHeight={1100}>
+        <ProductsSEOContent />
+      </LazySection>
     </div>
   );
 }

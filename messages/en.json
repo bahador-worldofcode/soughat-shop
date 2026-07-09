@@ -210,6 +210,26 @@
     "empty_desc": "Try adjusting your search or filter to find what you are looking for.",
     "clear_all_filters": "Clear All Filters"
   },
+  "ProductsSEO": {
+    "banner_alt": "Send premium gifts and souvenirs to Iran with crypto payment",
+    "banner_title": "Send Premium Gifts to Iran",
+    "banner_subtitle": "Secure Crypto Payment (USDT, BTC, Solana) & Door-to-Door Fast Delivery.",
+    "intro_title": "Every Gift Tells Your Family You're Thinking of Them",
+    "intro_p1": "From saffron-scented sweets and roasted pistachios to handcrafted jewelry and gold coins, every product in our catalog is chosen with one goal in mind: making your family in Iran feel your presence, even from thousands of miles away. Browse by category, compare prices, and pick exactly what suits the occasion, whether it's a birthday, Nowruz, or simply an 'I miss you.'",
+    "intro_p2": "Checking out is refreshingly simple. Skip the paperwork and bank restrictions entirely — just pay with USDT, Bitcoin, or Solana, and your order heads straight to our Tehran warehouse for careful packaging and dispatch. Most cities across Iran, from Tehran and Isfahan to Shiraz and Mashhad, receive their gift within a few days, with tracking every step of the way.",
+    "faq_title": "Frequently Asked Questions About Sending Gifts to Iran",
+    "faq_subtitle": "Quick answers about payment, delivery, and product quality for gifts sent to Iran.",
+    "faq_q1": "How can I send gifts to Iran from abroad?",
+    "faq_a1": "You can easily choose from our premium souvenirs and gifts. We handle the logistics and deliver directly to your family's doorstep anywhere in Iran.",
+    "faq_q2": "Which cryptocurrencies do you accept?",
+    "faq_a2": "We accept Tether (USDT), Solana (SOL), Bitcoin (BTC), and Ethereum. No Iranian bank account is required!",
+    "faq_q3": "Do you deliver outside Tehran?",
+    "faq_a3": "Yes! We offer nationwide delivery, including major cities like Isfahan, Shiraz, Mashhad, and all other provinces with secure packaging.",
+    "faq_q4": "Are the products fresh and authentic?",
+    "faq_a4": "Yes, all our sweets, nuts, and handicrafts are sourced directly from trusted Iranian suppliers and shipped fresh. Every order is checked for quality before it leaves our warehouse in Tehran.",
+    "faq_q5": "Will I get proof that my gift was delivered?",
+    "faq_a5": "Yes. As soon as your gift reaches your family's door, we send you a photo or delivery receipt on WhatsApp or Telegram, so you can relax knowing it arrived safely."
+  },
   "About": {
     "title": "About Us | Sending Gifts to Iran",
     "hero_title": "About",
