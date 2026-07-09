@@ -336,7 +336,25 @@ export default function CheckoutPage() {
 
         // اگر کاربر لاگین بود و تیک «ذخیره این آدرس» را زده بود، آدرس گیرنده
         // را در دفترچه آدرسش ذخیره می‌کنیم تا دفعه‌ی بعد نیازی به تایپ دوباره نباشد.
-        if (isLoggedIn && saveNewAddress && newAddressLabel.trim() && session?.user) {
+        //
+        // محافظِ ضدِ تکراری‌شدن: چک‌باکس «ذخیره برای دفعه‌ی بعد» به‌محضِ انتخابِ
+        // یکی از آدرس‌های ذخیره‌شده‌ی قبلی مخفی می‌شود (selectedAddressId پر
+        // می‌شود)، ولی اگر کاربر بعد از انتخاب، حتی یک حرف از فیلدهای گیرنده را
+        // ویرایش کند، این چک‌باکس دوباره ظاهر می‌شود (چون دیگر دقیقاً همان آدرسِ
+        // ذخیره‌شده نیست). برای اینکه در همین حالت هم یک آدرسِ تقریباً یکسان
+        // به‌اشتباه دوباره ذخیره نشود، اینجا قبل از insert یک بار دیگر و مستقل
+        // از وضعیتِ UI چک می‌کنیم که آیا آدرسی با همین ۴ فیلد از قبل در
+        // دفترچه‌ی آدرسِ کاربر وجود دارد یا نه.
+        const normalizeAddrField = (v: string) => (v || '').trim().replace(/\s+/g, ' ').toLowerCase();
+        const isAlreadySaved = (savedAddresses ?? []).some(
+          (a) =>
+            normalizeAddrField(a.receiver_name) === normalizeAddrField(formData.receiverName) &&
+            normalizeAddrField(a.receiver_phone) === normalizeAddrField(formData.receiverPhone) &&
+            normalizeAddrField(a.city) === normalizeAddrField(formData.city) &&
+            normalizeAddrField(a.address) === normalizeAddrField(formData.address)
+        );
+
+        if (isLoggedIn && saveNewAddress && newAddressLabel.trim() && session?.user && !isAlreadySaved) {
           (supabaseBrowser.from('saved_addresses') as any)
             .insert([
               {
