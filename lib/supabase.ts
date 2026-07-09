@@ -3,4 +3,37 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// --------------------------------------------------------------
+// چرا اینجا یک storageKey اختصاصی گذاشتیم:
+//
+// این کلاینت (lib/supabase.ts) همون کلاینت قدیمیِ ساده‌ست که پنل
+// ادمین (صفحه‌ی لاگین، AdminWrapper، و همه‌ی app/admin/*/page.tsx)
+// برای نگه‌داشتنِ سشنِ ادمین در localStorage ازش استفاده می‌کنه.
+//
+// از طرفی، سمتِ مشتری اخیراً به یک کلاینتِ جدید و کوکی‌محور
+// (lib/supabase-browser.ts) منتقل شده. اون کلاینت، به‌محضِ اولین
+// بارگذاری، تابعِ migrateLegacyLocalStorageSession (در
+// lib/authMigration.ts) رو اجرا می‌کنه تا سشن‌های قدیمیِ مشتری‌ها
+// رو از localStorage به کوکی مهاجرت بده.
+//
+// مشکل اینجا بود: اون تابعِ مهاجرت، دقیقاً همون کلیدِ پیش‌فرضِ
+// Supabase (یعنی sb-<project-ref>-auth-token) رو توی localStorage
+// می‌خونه — که تا قبل از این تغییر، دقیقاً همون کلیدی بود که همین
+// کلاینتِ پنل ادمین هم داشت ازش استفاده می‌کرد! یعنی وقتی ادمین،
+// توی همون مرورگر، سری هم به یک صفحه‌ی سمتِ مشتری (مثلاً /fa/...)
+// می‌زد، اسکریپتِ مهاجرت سشنِ *ادمین* رو به اشتباه یک سشنِ قدیمیِ
+// مشتری تشخیص می‌داد، refresh_token‌ش رو مصرف/باطل می‌کرد و در آخر
+// همون کلید رو از localStorage پاک می‌کرد. نتیجه: چند دقیقه بعد
+// (وقتی توکنِ دسترسیِ ادمین نیاز به تمدید پیدا می‌کرد) دیگه
+// refresh_token معتبری وجود نداشت و ادمین خودکار از پنل بیرون
+// پرت می‌شد.
+//
+// با گذاشتنِ یک storageKey متفاوت و اختصاصی برای همین کلاینت، سشنِ
+// پنل ادمین کاملاً از چشمِ اسکریپتِ مهاجرتِ سمتِ مشتری مخفی می‌مونه
+// و دیگه هیچ‌وقت با هم تداخل پیدا نمی‌کنن.
+// --------------------------------------------------------------
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    storageKey: 'sb-admin-auth-token',
+  },
+});
