@@ -4,7 +4,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 
 const intlMiddleware = createMiddleware({
   locales: ['fa', 'en'],
-  defaultLocale: 'fa',
+  defaultLocale: 'en',
   localePrefix: 'always',
 });
 

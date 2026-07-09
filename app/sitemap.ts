@@ -67,7 +67,7 @@ const STATIC_ROUTES: StaticRoute[] = [
 // کمکی: ساخت بلاک hreflang برای یک مسیرِ بدون-زبان (مثل '/about' یا
 // '/products/slug-x'). خروجی دقیقاً چیزیه که Next.js از روش تبدیل به
 // <xhtml:link rel="alternate" hreflang="..."> توی خودِ sitemap.xml می‌کنه.
-// x-default رو هم به fa (زبان پیش‌فرض سایت طبق middleware.ts) اشاره می‌دیم.
+// x-default رو هم به en (طبق تصمیم جدید تیم برای مخاطبان بین‌المللی) اشاره می‌دیم.
 // -----------------------------------------------------------------------
 function buildAlternates(path: string) {
   const siteUrl = getSiteUrl();
@@ -75,7 +75,7 @@ function buildAlternates(path: string) {
     languages: {
       fa: `${siteUrl}/fa${path}`,
       en: `${siteUrl}/en${path}`,
-      'x-default': `${siteUrl}/fa${path}`,
+      'x-default': `${siteUrl}/en${path}`,
     },
   };
 }

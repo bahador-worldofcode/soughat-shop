@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       languages: {
         'fa': `${siteUrl}/fa/crypto-guide`,
         'en': `${siteUrl}/en/crypto-guide`,
-        'x-default': `${siteUrl}/fa/crypto-guide`,
+        'x-default': `${siteUrl}/en/crypto-guide`,
       },
     },
     openGraph: {

@@ -4,9 +4,9 @@ export default getRequestConfig(async ({requestLocale}) => {
   // This typically corresponds to the `[locale]` segment
   let locale = await requestLocale;
  
-  // اگر زبانی غیر از fa یا en بود، پیش‌فرض fa شود
+  // اگر زبانی غیر از fa یا en بود، پیش‌فرض en شود
   if (!locale || !['fa', 'en'].includes(locale)) {
-    locale = 'fa';
+    locale = 'en';
   }
  
   return {

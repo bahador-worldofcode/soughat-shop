@@ -48,7 +48,7 @@ export async function generateMetadata({ searchParams, params }: BlogPageProps):
       languages: {
         fa: `${siteUrl}/fa${canonicalPath}`,
         en: `${siteUrl}/en${canonicalPath}`,
-        'x-default': `${siteUrl}/fa${canonicalPath}`,
+        'x-default': `${siteUrl}/en${canonicalPath}`,
       },
     },
     openGraph: {

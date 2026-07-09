@@ -213,7 +213,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       languages: {
         fa: `${siteUrl}/fa/send-money-to-iran`,
         en: `${siteUrl}/en/send-money-to-iran`,
-        'x-default': `${siteUrl}/fa/send-money-to-iran`,
+        'x-default': `${siteUrl}/en/send-money-to-iran`,
       },
     },
     openGraph: {

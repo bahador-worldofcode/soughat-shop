@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       languages: {
         fa: `${siteUrl}/fa/report-bug`,
         en: `${siteUrl}/en/report-bug`,
-        'x-default': `${siteUrl}/fa/report-bug`,
+        'x-default': `${siteUrl}/en/report-bug`,
       },
     },
   };
