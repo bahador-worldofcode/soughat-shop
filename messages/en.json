@@ -65,7 +65,8 @@
     "design_by": "Design & Engineering by",
     "review": "Write a Review",
     "partners": "Partners",
-    "remit": "Send Money to Iran"
+    "remit": "Send Money to Iran",
+    "report_bug": "Report a Bug"
   },
   "Home": {
     "hero_start": "Start Shopping",
@@ -678,5 +679,36 @@
       "track_btn": "Track order",
       "load_error": "Couldn't load your orders. Please try again."
     }
+  },
+  "ReportBug": {
+    "title": "Report a Bug or Issue",
+    "subtitle": "If you ran into an error or problem on the site, please send us the details so our team can look into it as soon as possible.",
+    "meta_title": "Report a Bug or Issue",
+    "meta_desc": "Report a bug or issue you encountered on Soughat Shop so our technical team can review it.",
+    "privacy_note": "Your information is only used to follow up on this report.",
+    "back_home": "Back to Home"
+  },
+  "BugReportForm": {
+    "label_name": "Name (optional)",
+    "label_name_ph": "e.g. John Doe",
+    "label_contact": "Email or Phone (optional)",
+    "label_contact_ph": "So we can follow up",
+    "label_description": "Describe the issue",
+    "label_description_ph": "What happened? Which page were you on? Please share any details you have...",
+    "label_image": "Screenshot (optional)",
+    "label_image_ph": "Choose an image",
+    "image_hint": "One image only, JPG, PNG or WebP",
+    "processing_image": "Processing image...",
+    "btn_remove_image": "Remove image",
+    "btn_send": "Send Report",
+    "btn_sending": "Sending...",
+    "btn_new": "Report Another Issue",
+    "success_title": "Report received!",
+    "success_desc": "Thanks for helping us improve Soughat Shop. Our technical team will review it shortly.",
+    "error_required": "Please describe the issue.",
+    "error_image_format": "Image format not allowed. Only JPG, PNG or WebP.",
+    "error_image_too_large_raw": "The image is too large. Please choose a smaller one.",
+    "error_image_generic": "Error processing the image. Please try again or send without an image.",
+    "error_generic": "Something went wrong. Please try again."
   }
 }
