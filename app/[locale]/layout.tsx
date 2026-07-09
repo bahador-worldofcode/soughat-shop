@@ -22,6 +22,10 @@ const vazir = Vazirmatn({ subsets: ['arabic', 'latin'] });
 // شناسه‌ی اندازه‌گیری گوگل آنالیتیکس (GA4)
 const GA_MEASUREMENT_ID = 'G-E6M9G3032G';
 
+// آدرس پایه‌ی سایت — یک‌بار اینجا تعریف می‌شود تا هم metadataBase و هم
+// alternates از همین یک منبع واحد استفاده کنند (جلوگیری از mismatch).
+const SITE_URL = 'https://soughat.shop';
+
 // --- تنظیمات متادیتا (سئو) ---
 // تبدیل به تابع برای اینکه بتوانیم زبان را داینامیک از آدرس بگیریم
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -32,7 +36,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const meta = (t as any).Metadata;
 
   return {
-    metadataBase: new URL('https://soughat.shop'),
+    metadataBase: new URL(SITE_URL),
     
     title: {
       default: meta.title,
@@ -53,22 +57,37 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       follow: true,
     },
 
-    // ✅ این بخش فقط برای صفحه اصلی (هوم‌پیج) صحیح است.
-    // صفحات داخلی (about, contact, crypto-guide, how-it-works, terms, trust, ...)
-    // خودشان در generateMetadata مخصوص خودشان این مقدار را override می‌کنند
-    // تا آدرس alternate درست (متناظر با همان صفحه) به گوگل اعلام شود.
+    // ✅ این alternates فقط یک «پیش‌فرض ایمن» (Safety Net) در سطح لایوت است،
+    // نه canonical واقعیِ هر صفحه.
+    // صفحات داخلی (about, contact, crypto-guide, how-it-works, terms, trust,
+    // products, blog, ...) خودشان در generateMetadata مخصوص خودشان کلید
+    // alternates را کامل override می‌کنند — چون Next.js متادیتای هر کلید را
+    // به‌صورت کامل جایگزین می‌کند نه merge عمقی — تا canonical و hreflang
+    // دقیقاً متناظر با همان صفحه (و نه صفحه‌ی اصلی) به گوگل اعلام شود.
+    //
+    // 🔧 ریشه‌ی خطای گوگل‌کنسول «Duplicate without user-selected canonical»
+    // روی /fa همین‌جا بود: اینجا فقط «languages» ست شده بود و «canonical»
+    // اصلاً وجود نداشت. صفحه‌ی هوم (app/[locale]/(home)/page.tsx) هم خودش
+    // generateMetadata جداگانه‌ای نداشت، پس این آبجکت ناقص، همان چیزی بود که
+    // مستقیماً روی خروجی /fa و /en می‌نشست — یعنی هوم‌پیج اصلاً تگ canonical
+    // نمی‌گرفت. حالا هم اینجا یک canonical خودارجاع (self-referencing) به‌عنوان
+    // پیش‌فرض داریم، هم به خود صفحه‌ی هوم یک generateMetadata مستقل اضافه شده
+    // (که این پیش‌فرض را override می‌کند اما نتیجه‌ی نهایی یکسان و درست است).
+    // x-default طبق تصمیم تیم برای مخاطبان بین‌المللی به en اشاره می‌کند —
+    // دقیقاً هماهنگ با buildAlternates() در app/sitemap.ts.
     alternates: {
+      canonical: `${SITE_URL}/${locale}`,
       languages: {
-        'fa': '/fa',
-        'en': '/en',
-        'x-default': '/en',
+        'fa': `${SITE_URL}/fa`,
+        'en': `${SITE_URL}/en`,
+        'x-default': `${SITE_URL}/en`,
       },
     },
 
     openGraph: {
       title: meta.title,
       description: meta.description,
-      url: 'https://soughat.shop',
+      url: SITE_URL,
       siteName: 'Soughat Shop',
       locale: locale === 'fa' ? 'fa_IR' : 'en_US',
       type: 'website',

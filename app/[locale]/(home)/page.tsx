@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase';
 import { ArrowLeft, Layers, Sparkles, ChevronsRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { getTranslations } from 'next-intl/server';
+import type { Metadata } from 'next';
 
 export const revalidate = 60;
 
@@ -20,6 +21,35 @@ export const revalidate = 60;
 // یکی باشد (همون تعداد نظری که هر بار لود می‌شود). اگر یکی را عوض کردی،
 // آن یکی را هم عوض کن.
 const REVIEWS_BATCH_SIZE = 6;
+
+function getSiteUrl() {
+  return process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat.shop';
+}
+
+// 🔧 رفع خطای گوگل‌کنسول «Duplicate without user-selected canonical» روی /fa:
+// این صفحه (حتی بعد از ریفکتور به معماری Suspense/Streaming) باید
+// generateMetadata مخصوص خودش را داشته باشد، وگرنه alternates ناقصِ
+// app/[locale]/layout.tsx (بدون canonical) مستقیماً روی خروجی /fa و /en
+// می‌نشیند. این تابع دقیقاً همان الگویی است که در بقیه‌ی صفحات پروژه
+// (about, terms, trust, products, blog, ...) استفاده شده: یک canonical
+// خودارجاع (self-referencing) برای همان زبانِ درخواستی + hreflang کامل،
+// با x-default روی en طبق تصمیم تیم (هماهنگ با buildAlternates در
+// app/sitemap.ts).
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const siteUrl = getSiteUrl();
+
+  return {
+    alternates: {
+      canonical: `${siteUrl}/${locale}`,
+      languages: {
+        fa: `${siteUrl}/fa`,
+        en: `${siteUrl}/en`,
+        'x-default': `${siteUrl}/en`,
+      },
+    },
+  };
+}
 
 // ============================================================================
 // 🆕 معماری جدید صفحه‌ی اصلی — بارگذاری «جز به جز» (Streaming per Suspense)
