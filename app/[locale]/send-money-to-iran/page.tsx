@@ -206,7 +206,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     : 'https://hwzowjniahrqdzpnlpas.supabase.co/storage/v1/object/public/media/1783290565150-834.webp';
 
   return {
-    title,
+    // 🔧 رفع باگ «۲ بار سوغات شاپ در تایتل»: متغیر title بالاتر خودش شامل
+    // «| Soughat.shop» / «| سوغات شاپ» هست. اگه رشته‌ی ساده بدیمش، لایوت
+    // دوباره template رو اضافه می‌کنه و برند دو بار تکرار میشه.
+    // title.absolute یعنی «همین رو دقیقاً همین‌طوری بفرست، دست لایوت بهش نرسه».
+    title: { absolute: title },
     description,
     alternates: {
       canonical: `${siteUrl}/${locale}/send-money-to-iran`,

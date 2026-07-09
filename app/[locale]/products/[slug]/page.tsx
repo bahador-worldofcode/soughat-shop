@@ -38,7 +38,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat.shop';
 
   return {
-    title: pageTitle,
+    // 🔧 رفع باگ «۲ بار سوغات شاپ در تایتل»: pageTitle از دیتابیس (seo_title)
+    // میاد و طبق پروتکل تولید محتوا از قبل شامل «| سوغات شاپ» هست. اگه اینجا
+    // فقط یک رشته‌ی ساده بدیم، لایوت (app/[locale]/layout.tsx) دوباره
+    // template «%s | Soughat Shop» رو روش اعمال می‌کنه و نتیجه دو بار
+    // نام برند میشه. با title.absolute این تایتل را همون‌طور که هست،
+    // بدون دست‌کاری توسط لایوت، مستقیم می‌فرستیم.
+    title: { absolute: pageTitle },
     description: pageDesc,
     openGraph: {
       title: pageTitle,

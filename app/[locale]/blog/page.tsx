@@ -41,7 +41,12 @@ export async function generateMetadata({ searchParams, params }: BlogPageProps):
   const description = t('subtitle');
 
   return {
-    title,
+    // 🔧 رفع باگ «۲ بار سوغات شاپ در تایتل»: t('title') از messages/*.json میاد
+    // و مقدارش «Soughat Shop Blog» / «وبلاگ سوغات شاپ» هست — یعنی از قبل
+    // شامل نام برند. اگه به‌صورت رشته‌ی ساده بدیمش، لایوت دوباره template
+    // «%s | Soughat Shop» رو اضافه می‌کنه و برند دو بار تکرار میشه.
+    // title.absolute یعنی «همین رو دقیقاً همین‌طوری بفرست، دست لایوت بهش نرسه».
+    title: { absolute: title },
     description,
     alternates: {
       canonical: `${siteUrl}/${locale}${canonicalPath}`,

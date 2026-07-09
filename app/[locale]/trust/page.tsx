@@ -9,7 +9,12 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat.shop';
 
   return {
-    title: t('title'),
+    // 🔧 رفع باگ «۲ بار سوغات شاپ در تایتل»: t('title') مقدارش
+    // «Why Trust Soughat Shop?» / «چرا به سوغات شاپ اعتماد کنیم؟» هست —
+    // یعنی از قبل شامل نام برند. اگه رشته‌ی ساده بدیمش، لایوت دوباره
+    // template رو اضافه می‌کنه و برند دو بار تکرار میشه. title.absolute
+    // یعنی «همین رو دقیقاً همین‌طوری بفرست، دست لایوت بهش نرسه».
+    title: { absolute: t('title') },
     description: t('hero_desc'),
     alternates: {
       canonical: `${siteUrl}/${locale}/trust`,

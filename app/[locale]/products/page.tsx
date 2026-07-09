@@ -92,7 +92,12 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const canonicalPath = currentCategory !== 'all' ? `/products?category=${encodeURIComponent(currentCategory)}` : '/products';
 
   return {
-    title,
+    // 🔧 رفع باگ «۲ بار سوغات شاپ در تایتل»: متغیر title بالاتر همیشه خودش
+    // شامل «| Soughat Shop» یا «| سوغات شاپ» هست (چه از activeCategory.seo_title
+    // چه از رشته‌ی ثابت پیش‌فرض). اگه به‌صورت رشته‌ی ساده بدیمش، لایوت دوباره
+    // template «%s | Soughat Shop» رو اضافه می‌کنه و برند دو بار تکرار میشه.
+    // title.absolute یعنی «همین رو دقیقاً همین‌طوری بفرست، دست لایوت بهش نرسه».
+    title: { absolute: title },
     description,
     openGraph: {
       title,
