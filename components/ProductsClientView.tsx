@@ -102,7 +102,19 @@ export default function ProductsClientView({
     ...rawCategories,
   ];
 
-  const isCatActive = (slug: string) => (slug || '').trim() === currentCategory;
+  // 🆕 رفع حس «هنگ کردن» موقع زدن دکمه‌ی دسته‌بندی: قبلاً isCatActive مستقیم
+  // روی currentCategory (که از سرور و بعد از کامل‌شدن ناوبری میاد) تکیه می‌کرد؛
+  // یعنی تا رفت‌وبرگشت با سرور کامل نمی‌شد، خودِ دکمه هم هایلایت نمی‌شد و به‌نظر
+  // بی‌جواب/هنگ می‌رسید. الان با یه state محلی، همون لحظه‌ی کلیک دکمه‌ی جدید
+  // فوراً هایلایت می‌شه (خوش‌بینانه/optimistic)، و بعداً وقتی currentCategory
+  // واقعی از سرور اومد، دوباره باهاش هم‌گام می‌شه — بدون اینکه منتظر بمونیم.
+  const [optimisticCategory, setOptimisticCategory] = useState(currentCategory);
+
+  useEffect(() => {
+    setOptimisticCategory(currentCategory);
+  }, [currentCategory]);
+
+  const isCatActive = (slug: string) => (slug || '').trim() === optimisticCategory;
 
   const [searchTerm, setSearchTerm] = useState(currentSearch);
   const debouncedSearch = useDebounce(searchTerm, 500);
@@ -135,6 +147,7 @@ export default function ProductsClientView({
   }, [debouncedSearch]);
 
   const handleCategoryChange = (slug: string) => {
+    setOptimisticCategory(slug === 'all' ? 'all' : slug);
     updateParams({ category: slug === 'all' ? null : slug, page: null });
   };
 
@@ -352,49 +365,51 @@ export default function ProductsClientView({
             </select>
           </div>
 
-          {/* 🆕 کارت‌های دسته‌بندی این‌بار واقعاً «کارت»ان (قاب + پس‌زمینه‌ی خودشون رو
-              دارن)، ولی به‌جای یک ردیف تکراری با عرض ثابت، توی یک گرید ۶ستونه با
-              grid-flow-row-dense قرار می‌گیرن: اسم‌های کوتاه ۲ ستون (یک‌سوم عرض) و
-              اسم‌های بلندتر ۳ ستون (نصف عرض) می‌گیرن. چون ارتفاع هر ردیف ثابته و
-              چیدمان dense خودش جای خالی رو با آیتم بعدی پر می‌کنه، عملاً فضای خالی
-              ته‌نشین نمی‌مونه؛ و چون تعداد ردیف‌ها مستقیماً از تعداد و سایز
-              دسته‌بندی‌ها می‌آد، با کم/زیاد شدن یک دسته‌بندی، خودِ ارتفاع کارت
-              اصلی هم به‌صورت طبیعی کوچیک/بزرگ می‌شه. */}
+          {/* 🆕 کارت‌های دسته‌بندی، دکمه‌های واقعی با قاب و پس‌زمینه‌ی خودشونن (مثل قبل)،
+              فقط این‌بار هر کدوم دقیقاً به اندازه‌ی محتوای خودش (آیکون+اسم) عرض
+              می‌گیره (flex-wrap معمولی، نه گرید با ستون ثابت) و با یک الگوی
+              margin-top متناوب، روی ردیف بالا/پایین می‌شینه — یه حس «پازل» و
+              بازیگوش، به‌جای یک ردیف صاف و یکنواخت. چون چیدمان از بالا (items-start)
+              شروع می‌شه، بلندترین دکمه‌ی هر ردیف (به‌همراه margin بالاش) ارتفاع
+              همون ردیف رو تعیین می‌کنه؛ پس چیزی روی هم نمی‌افته و فضای اضافه هم
+              نمی‌مونه. */}
           <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm transition-shadow hover:shadow-md">
             <h3 className="font-bold text-gray-800 flex items-center gap-2 mb-4">
               <Layers className="h-5 w-5 text-blue-600" />
               {t('categories_label')}
             </h3>
 
-            <div className="grid grid-cols-6 grid-flow-row-dense auto-rows-[62px] gap-2">
-              {categories.map((cat) => {
+            <div className="flex flex-wrap items-start gap-2">
+              {categories.map((cat, idx) => {
                 const catName = isEn ? cat.name_en || cat.name : cat.name;
                 const isActive = isCatActive(cat.slug);
-                const isWide = catName.length > 8;
+                // الگوی متناوب برای فاصله‌ی بالا؛ همین باعث میشه دکمه‌ها هم‌تراز
+                // نباشن و حس پازل/موج بگیرن (۴ تایی تکرار می‌شه تا زیادی منظم نشه)
+                const stagger = ['mt-0', 'mt-3', 'mt-1', 'mt-2'][idx % 4];
 
                 return (
                   <button
                     key={cat.id}
                     onClick={() => handleCategoryChange(cat.slug)}
                     title={catName}
-                    className={`${isWide ? 'col-span-3' : 'col-span-2'} flex flex-col items-center justify-center gap-1 rounded-xl border px-1 text-center transition-all duration-200 ${
+                    className={`${stagger} flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-bold transition-all duration-150 active:scale-95 ${
                       isActive
                         ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
                         : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700'
                     }`}
                   >
                     {cat.slug === 'all' ? (
-                      <Filter className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-white' : 'text-gray-400'}`} />
+                      <Filter className={`h-3.5 w-3.5 flex-shrink-0 ${isActive ? 'text-white' : 'text-gray-400'}`} />
                     ) : cat.icon_url ? (
                       <img
                         src={cat.icon_url}
                         alt=""
-                        className={`h-5 w-5 object-contain flex-shrink-0 ${isActive ? 'brightness-200' : ''}`}
+                        className={`w-3.5 h-3.5 object-contain flex-shrink-0 ${isActive ? 'brightness-200' : ''}`}
                       />
                     ) : (
-                      <Layers className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-white' : 'text-gray-400'}`} />
+                      <Layers className={`h-3.5 w-3.5 flex-shrink-0 ${isActive ? 'text-white' : 'text-gray-400'}`} />
                     )}
-                    <span className="text-[11px] font-bold leading-none truncate max-w-full">{catName}</span>
+                    <span className="truncate max-w-[9rem]">{catName}</span>
                   </button>
                 );
               })}
