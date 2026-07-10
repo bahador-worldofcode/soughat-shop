@@ -352,50 +352,49 @@ export default function ProductsClientView({
             </select>
           </div>
 
-          {/* 🆕 دسته‌بندی‌ها به‌صورت یک «ابر برچسب» (tag cloud) داخل همین کارت اصلی
-              نمایش داده می‌شن، نه به‌صورت چیپ‌های جدا با border/bg مستقل که حس
-              «کارت توی کارت» می‌دادن. هر آیتم فقط آیکون+اسمشه، بدون قاب دور خودش؛
-              سایز فونت/آیکون بین سه سایز کوچک تناوب داره تا فضای کارت رو با تنوع و
-              حس بازیگوش پر کنه، و دسته‌ی فعال با رنگ آبی + زیرخط مشخص می‌شه (نه
-              پس‌زمینه‌ی توپر) تا همچنان جدا از بقیه به‌نظر برسه ولی از فضای کارت
-              اصلی بیرون نزنه. */}
-          <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm transition-shadow hover:shadow-md">
+          {/* 🆕 کارت‌های دسته‌بندی این‌بار واقعاً «کارت»ان (قاب + پس‌زمینه‌ی خودشون رو
+              دارن)، ولی به‌جای یک ردیف تکراری با عرض ثابت، توی یک گرید ۶ستونه با
+              grid-flow-row-dense قرار می‌گیرن: اسم‌های کوتاه ۲ ستون (یک‌سوم عرض) و
+              اسم‌های بلندتر ۳ ستون (نصف عرض) می‌گیرن. چون ارتفاع هر ردیف ثابته و
+              چیدمان dense خودش جای خالی رو با آیتم بعدی پر می‌کنه، عملاً فضای خالی
+              ته‌نشین نمی‌مونه؛ و چون تعداد ردیف‌ها مستقیماً از تعداد و سایز
+              دسته‌بندی‌ها می‌آد، با کم/زیاد شدن یک دسته‌بندی، خودِ ارتفاع کارت
+              اصلی هم به‌صورت طبیعی کوچیک/بزرگ می‌شه. */}
+          <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm transition-shadow hover:shadow-md">
             <h3 className="font-bold text-gray-800 flex items-center gap-2 mb-4">
               <Layers className="h-5 w-5 text-blue-600" />
               {t('categories_label')}
             </h3>
 
-            <div className="flex flex-wrap items-center gap-x-1 gap-y-2.5">
-              {categories.map((cat, idx) => {
+            <div className="grid grid-cols-6 grid-flow-row-dense auto-rows-[62px] gap-2">
+              {categories.map((cat) => {
                 const catName = isEn ? cat.name_en || cat.name : cat.name;
                 const isActive = isCatActive(cat.slug);
-                const sizeTier = idx % 3;
-                const textSize = sizeTier === 0 ? 'text-base' : sizeTier === 1 ? 'text-sm' : 'text-[13px]';
-                const iconSize = sizeTier === 0 ? 'h-4 w-4' : sizeTier === 1 ? 'h-3.5 w-3.5' : 'h-3 w-3';
+                const isWide = catName.length > 8;
 
                 return (
                   <button
                     key={cat.id}
                     onClick={() => handleCategoryChange(cat.slug)}
                     title={catName}
-                    className={`group inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg font-bold transition-all duration-200 ${textSize} ${
-                      isActive ? 'text-blue-600' : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50/70'
+                    className={`${isWide ? 'col-span-3' : 'col-span-2'} flex flex-col items-center justify-center gap-1 rounded-xl border px-1 text-center transition-all duration-200 ${
+                      isActive
+                        ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                        : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700'
                     }`}
                   >
                     {cat.slug === 'all' ? (
-                      <Filter className={`${iconSize} flex-shrink-0 ${isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-blue-500'}`} />
+                      <Filter className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-white' : 'text-gray-400'}`} />
                     ) : cat.icon_url ? (
                       <img
                         src={cat.icon_url}
                         alt=""
-                        className={`${iconSize} object-contain flex-shrink-0 transition-transform duration-200 group-hover:scale-110 ${!isActive ? 'opacity-60 group-hover:opacity-100' : ''}`}
+                        className={`h-5 w-5 object-contain flex-shrink-0 ${isActive ? 'brightness-200' : ''}`}
                       />
                     ) : (
-                      <Layers className={`${iconSize} flex-shrink-0 ${isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-blue-500'}`} />
+                      <Layers className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-white' : 'text-gray-400'}`} />
                     )}
-                    <span className={`truncate max-w-[9rem] ${isActive ? 'underline underline-offset-4 decoration-2 decoration-blue-300' : ''}`}>
-                      {catName}
-                    </span>
+                    <span className="text-[11px] font-bold leading-none truncate max-w-full">{catName}</span>
                   </button>
                 );
               })}
