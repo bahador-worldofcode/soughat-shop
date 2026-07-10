@@ -105,3 +105,19 @@ export function stripHtmlToText(html: string): string {
     .replace(/\s+/g, ' ')
     .trim();
 }
+
+/**
+ * متن رو تا حداکثر maxLength کاراکتر می‌بره، اما هرگز وسط یک کلمه قطعش نمی‌کنه:
+ * تا آخرین فاصله‌ی قبل از حد مجاز عقب برمی‌گرده و در انتها «…» اضافه می‌کند تا
+ * برای کاربر مشخص باشد متن ادامه دارد. این فقط یک شبکه‌ی ایمنیِ آخر است — راه‌حل
+ * اصلی این است که یک فیلد کوتاه و کامل (مثل seo_desc) از ابتدا برای همین منظور
+ * پر شود؛ این تابع فقط جلوی بریده‌شدن زشت وسط کلمه را می‌گیرد اگر آن فیلد خالی بود.
+ */
+export function truncateAtWordBoundary(text: string, maxLength: number): string {
+  if (!text) return '';
+  if (text.length <= maxLength) return text;
+  const sliced = text.slice(0, maxLength);
+  const lastSpace = sliced.lastIndexOf(' ');
+  const safe = lastSpace > 40 ? sliced.slice(0, lastSpace) : sliced;
+  return safe.trim() + '…';
+}

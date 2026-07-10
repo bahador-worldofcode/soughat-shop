@@ -5,7 +5,7 @@ import { Suspense } from 'react';
 import ProductsClientView from '@/components/ProductsClientView';
 import ProductsSEOContent from '@/components/ProductsSEOContent';
 import LazySection from '@/components/LazySection';
-import { stripHtmlToText } from '@/lib/sanitizeHtml';
+import { stripHtmlToText, truncateAtWordBoundary } from '@/lib/sanitizeHtml';
 
 // این صفحه چون بر اساس searchParams (دسته‌بندی/جستجو/مرتب‌سازی/صفحه) فیلتر می‌شه،
 // همیشه به‌صورت داینامیک روی سرور رندر می‌شه (نه استاتیک) — دقیقاً چیزی که برای
@@ -37,6 +37,7 @@ interface Category {
   description_en?: string;
   seo_title?: string;
   seo_desc?: string;
+  seo_desc_en?: string;
 }
 
 const PAGE_SIZE = 12;
@@ -83,7 +84,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 
   const description = activeCategory
     ? (isEn
-        ? (activeCategory.seo_desc || stripHtmlToText(activeCategory.description_en || activeCategory.description || '').substring(0, 160))
+        ? (activeCategory.seo_desc_en || stripHtmlToText(activeCategory.description_en || activeCategory.description || '').substring(0, 160))
         : (activeCategory.seo_desc || stripHtmlToText(activeCategory.description || '').substring(0, 160)))
     : (isEn
         ? 'Browse every Soughat Shop product: Iranian sweets, handicrafts, gold, jewelry and gift cards. Pay with USDT, Bitcoin or Solana — delivered anywhere in Iran.'
@@ -196,7 +197,14 @@ export default async function ProductsPage({ params, searchParams }: Props) {
     ? (isEn ? (activeCategoryInfo.name_en || activeCategoryInfo.name) : activeCategoryInfo.name)
     : t('title');
   const pageSubtitle = activeCategoryInfo
-    ? stripHtmlToText((isEn ? activeCategoryInfo.description_en : activeCategoryInfo.description) || '').substring(0, 200) || t('subtitle')
+    ? (
+        (isEn ? activeCategoryInfo.seo_desc_en : activeCategoryInfo.seo_desc) ||
+        truncateAtWordBoundary(
+          stripHtmlToText((isEn ? activeCategoryInfo.description_en : activeCategoryInfo.description) || ''),
+          200
+        ) ||
+        t('subtitle')
+      )
     : t('subtitle');
 
   // ۴. Structured Data — ItemList/CollectionPage برای گوگل و بات‌های هوش مصنوعی
