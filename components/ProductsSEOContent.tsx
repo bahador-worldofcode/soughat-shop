@@ -7,23 +7,36 @@
 // نشده است. اگر روزی خواستی متن بنر یا سوالات متداول را عوض کنی، فقط
 // کافیست namespace «ProductsSEO» داخل فایل‌های زبان را ویرایش کنی.
 //
-// ساختار این بخش:
+// ساختار این بخش (به‌روزرسانی ۲۰۲۶/۰۷/۱۰ — محتوای واقعی و دقیق‌تر جایگزین
+// نسخه‌ی قبلی شد که به‌اشتباه از «انبار مرکزی در تهران» برای همه‌ی سفارش‌ها
+// صحبت می‌کرد. واقعیت این است که روش آماده‌سازی به نوع هدیه بستگی دارد):
 // ۱) بنر تصویری عریض (۲۱:۹ در دسکتاپ) با متن Overlay — برای EN سمت چپ
 //    (چون dir صفحه ltr است)، برای FA سمت راست (چون dir صفحه rtl است).
 //    این چینش با کلاس‌های منطقی Tailwind مثل justify-start و text-start
 //    خودکار انجام می‌شود و نیازی به شرط دستی isEn ندارد.
-// ۲) یک بلوک متن غنی سئو (H2 + دو پاراگراف) مخصوص همین صفحه — برای اینکه
+// ۲) یک بلوک متن غنی سئو (H2 + سه پاراگراف) مخصوص همین صفحه — برای اینکه
 //    محتوا با صفحه اصلی (HomeSEOContent) تکراری نشود و گوگل آن را محتوای
 //    نازک (Thin/Duplicate Content) تشخیص ندهد.
-// ۳) آکاردئون سوالات متداول با تگ‌های بومی <details>/<summary> (بدون
+// ۳) بخش جدید «سفارش شما چطور آماده و تحویل داده می‌شود» — پنج کارت که
+//    دقیقاً بر اساس نوع هدیه (نقد/طلا، شیرینی و سایر کالاها، گل، تهران و
+//    کرج، تاریخ دلخواه) روش واقعی آماده‌سازی و ارسال را توضیح می‌دهد.
+// ۴) آکاردئون سوالات متداول با تگ‌های بومی <details>/<summary> (بدون
 //    نیاز به جاوااسکریپت برای باز/بسته شدن) به همراه Schema.org FAQPage
-//    برای Rich Snippet در نتایج گوگل.
+//    برای Rich Snippet در نتایج گوگل. تعداد سوالات از ۵ به ۱۰ افزایش پیدا کرد.
 
 import Image from 'next/image';
-import { HelpCircle, ChevronDown } from 'lucide-react';
+import {
+  HelpCircle,
+  ChevronDown,
+  Banknote,
+  ShoppingBag,
+  Flower2,
+  Zap,
+  CalendarClock,
+} from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 
-const FAQ_COUNT = 5;
+const FAQ_COUNT = 10;
 
 export default function ProductsSEOContent() {
   const t = useTranslations('ProductsSEO');
@@ -56,6 +69,46 @@ export default function ProductsSEOContent() {
       },
     })),
   };
+
+  // کارت‌های بخش «سفارش شما چطور آماده و تحویل داده می‌شود» — هر کدام
+  // یک آیکون، عنوان و توضیح دارند که همگی از فایل ترجمه خوانده می‌شوند.
+  const fulfillmentItems = [
+    {
+      key: 'cash',
+      icon: Banknote,
+      title: t('fulfillment_cash_title'),
+      desc: t('fulfillment_cash_desc'),
+      accent: 'bg-emerald-50 text-emerald-600',
+    },
+    {
+      key: 'goods',
+      icon: ShoppingBag,
+      title: t('fulfillment_goods_title'),
+      desc: t('fulfillment_goods_desc'),
+      accent: 'bg-amber-50 text-amber-600',
+    },
+    {
+      key: 'flowers',
+      icon: Flower2,
+      title: t('fulfillment_flowers_title'),
+      desc: t('fulfillment_flowers_desc'),
+      accent: 'bg-pink-50 text-pink-600',
+    },
+    {
+      key: 'tehran',
+      icon: Zap,
+      title: t('fulfillment_tehran_title'),
+      desc: t('fulfillment_tehran_desc'),
+      accent: 'bg-blue-50 text-blue-600',
+    },
+    {
+      key: 'date',
+      icon: CalendarClock,
+      title: t('fulfillment_date_title'),
+      desc: t('fulfillment_date_desc'),
+      accent: 'bg-purple-50 text-purple-600',
+    },
+  ];
 
   return (
     <section className="bg-white border-t border-gray-100 py-14 md:py-16 font-[family-name:var(--font-vazir)]">
@@ -113,12 +166,53 @@ export default function ProductsSEOContent() {
           <p className="text-gray-600 leading-8 text-justify mb-4">
             {t('intro_p1')}
           </p>
-          <p className="text-gray-600 leading-8 text-justify">
+          <p className="text-gray-600 leading-8 text-justify mb-4">
             {t('intro_p2')}
+          </p>
+          <p className="text-gray-600 leading-8 text-justify">
+            {t('intro_p3')}
           </p>
         </div>
 
-        {/* ===== ۳) سوالات متداول (آکاردئون با details/summary) ===== */}
+        {/* ===== ۳) سفارش شما چطور آماده و تحویل داده می‌شود ===== */}
+        {/* این بخش عمداً اضافه شده تا شفاف و دقیق توضیح دهد که روش
+            آماده‌سازی به نوع هدیه بستگی دارد — نه اینکه همه‌چیز از یک
+            «انبار مرکزی در تهران» ارسال شود. هر کارت دقیقاً منطبق بر
+            مدل واقعی کسب‌وکار سوغات شاپ است. */}
+        <div className="mb-12 md:mb-16">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
+              {t('fulfillment_title')}
+            </h2>
+            <p className="text-gray-500 text-sm md:text-base max-w-2xl mx-auto">
+              {t('fulfillment_subtitle')}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+            {fulfillmentItems.map((item) => {
+              const ItemIcon = item.icon;
+              return (
+                <div
+                  key={item.key}
+                  className="bg-gray-50 hover:bg-white rounded-2xl border border-gray-100 hover:border-blue-100 hover:shadow-sm transition-colors p-5 md:p-6"
+                >
+                  <div className={`inline-flex items-center justify-center w-11 h-11 rounded-xl mb-4 ${item.accent}`}>
+                    <ItemIcon className="h-5 w-5" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm md:text-base mb-2 leading-snug">
+                    {item.title}
+                  </h3>
+                  <p className="text-gray-600 text-sm leading-7 text-justify">
+                    {item.desc}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ===== ۴) سوالات متداول (آکاردئون با details/summary) ===== */}
         <div>
           <div className="text-center mb-10">
             <div className="inline-flex items-center justify-center p-3 bg-blue-50 rounded-full mb-4">
