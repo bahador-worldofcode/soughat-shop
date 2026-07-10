@@ -25,6 +25,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       url: `${siteUrl}/${locale}/about`,
       locale: locale === 'fa' ? 'fa_IR' : 'en_US',
       type: 'website',
+      // 🔧 رفع «og:image وجود نداره»: این صفحه openGraph مخصوص خودش را
+      // override می‌کند، پس عکس پیش‌فرض لایوت به آن ارث نمی‌رسد — باید
+      // اینجا هم صریحاً ست شود.
+      images: [{ url: `${siteUrl}/images/og-default.jpg`, width: 1200, height: 630, alt: t('title') }],
     },
   };
 }

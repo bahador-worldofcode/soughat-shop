@@ -25,6 +25,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       url: `${siteUrl}/${locale}/crypto-guide`,
       locale: locale === 'fa' ? 'fa_IR' : 'en_US',
       type: 'website',
+      // 🔧 رفع «og:image وجود نداره»
+      images: [{ url: `${siteUrl}/images/og-default.jpg`, width: 1200, height: 630, alt: t('title') }],
     },
   };
 }
