@@ -413,9 +413,25 @@ async function ReviewsSection() {
 
   const reviewsInitialHasMore = (initialReviews?.length || 0) === REVIEWS_BATCH_SIZE;
 
+  // 🔧 رفع مشکل «دو Schema سازمانی جدا روی هوم‌پیج»:
+  // قبلاً اینجا یک Organization کاملاً جدا (با name/url مستقل) ساخته
+  // می‌شد که کنار Organization اصلیِ app/[locale]/layout.tsx می‌نشست —
+  // یعنی گوگل روی همین یک صفحه (هوم) به دو Organization متفاوت برمی‌خورد.
+  // الان به‌جای ساختن یک موجودیت جدید، همان «@id» ثابتِ Organization
+  // اصلی (`${SITE_URL}/#organization` در layout.tsx) استفاده می‌شود.
+  // با این کار گوگل این تکه را «اطلاعات بیشتر درباره‌ی همان برند»
+  // می‌بیند، نه یک Organization دوم و متناقض. aggregateRating و review
+  // عمداً همچنان فقط همین‌جا (هوم‌پیج) تزریق می‌شوند، چون این تنها
+  // صفحه‌ای‌ست که نظرات واقعاً روی آن قابل مشاهده‌اند — دقیقاً طبق
+  // دستورالعمل گوگل برای structured data نظرات.
   const reviewsJsonLd = reviewCount > 0 ? {
     '@context': 'https://schema.org',
     '@type': 'Organization',
+    // ⚠️ عمداً هاردکد شده (نه getSiteUrl()): این @id باید حرف‌به‌حرف با
+    // @id تعریف‌شده در app/[locale]/layout.tsx یکی باشد تا گوگل این دو
+    // تکه را یک موجودیت واحد بداند. اگر یکی از این دو را عوض کردی،
+    // آن یکی را هم دقیقاً همینطور عوض کن.
+    '@id': 'https://soughat.shop/#organization',
     name: 'Soughat Shop',
     url: 'https://soughat.shop',
     aggregateRating: {
