@@ -11,7 +11,7 @@ import BlogRail from "@/components/BlogRail";
 import Skeleton from "@/components/skeletons/Skeleton";
 import InstallPWAPrompt from "@/components/InstallPWAPrompt";
 import { supabase } from '@/lib/supabase';
-import { ArrowLeft, Layers, Sparkles, ChevronsRight } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, Layers, Sparkles, ChevronsRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
@@ -246,10 +246,21 @@ function NewestProductsSkeleton() {
 }
 
 // ---------------------------------------------------------------------------
-// بخش ۴: دسته‌بندی‌ها (Category Sections)
-// نکته: LazySectionهای داخلی (content-visibility برای اسکرول روان مرورگر)
-// دقیقاً مثل قبل حفظ شده‌اند؛ فقط کل بلوک حالا در Suspense خودش قرار گرفته
-// تا کوئری‌اش بقیه‌ی صفحه را معطل نکند.
+// بخش ۴: دسته‌بندی‌ها (Category Showcase)
+// 🆕 رفع مشکل «محتوای تکراری در صفحه‌ی اصلی» (Duplicate Content):
+// قبلاً این بخش برای هر دسته‌بندی، ۴ محصول آخرش را با <ProductCard> کامل
+// نمایش می‌داد. چون بخش «جدیدترین محصولات» بالای همین صفحه هم دقیقاً همان
+// محصولات تازه را نشان می‌دهد، در عمل خیلی از کارت‌های محصول دو بار (یک بار
+// در «جدیدترین‌ها» و یک بار زیر دسته‌بندی خودشان) در HTML صفحه‌ی اصلی
+// تکرار می‌شدند — دقیقاً چیزی که گوگل به‌عنوان Duplicate/Thin Content روی
+// صفحه‌ی اصلی جریمه می‌کند.
+//
+// راه‌حل: این بخش دیگر هیچ محصولی واکشی/نمایش نمی‌دهد؛ فقط خودِ
+// دسته‌بندی‌ها را به‌صورت کارت‌های بزرگ و شیک (ویترین) نشان می‌دهد. کاربر با
+// کلیک روی هر کارت وارد صفحه‌ی همان دسته‌بندی می‌شود و محصولاتش را آنجا
+// می‌بیند. فایده‌ی جانبی مهم: قبلاً به‌ازای هر دسته‌بندی یک کوئری جداگانه به
+// Supabase زده می‌شد (N+1)؛ الان فقط همان یک کوئری categories کافی است —
+// یعنی این بخش هم سریع‌تر شده هم سبک‌تر.
 // ---------------------------------------------------------------------------
 async function CategorySectionsBlock({ locale }: { locale: string }) {
   const t = await getTranslations('Home');
@@ -260,96 +271,69 @@ async function CategorySectionsBlock({ locale }: { locale: string }) {
     .select('*')
     .order('name');
 
-  const categorySections: { category: any; items: any[] }[] = [];
-  if (categories && categories.length > 0) {
-    const results = await Promise.all(
-      categories.map((cat) =>
-        supabase
-          .from('products')
-          .select('*')
-          .eq('category', cat.slug)
-          .order('created_at', { ascending: false })
-          .limit(4)
-      )
+  if (!categories || categories.length === 0) {
+    return (
+      <section className="container mx-auto px-4 mb-14 md:mb-20 animate-in fade-in duration-500">
+        <div className="text-center mb-8 md:mb-10">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+            {t('categories_title')}
+          </h2>
+        </div>
+        <div className="text-center py-16 bg-white rounded-3xl shadow-sm border border-gray-100">
+          <p className="text-gray-400">{t('categories_empty')}</p>
+        </div>
+      </section>
     );
-
-    categories.forEach((cat, idx) => {
-      const items = results[idx]?.data || [];
-      if (items.length > 0) {
-        categorySections.push({ category: cat, items });
-      }
-    });
   }
 
-  if (categorySections.length === 0) return null;
-
   return (
-    <LazySection minHeight={categorySections.length * 420}>
+    <LazySection minHeight={Math.ceil(categories.length / 2) * 210 + 160}>
       <section className="container mx-auto px-4 mb-14 md:mb-20 animate-in fade-in duration-500">
-        <div className="flex flex-col">
-          {categorySections.map(({ category: cat, items }, index) => {
+        <div className="text-center mb-8 md:mb-10">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+            {t('categories_title')}
+          </h2>
+          <p className="text-gray-500 text-sm md:text-base">
+            {t('categories_subtitle')}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          {categories.map((cat) => {
             const catName = isEn ? (cat.name_en || cat.name) : cat.name;
-            const isLast = index === categorySections.length - 1;
 
             return (
-              <LazySection
+              <Link
                 key={cat.id}
-                minHeight={380}
-                rootMargin="600px 0px"
-                className={`pb-8 md:pb-10 ${!isLast ? 'mb-8 md:mb-10 border-b border-gray-100' : ''}`}
+                href={`/products?category=${cat.slug}`}
+                className="group relative flex aspect-square flex-col items-center justify-center gap-3 md:gap-4 rounded-3xl border border-blue-100/70 bg-gradient-to-br from-white to-blue-50/60 p-5 text-center shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:border-blue-200 hover:shadow-xl"
               >
-                <div className="flex items-center justify-between gap-4 mb-6">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex-shrink-0 w-11 h-11 md:w-12 md:h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center overflow-hidden">
-                      {cat.icon_url ? (
-                        // توجه: عمداً از next/image استفاده نشده. آدرس آیکون توسط ادمین
-                        // به‌صورت متن آزاد وارد می‌شود (می‌تواند هر دامنه یا فرمتی، از جمله
-                        // SVG، باشد) و next/image برای دامنه‌های ناشناس/SVG خطای رانتایم
-                        // می‌دهد. چون آیکون خیلی کوچک است، سود بهینه‌سازی ارزش این ریسک را ندارد.
-                        <img
-                          src={cat.icon_url}
-                          alt={catName}
-                          className="w-7 h-7 md:w-8 md:h-8 object-contain"
-                        />
-                      ) : (
-                        <Layers className="w-5 h-5 md:w-6 md:h-6 text-blue-500" />
-                      )}
-                    </div>
-                    <h3 className="text-lg md:text-xl font-bold text-gray-900 truncate">
-                      {catName}
-                    </h3>
-                  </div>
-
-                  <Link
-                    href={`/products?category=${cat.slug}`}
-                    className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs md:text-sm font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-2 rounded-xl transition-all group"
-                  >
-                    <span className="hidden sm:inline">{t('view_all')}</span>
-                    <span className="sm:hidden">{t('view_category')}</span>
-                    <ArrowLeft className={`h-4 w-4 transition-transform ${isEn ? 'rotate-180 group-hover:translate-x-1' : 'group-hover:-translate-x-1'}`} />
-                  </Link>
+                <div className="flex h-20 w-20 md:h-24 md:w-24 lg:h-28 lg:w-28 items-center justify-center rounded-full bg-white shadow-md ring-1 ring-blue-100/80 overflow-hidden transition-transform duration-300 group-hover:scale-105 group-hover:ring-blue-200">
+                  {cat.icon_url ? (
+                    // توجه: عمداً از next/image استفاده نشده. آدرس آیکون توسط ادمین
+                    // به‌صورت متن آزاد وارد می‌شود (می‌تواند هر دامنه یا فرمتی، از جمله
+                    // SVG، باشد) و next/image برای دامنه‌های ناشناس/SVG خطای رانتایم
+                    // می‌دهد. چون آیکون خیلی کوچک است، سود بهینه‌سازی ارزش این ریسک را ندارد.
+                    <img
+                      src={cat.icon_url}
+                      alt={catName}
+                      className="h-11 w-11 md:h-14 md:w-14 object-contain"
+                    />
+                  ) : (
+                    <Layers className="h-9 w-9 md:h-11 md:w-11 text-blue-400" />
+                  )}
                 </div>
 
-                <div className="flex gap-4 items-stretch overflow-x-auto no-scrollbar overscroll-x-contain [-webkit-overflow-scrolling:touch] -mx-4 px-4 pb-1 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:mx-0 sm:px-0 sm:pb-0 md:gap-6 lg:grid-cols-4">
-                  {items.map((product) => (
-                    <div
-                      key={product.id}
-                      className="w-[65%] min-w-[240px] max-w-[290px] flex-shrink-0 sm:w-auto sm:flex-none sm:contents"
-                    >
-                      <ProductCard
-                        id={product.id}
-                        title={product.title}
-                        title_en={product.title_en}
-                        price={product.price}
-                        image={product.image}
-                        slug={product.slug}
-                        pricing_type={product.pricing_type}
-                        weight={product.weight}
-                      />
-                    </div>
-                  ))}
+                <h3 className="line-clamp-2 px-2 text-base font-bold leading-snug text-gray-900 md:text-lg lg:text-xl">
+                  {catName}
+                </h3>
+
+                <div
+                  className={`absolute bottom-4 ${isEn ? 'left-4' : 'right-4'} flex h-8 w-8 items-center justify-center rounded-full bg-blue-50 text-blue-500 transition-colors duration-300 group-hover:bg-blue-600 group-hover:text-white`}
+                >
+                  <ArrowUpRight className={`h-4 w-4 ${!isEn ? 'scale-x-[-1]' : ''}`} />
                 </div>
-              </LazySection>
+              </Link>
             );
           })}
         </div>
@@ -361,19 +345,18 @@ async function CategorySectionsBlock({ locale }: { locale: string }) {
 function CategorySectionsSkeleton() {
   return (
     <section className="container mx-auto px-4 mb-14 md:mb-20">
-      <div className="flex items-center gap-3 mb-6">
-        <Skeleton className="h-11 w-11 md:h-12 md:w-12 rounded-2xl" />
-        <Skeleton className="h-6 w-40" />
+      <div className="flex flex-col items-center gap-3 mb-8 md:mb-10">
+        <Skeleton className="h-7 md:h-8 w-56" />
+        <Skeleton className="h-4 w-72 hidden sm:block" />
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {Array.from({ length: 4 }).map((_, i) => (
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+        {Array.from({ length: 8 }).map((_, i) => (
           <div
             key={i}
-            className="bg-white rounded-2xl p-3 sm:p-4 h-[220px] sm:h-[260px] border border-gray-100 flex flex-col gap-3"
+            className="aspect-square rounded-3xl border border-gray-100 bg-white p-5 flex flex-col items-center justify-center gap-4"
           >
-            <Skeleton className="h-28 sm:h-32 w-full rounded-xl" />
-            <Skeleton className="h-3.5 w-3/4" />
-            <Skeleton className="h-3.5 w-1/2" />
+            <Skeleton className="h-20 w-20 md:h-24 md:w-24 rounded-full" />
+            <Skeleton className="h-4 w-3/4" />
           </div>
         ))}
       </div>
@@ -599,4 +582,3 @@ export default async function Home({
     </main>
   );
 }
-
