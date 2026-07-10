@@ -15,6 +15,7 @@ import FloatingCart from "@/components/FloatingCart";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import WebMCPProvider from "@/components/WebMCPProvider";
 import AuthSessionHandler from "@/components/AuthSessionHandler";
+import PWARegister from "@/components/PWARegister";
 
 // کانفیگ فونت برای خوانایی بهتر سایت
 const vazir = Vazirmatn({ subsets: ['arabic', 'latin'] });
@@ -91,31 +92,6 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       siteName: 'Soughat Shop',
       locale: locale === 'fa' ? 'fa_IR' : 'en_US',
       type: 'website',
-      // 🔧 رفع «og:image وجود نداره»: قبلاً این کلید اصلاً تعریف نشده بود،
-      // یعنی موقع شیر شدن لینک سایت تو واتس‌اپ/تلگرام/توییتر/فیسبوک هیچ
-      // تصویری نشون داده نمی‌شد. این همون عکس ۱۲۰۰×۶۳۰ پیش‌فرض سایته که
-      // برای صفحاتی که خودشون openGraph مخصوص ندارن (هوم‌پیج و بقیه‌ی
-      // صفحات ساده) استفاده می‌شه.
-      images: [
-        {
-          url: `${SITE_URL}/images/og-default.jpg`,
-          width: 1200,
-          height: 630,
-          alt: 'Soughat Shop',
-        },
-      ],
-    },
-
-    // 🔧 رفع «Twitter card از نوع summary بود، باید summary_large_image
-    // می‌بود؛ و twitter:image هم تعریف نشده بود»: قبلاً اصلاً کلید twitter
-    // در متادیتا وجود نداشت (یعنی توییتر با تنظیمات پیش‌فرضِ خودش، کارت
-    // کوچیکِ بدون عکس، رندر می‌کرد). summary_large_image یعنی کارت با
-    // عکس بزرگ (همون چیزی که برای دیده‌شدن بهتر لینک در توییتر لازمه).
-    twitter: {
-      card: 'summary_large_image',
-      title: meta.title,
-      description: meta.description,
-      images: [`${SITE_URL}/images/og-default.jpg`],
     },
     
     verification: {
@@ -271,9 +247,15 @@ export default async function LocaleLayout({
 
           {/* WebMCP: نمایش اکشن‌های فرانت‌اند به ایجنت‌های مبتنی بر مرورگر */}
           <WebMCPProvider locale={locale} />
+
+          {/* ثبت سرویس‌ورکر PWA — سراسری (نه فقط هوم‌پیج)، چون معیار
+              نصب‌پذیری باید در کل سایت برقرار باشد؛ خودِ نوتیف نصب فقط در
+              صفحه‌ی اصلی نمایش داده می‌شود (به (home)/page.tsx مراجعه کنید) */}
+          <PWARegister />
           
         </NextIntlClientProvider>
       </body>
     </html>
   );
 }
+

@@ -9,6 +9,7 @@ import ReviewsFeed from "@/components/ReviewsFeed";
 import LazySection from "@/components/LazySection";
 import BlogRail from "@/components/BlogRail";
 import Skeleton from "@/components/skeletons/Skeleton";
+import InstallPWAPrompt from "@/components/InstallPWAPrompt";
 import { supabase } from '@/lib/supabase';
 import { ArrowLeft, Layers, Sparkles, ChevronsRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
@@ -590,6 +591,12 @@ export default async function Home({
         <BlogRail />
       </LazySection>
 
+      {/* 🆕 نوتیف/کارت شناور «نصب اپلیکیشن» — عمداً فقط همین‌جا (صفحه‌ی
+          اصلی) ایمپورت شده، چون این کامپوننت خودش کل منطق نمایش/تاخیر/
+          حالت اندروید-آیفون و ذخیره‌سازی session را مدیریت می‌کند */}
+      <InstallPWAPrompt />
+
     </main>
   );
 }
+

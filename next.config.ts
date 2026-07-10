@@ -62,6 +62,18 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        // 🆕 سرویس‌ورکر (public/sw.js) هرگز نباید کش شود؛ وگرنه مرورگرِ
+        // کاربر برای مدت طولانی (حتی بعد از آپدیت این فایل روی سرور) همان
+        // نسخه‌ی قدیمی را اجرا می‌کند و آپدیت‌ها اصلاً به کاربر نمی‌رسند.
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=0, must-revalidate',
+          },
+        ],
+      },
     ];
   },
 
@@ -76,3 +88,4 @@ const nextConfig: NextConfig = {
 
 // کانفیگ اصلی را داخل پلاگین رپ (Wrap) می‌کنیم
 export default withNextIntl(nextConfig);
+

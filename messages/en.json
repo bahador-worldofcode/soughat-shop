@@ -730,5 +730,14 @@
     "error_image_too_large_raw": "The image is too large. Please choose a smaller one.",
     "error_image_generic": "Error processing the image. Please try again or send without an image.",
     "error_generic": "Something went wrong. Please try again."
+  },
+  "InstallPrompt": {
+    "title": "Install the Soughat Shop app",
+    "description": "Add it to your home screen for faster access next time.",
+    "install_button": "Install App",
+    "close_aria": "Dismiss",
+    "ios_step1": "Tap the Share button in Safari",
+    "ios_step2": "Then select \"Add to Home Screen\""
   }
 }
+

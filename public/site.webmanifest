@@ -1,6 +1,12 @@
 {
     "name": "Soughat Shop",
     "short_name": "Soughat",
+    "description": "Send gifts, sweets, gold and money to Iran \u2014 pay securely with crypto.",
+    "id": "/",
+    "start_url": "/",
+    "scope": "/",
+    "lang": "en",
+    "dir": "auto",
     "icons": [
         {
             "src": "/logo.png",
@@ -17,3 +23,4 @@
     "background_color": "#ffffff",
     "display": "standalone"
 }
+
