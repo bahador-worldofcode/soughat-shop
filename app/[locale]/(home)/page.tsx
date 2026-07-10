@@ -11,7 +11,7 @@ import BlogRail from "@/components/BlogRail";
 import Skeleton from "@/components/skeletons/Skeleton";
 import InstallPWAPrompt from "@/components/InstallPWAPrompt";
 import { supabase } from '@/lib/supabase';
-import { ArrowLeft, ArrowUpRight, Layers, Sparkles, ChevronsRight } from 'lucide-react';
+import { ArrowLeft, Layers, Sparkles, ChevronsRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
@@ -171,7 +171,7 @@ async function NewestProductsSection({ locale }: { locale: string }) {
 
         {/* یک لینک واحد «مشاهده همه محصولات» که فقط با کلاس‌های ریسپانسیو ظاهرش (نه تعدادش) تغییر می‌کند؛
             همین طراحی از تکرار المان در DOM جلوگیری می‌کند تا هیچ‌وقت دوتایی دیده نشود */}
-        <div className="flex items-center justify-between md:justify-end gap-4 mt-1 md:mt-0">
+        <div className="flex items-center justify-end gap-4 mt-1 md:mt-0">
           <Link
             href="/products"
             className="inline-flex items-center gap-1.5 md:gap-2 text-sm font-bold text-blue-600 hover:text-blue-800 md:hover:bg-blue-50 md:px-4 md:py-2 md:rounded-xl transition-all group"
@@ -287,7 +287,7 @@ async function CategorySectionsBlock({ locale }: { locale: string }) {
   }
 
   return (
-    <LazySection minHeight={Math.ceil(categories.length / 2) * 210 + 160}>
+    <LazySection minHeight={Math.ceil(categories.length / 4) * 110 + 160}>
       <section className="container mx-auto px-4 mb-14 md:mb-20 animate-in fade-in duration-500">
         <div className="text-center mb-8 md:mb-10">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
@@ -298,7 +298,7 @@ async function CategorySectionsBlock({ locale }: { locale: string }) {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4">
           {categories.map((cat) => {
             const catName = isEn ? (cat.name_en || cat.name) : cat.name;
 
@@ -306,9 +306,9 @@ async function CategorySectionsBlock({ locale }: { locale: string }) {
               <Link
                 key={cat.id}
                 href={`/products?category=${cat.slug}`}
-                className="group relative flex aspect-square flex-col items-center justify-center gap-3 md:gap-4 rounded-3xl border border-blue-100/70 bg-gradient-to-br from-white to-blue-50/60 p-5 text-center shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:border-blue-200 hover:shadow-xl"
+                className="group relative flex aspect-square flex-col items-center justify-between rounded-2xl border border-blue-100/70 bg-gradient-to-br from-white to-blue-50/60 p-2 md:p-3 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg"
               >
-                <div className="flex h-20 w-20 md:h-24 md:w-24 lg:h-28 lg:w-28 items-center justify-center rounded-full bg-white shadow-md ring-1 ring-blue-100/80 overflow-hidden transition-transform duration-300 group-hover:scale-105 group-hover:ring-blue-200">
+                <div className="relative flex w-full flex-1 items-center justify-center overflow-hidden">
                   {cat.icon_url ? (
                     // توجه: عمداً از next/image استفاده نشده. آدرس آیکون توسط ادمین
                     // به‌صورت متن آزاد وارد می‌شود (می‌تواند هر دامنه یا فرمتی، از جمله
@@ -317,22 +317,16 @@ async function CategorySectionsBlock({ locale }: { locale: string }) {
                     <img
                       src={cat.icon_url}
                       alt={catName}
-                      className="h-11 w-11 md:h-14 md:w-14 object-contain"
+                      className="h-full w-full object-contain p-1 transition-transform duration-300 group-hover:scale-110"
                     />
                   ) : (
-                    <Layers className="h-9 w-9 md:h-11 md:w-11 text-blue-400" />
+                    <Layers className="h-1/2 w-1/2 text-blue-400" />
                   )}
                 </div>
 
-                <h3 className="line-clamp-2 px-2 text-base font-bold leading-snug text-gray-900 md:text-lg lg:text-xl">
+                <h3 className="line-clamp-1 w-full px-1 text-[11px] md:text-xs font-medium text-gray-400 transition-colors duration-300 group-hover:text-blue-500">
                   {catName}
                 </h3>
-
-                <div
-                  className={`absolute bottom-4 ${isEn ? 'left-4' : 'right-4'} flex h-8 w-8 items-center justify-center rounded-full bg-blue-50 text-blue-500 transition-colors duration-300 group-hover:bg-blue-600 group-hover:text-white`}
-                >
-                  <ArrowUpRight className={`h-4 w-4 ${!isEn ? 'scale-x-[-1]' : ''}`} />
-                </div>
               </Link>
             );
           })}
@@ -349,14 +343,14 @@ function CategorySectionsSkeleton() {
         <Skeleton className="h-7 md:h-8 w-56" />
         <Skeleton className="h-4 w-72 hidden sm:block" />
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4">
         {Array.from({ length: 8 }).map((_, i) => (
           <div
             key={i}
-            className="aspect-square rounded-3xl border border-gray-100 bg-white p-5 flex flex-col items-center justify-center gap-4"
+            className="aspect-square rounded-2xl border border-gray-100 bg-white p-2 md:p-3 flex flex-col items-center justify-center gap-2"
           >
-            <Skeleton className="h-20 w-20 md:h-24 md:w-24 rounded-full" />
-            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-8 w-8 md:h-10 md:w-10 rounded-full" />
+            <Skeleton className="h-2.5 w-3/4" />
           </div>
         ))}
       </div>
