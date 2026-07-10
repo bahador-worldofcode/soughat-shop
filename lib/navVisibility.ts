@@ -35,3 +35,28 @@ export function isFloatingCartHidden(pathname: string | null | undefined): boole
 
   return false;
 }
+
+// 🆕 مسیرهایی که بنر تبلیغاتی سراسری (TopPromoBanner) نباید در آن‌ها نمایش
+// داده شود.
+// منطق: این بنر برای هدایتِ بازدیدکنندگانی است که تازه از طریق یک پست
+// وبلاگ/شبکه‌ی اجتماعی وارد سایت شده‌اند و ممکن است همان‌جا بمانند — هدف
+// این است که با یک کلیک به صفحه‌ی محصولات هدایت شوند. اما در صفحاتی که
+// کاربر از قبل وسط فرآیند پرداخت است یا همین الان خریدش را با موفقیت به
+// پایان رسانده، این بنر فقط حواس‌پرتی/مزاحمت بی‌مورد است و ربطی به آن لحظه
+// از سفر کاربر ندارد؛ برای همین آنجا مخفی می‌شود.
+export function isPromoBannerHidden(pathname: string | null | undefined): boolean {
+  if (!pathname) return false;
+
+  // پنل مدیریت محیط کاملاً جدایی دارد.
+  if (pathname.startsWith('/admin')) return true;
+
+  // صفحه‌ی تسویه‌حساب: تمرکز کامل کاربر روی تکمیل پرداخت مهم‌تر از هر
+  // پیشنهاد تبلیغاتی دیگری‌ست.
+  if (pathname.startsWith('/checkout')) return true;
+
+  // صفحه‌ی موفقیت سفارش: کاربر همین الان خرید کرده؛ اینجا جای تبریک و
+  // اطلاعات سفارش است، نه دعوت به خرید جدید.
+  if (pathname.startsWith('/success')) return true;
+
+  return false;
+}

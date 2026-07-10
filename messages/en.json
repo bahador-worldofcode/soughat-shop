@@ -1,4 +1,9 @@
 {
+  "PromoBanner": {
+    "text": "Send gifts & souvenirs to Iran, secure crypto checkout",
+    "cta": "Shop Now",
+    "close_aria": "Close banner"
+  },
   "Header": {
     "home": "Home",
     "products": "Products",

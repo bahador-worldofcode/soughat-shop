@@ -16,6 +16,7 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 import WebMCPProvider from "@/components/WebMCPProvider";
 import AuthSessionHandler from "@/components/AuthSessionHandler";
 import PWARegister from "@/components/PWARegister";
+import TopPromoBanner from "@/components/TopPromoBanner";
 
 // کانفیگ فونت برای خوانایی بهتر سایت
 const vazir = Vazirmatn({ subsets: ['arabic', 'latin'] });
@@ -224,6 +225,12 @@ export default async function LocaleLayout({
             dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
           />
 
+          {/* 🆕 بنر تبلیغاتی سراسری بالای صفحه — عمداً بالاتر از هدر، تا اولین
+              چیزی باشد که بازدیدکننده (مخصوصاً از طریق پست وبلاگ در
+              فیسبوک/اکس) می‌بیند. صفحاتی که نباید در آن‌ها نمایش داده شود
+              (تسویه‌حساب، موفقیت) در lib/navVisibility.ts مشخص شده‌اند. */}
+          <TopPromoBanner />
+
           {/* هدر سایت */}
           <Header />
           
@@ -258,4 +265,3 @@ export default async function LocaleLayout({
     </html>
   );
 }
-
