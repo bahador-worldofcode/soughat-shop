@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Package, ArrowRight, Copy, AlertCircle, MessageCircle, ClipboardCheck, Check, Loader2 } from 'lucide-react';
+import { Package, ArrowRight, Copy, AlertCircle, MessageCircle, ClipboardCheck, CheckCircle, Check, Loader2 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { Link } from '@/i18n/navigation';
 import { useTranslations, useLocale } from 'next-intl';
@@ -17,6 +17,12 @@ function SuccessContent() {
   const orderId = searchParams.get('id');
   const [trackingCode, setTrackingCode] = useState('');
   const [isValid, setIsValid] = useState(true);
+
+  // وضعیتِ واقعیِ سفارش از دیتابیس — اگه با کیف‌پول پرداخت شده باشه، تابعِ
+  // اتمیکِ pay_order_with_wallet همون لحظه‌ی ثبت status رو 'paid' کرده؛
+  // اگه با کریپتو باشه، هنوز 'pending'ه و منتظرِ تاییدِ دستیِ ادمینه. این
+  // صفحه بر اساسِ همین مقدار تصمیم می‌گیره کدوم تجربه رو نشون بده.
+  const [orderStatus, setOrderStatus] = useState<string | null>(null);
 
   // قبل از این اصلاح، این صفحه به هر orderId توی آدرس اعتماد می‌کرد؛ حتی اگر
   // کسی مستقیم یک لینک ساختگی (یا حتی pending_order_id خودِ کاربر که هنوز
@@ -42,6 +48,7 @@ function SuccessContent() {
 
         if (data?.exists) {
           setTrackingCode(orderId);
+          setOrderStatus(data.status ?? null);
           clearCart();
           setIsValid(true);
         } else {
@@ -105,21 +112,37 @@ function SuccessContent() {
     )
   }
 
+  // --- سفارشی که با کیف‌پول پرداخت شده، همون لحظه‌ی ثبت status='paid' گرفته
+  // (تابعِ اتمیکِ pay_order_with_wallet)، برخلافِ سفارشِ کریپتویی که تا
+  // تاییدِ دستیِ ادمین 'pending' می‌مونه. بر همین اساس، عنوان/توضیح/آیکون و
+  // نیازِ نمایشِ دکمه‌ی واتساپ (برای گرفتنِ آدرسِ ولت) فرق می‌کنه.
+  const isPaid = orderStatus === 'paid';
+
   // --- عنوان و توضیح صفحه از فایل‌های ترجمه (namespace: Success) ---
-  const pageTitle = t('registered_title');
-  const pageDesc = t('registered_desc');
+  const pageTitle = isPaid ? t('title') : t('registered_title');
+  const pageDesc = isPaid ? t('desc') : t('registered_desc');
 
   // --- نمایش صفحه برای سفارشات معتبر ---
   return (
     <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center min-h-[60vh] text-center animate-in fade-in duration-700 font-[family-name:var(--font-vazir)]">
       
-      {/* آیکون آبی (ثبت سفارش) به جای تیک سبز (پرداخت) */}
-      <div className="mb-8 relative">
-        <div className="absolute inset-0 bg-blue-100 rounded-full animate-ping opacity-75"></div>
-        <div className="relative bg-blue-100 p-6 rounded-full border-4 border-white shadow-sm">
-          <ClipboardCheck className="h-14 w-14 text-blue-600" />
+      {isPaid ? (
+        /* آیکونِ سبز — پرداخت واقعاً و همین الان از کیف‌پول کسر و تاییدشده */
+        <div className="mb-8 relative">
+          <div className="absolute inset-0 bg-green-100 rounded-full animate-ping opacity-75"></div>
+          <div className="relative bg-green-100 p-6 rounded-full border-4 border-white shadow-sm">
+            <CheckCircle className="h-14 w-14 text-green-600" />
+          </div>
         </div>
-      </div>
+      ) : (
+        /* آیکون آبی (ثبت سفارش) — هنوز پرداختِ کریپتو تاییدِ ادمین نگرفته */
+        <div className="mb-8 relative">
+          <div className="absolute inset-0 bg-blue-100 rounded-full animate-ping opacity-75"></div>
+          <div className="relative bg-blue-100 p-6 rounded-full border-4 border-white shadow-sm">
+            <ClipboardCheck className="h-14 w-14 text-blue-600" />
+          </div>
+        </div>
+      )}
 
       <h1 className="text-2xl md:text-3xl font-black text-gray-900 mb-4">{pageTitle}</h1>
       <p className="text-gray-600 max-w-md mb-8 leading-8">
@@ -127,11 +150,11 @@ function SuccessContent() {
       </p>
 
       {/* باکس نمایش کد پیگیری */}
-      <div className="bg-white border-2 border-blue-100 rounded-3xl p-6 w-full max-w-md mb-8 shadow-sm relative overflow-hidden">
+      <div className={`bg-white border-2 rounded-3xl p-6 w-full max-w-md mb-8 shadow-sm relative overflow-hidden ${isPaid ? 'border-green-100' : 'border-blue-100'}`}>
         {/* افکت نوری پس‌زمینه باکس */}
-        <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 opacity-60 pointer-events-none"></div>
+        <div className={`absolute top-0 right-0 w-24 h-24 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 opacity-60 pointer-events-none ${isPaid ? 'bg-green-50' : 'bg-blue-50'}`}></div>
 
-        <span className="relative z-10 text-xs font-bold text-blue-600 uppercase tracking-wider bg-blue-50 px-3 py-1.5 rounded-full mb-3 inline-block">
+        <span className={`relative z-10 text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full mb-3 inline-block ${isPaid ? 'text-green-600 bg-green-50' : 'text-blue-600 bg-blue-50'}`}>
             {t('tracking_code_label')}
         </span>
         <div className="relative z-10 flex items-center justify-between mt-3 bg-gray-50 p-4 rounded-xl border border-gray-200">
@@ -161,16 +184,21 @@ function SuccessContent() {
       {/* دکمه‌های اکشن */}
       <div className="flex flex-col gap-4 w-full max-w-md">
         
-        {/* دکمه اصلی واتساپ */}
-        <a 
-            href={`https://wa.me/989168038017?text=${encodeURIComponent(t('whatsapp_order_msg', { code: trackingCode }))}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 w-full py-4 px-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-green-200 hover:-translate-y-1"
-        >
-            <MessageCircle className="h-6 w-6" />
-            {t('whatsapp_get_address_btn')}
-        </a>
+        {/* دکمه اصلی واتساپ — فقط وقتی لازمه که هنوز پرداختی صورت نگرفته
+            (سفارشِ کریپتوییِ pending) و باید آدرسِ ولت گرفته بشه. برای
+            سفارشی که با کیف‌پول و همین الان پرداخت شده، این دکمه اصلاً
+            معنا نداره و نباید نشون داده بشه. */}
+        {!isPaid && (
+          <a 
+              href={`https://wa.me/989168038017?text=${encodeURIComponent(t('whatsapp_order_msg', { code: trackingCode }))}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 w-full py-4 px-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-green-200 hover:-translate-y-1"
+          >
+              <MessageCircle className="h-6 w-6" />
+              {t('whatsapp_get_address_btn')}
+          </a>
+        )}
 
         {/* دکمه‌های فرعی پیگیری و بازگشت */}
         <div className="flex gap-4">

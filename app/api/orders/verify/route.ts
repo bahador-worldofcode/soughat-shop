@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
-// این روت عمداً حداقلی است: فقط می‌گوید سفارش وجود دارد یا نه.
-// هیچ اطلاعات شخصی (نام، آدرس، تلفن و ...) برنمی‌گرداند، چون این مسیر
-// از سمت کلاینت و بدون احراز هویت صدا زده می‌شود (صفحه‌ی success).
+// این روت عمداً حداقلی است: فقط می‌گوید سفارش وجود دارد یا نه، و «وضعیتِ»
+// پرداختش چیه (pending/paid/...). هیچ اطلاعات شخصی (نام، آدرس، تلفن و ...)
+// برنمی‌گرداند، چون این مسیر از سمت کلاینت و بدون احراز هویت صدا زده می‌شود
+// (صفحه‌ی success). وضعیت هم داده‌ی حساسی نیست — فقط به صفحه‌ی success کمک
+// می‌کنه تشخیص بده سفارش با کیف‌پول (که همون لحظه‌ی ثبت واقعاً پرداخت و
+// paid شده) ثبت شده یا با کریپتو (که هنوز pending و منتظرِ تاییدِ دستیِ
+// ادمینه)، تا پیامِ درست رو نشون بده.
 //
 // چرا این فایل لازم است؟
 // صفحه‌ی success قبلاً به هر orderId توی URL (حتی جعلی/تصادفی) اعتماد می‌کرد،
@@ -23,7 +27,7 @@ export async function GET(request: Request) {
 
     const { data, error } = await supabaseAdmin
       .from('orders')
-      .select('id')
+      .select('id, status')
       .eq('id', orderId)
       .single();
 
@@ -31,7 +35,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ exists: false }, { status: 200 });
     }
 
-    return NextResponse.json({ exists: true }, { status: 200 });
+    return NextResponse.json({ exists: true, status: data.status }, { status: 200 });
   } catch (error: any) {
     // اگر orderId فرمت درستی نداشته باشد (مثلاً UUID نامعتبر)، همینجا با خطا مواجه می‌شویم؛
     // در این حالت هم باید safe-fail کنیم و بگوییم سفارش معتبر نیست، نه اینکه 500 برگردانیم
