@@ -52,7 +52,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, Link } from '@/i18n/navigation';
 import { supabaseBrowser, legacySessionReady } from '@/lib/supabase-browser';
-import { Loader2, AlertCircle, UserRound } from 'lucide-react';
+import { Loader2, AlertCircle, UserRound, MailCheck } from 'lucide-react';
 
 // آیکون رسمی گوگل (G) — بدون وابستگی به فایل خارجی
 function GoogleIcon() {
@@ -246,17 +246,31 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-xl border border-gray-200 animate-in fade-in zoom-in duration-300">
         <div className="text-center flex flex-col items-center">
           {/*
-            رفع باگ (کشف‌شده حین تست فاز ۱، بعد از تسک ۳۶): قبلاً همیشه
-            لوگوی گوگل بالای فرم نشون داده می‌شد، حتی برای کاربری که
-            می‌خواد با ایمیل/رمز عبور ثبت‌نام کنه — که گیج‌کننده بود.
-            الان یک آیکون خنثی (نه مخصوص گوگل) اینجا نشون داده می‌شه؛
-            لوگوی گوگل فقط داخل خودِ دکمه‌ی «ادامه با گوگل» می‌مونه.
+            رفع باگ (گزارش‌شده توسط کاربر): قبلاً بعد از ثبت‌نامِ موفق،
+            همچنان همون عنوانِ عمومیِ «ورود / ثبت‌نام» و توضیحِ «وارد
+            حساب خود شوید یا ثبت‌نام کنید» نشون داده می‌شد — دقیقاً در
+            حالی که پایینِ همون صفحه پیام سبزِ «ایمیلت رو چک کن» هم
+            بود. این ترکیب کاربر رو گیج می‌کرد: از یه طرف بهش می‌گفت
+            «وارد شو»، از طرف دیگه می‌گفت «برو ایمیلت رو چک کن».
+            الان بعد از ثبت‌نامِ موفق (signupSuccess === true)، آیکون،
+            عنوان، و توضیح هر سه به یک پیامِ حرفه‌ای و یک‌دستِ «ایمیل
+            تاییدت رو چک کن» تغییر می‌کنن؛ نه یک پیامِ ورودِ عمومی.
           */}
-          <div className="bg-blue-100 p-3 rounded-full mb-4">
-            <UserRound className="h-6 w-6 text-blue-600" />
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900">{t('title')}</h2>
-          <p className="mt-2 text-sm text-gray-500">{t('subtitle')}</p>
+          {signupSuccess ? (
+            <div className="bg-green-100 p-3 rounded-full mb-4">
+              <MailCheck className="h-6 w-6 text-green-600" />
+            </div>
+          ) : (
+            <div className="bg-blue-100 p-3 rounded-full mb-4">
+              <UserRound className="h-6 w-6 text-blue-600" />
+            </div>
+          )}
+          <h2 className="text-3xl font-bold text-gray-900">
+            {signupSuccess ? t('signup_success_title') : t('title')}
+          </h2>
+          <p className="mt-2 text-sm text-gray-500">
+            {signupSuccess ? t('signup_success_subtitle', { email }) : t('subtitle')}
+          </p>
         </div>
 
         {errorMsg && (
@@ -283,7 +297,9 @@ export default function LoginPage() {
           </button>
         )}
 
-        {/* تسک ۲۱: بعد از ثبت‌نام موفق، کل فرم مخفی می‌شه و فقط پیام «ایمیلت رو چک کن» نشون داده می‌شه */}
+        {/* تسک ۲۱: بعد از ثبت‌نام موفق، کل فرم مخفی می‌شه و به‌جاش یک
+            نکته‌ی تکمیلی (چک کردنِ پوشه‌ی اسپم) نشون داده می‌شه — پیامِ
+            اصلی حالا بالای صفحه (در تیتر) گفته می‌شه، نه اینجا. */}
         {signupSuccess ? (
           <div className="bg-green-50 border border-green-200 text-green-800 p-4 rounded-xl text-center text-sm">
             {t('check_your_email_message')}
@@ -431,9 +447,11 @@ export default function LoginPage() {
           </>
         )}
 
-        <p className="text-center text-xs text-gray-400 leading-relaxed">
-          {t('terms_note')}
-        </p>
+        {!signupSuccess && (
+          <p className="text-center text-xs text-gray-400 leading-relaxed">
+            {t('terms_note')}
+          </p>
+        )}
       </div>
     </div>
   );
