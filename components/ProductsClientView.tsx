@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
-import { motion } from 'framer-motion';
 import ProductCard from '@/components/ProductCard';
 import {
   Search,
@@ -279,25 +278,17 @@ export default function ProductsClientView({
                           handleCategoryChange(cat.slug);
                           setIsFilterSheetOpen(false);
                         }}
-                        className={`relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-bold border transition-all active:scale-95 text-start ${
-                          isActive
-                            ? 'bg-gradient-to-l from-blue-600 to-indigo-600 text-white border-transparent shadow-md shadow-blue-500/30'
-                            : 'bg-white text-gray-600 border-gray-200'
+                        className={`flex items-center gap-2 px-3 py-3 rounded-xl text-sm font-bold border transition-colors text-start ${
+                          isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200'
                         }`}
                       >
-                        <span
-                          className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg ${
-                            isActive ? 'bg-white/20' : 'bg-blue-50'
-                          }`}
-                        >
-                          {cat.slug === 'all' ? (
-                            <Filter className={`h-3.5 w-3.5 ${isActive ? 'text-white' : 'text-blue-500'}`} />
-                          ) : cat.icon_url ? (
-                            <img src={cat.icon_url} alt="" className={`h-3.5 w-3.5 object-contain ${isActive ? 'brightness-200' : ''}`} />
-                          ) : (
-                            <Layers className={`h-3.5 w-3.5 ${isActive ? 'text-white' : 'text-blue-500'}`} />
-                          )}
-                        </span>
+                        {cat.slug === 'all' ? (
+                          <Filter className="h-4 w-4 flex-shrink-0" />
+                        ) : cat.icon_url ? (
+                          <img src={cat.icon_url} alt="" className={`w-4 h-4 object-contain flex-shrink-0 ${isActive ? 'brightness-200' : ''}`} />
+                        ) : (
+                          <Layers className="h-4 w-4 flex-shrink-0" />
+                        )}
                         <span className="truncate">{catName}</span>
                       </button>
                     );
@@ -374,66 +365,45 @@ export default function ProductsClientView({
             </select>
           </div>
 
-          {/* 🆕 لیست دسته‌بندی — یک ستون تمیز و یکدست از ردیف‌ها، هر ردیف با یک
-              بج آیکون نرم در سمت خودش. به‌جای رنگ ثابت روی دکمه‌ی فعال، از
-              framer-motion با یک لایه‌ی مشترک (layoutId) استفاده شده تا وقتی
-              کاربر دسته‌بندی رو عوض می‌کنه، پس‌زمینه‌ی گرادیانت با یک انیمیشن
-              فنری («spring») نرم از ردیف قبلی به ردیف جدید سُر بخوره — دقیقاً
-              همون افکتی که توی اپ‌های مدرن (تب‌بار iOS، Linear، Vercel) می‌بینیم. */}
-          <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm transition-shadow hover:shadow-md">
+          {/* لیست دسته‌بندی — دکمه‌ها با flex-wrap کنار هم می‌شینن و هرکدوم
+              دقیقاً به اندازه‌ی محتوای خودش (آیکون+اسم) عرض می‌گیره، پس هیچ
+              فضای خالی توی ردیف نمی‌مونه. بدون انیمیشن/کتابخونه‌ی اضافه —
+              فقط یک transition-colors ساده‌ی CSS برای هاور/فعال بودن. */}
+          <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
             <h3 className="font-bold text-gray-800 flex items-center gap-2 mb-4">
               <Layers className="h-5 w-5 text-blue-600" />
               {t('categories_label')}
             </h3>
 
-            <div className="flex flex-col gap-1">
-              {categories.map((cat, idx) => {
+            <div className="flex flex-wrap gap-2">
+              {categories.map((cat) => {
                 const catName = isEn ? cat.name_en || cat.name : cat.name;
                 const isActive = isCatActive(cat.slug);
 
                 return (
-                  <motion.button
+                  <button
                     key={cat.id}
                     onClick={() => handleCategoryChange(cat.slug)}
                     title={catName}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.025, duration: 0.2 }}
-                    whileTap={{ scale: 0.97 }}
-                    className={`relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold overflow-hidden transition-colors duration-200 ${
-                      isActive ? 'text-white' : 'text-gray-600 hover:bg-blue-50/70 hover:text-blue-700'
+                    className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-bold transition-colors duration-150 active:scale-95 ${
+                      isActive
+                        ? 'bg-blue-600 border-blue-600 text-white'
+                        : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700'
                     }`}
                   >
-                    {isActive && (
-                      <motion.span
-                        layoutId="active-category-highlight"
-                        transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                        className="absolute inset-0 rounded-xl bg-gradient-to-l from-blue-600 to-indigo-600 shadow-md shadow-blue-500/30"
+                    {cat.slug === 'all' ? (
+                      <Filter className={`h-3.5 w-3.5 flex-shrink-0 ${isActive ? 'text-white' : 'text-gray-400'}`} />
+                    ) : cat.icon_url ? (
+                      <img
+                        src={cat.icon_url}
+                        alt=""
+                        className={`w-3.5 h-3.5 object-contain flex-shrink-0 ${isActive ? 'brightness-200' : ''}`}
                       />
+                    ) : (
+                      <Layers className={`h-3.5 w-3.5 flex-shrink-0 ${isActive ? 'text-white' : 'text-gray-400'}`} />
                     )}
-
-                    <span
-                      className={`relative z-10 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-colors duration-200 ${
-                        isActive ? 'bg-white/20' : 'bg-blue-50'
-                      }`}
-                    >
-                      {cat.slug === 'all' ? (
-                        <Filter className={`h-4 w-4 ${isActive ? 'text-white' : 'text-blue-500'}`} />
-                      ) : cat.icon_url ? (
-                        <img
-                          src={cat.icon_url}
-                          alt=""
-                          className={`h-4 w-4 object-contain ${isActive ? 'brightness-200' : ''}`}
-                        />
-                      ) : (
-                        <Layers className={`h-4 w-4 ${isActive ? 'text-white' : 'text-blue-500'}`} />
-                      )}
-                    </span>
-
-                    <span className="relative z-10 flex-1 truncate text-start">{catName}</span>
-
-                    {isActive && <Check className="relative z-10 h-4 w-4 flex-shrink-0 text-white" />}
-                  </motion.button>
+                    <span className="truncate max-w-[9rem]">{catName}</span>
+                  </button>
                 );
               })}
             </div>
