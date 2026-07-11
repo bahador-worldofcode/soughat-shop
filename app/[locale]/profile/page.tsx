@@ -35,6 +35,8 @@ import {
   X,
   Clock,
   CheckCircle,
+  ClipboardCheck,
+  MessageCircle,
   Truck,
   XCircle,
   ExternalLink,
@@ -1299,31 +1301,64 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* ── پیامِ پایانی بعدِ ثبتِ فاکتورِ شارژ (تسکِ ۲۶) ──────────── */}
+            {/* ── پیامِ پایانی بعدِ ثبتِ فاکتورِ شارژ ──────────────────────
+                از این‌جا به بعد، دقیقاً همون تجربه‌ی «ثبتِ سفارش» در
+                app/[locale]/success/page.tsx تکرار شده: آیکونِ آبیِ
+                ضربان‌دار، باکسِ اطلاعاتِ فاکتور، و دکمه‌ی سبزِ واتساپ برای
+                گرفتنِ آدرسِ ولت. تنها فرق، محتوا (شارژِ کیف‌پول به‌جای
+                سفارش) و دکمه‌ی ثانویه‌ست که این‌جا کاربر رو به تبِ کیف‌پول
+                برمی‌گردونه، نه به صفحه‌ی خانه/پیگیری. */}
             {chargeStep === 'submitted' && (
-              <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm text-center space-y-5">
-                <div className="inline-flex items-center justify-center h-14 w-14 rounded-full bg-green-100 mx-auto">
-                  <CheckCircle className="h-7 w-7 text-green-600" />
+              <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm text-center animate-in fade-in duration-700">
+                <div className="mb-6 relative inline-flex">
+                  <div className="absolute inset-0 bg-blue-100 rounded-full animate-ping opacity-75"></div>
+                  <div className="relative bg-blue-100 p-5 rounded-full border-4 border-white shadow-sm">
+                    <ClipboardCheck className="h-10 w-10 text-blue-600" />
+                  </div>
                 </div>
 
-                <div>
-                  <h2 className="font-bold text-gray-900 text-lg">{tWallet('submitted_title')}</h2>
-                  <p className="text-sm text-gray-500 mt-2 leading-relaxed max-w-sm mx-auto">
-                    {tWallet('submitted_desc', { amount: `${chargeAmount} ${chargeCurrency}` })}
-                  </p>
+                <h2 className="text-lg font-bold text-gray-900 mb-2">{tWallet('submitted_title')}</h2>
+                <p className="text-sm text-gray-500 leading-relaxed max-w-sm mx-auto mb-6">
+                  {tWallet('submitted_desc', { amount: `${chargeAmount} ${chargeCurrency}` })}
+                </p>
+
+                {/* باکسِ مبلغِ ثبت‌شده — معادلِ باکسِ «کدِ پیگیری» در صفحه‌ی موفقیتِ سفارش */}
+                <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 max-w-sm mx-auto mb-6">
+                  <span className="text-xs font-bold text-gray-400">{tWallet('submitted_amount_label')}</span>
+                  <span className="text-sm font-bold text-gray-900">
+                    {chargeAmount} {chargeCurrency}
+                  </span>
                 </div>
 
-                <button
-                  onClick={() => {
-                    setChargeStep('idle');
-                    setActiveTopupId(null);
-                    setWalletBalance(null);
-                    setWalletTx(null);
-                  }}
-                  className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-5 rounded-xl transition-colors"
-                >
-                  {tWallet('back_to_wallet')}
-                </button>
+                <div className="flex flex-col gap-3 max-w-sm mx-auto">
+                  {/* دکمه‌ی اصلیِ واتساپ — همون سبک، رنگ و رفتارِ دکمه‌ی صفحه‌ی موفقیتِ سفارش */}
+                  <a
+                    href={`https://wa.me/989168038017?text=${encodeURIComponent(
+                      tWallet('whatsapp_topup_msg', {
+                        id: activeTopupId || '',
+                        amount: `${chargeAmount} ${chargeCurrency}`,
+                      })
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 w-full py-4 px-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-green-200 hover:-translate-y-1"
+                  >
+                    <MessageCircle className="h-6 w-6" />
+                    {tWallet('whatsapp_get_address_btn')}
+                  </a>
+
+                  <button
+                    onClick={() => {
+                      setChargeStep('idle');
+                      setActiveTopupId(null);
+                      setWalletBalance(null);
+                      setWalletTx(null);
+                    }}
+                    className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-3.5 text-sm font-bold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                  >
+                    {tWallet('back_to_wallet')}
+                  </button>
+                </div>
               </div>
             )}
           </div>
