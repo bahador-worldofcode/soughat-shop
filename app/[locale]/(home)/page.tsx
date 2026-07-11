@@ -171,7 +171,7 @@ async function NewestProductsSection({ locale }: { locale: string }) {
 
         {/* یک لینک واحد «مشاهده همه محصولات» که فقط با کلاس‌های ریسپانسیو ظاهرش (نه تعدادش) تغییر می‌کند؛
             همین طراحی از تکرار المان در DOM جلوگیری می‌کند تا هیچ‌وقت دوتایی دیده نشود */}
-        <div className="flex items-center justify-end gap-4 mt-1 md:mt-0">
+        <div className="flex items-center justify-start gap-4 mt-1 md:mt-0">
           <Link
             href="/products"
             className="inline-flex items-center gap-1.5 md:gap-2 text-sm font-bold text-blue-600 hover:text-blue-800 md:hover:bg-blue-50 md:px-4 md:py-2 md:rounded-xl transition-all group"
@@ -287,7 +287,7 @@ async function CategorySectionsBlock({ locale }: { locale: string }) {
   }
 
   return (
-    <LazySection minHeight={Math.ceil(categories.length / 4) * 110 + 160}>
+    <LazySection minHeight={Math.ceil(categories.length / 2) * 170 + 160}>
       <section className="container mx-auto px-4 mb-14 md:mb-20 animate-in fade-in duration-500">
         <div className="text-center mb-8 md:mb-10">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
@@ -298,7 +298,7 @@ async function CategorySectionsBlock({ locale }: { locale: string }) {
           </p>
         </div>
 
-        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-8 gap-4 md:gap-4">
           {categories.map((cat) => {
             const catName = isEn ? (cat.name_en || cat.name) : cat.name;
 
@@ -306,7 +306,7 @@ async function CategorySectionsBlock({ locale }: { locale: string }) {
               <Link
                 key={cat.id}
                 href={`/products?category=${cat.slug}`}
-                className="group relative flex aspect-square flex-col items-center justify-between rounded-2xl border border-blue-100/70 bg-gradient-to-br from-white to-blue-50/60 p-2 md:p-3 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg"
+                className="group relative flex aspect-square flex-col items-center justify-between rounded-2xl border border-blue-100/70 bg-gradient-to-br from-white to-blue-50/60 p-3 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg"
               >
                 <div className="relative flex w-full flex-1 items-center justify-center overflow-hidden">
                   {cat.icon_url ? (
@@ -324,7 +324,7 @@ async function CategorySectionsBlock({ locale }: { locale: string }) {
                   )}
                 </div>
 
-                <h3 className="line-clamp-1 w-full px-1 text-[11px] md:text-xs font-medium text-gray-400 transition-colors duration-300 group-hover:text-blue-500">
+                <h3 className="line-clamp-1 w-full px-1 text-sm sm:text-[11px] md:text-xs font-medium text-gray-400 transition-colors duration-300 group-hover:text-blue-500">
                   {catName}
                 </h3>
               </Link>
@@ -343,14 +343,14 @@ function CategorySectionsSkeleton() {
         <Skeleton className="h-7 md:h-8 w-56" />
         <Skeleton className="h-4 w-72 hidden sm:block" />
       </div>
-      <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-8 gap-4 md:gap-4">
         {Array.from({ length: 8 }).map((_, i) => (
           <div
             key={i}
-            className="aspect-square rounded-2xl border border-gray-100 bg-white p-2 md:p-3 flex flex-col items-center justify-center gap-2"
+            className="aspect-square rounded-2xl border border-gray-100 bg-white p-3 flex flex-col items-center justify-center gap-2"
           >
-            <Skeleton className="h-8 w-8 md:h-10 md:w-10 rounded-full" />
-            <Skeleton className="h-2.5 w-3/4" />
+            <Skeleton className="h-14 w-14 sm:h-8 sm:w-8 md:h-10 md:w-10 rounded-full" />
+            <Skeleton className="h-3 sm:h-2.5 w-3/4" />
           </div>
         ))}
       </div>
