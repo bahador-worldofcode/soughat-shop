@@ -112,6 +112,16 @@ export default function LoginPage() {
   // جلوی چشمِ کاربر قرار بگیرد.
   const errorBoxRef = useRef<HTMLDivElement>(null);
 
+  // رفع باگِ مشابه (گزارش‌شده در دسکتاپ): بعد از ثبت‌نامِ موفق با
+  // ایمیل/رمز عبور، کارتِ سبزِ «ایمیلت رو چک کن» دقیقاً همین‌جا —
+  // بالای همین کارتِ لاگین — ظاهر می‌شود، اما اگر کاربر قبل از زدنِ
+  // دکمه‌ی ثبت‌نام کمی پایین‌ترِ صفحه (مثلاً نزدیکِ فوتر) اسکرول
+  // کرده باشد، این پیام بیرون از دیدش می‌ماند و به نظر می‌رسد هیچ
+  // اتفاقی نیفتاده. با این ref، به‌محضِ true شدنِ signupSuccess، کلِ
+  // کارتِ لاگین (که حالا به پیامِ موفقیت تبدیل شده) به‌آرامی وسطِ
+  // دیدِ کاربر اسکرول می‌شود.
+  const successCardRef = useRef<HTMLDivElement>(null);
+
   // اگر آدرس شامل ?error=... بود (یعنی Route Handlerِ callback با خطا
   // برگشت داده)، آن را از URL بخوان و نشان بده.
   useEffect(() => {
@@ -137,6 +147,15 @@ export default function LoginPage() {
       errorBoxRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, [errorMsg]);
+
+  // به‌محضِ نمایشِ پیامِ «ثبت‌نام موفق / ایمیلت رو چک کن»، صفحه را
+  // به‌آرامی به سمتِ همان کارت اسکرول کن تا اگر کاربر پایین‌ترِ صفحه
+  // بوده، این پیام حتماً جلوی چشمش قرار بگیرد.
+  useEffect(() => {
+    if (signupSuccess && successCardRef.current) {
+      successCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [signupSuccess]);
 
   // اگر کاربر قبلاً لاگین بود، مستقیم ببرش پروفایل
   useEffect(() => {
@@ -243,7 +262,10 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 font-[family-name:var(--font-vazir)]">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-xl border border-gray-200 animate-in fade-in zoom-in duration-300">
+      <div
+        ref={successCardRef}
+        className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-xl border border-gray-200 animate-in fade-in zoom-in duration-300"
+      >
         <div className="text-center flex flex-col items-center">
           {/*
             رفع باگ (گزارش‌شده توسط کاربر): قبلاً بعد از ثبت‌نامِ موفق،
