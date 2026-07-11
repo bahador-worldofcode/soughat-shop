@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   try {
     const { data: profiles, error: profilesError } = await supabaseAdmin
       .from('profiles')
-      .select('id, email, full_name, avatar_url, phone, country, is_admin, created_at')
+      .select('id, email, full_name, avatar_url, phone, country, is_admin, provider, created_at')
       .order('created_at', { ascending: false });
 
     if (profilesError) throw profilesError;
@@ -37,8 +37,36 @@ export async function GET(request: Request) {
       statsByUser.set(key, current);
     }
 
+    // تسک ۳۶ (EMAIL_PASSWORD_AUTH_SETUP.md): وضعیت «ایمیل تاییدشده؟» فقط
+    // در auth.users موجود است (نه در جدول profiles)، پس با Admin API
+    // آن را جدا می‌خوانیم و بر اساس id با پروفایل‌ها ترکیب می‌کنیم.
+    // چون تعداد کاربران این فروشگاه زیاد نیست، همه‌ی صفحات را در یک
+    // حلقه‌ی ساده جمع می‌کنیم (به‌جای پیاده‌سازی صفحه‌بندی سمت کلاینت).
+    const confirmedByUserId = new Map<string, boolean>();
+    let page = 1;
+    const perPage = 1000;
+    while (true) {
+      const { data: authPage, error: authError } = await supabaseAdmin.auth.admin.listUsers({
+        page,
+        perPage,
+      });
+      if (authError) throw authError;
+
+      for (const authUser of authPage.users) {
+        confirmedByUserId.set(authUser.id, !!authUser.email_confirmed_at);
+      }
+
+      if (authPage.users.length < perPage) break; // به آخرین صفحه رسیدیم
+      page += 1;
+    }
+
     const users = (profiles ?? []).map((p) => ({
       ...p,
+      // کاربرهای قدیمی‌تر (قبل از افزودن ستون provider در تسک ۱۴) مقدار
+      // provider ندارند؛ چون قبل از فعال شدن ایمیل/پسورد فقط گوگل وجود
+      // داشت، برای آن‌ها 'google' فرض می‌کنیم تا در پنل ادمین خالی نمانَد.
+      provider: p.provider || 'google',
+      email_confirmed: confirmedByUserId.get(p.id) ?? false,
       order_count: statsByUser.get(p.id)?.order_count ?? 0,
       total_spent: statsByUser.get(p.id)?.total_spent ?? 0,
     }));

@@ -12,6 +12,21 @@
 // همراهِ درخواست می‌رسد. دیگر هیچ وابستگی‌ای به اینکه جاوااسکریپتِ
 // کلاینت کِی هیدرِیت می‌شود، یا افزونه/حالت خصوصیِ مرورگر
 // localStorage را دست‌نخورده نگه داشته یا نه، وجود ندارد.
+//
+// تسک ۲۴ (EMAIL_PASSWORD_AUTH_SETUP.md): پارامتر اختیاری `next`
+// اضافه شد. مسیر ورود با گوگل هیچ‌وقت `next` نمی‌فرستد، پس رفتار
+// قبلی‌اش (همیشه فرود روی `/profile`) دقیقاً دست‌نخورده می‌ماند.
+// اما مسیر «فراموشی رمز عبور» (app/[locale]/forgot-password/page.tsx،
+// تسک ۲۳) هنگام ساختِ لینکِ بازیابی، `?next=/reset-password` را به
+// redirectTo اضافه می‌کند؛ یعنی وقتی کاربر روی لینکِ داخل ایمیلِ
+// بازیابیِ رمز کلیک می‌کند، به‌جای فرود اشتباه روی `/profile`، به
+// `app/[locale]/reset-password/page.tsx` (تسک ۲۵) هدایت می‌شود تا
+// بتواند رمز جدیدش را تنظیم کند — دقیقاً همان لحظه‌ای که سشنِ
+// موقتِ بازیابیِ رمز هنوز معتبر است.
+//
+// نکته‌ی امنیتی: چون مقصدِ نهایی همیشه با `requestUrl.origin` (یعنی
+// همان دامنه‌ی خودمان) ساخته می‌شود، حتی اگر کسی مقدار `next` را
+// دستکاری کند، ریدایرکت هرگز از دامنه‌ی سایت خارج نمی‌شود.
 // --------------------------------------------------------------
 
 import { NextResponse } from 'next/server';
@@ -20,6 +35,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
+  const next = requestUrl.searchParams.get('next');
 
   // مسیر واقعی چیزی مثل /en/auth/callback یا /fa/auth/callback است؛
   // بخش اول مسیر همان locale است.
@@ -31,8 +47,10 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      // ورود موفق — هدایت به صفحهٔ پروفایل
-      return NextResponse.redirect(`${requestUrl.origin}/${locale}/profile`);
+      // ورود موفق — اگر next مشخص شده بود (مثلاً بازیابی رمز عبور)
+      // به همان مسیر برو، وگرنه مثل همیشه به صفحهٔ پروفایل.
+      const destination = next ? `/${locale}${next}` : `/${locale}/profile`;
+      return NextResponse.redirect(`${requestUrl.origin}${destination}`);
     }
 
     console.error('Auth callback error:', error.message);

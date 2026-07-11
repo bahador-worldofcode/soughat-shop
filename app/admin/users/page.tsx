@@ -18,6 +18,9 @@ import {
   AlertCircle,
   Users as UsersIcon,
   UserCog,
+  KeyRound,
+  CheckCircle2,
+  XCircle,
 } from 'lucide-react';
 
 interface AdminUser {
@@ -28,6 +31,8 @@ interface AdminUser {
   phone: string | null;
   country: string | null;
   is_admin: boolean;
+  provider: string | null; // تسک ۳۶: روش ورود ('google' یا 'email')
+  email_confirmed: boolean; // تسک ۳۶: آیا ایمیل تایید شده؟
   created_at: string;
   order_count: number;
   total_spent: number;
@@ -235,6 +240,8 @@ export default function UsersPage() {
             <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
               <tr>
                 <th className="px-6 py-4 font-medium">کاربر</th>
+                <th className="px-6 py-4 font-medium">روش ورود</th>
+                <th className="px-6 py-4 font-medium">ایمیل تاییدشده؟</th>
                 <th className="px-6 py-4 font-medium">تماس</th>
                 <th className="px-6 py-4 font-medium">کشور</th>
                 <th className="px-6 py-4 font-medium">عضویت از</th>
@@ -245,7 +252,7 @@ export default function UsersPage() {
             <tbody className="divide-y divide-gray-100">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-gray-400">
+                  <td colSpan={8} className="px-6 py-10 text-center text-gray-400">
                     کاربری یافت نشد.
                   </td>
                 </tr>
@@ -285,6 +292,32 @@ export default function UsersPage() {
                           </div>
                         </div>
                       </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {user.provider === 'email' ? (
+                        <span className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 text-xs font-bold px-2 py-1 rounded-full">
+                          <KeyRound className="h-3 w-3" />
+                          ایمیل/رمز
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs font-bold px-2 py-1 rounded-full">
+                          <Mail className="h-3 w-3" />
+                          گوگل
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {user.email_confirmed ? (
+                        <span className="inline-flex items-center gap-1 text-green-600 text-xs font-bold">
+                          <CheckCircle2 className="h-4 w-4" />
+                          تاییدشده
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-amber-600 text-xs font-bold">
+                          <XCircle className="h-4 w-4" />
+                          تاییدنشده
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1 text-sm text-gray-700 font-mono dir-ltr justify-end">
@@ -471,4 +504,3 @@ export default function UsersPage() {
     </div>
   );
 }
-

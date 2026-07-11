@@ -40,15 +40,19 @@
 // تسک اضافه (جا افتاده در سند اصلی): دکمه‌ی ارسال فرم ایمیل اضافه
 // شد؛ بسته به `mode`، یا handleEmailSignUp یا handleEmailLogin رو
 // صدا می‌زنه. بدون این دکمه فرم قابل ارسال نبود.
+//
+// تسک ۲۲ (فاز ۵): لینک «رمز عبور رو فراموش کردی؟» اضافه شد، فقط
+// زیر فرم ورود (نه ثبت‌نام) — به مسیر /[locale]/forgot-password
+// می‌ره که در تسک ۲۳ ساخته می‌شه.
 // --------------------------------------------------------------
 
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useRouter } from '@/i18n/navigation';
+import { useRouter, Link } from '@/i18n/navigation';
 import { supabaseBrowser, legacySessionReady } from '@/lib/supabase-browser';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, UserRound } from 'lucide-react';
 
 // آیکون رسمی گوگل (G) — بدون وابستگی به فایل خارجی
 function GoogleIcon() {
@@ -223,8 +227,15 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 font-[family-name:var(--font-vazir)]">
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-xl border border-gray-200 animate-in fade-in zoom-in duration-300">
         <div className="text-center flex flex-col items-center">
+          {/*
+            رفع باگ (کشف‌شده حین تست فاز ۱، بعد از تسک ۳۶): قبلاً همیشه
+            لوگوی گوگل بالای فرم نشون داده می‌شد، حتی برای کاربری که
+            می‌خواد با ایمیل/رمز عبور ثبت‌نام کنه — که گیج‌کننده بود.
+            الان یک آیکون خنثی (نه مخصوص گوگل) اینجا نشون داده می‌شه؛
+            لوگوی گوگل فقط داخل خودِ دکمه‌ی «ادامه با گوگل» می‌مونه.
+          */}
           <div className="bg-blue-100 p-3 rounded-full mb-4">
-            <GoogleIcon />
+            <UserRound className="h-6 w-6 text-blue-600" />
           </div>
           <h2 className="text-3xl font-bold text-gray-900">{t('title')}</h2>
           <p className="mt-2 text-sm text-gray-500">{t('subtitle')}</p>
@@ -385,6 +396,16 @@ export default function LoginPage() {
                 {loading && <Loader2 className="h-5 w-5 animate-spin" />}
                 {mode === 'signup' ? t('signup_button') : t('login_with_email_button')}
               </button>
+
+              {/* تسک ۲۲: لینک فراموشی رمز — فقط زیر فرم ورود (نه ثبت‌نام) نشون داده می‌شه */}
+              {mode === 'login' && (
+                <Link
+                  href="/forgot-password"
+                  className="block text-center text-sm text-blue-600 hover:text-blue-700 hover:underline"
+                >
+                  {t('forgot_password_link')}
+                </Link>
+              )}
             </div>
           </>
         )}
