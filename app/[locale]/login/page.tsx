@@ -48,7 +48,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, Link } from '@/i18n/navigation';
 import { supabaseBrowser, legacySessionReady } from '@/lib/supabase-browser';
@@ -103,6 +103,15 @@ export default function LoginPage() {
   // دکمه‌ی «دوباره ارسال ایمیل تایید» نشون داده بشه
   const [showResendButton, setShowResendButton] = useState(false);
 
+  // رفع باگ (گزارش‌شده در دسکتاپ): وقتی کاربر کمی صفحه را اسکرول کرده
+  // باشد و بعد دکمه‌ی ورود/ثبت‌نام را بزند، باکسِ قرمزِ خطا (که بالای
+  // فرم اضافه می‌شود) ممکن است بیرون از دیدِ فعلیِ کاربر ظاهر شود —
+  // در نتیجه کاربر فکر می‌کند با کلیک روی دکمه هیچ اتفاقی نیفتاده.
+  // با این ref، هر بار که errorMsg تغییر کند (یعنی خطای جدیدی نشان
+  // داده شود)، خودِ صفحه به‌آرامی اسکرول می‌شود تا باکسِ خطا دقیقاً
+  // جلوی چشمِ کاربر قرار بگیرد.
+  const errorBoxRef = useRef<HTMLDivElement>(null);
+
   // اگر آدرس شامل ?error=... بود (یعنی Route Handlerِ callback با خطا
   // برگشت داده)، آن را از URL بخوان و نشان بده.
   useEffect(() => {
@@ -119,6 +128,15 @@ export default function LoginPage() {
       window.history.replaceState({}, '', cleanUrl);
     }
   }, [t]);
+
+  // هر بار errorMsg تغییر کرد (خطای جدیدی نشان داده شد)، اگر باکسِ
+  // خطا در حال حاضر بیرون از دیدِ کاربر باشد، به‌آرامی به سمتِ آن
+  // اسکرول کن. اگر از قبل در دید باشد، این متد کاری انجام نمی‌دهد.
+  useEffect(() => {
+    if (errorMsg && errorBoxRef.current) {
+      errorBoxRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [errorMsg]);
 
   // اگر کاربر قبلاً لاگین بود، مستقیم ببرش پروفایل
   useEffect(() => {
@@ -242,7 +260,10 @@ export default function LoginPage() {
         </div>
 
         {errorMsg && (
-          <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl flex items-start gap-3">
+          <div
+            ref={errorBoxRef}
+            className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl flex items-start gap-3"
+          >
             <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
             <div>
               <p className="font-bold mb-1">Login failed</p>
