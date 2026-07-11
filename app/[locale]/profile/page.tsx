@@ -36,6 +36,7 @@ import {
   XCircle,
   ExternalLink,
   Globe,
+  RefreshCw,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------
@@ -134,20 +135,52 @@ export default function ProfilePage() {
       // تأخیر) تمام می‌شود.
       await legacySessionReady;
 
+      // نکتهٔ مهم: عمداً از getSession() استفاده نمی‌کنیم، چون آن
+      // فقط چیزی را که در کوکی/localStorage ذخیره شده می‌خواند، بدون
+      // اینکه واقعاً از سرورِ Supabase بپرسد «آیا این کاربر هنوز
+      // وجود دارد؟». نتیجه: اگر کاربر از پنل ادمین (Authentication →
+      // Users) حذف شود، مرورگرِ او همچنان یک توکنِ محلیِ «به‌ظاهر
+      // معتبر» نگه می‌دارد و هم آیکون پروفایل در هدر و هم همین صفحه
+      // فکر می‌کنند کاربر وارد شده — در حالی‌که دیگر چنین کاربری
+      // وجود ندارد.
+      // getUser() برخلاف آن، یک درخواست واقعی به سرورِ Supabase
+      // می‌زند و اگر کاربر حذف/غیرفعال شده باشد، خطا برمی‌گرداند.
       const {
-        data: { session },
-      } = await supabaseBrowser.auth.getSession();
+        data: { user },
+        error: userError,
+      } = await supabaseBrowser.auth.getUser();
 
-      if (!session?.user) {
+      if (userError || !user) {
+        // سشنِ محلی دیگر معتبر نیست (مثلاً کاربر حذف شده) — کوکی‌های
+        // باقی‌مانده را کامل پاک می‌کنیم تا هدر و بقیه‌ی اپ هم واقعاً
+        // «خارج‌شده» را نشان دهند، نه اینکه یک سشنِ زامبی باقی بماند.
+        await supabaseBrowser.auth.signOut();
         setNotLoggedIn(true);
         setLoading(false);
         return;
       }
 
-      const { data, error } = await (supabaseBrowser.from('profiles') as any)
+      let { data, error } = await (supabaseBrowser.from('profiles') as any)
         .select('id, email, full_name, avatar_url, phone, country, created_at')
-        .eq('id', session.user.id)
-        .single();
+        .eq('id', user.id)
+        .maybeSingle(); // به‌جای single(): اگر ردیفی نبود، خطای PGRST116 نده — فقط null برگردان
+
+      // خودترمیمی: کاربر واقعاً معتبر است (getUser بالا تأیید کرد)
+      // ولی به هر دلیلی (مثلاً حذف دستیِ یک ردیف تستی از جدول
+      // profiles بدون حذف خودِ کاربر، یا شکست موقتِ triggerِ
+      // handle_new_user) ردیف پروفایلش وجود ندارد. به‌جای نمایش یک
+      // خطای خشک به کاربر، خودمان یک ردیف پایه می‌سازیم تا سیستم
+      // به‌جای گیر کردن، خودش وضعیت را درست کند.
+      // (نیازمندِ policyِ INSERT جدید روی جدول profiles — به فایل
+      // supabase/profiles.sql مراجعه کنید.)
+      if (!error && !data) {
+        const created = await (supabaseBrowser.from('profiles') as any)
+          .insert({ id: user.id, email: user.email ?? null })
+          .select('id, email, full_name, avatar_url, phone, country, created_at')
+          .single();
+        data = created.data;
+        error = created.error;
+      }
 
       if (error || !data) {
         setLoadError(true);
@@ -165,6 +198,17 @@ export default function ProfilePage() {
 
     loadProfile();
   }, []);
+
+  // ── تلاش دوباره برای بارگذاری پروفایل (دکمه‌ی «تلاش دوباره») ──
+  const retryLoadProfile = () => {
+    window.location.reload();
+  };
+
+  // ── خروج کامل از حساب (برای حالت خطای بارگذاری) ────────────────
+  const signOutAndGoToLogin = async () => {
+    await supabaseBrowser.auth.signOut();
+    router.replace('/login');
+  };
 
   // ── بارگذاری تنبل (Lazy) آدرس‌ها و سفارش‌ها، فقط وقتی تب باز می‌شود ──
   useEffect(() => {
@@ -486,10 +530,25 @@ export default function ProfilePage() {
   if (loadError || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 font-[family-name:var(--font-vazir)]">
-        <div className="max-w-md w-full bg-red-50 border border-red-200 text-red-700 p-6 rounded-2xl flex items-start gap-3">
-          <AlertCircle className="h-6 w-6 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-bold mb-1">{t('load_error')}</p>
+        <div className="max-w-md w-full bg-white border border-gray-200 rounded-2xl p-6 shadow-sm text-center">
+          <AlertCircle className="h-10 w-10 text-red-500 mx-auto mb-3" />
+          <p className="font-bold text-gray-900 mb-1">{t('load_error')}</p>
+          <p className="text-sm text-gray-500 mb-6">{t('load_error_desc')}</p>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={retryLoadProfile}
+              className="w-full inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition-colors"
+            >
+              <RefreshCw className="h-4 w-4" />
+              {t('retry')}
+            </button>
+            <button
+              onClick={signOutAndGoToLogin}
+              className="w-full inline-flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-3 px-4 rounded-xl transition-all"
+            >
+              <LogOut className="h-4 w-4" />
+              {tAuth('logout')}
+            </button>
           </div>
         </div>
       </div>

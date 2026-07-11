@@ -721,6 +721,8 @@
     "not_logged_in_desc": "Please sign in with Google to view your profile.",
     "login": "Sign in with Google",
     "load_error": "Failed to load your profile",
+    "load_error_desc": "Something went wrong loading your account. Try again, or sign out and sign back in.",
+    "retry": "Try again",
     "addresses": {
       "title": "Saved Addresses",
       "subtitle": "Save a recipient's address once, reuse it on your next order",
