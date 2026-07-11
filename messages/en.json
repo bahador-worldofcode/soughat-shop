@@ -774,15 +774,16 @@
     "tx_type_topup": "Wallet Top-up",
     "tx_type_order_payment": "Order Payment",
     "tx_type_admin_adjustment": "Manual Adjustment by Support",
-    "submitted_title": "Top-up Request Submitted",
-    "submitted_desc": "Your request has been submitted. Your wallet will be topped up once our team confirms your payment.",
+    "submitted_title": "Top-up Invoice Submitted",
+    "submitted_desc": "Your invoice for a wallet top-up of {amount} has been submitted. To get the wallet address and continue your payment, please tap the WhatsApp icon at the bottom of the page.",
     "back_to_wallet": "Back to Wallet",
     "pay_with_crypto_tab": "Pay with Crypto",
     "pay_with_wallet_tab": "Pay with Wallet",
     "insufficient_balance": "Insufficient wallet balance",
     "current_balance": "Current Balance",
     "balance_after_payment": "Balance After Payment",
-    "pay_and_submit_button": "Pay & Submit Order"
+    "pay_and_submit_button": "Pay & Submit Order",
+    "cancel_topup_button": "Cancel & Change Amount"
   },
   "Notifications": {
     "aria_label": "Notifications",

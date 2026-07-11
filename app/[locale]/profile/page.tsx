@@ -1263,12 +1263,26 @@ export default function ProfilePage() {
 
             {/* ── پرداختِ کریپتوییِ فاکتورِ شارژ ──────────────────── */}
             {chargeStep === 'paying' && activeTopupId && (
-              <WalletTopupPayment
-                topupId={activeTopupId}
-                requestedAmount={Number(chargeAmount)}
-                requestedCurrency={chargeCurrency}
-                onDone={() => setChargeStep('submitted')}
-              />
+              <div className="space-y-3">
+                {/* دکمه‌ی لغو/بازگشت — تا مشتری بتونه قبل از پرداخت، مبلغ رو تغییر بده */}
+                <button
+                  onClick={() => {
+                    setChargeStep('choose_amount');
+                    setActiveTopupId(null);
+                  }}
+                  className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-500 hover:text-blue-600 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                  {tWallet('cancel_topup_button')}
+                </button>
+
+                <WalletTopupPayment
+                  topupId={activeTopupId}
+                  requestedAmount={Number(chargeAmount)}
+                  requestedCurrency={chargeCurrency}
+                  onDone={() => setChargeStep('submitted')}
+                />
+              </div>
             )}
 
             {/* ── پیامِ پایانی بعدِ ثبتِ فاکتورِ شارژ (تسکِ ۲۶) ──────────── */}
@@ -1281,7 +1295,7 @@ export default function ProfilePage() {
                 <div>
                   <h2 className="font-bold text-gray-900 text-lg">{tWallet('submitted_title')}</h2>
                   <p className="text-sm text-gray-500 mt-2 leading-relaxed max-w-sm mx-auto">
-                    {tWallet('submitted_desc')}
+                    {tWallet('submitted_desc', { amount: `${chargeAmount} ${chargeCurrency}` })}
                   </p>
                 </div>
 

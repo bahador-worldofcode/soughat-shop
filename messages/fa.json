@@ -775,15 +775,16 @@
     "tx_type_topup": "شارژ کیف‌پول",
     "tx_type_order_payment": "پرداخت سفارش",
     "tx_type_admin_adjustment": "تنظیم دستی توسط پشتیبانی",
-    "submitted_title": "درخواست شارژ ثبت شد",
-    "submitted_desc": "درخواست شما ثبت شد؛ پس از تایید پرداخت توسط تیم ما، کیف‌پولتان شارژ خواهد شد.",
+    "submitted_title": "فاکتورِ شارژ ثبت شد",
+    "submitted_desc": "فاکتورِ شما جهتِ شارژِ کیف‌پول به مبلغِ {amount} در سیستم ثبت شد. برای دریافتِ آدرسِ کیف‌پول (ولت) و ادامه‌ی پرداخت، لطفاً روی آیکونِ واتساپِ پایینِ صفحه کلیک کنید.",
     "back_to_wallet": "بازگشت به کیف‌پول",
     "pay_with_crypto_tab": "پرداخت با کریپتو",
     "pay_with_wallet_tab": "پرداخت با کیف‌پول",
     "insufficient_balance": "موجودی کیف‌پول کافی نیست",
     "current_balance": "موجودی فعلی",
     "balance_after_payment": "موجودی پس از پرداخت",
-    "pay_and_submit_button": "پرداخت و ثبت سفارش"
+    "pay_and_submit_button": "پرداخت و ثبت سفارش",
+    "cancel_topup_button": "لغو و تغییرِ مبلغ"
   },
   "Notifications": {
     "aria_label": "اعلان‌ها",
