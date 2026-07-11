@@ -7,6 +7,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { Link, useRouter, usePathname } from '@/i18n/navigation';
 import { isMobileNavHidden } from '@/lib/navVisibility';
 import { useAuthState } from '@/lib/useAuthState';
+import NotificationBell from '@/components/NotificationBell';
 
 export default function Header() {
   const t = useTranslations('Header');
@@ -285,6 +286,8 @@ export default function Header() {
                 در غیر این صورت یک دکمه‌ی واضح «ورود» نمایش داده می‌شود؛
                 قبلاً وقتی کاربر وارد نشده بود اصلاً هیچ راهی برای رسیدن
                 به صفحه‌ی ورود در هدر دسکتاپ وجود نداشت. */}
+            {isAuthed && <NotificationBell />}
+
             {isAuthed ? (
               <Link href="/profile" aria-label={t('profile_aria')}>
                 <button className="relative p-2.5 hover:bg-blue-50 rounded-xl transition-colors group border border-transparent hover:border-blue-100">

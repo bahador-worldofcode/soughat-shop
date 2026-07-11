@@ -698,7 +698,8 @@
     "tabs": {
       "account": "اطلاعات حساب",
       "addresses": "آدرس‌ها",
-      "orders": "سفارش‌های من"
+      "orders": "سفارش‌های من",
+      "wallet": "کیف‌پول"
     },
     "avatar": "عکس پروفایل",
     "avatar_change": "تغییر عکس",
@@ -759,6 +760,34 @@
       "track_btn": "پیگیری سفارش",
       "load_error": "بارگذاری سفارش‌ها با خطا مواجه شد. دوباره امتحان کنید."
     }
+  },
+  "Wallet": {
+    "balance_title": "موجودی کیف‌پول",
+    "charge_button": "شارژ کیف‌پول",
+    "choose_currency": "انتخاب ارز جهت شارژ",
+    "choose_amount": "انتخاب مبلغ",
+    "custom_amount_ph": "مبلغ دلخواه را وارد کنید",
+    "min_amount_error": "حداقل مبلغ شارژ {amount} دلار است.",
+    "create_error": "خطا در ثبت درخواست شارژ",
+    "continue_button": "ادامه",
+    "history_title": "تاریخچه تراکنش‌ها",
+    "history_empty": "هنوز تراکنشی ثبت نشده است.",
+    "tx_type_topup": "شارژ کیف‌پول",
+    "tx_type_order_payment": "پرداخت سفارش",
+    "tx_type_admin_adjustment": "تنظیم دستی توسط پشتیبانی",
+    "submitted_title": "درخواست شارژ ثبت شد",
+    "submitted_desc": "درخواست شما ثبت شد؛ پس از تایید پرداخت توسط تیم ما، کیف‌پولتان شارژ خواهد شد.",
+    "back_to_wallet": "بازگشت به کیف‌پول",
+    "pay_with_crypto_tab": "پرداخت با کریپتو",
+    "pay_with_wallet_tab": "پرداخت با کیف‌پول",
+    "insufficient_balance": "موجودی کیف‌پول کافی نیست",
+    "current_balance": "موجودی فعلی",
+    "balance_after_payment": "موجودی پس از پرداخت",
+    "pay_and_submit_button": "پرداخت و ثبت سفارش"
+  },
+  "Notifications": {
+    "aria_label": "اعلان‌ها",
+    "empty": "اعلانی وجود ندارد"
   },
   "ProfileWelcome": {
     "created_title": "حساب کاربری شما با موفقیت ساخته شد! 🎉",

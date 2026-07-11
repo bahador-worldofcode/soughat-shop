@@ -13,9 +13,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
 import { supabaseBrowser, legacySessionReady } from '@/lib/supabase-browser';
+import { useStore } from '@/lib/store';
 import { compressAvatarImage, ImageCompressError } from '@/lib/imageCompress';
 import Toast from '@/components/Toast';
 import WelcomeOnboardingModal from '@/components/WelcomeOnboardingModal';
+import WalletTopupPayment from '@/components/WalletTopupPayment';
 import {
   Loader2,
   User as UserIcon,
@@ -38,6 +40,10 @@ import {
   ExternalLink,
   Globe,
   RefreshCw,
+  Wallet as WalletIcon,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  SlidersHorizontal,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------
@@ -76,7 +82,16 @@ interface OrderRow {
   created_at: string;
 }
 
-type TabKey = 'account' | 'addresses' | 'orders';
+interface WalletTx {
+  id: string;
+  type: 'topup' | 'order_payment' | 'admin_adjustment';
+  amount_usd: number;
+  balance_after_usd: number;
+  note: string | null;
+  created_at: string;
+}
+
+type TabKey = 'account' | 'addresses' | 'orders' | 'wallet';
 
 const emptyAddressForm = {
   label: '',
@@ -90,8 +105,15 @@ export default function ProfilePage() {
   const t = useTranslations('Profile');
   const tAuth = useTranslations('Auth');
   const tTrack = useTranslations('Track');
+  // namespace مستقلِ Wallet — عمداً جدا از Profile، چون همین کلیدها در
+  // چک‌اوت (فازِ ۵) هم استفاده می‌شن؛ اگه زیرِ Profile تعریف می‌شد، یا باید
+  // در چک‌اوت هم دوباره تکرارش می‌کردیم یا یک namespace غیرمرتبط رو صدا
+  // می‌زدیم. یک namespace مشترک یعنی هر کلید فقط یک‌بار در fa.json/en.json
+  // تعریف می‌شه (طبقِ تسکِ ۳۹).
+  const tWallet = useTranslations('Wallet');
   const locale = useLocale();
   const router = useRouter();
+  const { rates: storeRates } = useStore();
 
   // ── وضعیت کلی صفحه ──────────────────────────────────────────
   const [loading, setLoading] = useState(true);
@@ -125,6 +147,19 @@ export default function ProfilePage() {
   const [orders, setOrders] = useState<OrderRow[] | null>(null);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState(false);
+
+  // ── تب «کیف‌پول» ──────────────────────────────────────────────
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [walletTx, setWalletTx] = useState<WalletTx[] | null>(null);
+  const [walletLoading, setWalletLoading] = useState(false);
+
+  // ── فرآیندِ شارژِ کیف‌پول (نمایشِ موجودی → انتخابِ مبلغ → پرداختِ کریپتو → پیامِ پایانی) ──
+  type ChargeStep = 'idle' | 'choose_amount' | 'paying' | 'submitted';
+  const [chargeStep, setChargeStep] = useState<ChargeStep>('idle');
+  const [chargeCurrency, setChargeCurrency] = useState<'USD' | 'EUR' | 'GBP' | 'SEK'>('USD');
+  const [chargeAmount, setChargeAmount] = useState<number | ''>('');
+  const [activeTopupId, setActiveTopupId] = useState<string | null>(null);
+  const [chargeError, setChargeError] = useState('');
 
   // ── بارگذاری اولیه‌ی پروفایل ─────────────────────────────────
   useEffect(() => {
@@ -270,6 +305,90 @@ export default function ProfilePage() {
     } finally {
       setOrdersLoading(false);
     }
+  };
+
+  // ── بارگذاری تنبل (Lazy) موجودی و تاریخچه‌ی کیف‌پول ──────────────
+  // فقط وقتی کاربر برای اولین‌بار روی تب «کیف‌پول» می‌زنه اجرا می‌شه.
+  // مستقیم از سوپابیس می‌خونیم (نه یک API Route جدا) چون هر دو جدول
+  // پالیسیِ RLSِ «فقط صاحبِ ردیف» دارن — دقیقاً همون الگویی که بالاتر
+  // برای saved_addresses هم استفاده شده.
+  useEffect(() => {
+    if (tab !== 'wallet' || walletBalance !== null) return;
+
+    const loadWallet = async () => {
+      setWalletLoading(true);
+      const {
+        data: { user },
+      } = await supabaseBrowser.auth.getUser();
+      if (!user) {
+        setWalletLoading(false);
+        return;
+      }
+
+      const [{ data: profileRow }, { data: txRows }] = await Promise.all([
+        (supabaseBrowser.from('profiles') as any)
+          .select('wallet_balance_usd')
+          .eq('id', user.id)
+          .single(),
+        (supabaseBrowser.from('wallet_transactions') as any)
+          .select('id, type, amount_usd, balance_after_usd, note, created_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(50),
+      ]);
+
+      setWalletBalance(profileRow?.wallet_balance_usd ?? 0);
+      setWalletTx(txRows ?? []);
+      setWalletLoading(false);
+    };
+
+    loadWallet();
+    // «walletBalance» عمداً در وابستگی‌ها هست: تنها راهیه که دکمه‌ی «بازگشت به
+    // کیف‌پول» (تسک ۲۶) با ریست‌کردنِ walletBalance به null می‌تونه این افکت رو
+    // دوباره فعال کنه تا موجودیِ تازه خونده بشه؛ خودِ گاردِ بالا (walletBalance
+    // !== null) جلوی هر حلقه‌ی بی‌نهایت رو می‌گیره.
+  }, [tab, walletBalance]);
+
+  // ── شروعِ فرآیندِ شارژ: اعتبارسنجی + ساختِ فاکتورِ شارژ در Supabase ──
+  // چون کاربر حتماً لاگین‌کرده (تبِ کیف‌پول برای مهمان قابل‌دیدن نیست)،
+  // مستقیم و بدونِ واسطه‌ی یک API Route در جدولِ wallet_topups درج می‌کنیم
+  // (پالیسیِ insertِ فاز ۱ اجازه می‌ده). نرخِ تبدیل از rates کش‌شده‌ی
+  // useStore خونده می‌شه — دقیقاً برعکسِ convertPrice در lib/store.ts.
+  const handleStartCharge = async () => {
+    setChargeError('');
+    if (!chargeAmount || chargeAmount < 10) {
+      setChargeError(tWallet('min_amount_error'));
+      return;
+    }
+
+    const {
+      data: { user },
+    } = await supabaseBrowser.auth.getUser();
+    if (!user) return;
+
+    // rates[code] یعنی «۱ دلار معادل چند واحد از اون ارزه»؛ پس برای رفتن از
+    // ارزِ انتخابی به دلار، باید بر همون نرخ تقسیم کرد (دقیقاً برعکسِ convertPrice)
+    const rate = storeRates[chargeCurrency] || 1;
+    const amountUsd = Math.round((chargeAmount / rate) * 100) / 100;
+
+    const { data, error } = await (supabaseBrowser.from('wallet_topups') as any)
+      .insert({
+        user_id: user.id,
+        requested_currency: chargeCurrency,
+        requested_amount: chargeAmount,
+        amount_usd: amountUsd,
+        status: 'pending',
+      })
+      .select('id')
+      .single();
+
+    if (error || !data) {
+      setChargeError(tWallet('create_error'));
+      return;
+    }
+
+    setActiveTopupId(data.id);
+    setChargeStep('paying');
   };
 
   // ── ذخیره‌ی نام و شماره تماس ──────────────────────────────────
@@ -588,7 +707,26 @@ export default function ProfilePage() {
     { key: 'account', label: t('tabs.account'), icon: UserIcon },
     { key: 'addresses', label: t('tabs.addresses'), icon: MapPin },
     { key: 'orders', label: t('tabs.orders'), icon: Package },
+    { key: 'wallet', label: t('tabs.wallet'), icon: WalletIcon },
   ];
+
+  // نگاشتِ نوعِ تراکنشِ کیف‌پول به آیکون/رنگ/برچسب
+  const walletTxMeta = (type: WalletTx['type']) => {
+    const map: Record<WalletTx['type'], { icon: any; className: string; label: string }> = {
+      topup: { icon: ArrowDownCircle, className: 'bg-green-50 text-green-600', label: tWallet('tx_type_topup') },
+      order_payment: {
+        icon: ArrowUpCircle,
+        className: 'bg-red-50 text-red-600',
+        label: tWallet('tx_type_order_payment'),
+      },
+      admin_adjustment: {
+        icon: SlidersHorizontal,
+        className: 'bg-blue-50 text-blue-600',
+        label: tWallet('tx_type_admin_adjustment'),
+      },
+    };
+    return map[type];
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 font-[family-name:var(--font-vazir)]">
@@ -948,6 +1086,218 @@ export default function ProfilePage() {
                   </div>
                 );
               })}
+          </div>
+        )}
+
+        {/* ── تب ۴: کیف‌پول ────────────────────────────────── */}
+        {tab === 'wallet' && (
+          <div className="space-y-4">
+            {chargeStep === 'idle' && (
+              <>
+                {/* کارتِ موجودی */}
+                <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-6 shadow-sm text-white">
+                  <div className="flex items-center gap-2 text-blue-100 text-sm mb-1">
+                    <WalletIcon className="h-4 w-4" />
+                    {tWallet('balance_title')}
+                  </div>
+                  <p className="text-3xl font-bold mb-4">
+                    {walletBalance !== null ? `$${walletBalance.toLocaleString()}` : '—'}
+                  </p>
+                  <button
+                    onClick={() => {
+                      setChargeError('');
+                      setChargeAmount('');
+                      setChargeStep('choose_amount');
+                    }}
+                    className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-sm font-bold py-2 px-4 rounded-xl transition-colors"
+                  >
+                    <ArrowDownCircle className="h-4 w-4" />
+                    {tWallet('charge_button')}
+                  </button>
+                </div>
+
+                {/* تاریخچه‌ی تراکنش‌ها */}
+                <div>
+                  <h2 className="font-bold text-gray-900">{tWallet('history_title')}</h2>
+                </div>
+
+                {walletLoading && (
+                  <div className="flex justify-center py-10">
+                    <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                  </div>
+                )}
+
+                {!walletLoading && walletTx && walletTx.length === 0 && (
+                  <div className="bg-white border border-dashed border-gray-300 rounded-2xl p-10 text-center">
+                    <WalletIcon className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                    <p className="text-sm text-gray-500">{tWallet('history_empty')}</p>
+                  </div>
+                )}
+
+                {!walletLoading &&
+                  walletTx &&
+                  walletTx.map((txItem) => {
+                    const meta = walletTxMeta(txItem.type);
+                    const TxIcon = meta.icon;
+                    const isPositive = txItem.amount_usd > 0;
+
+                    return (
+                      <div
+                        key={txItem.id}
+                        className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className={`inline-flex items-center justify-center h-9 w-9 rounded-full flex-shrink-0 ${meta.className}`}>
+                            <TxIcon className="h-4 w-4" />
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-gray-900">{meta.label}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">{formatOrderDate(txItem.created_at)}</p>
+                          </div>
+                        </div>
+                        <span className={`font-bold text-sm flex-shrink-0 ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                          {isPositive ? '+' : ''}
+                          {txItem.amount_usd.toLocaleString()}$
+                        </span>
+                      </div>
+                    );
+                  })}
+              </>
+            )}
+
+            {/* ── انتخابِ مبلغِ شارژ ──────────────────────────── */}
+            {chargeStep === 'choose_amount' && (
+              <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-5">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-bold text-gray-900">{tWallet('choose_amount')}</h2>
+                  <button
+                    onClick={() => {
+                      setChargeStep('idle');
+                      setChargeError('');
+                    }}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                    aria-label={tWallet('back_to_wallet')}
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                {/* سوییچرِ ارز — دقیقاً هم‌سبک با سوییچرِ ارزِ هدر */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1.5">
+                    {tWallet('choose_currency')}
+                  </label>
+                  <div className="inline-flex items-center gap-1 border border-gray-200 rounded-xl px-3 py-2 bg-gray-50 hover:bg-white transition-all">
+                    <select
+                      value={chargeCurrency}
+                      onChange={(e) => {
+                        setChargeCurrency(e.target.value as 'USD' | 'EUR' | 'GBP' | 'SEK');
+                        setChargeAmount('');
+                        setChargeError('');
+                      }}
+                      className="bg-transparent text-sm font-bold outline-none cursor-pointer uppercase text-gray-700"
+                    >
+                      <option value="USD">USD ($)</option>
+                      <option value="EUR">EUR (€)</option>
+                      <option value="GBP">GBP (£)</option>
+                      <option value="SEK">SEK (kr)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* دکمه‌های مبلغِ پیش‌فرض */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1.5">
+                    {tWallet('choose_amount')}
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {[50, 100, 200, 500].map((preset) => (
+                      <button
+                        key={preset}
+                        onClick={() => {
+                          setChargeAmount(preset);
+                          setChargeError('');
+                        }}
+                        className={`flex-1 min-w-[70px] py-2.5 rounded-xl border text-sm font-bold transition-colors ${
+                          chargeAmount === preset
+                            ? 'bg-blue-600 border-blue-600 text-white'
+                            : 'bg-white border-gray-200 text-gray-700 hover:border-blue-300'
+                        }`}
+                      >
+                        {preset} {chargeCurrency}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* اینپوتِ عددیِ دستی برای مبلغِ دلخواه */}
+                <div>
+                  <input
+                    type="number"
+                    min={0}
+                    value={chargeAmount}
+                    onChange={(e) => {
+                      setChargeAmount(e.target.value === '' ? '' : Number(e.target.value));
+                      setChargeError('');
+                    }}
+                    placeholder={tWallet('custom_amount_ph')}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm text-gray-900"
+                  />
+                </div>
+
+                {chargeError && (
+                  <div className="flex items-center gap-2 text-red-600 text-sm">
+                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                    {chargeError}
+                  </div>
+                )}
+
+                <button
+                  onClick={handleStartCharge}
+                  className="w-full inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition-colors"
+                >
+                  {tWallet('continue_button')}
+                </button>
+              </div>
+            )}
+
+            {/* ── پرداختِ کریپتوییِ فاکتورِ شارژ ──────────────────── */}
+            {chargeStep === 'paying' && activeTopupId && (
+              <WalletTopupPayment
+                topupId={activeTopupId}
+                requestedAmount={Number(chargeAmount)}
+                requestedCurrency={chargeCurrency}
+                onDone={() => setChargeStep('submitted')}
+              />
+            )}
+
+            {/* ── پیامِ پایانی بعدِ ثبتِ فاکتورِ شارژ (تسکِ ۲۶) ──────────── */}
+            {chargeStep === 'submitted' && (
+              <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm text-center space-y-5">
+                <div className="inline-flex items-center justify-center h-14 w-14 rounded-full bg-green-100 mx-auto">
+                  <CheckCircle className="h-7 w-7 text-green-600" />
+                </div>
+
+                <div>
+                  <h2 className="font-bold text-gray-900 text-lg">{tWallet('submitted_title')}</h2>
+                  <p className="text-sm text-gray-500 mt-2 leading-relaxed max-w-sm mx-auto">
+                    {tWallet('submitted_desc')}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setChargeStep('idle');
+                    setActiveTopupId(null);
+                    setWalletBalance(null);
+                    setWalletTx(null);
+                  }}
+                  className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-5 rounded-xl transition-colors"
+                >
+                  {tWallet('back_to_wallet')}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

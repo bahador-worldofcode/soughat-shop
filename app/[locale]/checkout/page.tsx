@@ -32,8 +32,13 @@ function getCartSignature(items: { id: string; quantity: number }[]) {
 
 export default function CheckoutPage() {
   const t = useTranslations('Checkout');
+  // همون namespace مستقلِ Wallet که در تبِ کیف‌پولِ پروفایل هم استفاده می‌شه —
+  // کلیدهایی مثل pay_with_wallet_tab/insufficient_balance فقط یک‌بار در
+  // fa.json/en.json تعریف می‌شن و بینِ این دو صفحه مشترکن.
+  const tWallet = useTranslations('Wallet');
   const locale = useLocale();
   const isEn = locale === 'en';
+  const router = useRouter();
   
   const { cart, totalPrice, getSymbol, convertPrice, currency } = useStore();
   
@@ -75,6 +80,18 @@ export default function CheckoutPage() {
     country: string | null;
   } | null>(null);
 
+  // موجودیِ کیف‌پولِ کاربر (به دلار) — برای تبِ «پرداخت با کیف‌پول» در فازِ ۵
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+
+  // انتخابِ روشِ پرداخت در مرحله‌ی ۲ — کریپتو (پیش‌فرض) یا کیف‌پول
+  const [paymentTab, setPaymentTab] = useState<'crypto' | 'wallet'>('crypto');
+  const [payingWithWallet, setPayingWithWallet] = useState(false);
+  const [walletPayError, setWalletPayError] = useState('');
+
+  // تبِ «پرداخت با کیف‌پول» فقط وقتی فعاله که کاربر لاگین باشه، موجودی خونده
+  // شده باشه، و موجودی حداقل به‌اندازه‌ی مبلغِ کلِ سفارش (دلاری) کافی باشه
+  const canPayWithWallet = isLoggedIn && walletBalance !== null && walletBalance >= totalBaseUSD;
+
   const [formData, setFormData] = useState({
     senderName: '',
     senderPhone: '',
@@ -112,7 +129,7 @@ export default function CheckoutPage() {
       if (!session?.user) return;
       setIsLoggedIn(true);
 
-      const [{ data: addresses }, { data: profileData }] = await Promise.all([
+      const [{ data: addresses }, { data: profileData }, { data: walletRow }] = await Promise.all([
         (supabaseBrowser.from('saved_addresses') as any)
           .select('id, label, receiver_name, receiver_phone, city, address, is_default')
           .order('is_default', { ascending: false })
@@ -121,10 +138,15 @@ export default function CheckoutPage() {
           .select('full_name, phone, country')
           .eq('id', session.user.id)
           .single(),
+        (supabaseBrowser.from('profiles') as any)
+          .select('wallet_balance_usd')
+          .eq('id', session.user.id)
+          .single(),
       ]);
 
       if (addresses) setSavedAddresses(addresses as SavedAddress[]);
       if (profileData) setProfileInfo(profileData);
+      setWalletBalance(walletRow?.wallet_balance_usd ?? 0);
     };
     loadUserData();
   }, []);
@@ -266,6 +288,38 @@ export default function CheckoutPage() {
     localStorage.removeItem('pending_order_cart_sig');
     setResumedOrder(false);
     setStep(1);
+  };
+
+  // تسکِ ۳۰: پرداختِ سفارش مستقیم از موجودیِ کیف‌پول — بدونِ نیازِ به تاییدِ
+  // دستیِ ادمین، چون کسرِ موجودی سمتِ سرور و اتمیک (با تابعِ RPC فازِ ۱)
+  // تایید می‌شه. مقصدِ نهایی دقیقاً همون صفحه‌ی موفقیتیه که بعدِ پرداختِ
+  // کریپتو هم بهش می‌رسیم.
+  const handlePayWithWallet = async () => {
+    setPayingWithWallet(true);
+    setWalletPayError('');
+    try {
+      const {
+        data: { session },
+      } = await supabaseBrowser.auth.getSession();
+      const res = await fetch('/api/wallet/pay-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ orderId }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || t('errors.server_error'));
+
+      localStorage.removeItem('pending_order_id');
+      localStorage.removeItem('checkout_draft');
+      router.push(`/success?id=${orderId}`);
+    } catch (err: any) {
+      setWalletPayError(err.message);
+    } finally {
+      setPayingWithWallet(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -729,8 +783,95 @@ export default function CheckoutPage() {
                     <span className="text-sm font-bold leading-6">{t('resumed_notice')}</span>
                 </div>
               )}
-              
-              <CryptoPayment orderId={orderId} />
+
+              {/*
+                تسکِ ۲۹: سوییچرِ دو-تبی برای انتخابِ روشِ پرداخت — فقط برای
+                کاربرِ لاگین‌کرده نشون داده می‌شه (مهمان اصلاً کیف‌پول نداره).
+                دقیقاً هم‌الگو با تب‌های «ورود»/«ثبت‌نام» در صفحه‌ی لاگین.
+              */}
+              {isLoggedIn && (
+                <div className="mb-6">
+                  <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-xl">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentTab('crypto')}
+                      aria-pressed={paymentTab === 'crypto'}
+                      className={`flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-colors ${
+                        paymentTab === 'crypto'
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      {tWallet('pay_with_crypto_tab')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => canPayWithWallet && setPaymentTab('wallet')}
+                      aria-pressed={paymentTab === 'wallet'}
+                      disabled={!canPayWithWallet}
+                      className={`flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-colors ${
+                        !canPayWithWallet
+                          ? 'text-gray-300 cursor-not-allowed'
+                          : paymentTab === 'wallet'
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      {tWallet('pay_with_wallet_tab')}
+                    </button>
+                  </div>
+
+                  {!canPayWithWallet && (
+                    <p className="text-xs text-gray-400 mt-1.5 px-1">
+                      {tWallet('insufficient_balance')}
+                      {walletBalance !== null && ` — ${tWallet('current_balance')}: $${walletBalance.toLocaleString()}`}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* تسکِ ۳۰: وقتی تبِ کیف‌پول انتخاب شده، به‌جای CryptoPayment یک
+                  کارتِ ساده‌ی خلاصه‌ی پرداخت + دکمه‌ی «پرداخت و ثبت سفارش»
+                  نشون بده. برخلافِ کریپتو، این مسیر نیازی به تاییدِ دستیِ
+                  ادمین نداره — پرداخت همون لحظه اتمیک انجام می‌شه. */}
+              {paymentTab === 'wallet' ? (
+                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-5">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">{t('cart_summary.total')}</span>
+                      <span className="font-bold text-gray-900">${totalBaseUSD.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">{tWallet('current_balance')}</span>
+                      <span className="font-bold text-gray-900">${(walletBalance ?? 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm pt-3 border-t border-gray-100">
+                      <span className="text-gray-500">{tWallet('balance_after_payment')}</span>
+                      <span className="font-bold text-green-600">
+                        ${((walletBalance ?? 0) - totalBaseUSD).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {walletPayError && (
+                    <div className="flex items-center gap-2 text-red-600 text-sm">
+                      <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                      {walletPayError}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handlePayWithWallet}
+                    disabled={payingWithWallet}
+                    className="w-full inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-xl transition-colors"
+                  >
+                    {payingWithWallet && <Loader2 className="h-4 w-4 animate-spin" />}
+                    {tWallet('pay_and_submit_button')}
+                  </button>
+                </div>
+              ) : (
+                <CryptoPayment orderId={orderId} />
+              )}
             </>
           )}
 

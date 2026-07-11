@@ -21,6 +21,8 @@ import {
   KeyRound,
   CheckCircle2,
   XCircle,
+  Wallet,
+  Settings2,
 } from 'lucide-react';
 
 interface AdminUser {
@@ -36,6 +38,7 @@ interface AdminUser {
   created_at: string;
   order_count: number;
   total_spent: number;
+  wallet_balance_usd: number; // تسک ۳۷: موجودی کیف‌پول (سند کیف‌پول)
 }
 
 export default function UsersPage() {
@@ -52,6 +55,12 @@ export default function UsersPage() {
 
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const [adjustTarget, setAdjustTarget] = useState<AdminUser | null>(null);
+  const [adjustAmount, setAdjustAmount] = useState('');
+  const [adjustNote, setAdjustNote] = useState('');
+  const [adjustSaving, setAdjustSaving] = useState(false);
+  const [adjustError, setAdjustError] = useState('');
 
   useEffect(() => {
     fetchUsers();
@@ -140,6 +149,48 @@ export default function UsersPage() {
       alert(err.message || 'خطای ناشناخته');
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const openAdjust = (user: AdminUser) => {
+    setAdjustTarget(user);
+    setAdjustAmount('');
+    setAdjustNote('');
+    setAdjustError('');
+  };
+
+  const closeAdjust = () => {
+    setAdjustTarget(null);
+  };
+
+  // تسک ۳۸: ثبتِ تنظیمِ دستیِ موجودی — از تابعِ اتمیکِ admin_adjust_wallet
+  // (فاز ۱) عبور می‌کنه، پس هم تراکنش در تاریخچه ثبت می‌شه هم یک نوتیفِ
+  // داخل‌سایتی برای مشتری ساخته می‌شه (منطقش داخلِ خودِ تابعِ دیتابیسه).
+  const handleAdjustSubmit = async () => {
+    if (!adjustTarget) return;
+    const amountUsd = Number(adjustAmount);
+    if (!amountUsd || Number.isNaN(amountUsd)) {
+      setAdjustError('مبلغ باید یک عددِ غیرصفر باشد (مثبت = افزایش، منفی = کاهش).');
+      return;
+    }
+    setAdjustSaving(true);
+    setAdjustError('');
+    try {
+      const headers = await getAuthHeader();
+      const res = await fetch('/api/admin/wallet-adjust', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...headers },
+        body: JSON.stringify({ userId: adjustTarget.id, amountUsd, note: adjustNote || undefined }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'خطا در ثبتِ تغییرِ موجودی');
+
+      setAdjustTarget(null);
+      await fetchUsers(); // برای دیدنِ موجودیِ تازه در همون لحظه
+    } catch (err: any) {
+      setAdjustError(err.message || 'خطای ناشناخته');
+    } finally {
+      setAdjustSaving(false);
     }
   };
 
@@ -246,13 +297,14 @@ export default function UsersPage() {
                 <th className="px-6 py-4 font-medium">کشور</th>
                 <th className="px-6 py-4 font-medium">عضویت از</th>
                 <th className="px-6 py-4 font-medium">سفارش‌ها</th>
+                <th className="px-6 py-4 font-medium">موجودی کیف‌پول</th>
                 <th className="px-6 py-4 font-medium text-center">عملیات</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-10 text-center text-gray-400">
+                  <td colSpan={9} className="px-6 py-10 text-center text-gray-400">
                     کاربری یافت نشد.
                   </td>
                 </tr>
@@ -344,6 +396,21 @@ export default function UsersPage() {
                         {user.total_spent > 0 && (
                           <div className="text-xs text-green-600 font-bold">${user.total_spent.toLocaleString('en-US')}</div>
                         )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2 justify-end">
+                        <div className="flex items-center gap-1.5 text-sm font-bold text-blue-700 font-mono dir-ltr">
+                          <Wallet className="h-3.5 w-3.5 text-blue-400" />
+                          ${(user.wallet_balance_usd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        <button
+                          onClick={() => openAdjust(user)}
+                          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex-shrink-0"
+                          title="تنظیم دستی موجودی"
+                        >
+                          <Settings2 className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -496,6 +563,79 @@ export default function UsersPage() {
               >
                 {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
                 بله، حذف شود
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* مودال تنظیم دستی موجودی کیف‌پول (تسک ۳۸) */}
+      {adjustTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+            <div className="p-5 border-b border-gray-100 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <Wallet className="h-5 w-5 text-blue-600" />
+                تنظیم دستی موجودی
+              </h3>
+              <button onClick={closeAdjust}>
+                <X className="h-5 w-5 text-gray-400 hover:text-red-500" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-xs text-gray-500">
+                موجودیِ «{adjustTarget.full_name || adjustTarget.email}»:{' '}
+                <span className="font-bold text-blue-700 font-mono">
+                  ${(adjustTarget.wallet_balance_usd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </p>
+
+              {adjustError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg text-xs flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                  {adjustError}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  مبلغِ تغییر (دلار) — مثبت = افزایش، منفی = کاهش
+                </label>
+                <input
+                  type="number"
+                  dir="ltr"
+                  value={adjustAmount}
+                  onChange={(e) => setAdjustAmount(e.target.value)}
+                  placeholder="مثلاً 20 یا -5"
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 text-sm outline-none focus:border-blue-500 text-left font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">توضیح (اختیاری)</label>
+                <input
+                  type="text"
+                  value={adjustNote}
+                  onChange={(e) => setAdjustNote(e.target.value)}
+                  placeholder="مثلاً استرداد سفارش لغوشده"
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 text-sm outline-none focus:border-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="p-5 border-t border-gray-100 flex gap-2">
+              <button
+                onClick={closeAdjust}
+                className="flex-1 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-bold text-sm hover:bg-gray-50"
+              >
+                انصراف
+              </button>
+              <button
+                onClick={handleAdjustSubmit}
+                disabled={adjustSaving}
+                className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm disabled:opacity-60 inline-flex items-center justify-center gap-2"
+              >
+                {adjustSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+                ثبت
               </button>
             </div>
           </div>

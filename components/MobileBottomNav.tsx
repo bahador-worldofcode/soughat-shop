@@ -25,6 +25,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { Link, useRouter, usePathname } from '@/i18n/navigation';
 import { isMobileNavHidden } from '@/lib/navVisibility';
 import { useAuthState } from '@/lib/useAuthState';
+import NotificationBell from '@/components/NotificationBell';
 import Toast from '@/components/Toast';
 
 // آیتم‌های ثانویه (کم‌اهمیت‌تر) که به‌صورت فشرده و کوچک نمایش داده می‌شوند.
@@ -186,14 +187,17 @@ export default function MobileBottomNav() {
                 صورت دکمه‌ی ورود. قبلاً هیچ راهی برای رسیدن به پروفایل یا صفحه‌ی
                 ورود در نسخه‌ی موبایل سایت وجود نداشت. */}
             {isAuthed ? (
-              <Link
-                href="/profile"
-                onClick={() => setIsMenuOpen(false)}
-                className="flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 mb-3 text-blue-700 active:bg-blue-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-              >
-                <User className="h-4 w-4 flex-shrink-0" />
-                <span className="text-sm font-bold">{tHeader('profile_aria')}</span>
-              </Link>
+              <div className="flex items-center gap-2 mb-3">
+                <Link
+                  href="/profile"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex-1 flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-blue-700 active:bg-blue-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                >
+                  <User className="h-4 w-4 flex-shrink-0" />
+                  <span className="text-sm font-bold">{tHeader('profile_aria')}</span>
+                </Link>
+                <NotificationBell />
+              </div>
             ) : (
               <Link
                 href="/login"

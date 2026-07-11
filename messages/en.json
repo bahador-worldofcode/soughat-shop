@@ -697,7 +697,8 @@
     "tabs": {
       "account": "Account",
       "addresses": "Addresses",
-      "orders": "My Orders"
+      "orders": "My Orders",
+      "wallet": "Wallet"
     },
     "avatar": "Profile photo",
     "avatar_change": "Change photo",
@@ -758,6 +759,34 @@
       "track_btn": "Track order",
       "load_error": "Couldn't load your orders. Please try again."
     }
+  },
+  "Wallet": {
+    "balance_title": "Wallet Balance",
+    "charge_button": "Top Up Wallet",
+    "choose_currency": "Choose Currency to Top Up",
+    "choose_amount": "Choose Amount",
+    "custom_amount_ph": "Enter custom amount",
+    "min_amount_error": "Minimum top-up amount is {amount} USD.",
+    "create_error": "Error creating top-up request",
+    "continue_button": "Continue",
+    "history_title": "Transaction History",
+    "history_empty": "No transactions yet.",
+    "tx_type_topup": "Wallet Top-up",
+    "tx_type_order_payment": "Order Payment",
+    "tx_type_admin_adjustment": "Manual Adjustment by Support",
+    "submitted_title": "Top-up Request Submitted",
+    "submitted_desc": "Your request has been submitted. Your wallet will be topped up once our team confirms your payment.",
+    "back_to_wallet": "Back to Wallet",
+    "pay_with_crypto_tab": "Pay with Crypto",
+    "pay_with_wallet_tab": "Pay with Wallet",
+    "insufficient_balance": "Insufficient wallet balance",
+    "current_balance": "Current Balance",
+    "balance_after_payment": "Balance After Payment",
+    "pay_and_submit_button": "Pay & Submit Order"
+  },
+  "Notifications": {
+    "aria_label": "Notifications",
+    "empty": "No notifications"
   },
   "ProfileWelcome": {
     "created_title": "Your account has been created! 🎉",
