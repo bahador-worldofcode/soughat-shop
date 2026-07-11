@@ -1263,18 +1263,32 @@ export default function ProfilePage() {
 
             {/* ── پرداختِ کریپتوییِ فاکتورِ شارژ ──────────────────── */}
             {chargeStep === 'paying' && activeTopupId && (
-              <div className="space-y-3">
-                {/* دکمه‌ی لغو/بازگشت — تا مشتری بتونه قبل از پرداخت، مبلغ رو تغییر بده */}
-                <button
-                  onClick={() => {
-                    setChargeStep('choose_amount');
-                    setActiveTopupId(null);
-                  }}
-                  className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-500 hover:text-blue-600 transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                  {tWallet('cancel_topup_button')}
-                </button>
+              <div className="space-y-4">
+                {/* نوارِ اطلاعاتِ فاکتور: مبلغِ انتخابی + دکمه‌ی «لغو و تغییرِ مبلغ».
+                    به‌جای یک متنِ ساده‌ی معلق بالای کارت، این کنترل حالا زمینه‌ی
+                    خودش رو داره (مبلغِ فعلی رو هم نشون می‌ده) و به‌شکلِ یک دکمه‌ی
+                    ثانویه — نه پررنگ و نه در حدِ یک لینکِ گمشده — طراحی شده تا
+                    هم واضح باشه که قابلِ کلیکه، هم با دکمه‌ی اصلیِ «پرداخت کردم»
+                    داخلِ WalletTopupPayment اشتباه گرفته نشه. */}
+                <div className="flex items-center justify-between gap-3 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+                  <div className="text-sm text-gray-600 min-w-0">
+                    <span className="text-gray-400">{tWallet('choose_amount')}: </span>
+                    <span className="font-bold text-gray-900">
+                      {chargeAmount} {chargeCurrency}
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setChargeStep('choose_amount');
+                      setActiveTopupId(null);
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-600 bg-white border border-gray-300 rounded-lg px-3 py-1.5 hover:bg-gray-100 hover:border-gray-400 hover:text-blue-600 active:bg-gray-200 transition-colors flex-shrink-0"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                    {tWallet('cancel_topup_button')}
+                  </button>
+                </div>
 
                 <WalletTopupPayment
                   topupId={activeTopupId}
