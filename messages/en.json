@@ -759,6 +759,21 @@
       "load_error": "Couldn't load your orders. Please try again."
     }
   },
+  "ProfileWelcome": {
+    "created_title": "Your account has been created! 🎉",
+    "created_desc": "Welcome to Soughat Shop! Want a quick look at how your profile works?",
+    "start_tour": "Take the quick tour",
+    "skip": "Skip",
+    "step_label": "Step {current} of {total}",
+    "next": "Next",
+    "finish": "Let's go!",
+    "tab1_title": "Account Info",
+    "tab1_desc": "Set your name, phone number and profile photo here. Add your country of residence so it auto-fills at checkout.",
+    "tab2_title": "Saved Addresses",
+    "tab2_desc": "Save a recipient's address once (like your mom's house) so you can place your next order in seconds.",
+    "tab3_title": "My Orders",
+    "tab3_desc": "See every order placed with this account, and track delivery status in real time."
+  },
   "ReportBug": {
     "title": "Report a Bug or Issue",
     "subtitle": "If you ran into an error or problem on the site, please send us the details so our team can look into it as soon as possible.",

@@ -15,6 +15,7 @@ import { useRouter } from '@/i18n/navigation';
 import { supabaseBrowser, legacySessionReady } from '@/lib/supabase-browser';
 import { compressAvatarImage, ImageCompressError } from '@/lib/imageCompress';
 import Toast from '@/components/Toast';
+import WelcomeOnboardingModal from '@/components/WelcomeOnboardingModal';
 import {
   Loader2,
   User as UserIcon,
@@ -50,6 +51,7 @@ interface Profile {
   phone: string | null;
   country: string | null;
   created_at: string;
+  has_seen_welcome: boolean;
 }
 
 interface SavedAddress {
@@ -98,6 +100,7 @@ export default function ProfilePage() {
   const [loadError, setLoadError] = useState(false);
   const [tab, setTab] = useState<TabKey>('account');
   const [toast, setToast] = useState({ show: false, message: '' });
+  const [showWelcome, setShowWelcome] = useState(false);
 
   // ── تب «اطلاعات حساب» ───────────────────────────────────────
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -161,7 +164,7 @@ export default function ProfilePage() {
       }
 
       let { data, error } = await (supabaseBrowser.from('profiles') as any)
-        .select('id, email, full_name, avatar_url, phone, country, created_at')
+        .select('id, email, full_name, avatar_url, phone, country, created_at, has_seen_welcome')
         .eq('id', user.id)
         .maybeSingle(); // به‌جای single(): اگر ردیفی نبود، خطای PGRST116 نده — فقط null برگردان
 
@@ -176,7 +179,7 @@ export default function ProfilePage() {
       if (!error && !data) {
         const created = await (supabaseBrowser.from('profiles') as any)
           .insert({ id: user.id, email: user.email ?? null })
-          .select('id, email, full_name, avatar_url, phone, country, created_at')
+          .select('id, email, full_name, avatar_url, phone, country, created_at, has_seen_welcome')
           .single();
         data = created.data;
         error = created.error;
@@ -194,6 +197,15 @@ export default function ProfilePage() {
       setCountry(data.country ?? '');
       setAvatarUrl(data.avatar_url ?? null);
       setLoading(false);
+
+      // مودالِ خوش‌آمدگویی + تور ۳ مرحله‌ای: فقط زمانی نمایش داده می‌شود
+      // که این ردیفِ پروفایل تا به حال آن را ندیده باشد (اولین ورود بعد
+      // از ساخت حساب). بعد از بسته‌شدنِ مودال، این مقدار در دیتابیس
+      // true می‌شود و دیگر هیچ‌وقت (حتی در دستگاه/مرورگر دیگر) دوباره
+      // نمایش داده نمی‌شود.
+      if (!data.has_seen_welcome) {
+        setShowWelcome(true);
+      }
     };
 
     loadProfile();
@@ -454,6 +466,21 @@ export default function ProfilePage() {
     loadAddresses();
   };
 
+  // ── بستن مودال خوش‌آمدگویی (رد کردن یا اتمام تور) ─────────────
+  // بلافاصله در UI مخفی می‌شود (بدون معطلی برای پاسخ سرور) و در پس‌زمینه
+  // در دیتابیس ثبت می‌شود که دیگر هیچ‌وقت دوباره نمایش داده نشود.
+  const dismissWelcome = () => {
+    setShowWelcome(false);
+    if (!profile) return;
+    (supabaseBrowser.from('profiles') as any)
+      .update({ has_seen_welcome: true })
+      .eq('id', profile.id)
+      .then(({ error }: { error: any }) => {
+        if (error) console.error('Failed to persist has_seen_welcome:', error.message);
+      });
+    setProfile((prev) => (prev ? { ...prev, has_seen_welcome: true } : prev));
+  };
+
   // ── خروج از حساب ───────────────────────────────────────────
   const handleLogout = async () => {
     await supabaseBrowser.auth.signOut();
@@ -570,6 +597,8 @@ export default function ProfilePage() {
         show={toast.show}
         onDone={() => setToast((prev) => ({ ...prev, show: false }))}
       />
+
+      <WelcomeOnboardingModal open={showWelcome} onDone={dismissWelcome} />
 
       <div className="max-w-3xl mx-auto px-4 py-10">
         {/* هدر */}
