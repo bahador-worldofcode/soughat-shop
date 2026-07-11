@@ -492,7 +492,7 @@ export default function ProductsClientView({
                     disabled={currentPage === 1}
                     className="h-10 w-10 flex items-center justify-center rounded-xl border border-gray-200 hover:bg-white hover:border-blue-500 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-gray-500 bg-white"
                   >
-                    {isEn ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+                    <ChevronLeft className="h-5 w-5" />
                   </button>
 
                   <div className="bg-white border border-gray-200 rounded-xl px-4 h-10 flex items-center text-sm font-bold text-gray-700 shadow-sm">
@@ -504,7 +504,7 @@ export default function ProductsClientView({
                     disabled={currentPage === totalPages}
                     className="h-10 w-10 flex items-center justify-center rounded-xl border border-gray-200 hover:bg-white hover:border-blue-500 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-gray-500 bg-white"
                   >
-                    {isEn ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+                    <ChevronRight className="h-5 w-5" />
                   </button>
                 </div>
               )}
