@@ -85,7 +85,7 @@ export default function TopPromoBanner() {
         href="/products"
         onClick={trackClick}
         className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 text-center text-xs font-bold transition-colors hover:bg-white/10 sm:text-sm ${
-          isEn ? 'pl-10 pr-4' : 'pr-10 pl-4'
+          isEn ? 'pr-10 pl-4' : 'pl-10 pr-4'
         }`}
       >
         <Gift className="hidden h-4 w-4 flex-shrink-0 sm:block" aria-hidden="true" />
