@@ -293,12 +293,9 @@ async function CategorySectionsBlock({ locale }: { locale: string }) {
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
             {t('categories_title')}
           </h2>
-          <p className="text-gray-500 text-sm md:text-base">
-            {t('categories_subtitle')}
-          </p>
         </div>
 
-        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4">
           {categories.map((cat) => {
             const catName = isEn ? (cat.name_en || cat.name) : cat.name;
 
@@ -341,9 +338,8 @@ function CategorySectionsSkeleton() {
     <section className="container mx-auto px-4 mb-14 md:mb-20">
       <div className="flex flex-col items-center gap-3 mb-8 md:mb-10">
         <Skeleton className="h-7 md:h-8 w-56" />
-        <Skeleton className="h-4 w-72 hidden sm:block" />
       </div>
-      <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4">
         {Array.from({ length: 8 }).map((_, i) => (
           <div
             key={i}
