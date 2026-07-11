@@ -8,6 +8,38 @@
 // در صورتِ خطا، آن Route Handler کاربر را با
 // /login?error=... به همین صفحه برمی‌گرداند. این صفحه حالا آن
 // پارامتر را می‌خواند و پیام خطا را نشان می‌دهد.
+//
+// تسک ۱۵ (EMAIL_PASSWORD_AUTH_SETUP.md): اضافه شدنِ state انتخاب
+// حالت (ورود/ثبت‌نام) و دو تب کوچیک بالای فرم ایمیل. متن تب‌ها از
+// namespace ترجمه‌ی Auth می‌آید (کلیدهای login_tab/signup_tab در
+// messages/fa.json و messages/en.json).
+//
+// تسک ۱۶: فیلدهای فرم ایمیل/رمز عبور (ایمیل، رمز عبور، و در حالت
+// ثبت‌نام: نام کامل + تکرار رمز عبور) اضافه شد. توابع ثبت‌نام/ورود
+// و دکمه‌ی ارسال در تسک‌های ۱۷ و ۱۸ اضافه می‌شن.
+//
+// تسک ۱۷: تابع `handleEmailSignUp` اضافه شد (ثبت‌نام با ایمیل/رمز
+// عبور از طریق Supabase). هنوز به هیچ دکمه‌ای وصل نشده — تسک ۱۸
+// تابع ورود رو اضافه می‌کنه و بعدش دکمه‌ی ارسال وصل می‌شه.
+//
+// تسک ۱۸: تابع `handleEmailLogin` اضافه شد (ورود با ایمیل/رمز عبور).
+// اگه خطا «ایمیل تاییدنشده» باشه، دکمه‌ی ارسال دوباره (تسک ۱۹) نشون
+// داده می‌شه. هنوز هیچ‌کدوم از این دو تابع به دکمه‌ای وصل نیستن.
+//
+// تسک ۱۹: تابع `handleResendConfirmation` + دکمه‌ی «ارسال دوباره‌ی
+// ایمیل تایید» اضافه شد؛ این دکمه فقط وقتی `showResendButton` تروئه
+// نشون داده می‌شه (زیر باکس پیام خطا).
+//
+// تسک ۲۰: یک خط جداکننده‌ی ساده («یا») بین دکمه‌ی گوگل و تب‌های
+// فرم ایمیل اضافه شد تا UI شلوغ به نظر نرسه.
+//
+// تسک ۲۱: بعد از ثبت‌نام موفق (signupSuccess === true)، دکمه‌ی
+// گوگل + جداکننده + تب‌ها + فیلدها همه مخفی می‌شن و فقط پیام
+// «ایمیلت رو چک کن» نشون داده می‌شه.
+//
+// تسک اضافه (جا افتاده در سند اصلی): دکمه‌ی ارسال فرم ایمیل اضافه
+// شد؛ بسته به `mode`، یا handleEmailSignUp یا handleEmailLogin رو
+// صدا می‌زنه. بدون این دکمه فرم قابل ارسال نبود.
 // --------------------------------------------------------------
 
 'use client';
@@ -50,6 +82,22 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false); // هنگام کلیک روی دکمه
   const [checking, setChecking] = useState(true); // بررسی اولیهٔ سِشن
   const [errorMsg, setErrorMsg] = useState(''); // خطای برگشتی از auth/callback/route.ts
+
+  // تسک ۱۵: حالت فرم ایمیل — 'login' یا 'signup' (پیش‌فرض: ورود)
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
+
+  // تسک ۱۶: فیلدهای فرم ایمیل/رمز عبور
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState(''); // فقط در حالت ثبت‌نام
+  const [confirmPassword, setConfirmPassword] = useState(''); // فقط در حالت ثبت‌نام
+
+  // تسک ۱۷: بعد از ثبت‌نام موفق، true می‌شه تا پیام «ایمیلت رو چک کن» نشون داده بشه
+  const [signupSuccess, setSignupSuccess] = useState(false);
+
+  // تسک ۱۸: وقتی ورود به‌خاطر «ایمیل تاییدنشده» رد بشه، true می‌شه تا
+  // دکمه‌ی «دوباره ارسال ایمیل تایید» نشون داده بشه
+  const [showResendButton, setShowResendButton] = useState(false);
 
   // اگر آدرس شامل ?error=... بود (یعنی Route Handlerِ callback با خطا
   // برگشت داده)، آن را از URL بخوان و نشان بده.
@@ -110,6 +158,58 @@ export default function LoginPage() {
     // و ما دیگر نیازی به تغییر مسیر دستی نداریم.
   };
 
+  // تسک ۱۷: ثبت‌نام با ایمیل/رمز عبور
+  const handleEmailSignUp = async () => {
+    if (password !== confirmPassword) {
+      setErrorMsg(t('passwords_do_not_match'));
+      return;
+    }
+    setLoading(true);
+    setErrorMsg('');
+
+    const { error } = await supabaseBrowser.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: fullName },
+        emailRedirectTo: `${window.location.origin}/${locale}/auth/callback`,
+      },
+    });
+
+    setLoading(false);
+    if (error) {
+      setErrorMsg(error.message);
+    } else {
+      setSignupSuccess(true); // پیام «ایمیلت رو چک کن» نشون بده (تسک ۲۱)
+    }
+  };
+
+  // تسک ۱۸: ورود با ایمیل/رمز عبور
+  const handleEmailLogin = async () => {
+    setLoading(true);
+    setErrorMsg('');
+
+    const { error } = await supabaseBrowser.auth.signInWithPassword({ email, password });
+
+    setLoading(false);
+    if (error) {
+      if (error.message.toLowerCase().includes('email not confirmed')) {
+        setErrorMsg(t('email_not_confirmed'));
+        setShowResendButton(true); // دکمه‌ی «دوباره ارسال ایمیل تایید» رو نشون بده (تسک ۱۹)
+      } else {
+        setErrorMsg(t('invalid_credentials'));
+      }
+    } else {
+      router.replace('/profile');
+    }
+  };
+
+  // تسک ۱۹: ارسال دوباره‌ی ایمیل تایید (وقتی کاربر قبل از تایید ایمیل تلاش به ورود کرده)
+  const handleResendConfirmation = async () => {
+    await supabaseBrowser.auth.resend({ type: 'signup', email });
+    setErrorMsg(t('confirmation_resent'));
+  };
+
   // تا وقتی چک می‌کنیم کاربر لاگین هست یا نه، فقط اسپینر نشان بده
   if (checking) {
     return (
@@ -140,19 +240,154 @@ export default function LoginPage() {
           </div>
         )}
 
-        <button
-          type="button"
-          onClick={handleGoogleLogin}
-          disabled={loading}
-          className="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-800 font-semibold py-3 px-4 rounded-xl shadow-sm transition-all disabled:opacity-70 disabled:cursor-not-allowed"
-        >
-          {loading ? (
-            <Loader2 className="h-5 w-5 animate-spin text-gray-600" />
-          ) : (
-            <GoogleIcon />
-          )}
-          {loading ? t('signing_in') : t('google_button')}
-        </button>
+        {/* تسک ۱۹: فقط وقتی ورود به‌خاطر «ایمیل تاییدنشده» رد بشه نشون داده می‌شه */}
+        {showResendButton && (
+          <button
+            type="button"
+            onClick={handleResendConfirmation}
+            className="w-full text-sm font-semibold text-blue-600 hover:text-blue-700 underline underline-offset-2"
+          >
+            {t('resend_confirmation_button')}
+          </button>
+        )}
+
+        {/* تسک ۲۱: بعد از ثبت‌نام موفق، کل فرم مخفی می‌شه و فقط پیام «ایمیلت رو چک کن» نشون داده می‌شه */}
+        {signupSuccess ? (
+          <div className="bg-green-50 border border-green-200 text-green-800 p-4 rounded-xl text-center text-sm">
+            {t('check_your_email_message')}
+          </div>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-800 font-semibold py-3 px-4 rounded-xl shadow-sm transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <Loader2 className="h-5 w-5 animate-spin text-gray-600" />
+              ) : (
+                <GoogleIcon />
+              )}
+              {loading ? t('signing_in') : t('google_button')}
+            </button>
+
+            {/* تسک ۲۰: خط جداکننده‌ی ساده بین دکمه‌ی گوگل و فرم ایمیل */}
+            <div className="flex items-center gap-3">
+              <div className="h-px flex-1 bg-gray-200" />
+              <span className="text-xs font-medium text-gray-400 uppercase">{t('or_divider')}</span>
+              <div className="h-px flex-1 bg-gray-200" />
+            </div>
+
+            {/*
+              تسک ۱۵: دو تب سوییچ بین «ورود» و «ثبت‌نام»، دقیقاً بالای
+              محل فرم ایمیل/رمز عبور.
+            */}
+            <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setMode('login')}
+                aria-pressed={mode === 'login'}
+                className={`flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-colors ${
+                  mode === 'login'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {t('login_tab')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('signup')}
+                aria-pressed={mode === 'signup'}
+                className={`flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-colors ${
+                  mode === 'signup'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {t('signup_tab')}
+              </button>
+            </div>
+
+            {/*
+              تسک ۱۶: فیلدهای فرم ایمیل/رمز عبور. ایمیل و رمز عبور همیشه
+              نشون داده می‌شن؛ نام کامل و تکرار رمز فقط در حالت ثبت‌نام.
+            */}
+            <div className="space-y-4">
+              {mode === 'signup' && (
+                <div>
+                  <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
+                    {t('full_name_label')}
+                  </label>
+                  <input
+                    id="fullName"
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('email_label')}
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('password_label')}
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {mode === 'signup' && (
+                <div>
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                    {t('confirm_password_label')}
+                  </label>
+                  <input
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              )}
+
+              {/*
+                تسک اضافه (جا افتاده در سند اصلی): دکمه‌ی ارسال فرم
+                ایمیل — بسته به `mode`، تابع ثبت‌نام یا ورود رو صدا
+                می‌زنه. بدون این دکمه، فیلدهای بالا قابل ارسال نبودن.
+              */}
+              <button
+                type="button"
+                onClick={mode === 'signup' ? handleEmailSignUp : handleEmailLogin}
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl shadow-sm transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {loading && <Loader2 className="h-5 w-5 animate-spin" />}
+                {mode === 'signup' ? t('signup_button') : t('login_with_email_button')}
+              </button>
+            </div>
+          </>
+        )}
 
         <p className="text-center text-xs text-gray-400 leading-relaxed">
           {t('terms_note')}
