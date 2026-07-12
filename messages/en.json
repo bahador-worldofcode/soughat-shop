@@ -798,7 +798,10 @@
   },
   "Notifications": {
     "aria_label": "Notifications",
-    "empty": "No notifications"
+    "empty": "No notifications",
+    "clear_all": "Clear all",
+    "confirm_clear_all": "Clear all notifications? Your full transaction history stays available in the Wallet tab.",
+    "dismiss_aria": "Dismiss this notification"
   },
   "ProfileWelcome": {
     "created_title": "Your account has been created! 🎉",
