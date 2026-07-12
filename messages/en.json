@@ -440,7 +440,7 @@
     "manual_pay_desc": "For security and to prevent any deposit errors, the automatic gateway is temporarily disabled. Please click the button below to contact us on WhatsApp to receive the Tether (USDT) or Solana (SOL) wallet address and finalize your order.",
     "btn_whatsapp": "Contact via WhatsApp & Get Address",
     "security_msg": "By confirming the details, your invoice will be generated and you will receive payment instructions in the next step.",
-    "btn_final_submit": "Confirm & Finalize Order",
+    "btn_final_submit": "Confirm Amount & Continue",
     "whatsapp_message_template": "Hello, I have placed order #{orderId} on the website and I am messaging to get the wallet address for payment.",
     "hint_title": "Price Transparency: How was this amount calculated?",
     "hint_loading": "Calculating the exact amount based on the live rate...",
