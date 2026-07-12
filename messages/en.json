@@ -791,7 +791,8 @@
     "rate_no_conversion": "No conversion needed (Wallet is in USD)",
     "rate_live_fiat": "Live Rate: 1 {fiatCode} ≈ ${fiatRate}",
     "hint_usd": "Dear customer, your wallet balance is held in US Dollars ($), and since you selected the same currency, no conversion is needed. Your order amount is exactly <ltr>{usdAmount}$</ltr>, and this exact amount will be deducted from your wallet balance.",
-    "hint_fiat": "Dear customer, your wallet balance is held in US Dollars ($). Since you selected {fiatName}, your order amount (<ltr>{fiatSymbol}{fiatAmount}</ltr>) was converted to USD using our live exchange rate (<ltr>1 {fiatCode} ≈ {fiatRate}$</ltr>), which equals <ltr>{usdAmount}$</ltr>. This exact amount, and nothing more, will be deducted from your wallet balance — there is no hidden fee or markup."
+    "hint_fiat": "Dear customer, your wallet balance is held in US Dollars ($). Since you selected {fiatName}, your order amount (<ltr>{fiatSymbol}{fiatAmount}</ltr>) was converted to USD using our live exchange rate (<ltr>1 {fiatCode} ≈ {fiatRate}$</ltr>), which equals <ltr>{usdAmount}$</ltr>. This exact amount, and nothing more, will be deducted from your wallet balance — there is no hidden fee or markup.",
+    "balance_usd_note": "Exact system reference: ${usdAmount}"
   },
   "Notifications": {
     "aria_label": "Notifications",

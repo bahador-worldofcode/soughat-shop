@@ -869,7 +869,7 @@ export default function CheckoutPage() {
                   {!canPayWithWallet && (
                     <p className="text-xs text-gray-400 mt-1.5 px-1">
                       {tWallet('insufficient_balance')}
-                      {walletBalance !== null && ` — ${tWallet('current_balance')}: $${walletBalance.toLocaleString()}`}
+                      {walletBalance !== null && ` — ${tWallet('current_balance')}: ≈ ${symbol} ${convertPrice(walletBalance).toFixed(2)}`}
                     </p>
                   )}
                 </div>
@@ -931,16 +931,31 @@ export default function CheckoutPage() {
                       </p>
                     </div>
 
-                    {/* موجودیِ کیف‌پول قبل و بعد از پرداخت */}
+                    {/* موجودیِ کیف‌پول قبل و بعد از پرداخت — با همون ارزی که بالای
+                        سایت انتخاب شده، چون این عدد جمعِ چند تراکنشِ احتمالاً
+                        باارزهای مختلفه، با علامتِ «≈» مشخص می‌شه؛ مبنای دقیق و
+                        ثابتِ سیستم (دلار) هم کنارش، ریز، همیشه قابلِ‌دیدنه. */}
                     <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 mb-6 space-y-3">
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-gray-500">{tWallet('current_balance')}</span>
-                        <span className="font-bold text-gray-900 font-mono">${(walletBalance ?? 0).toLocaleString()}</span>
+                        <span className="text-right">
+                          <span className="font-bold text-gray-900 font-mono block">
+                            ≈ {symbol} {convertPrice(walletBalance ?? 0).toFixed(2)}
+                          </span>
+                          <span className="text-[11px] text-gray-400 font-mono">
+                            {tWallet('balance_usd_note', { usdAmount: (walletBalance ?? 0).toFixed(2) })}
+                          </span>
+                        </span>
                       </div>
                       <div className="flex items-center justify-between text-sm pt-3 border-t border-gray-200">
                         <span className="text-gray-500">{tWallet('balance_after_payment')}</span>
-                        <span className="font-bold text-green-600 font-mono">
-                          ${((walletBalance ?? 0) - totalBaseUSD).toLocaleString()}
+                        <span className="text-right">
+                          <span className="font-bold text-green-600 font-mono block">
+                            ≈ {symbol} {convertPrice((walletBalance ?? 0) - totalBaseUSD).toFixed(2)}
+                          </span>
+                          <span className="text-[11px] text-gray-400 font-mono">
+                            {tWallet('balance_usd_note', { usdAmount: ((walletBalance ?? 0) - totalBaseUSD).toFixed(2) })}
+                          </span>
                         </span>
                       </div>
                     </div>

@@ -91,7 +91,25 @@ interface WalletTx {
   balance_after_usd: number;
   note: string | null;
   created_at: string;
+  // ارز و مبلغِ اصلیِ همون لحظه‌ای که این تراکنش ثبت شد (مثلاً همون ۵۰
+  // پوندی که مشتری واقعاً شارژ کرد، یا همون مبلغِ نمایشیِ سفارش) — این دو
+  // ستون توسطِ توابعِ RPC پر می‌شن، نه در فرانت‌اند. برای تراکنش‌های قدیمی
+  // (قبل از اضافه‌شدنِ این دو ستون) یا اصلاح‌های دستیِ ادمین، این مقدار
+  // null می‌مونه و در نمایش، به‌جاش یک تبدیلِ زنده‌ی تقریبی نشون می‌دیم.
+  display_currency: string | null;
+  display_amount: number | null;
 }
+
+// نمادِ هر ارز، مستقل از ارزِ فعلیِ انتخاب‌شده‌ی سایت — چون توی تاریخچه‌ی
+// تراکنش‌ها ممکنه یک ردیف مالِ زمانی باشه که مشتری ارزِ دیگه‌ای انتخاب
+// کرده بود (مثلاً امروز روی SEK هست ولی این تراکنش با GBP ثبت شده).
+// همون نمادهایی که در lib/store.ts و WalletTopupPayment.tsx هم هست.
+const WALLET_FIAT_SYMBOLS: Record<string, string> = {
+  USD: '$',
+  EUR: '€',
+  GBP: '£',
+  SEK: 'kr',
+};
 
 type TabKey = 'account' | 'addresses' | 'orders' | 'wallet';
 
@@ -115,7 +133,7 @@ export default function ProfilePage() {
   const tWallet = useTranslations('Wallet');
   const locale = useLocale();
   const router = useRouter();
-  const { rates: storeRates } = useStore();
+  const { rates: storeRates, convertPrice, getSymbol, currency: storeCurrency } = useStore();
 
   // ── وضعیت کلی صفحه ──────────────────────────────────────────
   const [loading, setLoading] = useState(true);
@@ -333,7 +351,7 @@ export default function ProfilePage() {
           .eq('id', user.id)
           .single(),
         (supabaseBrowser.from('wallet_transactions') as any)
-          .select('id, type, amount_usd, balance_after_usd, note, created_at')
+          .select('id, type, amount_usd, balance_after_usd, note, created_at, display_currency, display_amount')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(50),
@@ -1096,15 +1114,24 @@ export default function ProfilePage() {
           <div className="space-y-4">
             {chargeStep === 'idle' && (
               <>
-                {/* کارتِ موجودی */}
+                {/* کارتِ موجودی — چون این عدد جمعِ تراکنش‌هایی با ارزهای احتمالاً
+                    مختلفه، نمی‌شه «همون عددِ دقیق» نشونش داد؛ پس با ارزِ فعلیِ
+                    انتخاب‌شده‌ی سایت (همون سوییچرِ بالای هدر) و علامتِ «≈»
+                    نمایش می‌دیم، و مبنای دقیق و ثابتِ سیستم (دلار) رو هم
+                    زیرش، ریز و واضح، می‌نویسیم — تا هیچ‌وقت مبهم نباشه. */}
                 <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-6 shadow-sm text-white">
                   <div className="flex items-center gap-2 text-blue-100 text-sm mb-1">
                     <WalletIcon className="h-4 w-4" />
                     {tWallet('balance_title')}
                   </div>
-                  <p className="text-3xl font-bold mb-4">
-                    {walletBalance !== null ? `$${walletBalance.toLocaleString()}` : '—'}
+                  <p className="text-3xl font-bold mb-1">
+                    {walletBalance !== null ? `≈ ${getSymbol()} ${convertPrice(walletBalance).toFixed(2)}` : '—'}
                   </p>
+                  {walletBalance !== null && (
+                    <p className="text-xs text-blue-100/80 mb-4">
+                      {tWallet('balance_usd_note', { usdAmount: walletBalance.toFixed(2) })}
+                    </p>
+                  )}
                   <button
                     onClick={() => {
                       setChargeError('');
@@ -1143,6 +1170,21 @@ export default function ProfilePage() {
                     const TxIcon = meta.icon;
                     const isPositive = txItem.amount_usd > 0;
 
+                    // اگه این تراکنش ارز و مبلغِ اصلیِ خودش رو ذخیره کرده باشه
+                    // (شارژها و پرداختِ سفارش‌ها با کیف‌پول از این به بعد این‌طورن)،
+                    // همون عددِ دقیقی که مشتری همون لحظه دیده رو بدونِ هیچ تغییری
+                    // نشون می‌دیم — نه یک تبدیلِ زنده‌ی امروز. فقط برای اصلاح‌های
+                    // دستیِ ادمین یا تراکنش‌های خیلی قدیمی (قبل از اضافه‌شدنِ این دو
+                    // ستون در دیتابیس)، چاره‌ای نیست جز یک تبدیلِ زنده‌ی تقریبی با
+                    // نرخِ امروز که با علامتِ «≈» مشخصش می‌کنیم.
+                    const hasExactDisplay = !!txItem.display_currency && txItem.display_amount !== null;
+                    const rowSymbol = hasExactDisplay
+                      ? WALLET_FIAT_SYMBOLS[txItem.display_currency as string] || txItem.display_currency
+                      : getSymbol();
+                    const rowAmount = hasExactDisplay
+                      ? Number(txItem.display_amount).toFixed(2)
+                      : convertPrice(Math.abs(txItem.amount_usd)).toFixed(2);
+
                     return (
                       <div
                         key={txItem.id}
@@ -1158,8 +1200,9 @@ export default function ProfilePage() {
                           </div>
                         </div>
                         <span className={`font-bold text-sm flex-shrink-0 ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                          {isPositive ? '+' : ''}
-                          {txItem.amount_usd.toLocaleString()}$
+                          {isPositive ? '+' : '-'}
+                          {!hasExactDisplay && '≈ '}
+                          {rowSymbol} {rowAmount}
                         </span>
                       </div>
                     );
