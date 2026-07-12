@@ -43,6 +43,7 @@ export default function NotificationBell() {
   const [items, setItems] = useState<Notif[]>([]);
   const [open, setOpen] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [showClearModal, setShowClearModal] = useState(false); // 🆕 مودالِ سفارشیِ تاییدِ پاک‌کردن
   const boxRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = items.filter((n) => !n.is_read).length;
@@ -112,11 +113,15 @@ export default function NotificationBell() {
     }
   };
 
-  // پاک‌کردنِ همه‌ی نوتیف‌های همین کاربر، با یک تاییدِ ساده تا کسی اشتباهی نزنه.
-  const clearAll = async () => {
+  // 🆕 دیگه به‌جای window.confirm خامِ مرورگر، فقط مودالِ سفارشی رو باز می‌کنیم.
+  const clearAll = () => {
     if (items.length === 0 || clearing) return;
-    if (!window.confirm(t('confirm_clear_all'))) return;
+    setShowClearModal(true);
+  };
 
+  // پاک‌کردنِ واقعیِ همه‌ی نوتیف‌های همین کاربر — بعد از تاییدِ کاربر در مودال.
+  const confirmClearAll = async () => {
+    setShowClearModal(false);
     try {
       const { data: { user } } = await supabaseBrowser.auth.getUser();
       if (!user) return;
@@ -125,7 +130,7 @@ export default function NotificationBell() {
       setItems([]);
       await (supabaseBrowser.from('notifications') as any).delete().eq('user_id', user.id);
     } catch (err) {
-      console.error('NotificationBell: error in clearAll()', err);
+      console.error('NotificationBell: error in confirmClearAll()', err);
     } finally {
       setClearing(false);
     }
@@ -182,6 +187,50 @@ export default function NotificationBell() {
               </div>
             ))
           )}
+        </div>
+      )}
+
+      {/* 🆕 مودالِ کوچیکِ سفارشیِ تاییدِ «پاک کردن همه» — جایگزینِ window.confirm خامِ
+          مرورگر. دقیقاً همون استایلِ مودالِ «پاک کردن فرم» که تو صفحه‌ی
+          تسویه‌حساب استفاده شده (آیکون قرمز + عنوان + توضیح + دو دکمه)، تا
+          روی موبایل و دسکتاپ هر دو جمع‌وجور و هماهنگ با بقیه‌ی سایت باشه. */}
+      {showClearModal && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onClick={() => setShowClearModal(false)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-xs overflow-hidden font-[family-name:var(--font-vazir)]"
+          >
+            <div className="p-6 text-center">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="h-6 w-6 text-red-600" />
+              </div>
+              <h3 className="font-bold text-base text-gray-900 mb-2">
+                {t('clear_modal.title')}
+              </h3>
+              <p className="text-sm text-gray-500 leading-6">
+                {t('clear_modal.desc')}
+              </p>
+            </div>
+            <div className="bg-gray-50 p-3 flex gap-2">
+              <button
+                onClick={() => setShowClearModal(false)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-300 text-gray-700 text-sm font-bold hover:bg-white transition-colors"
+              >
+                {t('clear_modal.no')}
+              </button>
+              <button
+                onClick={confirmClearAll}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition-colors shadow-md shadow-red-200"
+              >
+                {t('clear_modal.yes')}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

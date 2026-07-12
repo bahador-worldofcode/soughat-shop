@@ -800,8 +800,13 @@
     "aria_label": "Notifications",
     "empty": "No notifications",
     "clear_all": "Clear all",
-    "confirm_clear_all": "Clear all notifications? Your full transaction history stays available in the Wallet tab.",
-    "dismiss_aria": "Dismiss this notification"
+    "dismiss_aria": "Dismiss this notification",
+    "clear_modal": {
+      "title": "Clear all notifications?",
+      "desc": "Your full transaction history stays available in the Wallet tab.",
+      "yes": "Yes, clear all",
+      "no": "Cancel"
+    }
   },
   "ProfileWelcome": {
     "created_title": "Your account has been created! 🎉",
