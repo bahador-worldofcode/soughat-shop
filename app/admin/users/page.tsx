@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import AdminPagination from '@/components/AdminPagination';
 import {
   Search,
   Loader2,
@@ -41,11 +42,33 @@ interface AdminUser {
   wallet_balance_usd: number; // تسک ۳۷: موجودی کیف‌پول (سند کیف‌پول)
 }
 
+interface UserStats {
+  totalUsers: number;
+  totalOrders: number;
+  totalRevenue: number;
+}
+
+const PAGE_SIZE = 20;
+const SEARCH_DEBOUNCE_MS = 400;
+
 export default function UsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [stats, setStats] = useState<UserStats>({ totalUsers: 0, totalOrders: 0, totalRevenue: 0 });
+
+  // «loading» فقط برای همون اولین باری که صفحه باز می‌شه true می‌مونه
+  // (اسپینرِ تمام‌صفحه). بعد از اون، تعویضِ صفحه/جستجو فقط «tableLoading»
+  // رو روشن می‌کنه که یک لایه‌ی سبک روی همون جدولِ قبلی نشون می‌ده — به‌جای
+  // این‌که کل صفحه دوباره خالی و لود بشه.
   const [loading, setLoading] = useState(true);
+  const [tableLoading, setTableLoading] = useState(false);
   const [loadError, setLoadError] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
@@ -62,8 +85,24 @@ export default function UsersPage() {
   const [adjustSaving, setAdjustSaving] = useState(false);
   const [adjustError, setAdjustError] = useState('');
 
+  // برای اینکه با هر ضربه‌ی کیبورد یک درخواست جدید به سرور نره، ۴۰۰
+  // میلی‌ثانیه بعد از آخرین تایپ صبر می‌کنیم و بعد جستجوی واقعی رو
+  // با صفحه‌ی ۱ دوباره شروع می‌کنیم.
   useEffect(() => {
-    fetchUsers();
+    const timer = setTimeout(() => {
+      setPage(1);
+      setDebouncedSearch(searchInput.trim());
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  useEffect(() => {
+    fetchUsers(page, debouncedSearch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, debouncedSearch]);
+
+  useEffect(() => {
+    fetchStats();
   }, []);
 
   const getAuthHeader = async (): Promise<Record<string, string>> => {
@@ -74,19 +113,53 @@ export default function UsersPage() {
     return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
   };
 
-  const fetchUsers = async () => {
-    setLoading(true);
+  const isFirstFetch = useRef(true);
+
+  const fetchUsers = async (pageArg: number, searchArg: string) => {
+    if (isFirstFetch.current) {
+      setLoading(true);
+    } else {
+      setTableLoading(true);
+    }
     setLoadError('');
     try {
       const headers = await getAuthHeader();
-      const res = await fetch('/api/admin/users', { headers });
+      const params = new URLSearchParams({
+        page: String(pageArg),
+        pageSize: String(PAGE_SIZE),
+      });
+      if (searchArg) params.set('search', searchArg);
+
+      const res = await fetch(`/api/admin/users?${params.toString()}`, { headers });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'خطا در دریافت کاربران');
+
       setUsers(json.users as AdminUser[]);
+      setTotal(json.total ?? 0);
+      setTotalPages(json.totalPages ?? 1);
     } catch (err: any) {
       setLoadError(err.message || 'خطای ناشناخته');
     } finally {
       setLoading(false);
+      setTableLoading(false);
+      isFirstFetch.current = false;
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const headers = await getAuthHeader();
+      const res = await fetch('/api/admin/users/stats', { headers });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'خطا در دریافت آمار');
+      setStats({
+        totalUsers: json.totalUsers ?? 0,
+        totalOrders: json.totalOrders ?? 0,
+        totalRevenue: json.totalRevenue ?? 0,
+      });
+    } catch {
+      // آمارِ کارت‌های بالای صفحه صرفاً جنبه‌ی نمایشی داره؛ اگه یک بار
+      // شکست بخوره، دلیلی نداره کل پنل رو با یک خطای قرمز مسدود کنیم.
     }
   };
 
@@ -143,8 +216,10 @@ export default function UsersPage() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'خطا در حذف کاربر');
 
-      setUsers((prev) => prev.filter((u) => u.id !== deleteTarget.id));
       setDeleteTarget(null);
+      // بعد از حذف، هم همین صفحه هم کارت‌های آماری (تعداد کل کاربران)
+      // باید دوباره از سرور خونده بشن.
+      await Promise.all([fetchUsers(page, debouncedSearch), fetchStats()]);
     } catch (err: any) {
       alert(err.message || 'خطای ناشناخته');
     } finally {
@@ -186,27 +261,13 @@ export default function UsersPage() {
       if (!res.ok) throw new Error(result.error || 'خطا در ثبتِ تغییرِ موجودی');
 
       setAdjustTarget(null);
-      await fetchUsers(); // برای دیدنِ موجودیِ تازه در همون لحظه
+      await fetchUsers(page, debouncedSearch); // برای دیدنِ موجودیِ تازه در همون لحظه
     } catch (err: any) {
       setAdjustError(err.message || 'خطای ناشناخته');
     } finally {
       setAdjustSaving(false);
     }
   };
-
-  const filteredUsers = users.filter((u) => {
-    const term = searchTerm.trim().toLowerCase();
-    if (!term) return true;
-    return (
-      u.full_name?.toLowerCase().includes(term) ||
-      u.email?.toLowerCase().includes(term) ||
-      u.phone?.toLowerCase().includes(term)
-    );
-  });
-
-  const totalUsers = users.length;
-  const totalRevenue = users.reduce((sum, u) => sum + (u.total_spent || 0), 0);
-  const totalOrders = users.reduce((sum, u) => sum + (u.order_count || 0), 0);
 
   const formatDate = (iso: string) => {
     try {
@@ -239,8 +300,8 @@ export default function UsersPage() {
           <input
             type="text"
             placeholder="جستجو (نام، ایمیل، تلفن)..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             className="w-full pr-9 pl-4 py-2 text-sm bg-white rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-100 outline-none"
           />
         </div>
@@ -253,7 +314,7 @@ export default function UsersPage() {
         </div>
       )}
 
-      {/* کارت‌های آماری */}
+      {/* کارت‌های آماری — مستقل از صفحه‌بندی، همیشه عددِ کلِ واقعی رو نشون می‌دن */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
           <div className="bg-blue-50 p-3 rounded-xl">
@@ -261,7 +322,7 @@ export default function UsersPage() {
           </div>
           <div>
             <p className="text-xs text-gray-400">تعداد کل کاربران</p>
-            <p className="text-xl font-bold text-gray-800">{totalUsers.toLocaleString('fa-IR')}</p>
+            <p className="text-xl font-bold text-gray-800">{stats.totalUsers.toLocaleString('fa-IR')}</p>
           </div>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
@@ -270,7 +331,7 @@ export default function UsersPage() {
           </div>
           <div>
             <p className="text-xs text-gray-400">سفارش‌های ثبت‌شده با حساب</p>
-            <p className="text-xl font-bold text-gray-800">{totalOrders.toLocaleString('fa-IR')}</p>
+            <p className="text-xl font-bold text-gray-800">{stats.totalOrders.toLocaleString('fa-IR')}</p>
           </div>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
@@ -279,14 +340,26 @@ export default function UsersPage() {
           </div>
           <div>
             <p className="text-xs text-gray-400">جمع خرید این کاربران (دلار)</p>
-            <p className="text-xl font-bold text-gray-800">${totalRevenue.toLocaleString('en-US')}</p>
+            <p className="text-xl font-bold text-gray-800">${stats.totalRevenue.toLocaleString('en-US')}</p>
           </div>
         </div>
       </div>
 
       {/* جدول کاربران */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
+          {/* لایه‌ی سبکِ لودینگ روی جدول، فقط موقعِ تعویضِ صفحه/جستجو —
+              جدولِ قبلی محو می‌مونه تا کاربر بفهمه چیزی در حالِ بارگذاریه،
+              بدون اینکه کل صفحه خالی و از نو ساخته بشه. */}
+          {tableLoading && (
+            <div className="absolute inset-0 z-10 bg-white/60 backdrop-blur-[1px] flex items-start justify-center pt-12">
+              <div className="flex items-center gap-2 text-sm text-gray-500 bg-white shadow-sm border border-gray-100 rounded-full px-4 py-2">
+                <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                در حال بارگذاری...
+              </div>
+            </div>
+          )}
+
           <table className="w-full text-right">
             <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
               <tr>
@@ -302,14 +375,14 @@ export default function UsersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filteredUsers.length === 0 ? (
+              {users.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-6 py-10 text-center text-gray-400">
                     کاربری یافت نشد.
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((user) => (
+                users.map((user) => (
                   <tr key={user.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -438,6 +511,15 @@ export default function UsersPage() {
             </tbody>
           </table>
         </div>
+
+        <AdminPagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+          disabled={tableLoading}
+        />
       </div>
 
       {/* مودال ویرایش کاربر */}

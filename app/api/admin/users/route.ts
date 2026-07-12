@@ -4,74 +4,51 @@ import { verifyAdmin } from '@/lib/verifyAdmin';
 
 export const dynamic = 'force-dynamic';
 
-// ─── لیست کامل کاربران ثبت‌نام‌کرده (به‌همراه آمار سفارش هرکدام) ──────
+const DEFAULT_PAGE_SIZE = 20;
+const MAX_PAGE_SIZE = 100;
+
+// ─── لیستِ صفحه‌بندی‌شده‌ی کاربران (+ آمار سفارش هرکدام) ───────────────
+// قبلاً این مسیر کل جدولِ profiles، کل جدولِ orders و کلِ auth.users رو
+// یک‌جا می‌خوند تا آمار هر کاربر رو خودش حساب کنه — همون چیزی که با
+// زیاد شدنِ مشتری‌ها فشار زیادی به سرور می‌آورد. حالا فقط همون تعداد
+// ردیفی که برای «همین صفحه» لازمه رو از تابعِ دیتابیسیِ admin_list_users
+// می‌گیریم (نگاه کن به supabase/wallet_admin_pagination.sql).
 export async function GET(request: Request) {
   if (!(await verifyAdmin(request))) {
     return NextResponse.json({ error: 'عدم دسترسی! لطفاً وارد پنل شوید.' }, { status: 401 });
   }
 
   try {
-    const { data: profiles, error: profilesError } = await supabaseAdmin
-      .from('profiles')
-      .select('id, email, full_name, avatar_url, phone, country, is_admin, provider, created_at, wallet_balance_usd')
-      .order('created_at', { ascending: false });
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search')?.trim() || '';
+    const page = Math.max(1, Number(searchParams.get('page')) || 1);
+    const pageSize = Math.min(
+      MAX_PAGE_SIZE,
+      Math.max(1, Number(searchParams.get('pageSize')) || DEFAULT_PAGE_SIZE)
+    );
+    const offset = (page - 1) * pageSize;
 
-    if (profilesError) throw profilesError;
+    const { data, error } = await supabaseAdmin.rpc('admin_list_users', {
+      p_search: search || null,
+      p_limit: pageSize,
+      p_offset: offset,
+    });
 
-    // آمار سفارش هر کاربر: تعداد سفارش‌ها و جمع مبلغ. چون معمولاً تعداد
-    // سفارش‌ها برای این نوع فروشگاه خیلی زیاد نیست، همه را یک‌جا می‌خوانیم
-    // و خودمان جمع می‌زنیم — ساده‌تر و سریع‌تر از ساختن یک view جداگانه.
-    const { data: orders, error: ordersError } = await supabaseAdmin
-      .from('orders')
-      .select('user_id, total_price')
-      .not('user_id', 'is', null);
+    if (error) throw error;
 
-    if (ordersError) throw ordersError;
+    const rows = (data ?? []) as Array<Record<string, any>>;
+    // total_count روی هر ردیف تکراری برمی‌گرده (نتیجه‌ی count(*) over())،
+    // پس کافیه از ردیفِ اول بخونیمش؛ اگه صفحه خالی بود یعنی نتیجه‌ای نیست.
+    const total = rows.length > 0 ? Number(rows[0].total_count) : 0;
+    const users = rows.map(({ total_count, ...rest }) => rest);
 
-    const statsByUser = new Map<string, { order_count: number; total_spent: number }>();
-    for (const order of orders ?? []) {
-      const key = order.user_id as string;
-      const current = statsByUser.get(key) || { order_count: 0, total_spent: 0 };
-      current.order_count += 1;
-      current.total_spent += Number(order.total_price) || 0;
-      statsByUser.set(key, current);
-    }
-
-    // تسک ۳۶ (EMAIL_PASSWORD_AUTH_SETUP.md): وضعیت «ایمیل تاییدشده؟» فقط
-    // در auth.users موجود است (نه در جدول profiles)، پس با Admin API
-    // آن را جدا می‌خوانیم و بر اساس id با پروفایل‌ها ترکیب می‌کنیم.
-    // چون تعداد کاربران این فروشگاه زیاد نیست، همه‌ی صفحات را در یک
-    // حلقه‌ی ساده جمع می‌کنیم (به‌جای پیاده‌سازی صفحه‌بندی سمت کلاینت).
-    const confirmedByUserId = new Map<string, boolean>();
-    let page = 1;
-    const perPage = 1000;
-    while (true) {
-      const { data: authPage, error: authError } = await supabaseAdmin.auth.admin.listUsers({
-        page,
-        perPage,
-      });
-      if (authError) throw authError;
-
-      for (const authUser of authPage.users) {
-        confirmedByUserId.set(authUser.id, !!authUser.email_confirmed_at);
-      }
-
-      if (authPage.users.length < perPage) break; // به آخرین صفحه رسیدیم
-      page += 1;
-    }
-
-    const users = (profiles ?? []).map((p) => ({
-      ...p,
-      // کاربرهای قدیمی‌تر (قبل از افزودن ستون provider در تسک ۱۴) مقدار
-      // provider ندارند؛ چون قبل از فعال شدن ایمیل/پسورد فقط گوگل وجود
-      // داشت، برای آن‌ها 'google' فرض می‌کنیم تا در پنل ادمین خالی نمانَد.
-      provider: p.provider || 'google',
-      email_confirmed: confirmedByUserId.get(p.id) ?? false,
-      order_count: statsByUser.get(p.id)?.order_count ?? 0,
-      total_spent: statsByUser.get(p.id)?.total_spent ?? 0,
-    }));
-
-    return NextResponse.json({ users });
+    return NextResponse.json({
+      users,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

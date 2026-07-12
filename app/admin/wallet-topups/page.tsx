@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import AdminPagination from '@/components/AdminPagination';
 import { Search, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 
 interface WalletTopup {
@@ -27,15 +28,40 @@ interface WalletTopup {
   } | null;
 }
 
+const PAGE_SIZE = 20;
+const SEARCH_DEBOUNCE_MS = 400;
+
 export default function WalletTopupsPage() {
   const [topups, setTopups] = useState<WalletTopup[]>([]);
+
+  // «loading» فقط برای اولین بارگذاری true می‌مونه (اسپینرِ تمام‌صفحه)؛
+  // تعویضِ صفحه یا جستجو بعد از اون فقط «tableLoading» رو روشن می‌کنه.
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [tableLoading, setTableLoading] = useState(false);
+  const [loadError, setLoadError] = useState('');
+
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
+  const isFirstFetch = useRef(true);
+
   useEffect(() => {
-    fetchTopups();
-  }, []);
+    const timer = setTimeout(() => {
+      setPage(1);
+      setDebouncedSearch(searchInput.trim());
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  useEffect(() => {
+    fetchTopups(page, debouncedSearch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, debouncedSearch]);
 
   // چون جدولِ wallet_topups هم مثلِ orders کاملاً برای کلاینتِ anon قفل است،
   // دقیقاً همون الگوی توکنِ سشنِ ادمین + API امنِ سمتِ سرور رو استفاده می‌کنیم.
@@ -46,26 +72,36 @@ export default function WalletTopupsPage() {
     return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
   };
 
-  const fetchTopups = async () => {
+  const fetchTopups = async (pageArg: number, searchArg: string) => {
+    if (isFirstFetch.current) {
+      setLoading(true);
+    } else {
+      setTableLoading(true);
+    }
+    setLoadError('');
     try {
       const headers = await getAuthHeader();
-      const res = await fetch('/api/admin/wallet-topups', { headers });
+      const params = new URLSearchParams({
+        page: String(pageArg),
+        pageSize: String(PAGE_SIZE),
+      });
+      if (searchArg) params.set('search', searchArg);
+
+      const res = await fetch(`/api/admin/wallet-topups?${params.toString()}`, { headers });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'خطا در دریافت فاکتورهای شارژ');
-      setTopups(json as WalletTopup[]);
+
+      setTopups(json.topups as WalletTopup[]);
+      setTotal(json.total ?? 0);
+      setTotalPages(json.totalPages ?? 1);
     } catch (err: any) {
-      alert(err.message || 'خطای ناشناخته در دریافت فاکتورهای شارژ');
+      setLoadError(err.message || 'خطای ناشناخته در دریافت فاکتورهای شارژ');
     } finally {
       setLoading(false);
+      setTableLoading(false);
+      isFirstFetch.current = false;
     }
   };
-
-  const filteredTopups = topups.filter(
-    (t) =>
-      t.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.profiles?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.id.includes(searchTerm)
-  );
 
   // تابعِ مشترکِ هر دو دکمه‌ی عملیات؛ از تابعِ اتمیکِ سمتِ سرور (فاز ۱/۲) عبور
   // می‌کنه، پس هیچ‌وقت دوبار حساب نمی‌شه، حتی با کلیکِ تصادفیِ دوباره.
@@ -80,7 +116,7 @@ export default function WalletTopupsPage() {
       });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error);
-      await fetchTopups();
+      await fetchTopups(page, debouncedSearch);
     } catch (err: any) {
       alert('خطا: ' + err.message);
     } finally {
@@ -151,15 +187,33 @@ export default function WalletTopupsPage() {
           <input
             type="text"
             placeholder="جستجو (نام، ایمیل، کد فاکتور)..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             className="w-full pr-9 pl-4 py-2 text-sm bg-white rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-100 outline-none"
           />
         </div>
       </div>
 
+      {loadError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl flex items-center gap-2 text-sm">
+          {loadError}
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
+          {/* لایه‌ی سبکِ لودینگ روی جدول، فقط موقعِ تعویضِ صفحه/جستجو —
+              جدولِ قبلی محو می‌مونه تا کاربر بفهمه چیزی در حالِ بارگذاریه،
+              بدون اینکه کل صفحه خالی و از نو ساخته بشه. */}
+          {tableLoading && (
+            <div className="absolute inset-0 z-10 bg-white/60 backdrop-blur-[1px] flex items-start justify-center pt-12">
+              <div className="flex items-center gap-2 text-sm text-gray-500 bg-white shadow-sm border border-gray-100 rounded-full px-4 py-2">
+                <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                در حال بارگذاری...
+              </div>
+            </div>
+          )}
+
           <table className="w-full text-right">
             <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
               <tr>
@@ -173,14 +227,14 @@ export default function WalletTopupsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filteredTopups.length === 0 ? (
+              {topups.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-10 text-center text-gray-400">
                     فاکتور شارژی یافت نشد.
                   </td>
                 </tr>
               ) : (
-                filteredTopups.map((topup) => (
+                topups.map((topup) => (
                   <tr key={topup.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="text-sm font-bold text-gray-900">{topup.profiles?.full_name || '---'}</div>
@@ -252,6 +306,15 @@ export default function WalletTopupsPage() {
             </tbody>
           </table>
         </div>
+
+        <AdminPagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+          disabled={tableLoading}
+        />
       </div>
     </div>
   );
