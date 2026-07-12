@@ -12,6 +12,30 @@ interface Notif {
   created_at: string;
 }
 
+// 🆕 فرمت‌کننده‌ی امنِ تاریخ: اگه created_at خالی/نامعتبر باشه (مثلاً بعد از
+// یک تغییر دیتابیس یک ردیف بدون created_at ساخته شده باشه)، به‌جای اینکه
+// new Date(...).toLocaleDateString(...) یک RangeError پرتاب کنه و کل سایت
+// (چون Header بیرون از error.tsx رندر می‌شه) کرش کنه، فقط یک رشته‌ی خالی
+// برمی‌گردونیم و رندر ادامه پیدا می‌کنه.
+function formatNotifDate(value: string | null | undefined, isEn: boolean) {
+  if (!value) return '';
+  try {
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return '';
+    // 🔧 نکته‌ی مهم: toLocaleDateString گزینه‌ی timeStyle رو قبول نمی‌کنه و
+    // همیشه با آن خطا می‌ده («Invalid option: timeStyle»)، چون فقط برای
+    // نمایش بخش تاریخه. برای نمایش تاریخ + ساعت با هم باید از toLocaleString
+    // استفاده کنیم (نه toLocaleDateString) — این یکی dateStyle و timeStyle
+    // رو با هم قبول می‌کنه.
+    return d.toLocaleString(isEn ? 'en-US' : 'fa-IR', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+  } catch {
+    return '';
+  }
+}
+
 export default function NotificationBell() {
   const t = useTranslations('Notifications');
   const locale = useLocale();
@@ -24,14 +48,28 @@ export default function NotificationBell() {
   const unreadCount = items.filter((n) => !n.is_read).length;
 
   const load = async () => {
-    const { data: { user } } = await supabaseBrowser.auth.getUser();
-    if (!user) return;
-    const { data } = await (supabaseBrowser.from('notifications') as any)
-      .select('id, title, message, is_read, created_at')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(20);
-    if (data) setItems(data);
+    try {
+      const { data: { user } } = await supabaseBrowser.auth.getUser();
+      if (!user) return;
+      const { data, error } = await (supabaseBrowser.from('notifications') as any)
+        .select('id, title, message, is_read, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      // 🆕 اگه سوپابیس خطا برگردوند (مثلاً ستونی که تازگی در دیتابیس تغییر
+      // دادیم دیگه وجود نداره یا اسمش عوض شده)، فقط لاگ می‌کنیم و از تابع
+      // خارج می‌شیم؛ به‌جای اینکه با دیتای خراب/نامعتبر setItems صدا بزنیم.
+      if (error) {
+        console.error('NotificationBell: error loading notifications', error);
+        return;
+      }
+      if (data) setItems(data);
+    } catch (err) {
+      // 🆕 هر خطای غیرمنتظره‌ی دیگه (شبکه، پارس و ...) هم اینجا قورت داده
+      // می‌شه تا هیچ‌وقت باعث کرش کل سایت نشه.
+      console.error('NotificationBell: unexpected error in load()', err);
+    }
   };
 
   useEffect(() => {
@@ -52,9 +90,13 @@ export default function NotificationBell() {
     const unread = items.filter((n) => !n.is_read);
     if (unread.length === 0) return;
     setItems((prev) => prev.map((n) => ({ ...n, is_read: true })));
-    await (supabaseBrowser.from('notifications') as any)
-      .update({ is_read: true })
-      .in('id', unread.map((n) => n.id));
+    try {
+      await (supabaseBrowser.from('notifications') as any)
+        .update({ is_read: true })
+        .in('id', unread.map((n) => n.id));
+    } catch (err) {
+      console.error('NotificationBell: error in markAllRead()', err);
+    }
   };
 
   // حذفِ تکیِ یک نوتیف. تاریخچه‌ی کاملِ تراکنش‌ها (واریز/برداشت/تنظیمِ دستی)
@@ -63,7 +105,11 @@ export default function NotificationBell() {
   // پس حذفش از اینجا هیچ داده‌ی مالی‌ای رو گم نمی‌کنه.
   const dismissOne = async (id: string) => {
     setItems((prev) => prev.filter((n) => n.id !== id));
-    await (supabaseBrowser.from('notifications') as any).delete().eq('id', id);
+    try {
+      await (supabaseBrowser.from('notifications') as any).delete().eq('id', id);
+    } catch (err) {
+      console.error('NotificationBell: error in dismissOne()', err);
+    }
   };
 
   // پاک‌کردنِ همه‌ی نوتیف‌های همین کاربر، با یک تاییدِ ساده تا کسی اشتباهی نزنه.
@@ -71,13 +117,18 @@ export default function NotificationBell() {
     if (items.length === 0 || clearing) return;
     if (!window.confirm(t('confirm_clear_all'))) return;
 
-    const { data: { user } } = await supabaseBrowser.auth.getUser();
-    if (!user) return;
+    try {
+      const { data: { user } } = await supabaseBrowser.auth.getUser();
+      if (!user) return;
 
-    setClearing(true);
-    setItems([]);
-    await (supabaseBrowser.from('notifications') as any).delete().eq('user_id', user.id);
-    setClearing(false);
+      setClearing(true);
+      setItems([]);
+      await (supabaseBrowser.from('notifications') as any).delete().eq('user_id', user.id);
+    } catch (err) {
+      console.error('NotificationBell: error in clearAll()', err);
+    } finally {
+      setClearing(false);
+    }
   };
 
   return (
@@ -116,10 +167,10 @@ export default function NotificationBell() {
           ) : (
             items.map((n) => (
               <div key={n.id} className={`relative p-3 pe-8 border-b border-gray-50 ${!n.is_read ? 'bg-blue-50/50' : ''}`}>
-                <p className="text-sm font-bold text-gray-800">{n.title}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{n.message}</p>
+                <p className="text-sm font-bold text-gray-800">{n.title ?? ''}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{n.message ?? ''}</p>
                 <p className="text-[10px] text-gray-400 mt-1.5">
-                  {new Date(n.created_at).toLocaleDateString(isEn ? 'en-US' : 'fa-IR', { dateStyle: 'medium', timeStyle: 'short' })}
+                  {formatNotifDate(n.created_at, isEn)}
                 </p>
                 <button
                   onClick={() => dismissOne(n.id)}
