@@ -180,6 +180,12 @@ export default function ProfilePage() {
   const [chargeAmount, setChargeAmount] = useState<number | ''>('');
   const [activeTopupId, setActiveTopupId] = useState<string | null>(null);
   const [chargeError, setChargeError] = useState('');
+  // اطلاعاتِ همون لحظه‌ای که مشتری رو صفحه‌ی پرداختِ کریپتو دید: کدوم ارز
+  // (USDT/SOL) رو انتخاب کرد و دقیقاً چه مبلغی باید بفرسته. این مقدار از
+  // WalletTopupPayment (تسکِ فازِ ۶) برمی‌گرده و فقط برای ساختِ پیامِ
+  // کاملِ واتساپه — هیچ نقشی در محاسبه یا ذخیره‌ی مالی نداره (اون کار از
+  // قبل توسطِ خودِ WalletTopupPayment + روتِ confirm انجام می‌شه).
+  const [chargeMethodInfo, setChargeMethodInfo] = useState<{ method: string; payableAmount: string } | null>(null);
 
   // ── بارگذاری اولیه‌ی پروفایل ─────────────────────────────────
   useEffect(() => {
@@ -1136,6 +1142,7 @@ export default function ProfilePage() {
                     onClick={() => {
                       setChargeError('');
                       setChargeAmount('');
+                      setChargeMethodInfo(null);
                       setChargeStep('choose_amount');
                     }}
                     className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-sm font-bold py-2 px-4 rounded-xl transition-colors"
@@ -1327,6 +1334,7 @@ export default function ProfilePage() {
                     onClick={() => {
                       setChargeStep('choose_amount');
                       setActiveTopupId(null);
+                      setChargeMethodInfo(null);
                     }}
                     className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-600 bg-white border border-gray-300 rounded-lg px-3 py-1.5 hover:bg-gray-100 hover:border-gray-400 hover:text-blue-600 active:bg-gray-200 transition-colors flex-shrink-0"
                   >
@@ -1339,7 +1347,10 @@ export default function ProfilePage() {
                   topupId={activeTopupId}
                   requestedAmount={Number(chargeAmount)}
                   requestedCurrency={chargeCurrency}
-                  onDone={() => setChargeStep('submitted')}
+                  onDone={(info: { method: string; payableAmount: string }) => {
+                    setChargeMethodInfo(info);
+                    setChargeStep('submitted');
+                  }}
                 />
               </div>
             )}
@@ -1365,21 +1376,39 @@ export default function ProfilePage() {
                   {tWallet('submitted_desc', { amount: `${chargeAmount} ${chargeCurrency}` })}
                 </p>
 
-                {/* باکسِ مبلغِ ثبت‌شده — معادلِ باکسِ «کدِ پیگیری» در صفحه‌ی موفقیتِ سفارش */}
-                <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 max-w-sm mx-auto mb-6">
-                  <span className="text-xs font-bold text-gray-400">{tWallet('submitted_amount_label')}</span>
-                  <span className="text-sm font-bold text-gray-900">
-                    {chargeAmount} {chargeCurrency}
-                  </span>
+                {/* باکسِ مبلغِ ثبت‌شده — معادلِ باکسِ «کدِ پیگیری» در صفحه‌ی موفقیتِ سفارش.
+                    اگه chargeMethodInfo موجود باشه (که همیشه باید باشه، چون همین
+                    الان از WalletTopupPayment برگشته)، ردیفِ دومی هم اضافه می‌شه که
+                    دقیقاً می‌گه با کدوم ارز و چه مبلغی باید پرداخت بشه — همون چیزی
+                    که خودِ مشتری چند ثانیه پیش رو صفحه دید، تا مبهم نمونه. */}
+                <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 max-w-sm mx-auto mb-6 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-400">{tWallet('submitted_amount_label')}</span>
+                    <span className="text-sm font-bold text-gray-900">
+                      {chargeAmount} {chargeCurrency}
+                    </span>
+                  </div>
+                  {chargeMethodInfo && (
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                      <span className="text-xs font-bold text-gray-400">{tWallet('submitted_crypto_label')}</span>
+                      <span className="text-sm font-bold text-blue-700 font-mono" dir="ltr">
+                        {chargeMethodInfo.payableAmount} {chargeMethodInfo.method}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col gap-3 max-w-sm mx-auto">
-                  {/* دکمه‌ی اصلیِ واتساپ — همون سبک، رنگ و رفتارِ دکمه‌ی صفحه‌ی موفقیتِ سفارش */}
+                  {/* دکمه‌ی اصلیِ واتساپ — همون سبک، رنگ و رفتارِ دکمه‌ی صفحه‌ی موفقیتِ سفارش.
+                      حالا پیام، ارز و مبلغِ دقیقِ کریپتویی رو هم داره؛ نه فقط مبلغِ فیاتِ اولیه —
+                      تا خودِ مشتری هم مجبور نباشه این اطلاعات رو دستی توی پیامش بنویسه. */}
                   <a
                     href={`https://wa.me/989168038017?text=${encodeURIComponent(
                       tWallet('whatsapp_topup_msg', {
                         id: activeTopupId || '',
                         amount: `${chargeAmount} ${chargeCurrency}`,
+                        method: chargeMethodInfo?.method || '-',
+                        payableAmount: chargeMethodInfo?.payableAmount || '-',
                       })
                     )}`}
                     target="_blank"
@@ -1394,6 +1423,7 @@ export default function ProfilePage() {
                     onClick={() => {
                       setChargeStep('idle');
                       setActiveTopupId(null);
+                      setChargeMethodInfo(null);
                       setWalletBalance(null);
                       setWalletTx(null);
                     }}

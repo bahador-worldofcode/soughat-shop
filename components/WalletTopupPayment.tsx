@@ -42,7 +42,11 @@ interface Props {
   topupId: string;
   requestedAmount: number;
   requestedCurrency: FiatCurrency;
-  onDone: () => void;
+  // به‌جای onDone() ساده، حالا اطلاعاتِ همون لحظه‌ای که مشتری واقعاً رو
+  // صفحه دیده (کدوم ارز، دقیقاً چه مبلغی) رو هم به کامپوننتِ والد
+  // (profile/page.tsx) برمی‌گردونه — تا پیامِ آماده‌ی واتساپ هم بتونه
+  // این اطلاعات رو داشته باشه، نه فقط مبلغِ فیاتِ اولیه.
+  onDone: (info: { method: string; payableAmount: string }) => void;
 }
 
 // چون این کامپوننت به cart/currencyِ سراسری وابسته نیست (ارزِ فاکتور از
@@ -118,12 +122,15 @@ export default function WalletTopupPayment({ topupId, requestedAmount, requested
     fetchSecurePrice();
   }, [fetchSecurePrice]);
 
-  // ثبتِ نهایی: فقط یک پیامِ تلگرام برای ادمین می‌فرسته (طبقِ تسکِ ۱۱،
-  // هنوز هیچ پولی جابه‌جا نمی‌شه — تاییدِ دستیِ ادمین در پنل، فاز ۷،
-  // موجودی رو واقعاً شارژ می‌کنه). چون این روت برخلافِ orders/confirm
-  // ورود اجباری داره، توکنِ سشن رو در هدرِ Authorization می‌فرستیم.
+  // ثبتِ نهایی: هم مبلغِ دقیقِ کریپتویی (payableAmount) رو به سرور می‌فرسته
+  // تا روی خودِ فاکتور ذخیره بشه (برای پنلِ ادمین)، هم یک پیامِ تلگرام
+  // برای ادمین می‌فرسته (طبقِ تسکِ ۱۱، هنوز هیچ پولی جابه‌جا نمی‌شه —
+  // تاییدِ دستیِ ادمین در پنل، فاز ۷، موجودی رو واقعاً شارژ می‌کنه). چون
+  // این روت برخلافِ orders/confirm ورود اجباری داره، توکنِ سشن رو در
+  // هدرِ Authorization می‌فرستیم.
   const handlePaymentDone = async () => {
     setIsChecking(true);
+    const methodSymbol = selectedMethod?.symbol || 'Crypto';
     try {
       const {
         data: { session },
@@ -137,7 +144,8 @@ export default function WalletTopupPayment({ topupId, requestedAmount, requested
         },
         body: JSON.stringify({
           topupId: topupId,
-          paymentMethod: selectedMethod?.symbol || 'Crypto',
+          paymentMethod: methodSymbol,
+          payableAmount: payableAmount,
         }),
       });
     } catch (e) {
@@ -147,7 +155,7 @@ export default function WalletTopupPayment({ topupId, requestedAmount, requested
     // برخلافِ CryptoPayment (که به صفحه‌ی /success می‌ره)، شارژِ کیف‌پول
     // صفحه‌ی موفقیتِ جدا نداره — نتیجه همین‌جا، داخلِ تبِ کیف‌پول نشون داده می‌شه.
     setTimeout(() => {
-      onDone();
+      onDone({ method: methodSymbol, payableAmount });
     }, 1000);
   };
 

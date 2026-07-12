@@ -12,6 +12,11 @@ interface WalletTopup {
   requested_amount: number;
   amount_usd: number;
   payment_method: string | null;
+  // مبلغِ دقیقِ کریپتویی‌ای که مشتری همون لحظه رو صفحه دید (مثلاً «51.81»
+  // برای USDT یا «0.29» برای SOL) — از این به بعد کنارِ روشِ پرداخت ذخیره
+  // می‌شه تا ادمین دیگه مجبور نباشه برای فهمیدنش تلگرام رو بگرده یا خودش
+  // حساب کنه.
+  payable_crypto_amount: number | null;
   status: string;
   credited: boolean;
   paid_at: string | null;
@@ -187,7 +192,20 @@ export default function WalletTopupsPage() {
                     <td className="px-6 py-4 text-sm font-bold text-blue-700 dir-ltr text-right">
                       ${topup.amount_usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{topup.payment_method || '---'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-700">
+                      {topup.payment_method ? (
+                        <div>
+                          <span className="font-bold text-gray-900">{topup.payment_method}</span>
+                          {topup.payable_crypto_amount !== null && (
+                            <span className="block text-xs text-blue-700 font-mono mt-0.5" dir="ltr">
+                              {topup.payable_crypto_amount} {topup.payment_method}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        '---'
+                      )}
+                    </td>
                     <td className="px-6 py-4">
                       <span
                         className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${getStatusColor(
