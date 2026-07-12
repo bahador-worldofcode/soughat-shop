@@ -1,6 +1,6 @@
 'use client';
-import { useState, useEffect, useRef, type ReactNode } from 'react';
-import { MapPin, ShoppingCart, ChevronLeft, ChevronRight, Loader2, Globe, FileText, ShieldCheck, ArrowLeft, AlertTriangle, Trash2, XCircle, Info, Star, Wand2, Calculator } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { MapPin, ShoppingCart, ChevronLeft, ChevronRight, Loader2, Globe, FileText, ShieldCheck, ArrowLeft, AlertTriangle, Trash2, XCircle, Info, Star, Wand2 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import CryptoPayment from '@/components/CryptoPayment';
 import { useTranslations, useLocale } from 'next-intl';
@@ -36,16 +36,15 @@ export default function CheckoutPage() {
   // کلیدهایی مثل pay_with_wallet_tab/insufficient_balance فقط یک‌بار در
   // fa.json/en.json تعریف می‌شن و بینِ این دو صفحه مشترکن.
   const tWallet = useTranslations('Wallet');
-  // برای استفاده‌ی مجدد از دیکشنری نام ارزها (currencies.*) و متن عنوان باکس
-  // شفافیت (hint_title) که عیناً در صفحه‌ی پرداخت کریپتو هم استفاده می‌شه —
-  // تا این متن‌ها دقیقاً یکبار در fa.json/en.json تعریف بشن و بینِ هر دو
-  // صفحه (پرداخت کریپتو و پرداخت کیف‌پول) مشترک بمونن.
+  // فقط برای استفاده‌ی مجدد از کلیدِ fiat_value («ارزش سفارش»)، که عیناً در
+  // صفحه‌ی پرداختِ کریپتو هم همین متن استفاده می‌شه — تا یک‌بار در fa.json/en.json
+  // تعریف بشه و بینِ هر دو صفحه مشترک بمونه.
   const tCrypto = useTranslations('CryptoPayment');
   const locale = useLocale();
   const isEn = locale === 'en';
   const router = useRouter();
   
-  const { cart, totalPrice, getSymbol, convertPrice, currency, rates } = useStore();
+  const { cart, totalPrice, getSymbol, convertPrice, currency } = useStore();
   
   const displayTotal = totalPrice();
   const symbol = getSymbol();
@@ -97,45 +96,26 @@ export default function CheckoutPage() {
   // شده باشه، و موجودی حداقل به‌اندازه‌ی مبلغِ کلِ سفارش (دلاری) کافی باشه
   const canPayWithWallet = isLoggedIn && walletBalance !== null && walletBalance >= totalBaseUSD;
 
-  // ===== باکس راهنمای زنده و شفاف محاسبه قیمت برای تبِ کیف‌پول (فیات -> دلار) =====
-  // عیناً همون منطقی که در components/CryptoPayment.tsx برای تبدیلِ فیات به دلار
-  // استفاده می‌شه، اینجا هم تکرار شده تا مشتری‌ای که ارزِ نمایشی‌اش (مثلاً یورو)
-  // فرق می‌کنه، دقیقاً همون تجربه‌ی شفاف رو ببینه و فکر نکنه سرش کلاه رفته —
-  // موجودیِ کیف‌پول همیشه دلاریه، پس این تبدیل باید مثلِ کریپتو کاملاً روشن باشه.
-  const walletCurrencyNames: Record<string, string> = {
-    USD: tCrypto('currencies.USD'),
-    EUR: tCrypto('currencies.EUR'),
-    GBP: tCrypto('currencies.GBP'),
-    SEK: tCrypto('currencies.SEK'),
-  };
-  const walletFiatName = walletCurrencyNames[currency] || currency;
-
-  // rates[currency] یعنی «۱ دلار معادل چند واحد از آن ارز است»، پس عکسِ آن نرخ
-  // همان ارز به دلار است — دقیقاً همون فرمولِ CryptoPayment.tsx
-  const walletCurrentFiatRate = rates[currency];
-  const walletFiatRateToUsd = walletCurrentFiatRate ? 1 / walletCurrentFiatRate : 1;
-
-  // این تابع بخش‌های عددی/لاتین (نرخ‌ها، ارقام، نماد دلار) را داخل یک «جزیره LTR»
-  // ایزوله می‌کند تا موتور bidi مرورگر آن‌ها را با متن فارسی اطرافشان قاطی نکند
-  const walletLtrIsolate = (chunks: ReactNode) => (
-    <span dir="ltr" className="inline-block whitespace-nowrap">{chunks}</span>
-  );
-
-  const walletHintText =
-    currency === 'USD'
-      ? tWallet.rich('hint_usd', {
-          usdAmount: totalBaseUSD.toFixed(2),
-          ltr: walletLtrIsolate,
-        })
-      : tWallet.rich('hint_fiat', {
-          fiatName: walletFiatName,
-          fiatCode: currency,
-          fiatSymbol: symbol,
-          fiatAmount: displayTotal.toFixed(2),
-          fiatRate: walletFiatRateToUsd.toFixed(4),
-          usdAmount: totalBaseUSD.toFixed(2),
-          ltr: walletLtrIsolate,
-        });
+  // ===== ساده‌سازیِ باکسِ پرداخت با کیف‌پول =====
+  // برخلافِ کریپتو (که چون تراکنش برگشت‌ناپذیره و مشتری با ارز غریبه‌ست، به
+  // توضیحِ کامل نیاز داره)، اینجا خودِ کسرِ کیف‌پول لحظه‌ای، اتمیک، و از پیش
+  // قفل‌شده‌ست (totalBaseUSD همون عددیه که در handleSubmit روی سفارش ذخیره
+  // می‌شه و بعداً توسط RPC «pay_order_with_wallet» دقیقاً همون‌قدر کسر می‌شه)
+  // پس نیازی به پاراگرافِ توضیحیِ جداگانه نیست.
+  //
+  // فقط یک نکته باقی می‌مونه: چون موجودیِ کیف‌پول زیرِ پوسته دلاریه ولی به
+  // مشتری با ارزِ نمایشی‌اش (مثلاً یورو) نشون داده می‌شه، اگه نرخِ ارز بینِ
+  // این تراکنش و دفعه‌ی بعدی که مشتری کیف‌پولش رو چک می‌کنه عوض بشه، ممکنه
+  // فکر کنه پولش «گم شده». برای همین، زیرِ *هر سه* عدد (نه فقط موجودی‌ها) یک
+  // خطِ خیلی ریزِ «مبنای دقیق سیستم: $...» نگه می‌داریم — همینِ خط به‌تنهایی
+  // کافیه و نیازی به پاراگراف نیست.
+  //
+  // نکته‌ی فنیِ مهم: عمداً مقدارِ ارزشِ سفارش رو هم (مثلِ موجودی‌ها) از همون
+  // convertPrice(totalBaseUSD) می‌سازیم، نه از displayTotal (که جمعِ جداگانه‌ی
+  // آیتم‌هاست). این‌طوری هر سه عدد از یک مسیرِ محاسبه میان و همیشه دقیقاً
+  // جمع‌وتفریق‌پذیرن — یعنی «موجودیِ قبل − ارزشِ سفارش» همیشه دقیقاً برابرِ
+  // «موجودیِ بعد» می‌شه، بدونِ حتی یک سِنت اختلافِ گردکردن.
+  const walletOrderValueDisplay = convertPrice(totalBaseUSD);
 
   const [formData, setFormData] = useState({
     senderName: '',
@@ -883,60 +863,33 @@ export default function CheckoutPage() {
                 <div className="bg-white rounded-2xl border border-blue-100 shadow-lg overflow-hidden font-[family-name:var(--font-vazir)]">
                   <div className="p-6">
 
-                    {/* نمایش مبلغ نهایی — دقیقاً هم‌الگو با باکسِ صفحه‌ی پرداختِ کریپتو،
-                        تا مشتری‌ای که ارزِ نمایشی‌اش (مثلاً یورو) با دلار فرق می‌کنه،
-                        همون تجربه‌ی آشنا و شفاف رو ببینه و فکر نکنه سرش کلاه رفته */}
-                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 mb-8 space-y-3">
-                      <div className="flex justify-between items-center text-gray-500 text-sm">
-                        <span>{tCrypto('fiat_value')}</span>
-                        <span className="font-mono">{symbol} {displayTotal.toFixed(2)}</span>
-                      </div>
+                    {/* یک خطِ کوتاه و یک‌بارمصرف که فقط همینجا می‌گه کیف‌پول دلاریه —
+                        به‌جای پاراگرافِ کاملِ توضیحیِ قبلی. کافیه چون خودِ اعداد پایین‌تر
+                        (با خطِ ریزِ «مبنای دقیق سیستم») این موضوع رو هر بار یادآوری می‌کنن. */}
+                    <p className="flex items-center gap-1.5 text-xs text-gray-400 mb-4">
+                      <Info className="h-3.5 w-3.5 flex-shrink-0" />
+                      {tWallet('wallet_currency_notice')}
+                    </p>
 
-                      <div className="flex justify-between items-center text-gray-900 border-t border-gray-200 pt-3">
-                        <div className="flex flex-col">
-                          <span className="font-bold text-sm flex items-center gap-1">
-                            <Info className="h-4 w-4 text-blue-500" /> {tWallet('payable_from_wallet')}
-                          </span>
-                          {currency === 'USD' ? (
-                            <span className="text-[11px] text-green-700 mt-1 bg-green-100 px-2 py-0.5 rounded-md inline-block w-fit font-medium">
-                              {tWallet('rate_no_conversion')}
-                            </span>
-                          ) : (
-                            <span className="text-[11px] text-gray-500 mt-1 bg-gray-200 px-2 py-0.5 rounded-md inline-block w-fit">
-                              {tWallet('rate_live_fiat', {
-                                fiatCode: currency,
-                                fiatRate: walletFiatRateToUsd.toFixed(4),
-                              })}
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="text-right">
-                          <span className="text-3xl font-black text-blue-700 font-mono tracking-tight drop-shadow-sm">
-                            ${totalBaseUSD.toFixed(2)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* باکس راهنمای زنده و شفاف نحوه‌ی محاسبه‌ی قیمت — عیناً هم‌الگو با
-                        پرداخت کریپتو، فقط با متنِ مخصوصِ کیف‌پول */}
-                    <div className="mb-8 bg-yellow-50 border border-yellow-300 rounded-xl p-4 text-yellow-900 shadow-sm">
-                      <div className="flex items-center gap-2 mb-2 font-bold text-sm text-yellow-800">
-                        <Calculator className="h-4 w-4 flex-shrink-0" />
-                        <span>{tCrypto('hint_title')}</span>
-                      </div>
-                      <p className="text-xs leading-6 text-justify opacity-90">
-                        {walletHintText}
-                      </p>
-                    </div>
-
-                    {/* موجودیِ کیف‌پول قبل و بعد از پرداخت — با همون ارزی که بالای
-                        سایت انتخاب شده، چون این عدد جمعِ چند تراکنشِ احتمالاً
-                        باارزهای مختلفه، با علامتِ «≈» مشخص می‌شه؛ مبنای دقیق و
-                        ثابتِ سیستم (دلار) هم کنارش، ریز، همیشه قابلِ‌دیدنه. */}
+                    {/* یک باکسِ واحد و ساده: ارزشِ سفارش، موجودیِ فعلی، موجودیِ پس از
+                        پرداخت — هر سه با همون ارزِ نمایشیِ بالای سایت (چون این ارزیه که
+                        مشتری باهاش راحته) و زیرِ هر کدوم، ریز و کم‌رنگ، مبنای دقیقِ
+                        دلاریِ سیستم. هر سه عدد از convertPrice ساخته می‌شن تا همیشه
+                        دقیقاً جمع‌وتفریق‌پذیر بمونن (نکته‌ی فنیِ بالای فایل رو ببین). */}
                     <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 mb-6 space-y-3">
                       <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-500">{tCrypto('fiat_value')}</span>
+                        <span className="text-right">
+                          <span className="font-bold text-gray-900 font-mono block">
+                            {symbol} {walletOrderValueDisplay.toFixed(2)}
+                          </span>
+                          <span className="text-[11px] text-gray-400 font-mono">
+                            {tWallet('balance_usd_note', { usdAmount: totalBaseUSD.toFixed(2) })}
+                          </span>
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-sm pt-3 border-t border-gray-200">
                         <span className="text-gray-500">{tWallet('current_balance')}</span>
                         <span className="text-right">
                           <span className="font-bold text-gray-900 font-mono block">

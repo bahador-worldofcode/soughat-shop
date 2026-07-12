@@ -788,6 +788,7 @@
     "balance_after_payment": "Balance After Payment",
     "pay_and_submit_button": "Pay & Submit Order",
     "cancel_topup_button": "Cancel & Change Amount",
+    "wallet_currency_notice": "Your wallet balance is calculated and held in US Dollars.",
     "payable_from_wallet": "Amount to be Deducted:",
     "rate_no_conversion": "No conversion needed (Wallet is in USD)",
     "rate_live_fiat": "Live Rate: 1 {fiatCode} ≈ ${fiatRate}",

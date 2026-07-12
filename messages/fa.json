@@ -789,6 +789,7 @@
     "balance_after_payment": "موجودی پس از پرداخت",
     "pay_and_submit_button": "پرداخت و ثبت سفارش",
     "cancel_topup_button": "لغو و تغییرِ مبلغ",
+    "wallet_currency_notice": "موجودی کیف‌پول شما بر اساس دلار آمریکا محاسبه و نگهداری می‌شود.",
     "payable_from_wallet": "مبلغ قابل کسر از کیف‌پول:",
     "rate_no_conversion": "نیازی به تبدیل نیست (کیف‌پول دلاری است)",
     "rate_live_fiat": "نرخ لحظه‌ای: 1 {fiatCode} ≈ ${fiatRate}",
