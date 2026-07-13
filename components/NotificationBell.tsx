@@ -152,7 +152,7 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute end-0 mt-2 w-80 max-h-96 overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-xl z-50 font-[family-name:var(--font-vazir)]">
+        <div className="absolute end-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-xl z-50 font-[family-name:var(--font-vazir)]">
           {items.length > 0 && (
             <div className="sticky top-0 flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-white">
               <span className="text-xs font-bold text-gray-400">{t('aria_label')}</span>
