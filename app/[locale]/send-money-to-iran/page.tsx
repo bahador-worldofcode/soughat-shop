@@ -65,7 +65,7 @@ const faqFa: FaqItem[] = [
   { q: 'چگونه می‌توانم با پشتیبانی سوغات شاپ ارتباط برقرار کنم؟', a: 'شما می‌توانید از طریق بخش تماس با ما در وب‌سایت، تلگرام یا واتس‌اپ با تیم پشتیبانی سریع و پاسخگوی ما در ارتباط باشید.' },
   { q: 'آیا برای ارسال پول از انگلیس به ایران محدودیتی وجود دارد؟', a: 'خیر، با استفاده از ارزهای دیجیتال هیچ محدودیتی از سوی سوغات شاپ برای مقصد یا مبدأ وجود ندارد. شما می‌توانید از انگلیس، اسکاتلند یا هر نقطه دیگری سفارش خود را ثبت کنید.' },
   { q: 'آیا سکه‌های شما ضرب سال جاری و استاندارد هستند؟', a: 'بله، تمامی سکه‌های طلا (یک گرمی، ربع، نیم و تمام) از جنس طلای ۱۸ عیار و ضرب سال جاری مرکز مبادله هستند و دارای ارزش سرمایه‌گذاری و هدایایی بالا می‌باشند.' },
-  { q: 'اگر شبکه بلاکچین شلوغ باشد چه اتفاقی می‌افتد؟', a: 'در صورت شلوغی شبکه، تأیید تراکنش ممکن است کمی طول بکشد. ما شبکه TRC20 را پیشنهاد می‌دهیم که معمولاً کمترین میزان شلوغی و بالاترین سرعت را دارد.' },
+  { q: 'اگر شبکه بلاکچین شلوغ باشد چه اتفاقی می‌افتد؟', a: 'در صورت شلوغی شبکه، تأیید تراکنش ممکن است کمی طول بکشد. ما شبکه TRC20 را پیشنهاد می‌دهیم که معمولاً کمترین میزان شلوغی و بالاترین سرعت را gross سرعت را دارد.' },
   { q: 'آیا برای نوروز یا اعیاد خاص تخفیفی روی کارمزدها وجود دارد؟', a: 'سوغات شاپ در مناسبت‌های مختلف، کمپین‌ها و تخفیفاتی را برای کاربران خود در نظر می‌گیرد. برای اطلاع از این پیشنهادها، خبرنامه ما را دنبال کنید.' },
   {
     q: (
@@ -466,6 +466,153 @@ export default async function SendMoneyToIranPage({ params }: { params: Promise<
           </figcaption>
         </figure>
 
+        {/* Security & speed */}
+        <section className="mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            {isEn ? 'Security and Speed in Sending Funds to Iran with Soughat.shop' : 'امنیت و سرعت در ارسال وجه به ایران با سوغات شاپ'}
+          </h2>
+          <p className="text-gray-700 leading-8 text-justify mb-6">
+            {isEn
+              ? 'We understand how crucial trust is in financial matters. Our platform is designed to provide the highest level of security for your crypto transactions. Blockchain technology ensures your payments are transparent and irreversible, and our 24/7 support team strives to finalize your money transfer to Iran in the shortest time possible (usually less than an hour). Here is how it works:'
+              : 'ما درک می‌کنیم که اعتماد در مسائل مالی چقدر مهم است. پلتفرم ما طوری طراحی شده است که بالاترین سطح امنیت را برای تراکنش‌های کریپتویی شما فراهم کند. فناوری بلاکچین اطمینان می‌دهد که پرداخت‌های شما شفاف و غیرقابل بازگشت هستند و تیم پشتیبانی ما ۲۴ ساعته در تلاش است تا ارسال پول به ایران را در کوتاه‌ترین زمان ممکن (معمولاً کمتر از یک ساعت) نهایی کند. فرآیند کار به این شکل است:'}
+          </p>
+          <ol className="space-y-2 list-decimal pr-6 leading-7 text-gray-700">
+            {isEn ? (
+              <>
+                <li>Select a product (Cash or Gold Coin) on the website.</li>
+                <li>Submit the recipient&apos;s details in Iran (Name, phone number, bank card number, or postal address).</li>
+                <li>Receive the USDT wallet address (TRC20 or other networks) from Soughat.shop.</li>
+                <li>Transfer Tether from your wallet to ours.</li>
+                <li>Confirmation of the transaction on the blockchain network and instant deposit of the amount to the Iranian bank card or physical dispatch of gold.</li>
+              </>
+            ) : (
+              <>
+                <li>انتخاب محصول (پول نقد یا سکه طلا) در وب‌سایت.</li>
+                <li>ثبت اطلاعات گیرنده در ایران (نام، شماره تماس، شماره کارت بانکی یا آدرس پستی).</li>
+                <li>دریافت آدرس کیف پول USDT (TRC20 یا شبکه‌های دیگر) از طرف سوغات شاپ.</li>
+                <li>انتقال تتر از کیف پول شما به کیف پول ما.</li>
+                <li>تأیید تراکنش در شبکه بلاکچین و واریز فوری مبلغ به کارت بانکی ایرانی یا ارسال فیزیکی طلا.</li>
+              </>
+            )}
+          </ol>
+        </section>
+
+        <figure className="mb-12 rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+          <img
+            src={isEn
+              ? 'https://hwzowjniahrqdzpnlpas.supabase.co/storage/v1/object/public/media/1783290583933-610.webp'
+              : 'https://hwzowjniahrqdzpnlpas.supabase.co/storage/v1/object/public/media/1783290580363-349.webp'}
+            alt={isEn ? 'Secure and fast verified remittance to Iran' : 'پرداخت سریع با کریپتو به ایران'}
+            className="w-full h-auto"
+          />
+          <figcaption className="text-center text-sm text-gray-500 py-3 bg-gray-50">
+            {isEn ? 'Fast and highly secure crypto payment process for remittance to Iran' : 'فرآیند پرداخت سریع و امن با تتر برای واریز به ایران'}
+          </figcaption>
+        </figure>
+
+        {/* ======================= S T A R T - N E W - S E O ====================== */}
+        {/* SEO Targeted Section for: how to send money to iran */}
+        <section className="mb-16 bg-blue-50/60 p-6 md:p-10 rounded-[2rem] border border-blue-100 shadow-sm">
+          <h2 className="text-2xl md:text-3xl font-black text-blue-900 mb-6 leading-tight">
+            {isEn ? 'How to Send Money to Iran? A 0-to-100 Step-by-Step Guide' : 'چگونه به ایران پول بفرستیم؟ (آموزش کامل و صفر تا صد)'}
+          </h2>
+          <p className="text-gray-700 leading-8 text-justify mb-8 md:text-lg">
+            {isEn ? (
+              <>
+                If you find yourself searching online for <strong>"how to send money to iran"</strong>, you probably already know about the rigid banking blockades, stressful international bank transfers, and unpredictable delays. Luckily, using Soughat.shop makes this completely stress-free. Here is the ultimate 0-to-100 tutorial on getting cash into your family's hands today:
+              </>
+            ) : (
+              <>
+                یکی از پرتکرارترین کلمات جستجو شده توسط ایرانیان خارج از کشور عبارت <strong>how to send money to iran</strong> است. در شرایط تحریم‌های بانکی بین‌المللی و مسدود بودن ویزاکارت و سوئیفت برای هموطنان داخل ایران، بهترین و بی‌خطرترین پاسخ برای «چگونه به ایران پول بفرستیم؟»، پلتفرم ارزهای دیجیتال و رمزنگاری‌شده است. در این آموزش صفر تا صد دقیقاً توضیح داده‌ایم که چگونه برای خانواده در ایران وجه نقد (تومان/ریال) حواله کنید:
+              </>
+            )}
+          </p>
+
+          <div className="space-y-8">
+            <div className="flex gap-4 md:gap-5">
+              <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-lg shadow-md">1</div>
+              <div>
+                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">
+                  {isEn ? 'Initiate the Cash Remittance Service' : 'شروع با ثبت سرویس پول نقد در سبد خرید'}
+                </h3>
+                <p className="text-gray-700 leading-7 text-justify">
+                  {isEn ? 'Navigate directly to our "Gold & Money" catalog and locate the cash remittance package. Determine how much money (measured in equivalent Tomans) you wish to transfer and confidently hit the "Add to Cart" button.' : 'مرحله اول بسیار ساده است. وارد صفحه محصول «ارسال پول نقد کارت به کارت» در بخش محصولات سوغات شاپ شوید و معادل ریالی و میزان مبلغی را که تمایل دارید خانواده‌تان دریافت کنند مشخص کرده و آن را به سبد خرید اضافه کنید.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-4 md:gap-5">
+              <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-lg shadow-md">2</div>
+              <div>
+                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">
+                  {isEn ? 'Submit Exact Iranian Bank Credentials' : 'درج مشخصات کارت شتاب و اطلاعات گیرنده'}
+                </h3>
+                <p className="text-gray-700 leading-7 text-justify">
+                  {isEn ? 'Continue straight to checkout. You\'ll encounter a specific form for receiver data. Type in the recipient’s legal name, precise phone number for domestic contact, and accurately fill the notes area with the recipient\'s valid 16-digit Shetab bank card or their bank account (Shaba).' : 'در بخش پرداخت نهایی فرم‌ها، کافی است مشخصات ارتباطی (مانند آدرس یا شماره تماس گیرنده در داخل ایران) را ثبت کنید و از همه مهمتر، شماره کارت ۱۶ رقمی شتابی مقصد و نام دقیق دارنده آن حساب در ایران را در توضیحات سفارش قید فرمایید.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-4 md:gap-5">
+              <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-lg shadow-md">3</div>
+              <div>
+                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">
+                  {isEn ? 'Access our Blockchain Gateway & Price Finalization' : 'ورود به درگاه هوشمند ارزی و نهایی‌سازی قیمت'}
+                </h3>
+                <p className="text-gray-700 leading-7 text-justify">
+                  {isEn ? 'This platform will effortlessly do all exchange conversions showing exact Live conversion rate (USD, EUR, GBP to Tomans and crypto assets like Tether USDT/Solana). Check this fully transparent fiat-to-crypto bill, and get Soughat\'s official unique digital wallet address for sending payment.' : 'سیستم قدرتمند و پلتفرم لایو ما تمام معادل‌سازی‌های نرخ‌های تبدیل یورو، پوند یا دلار شما به تتر (یا سایر رمز ارزها مثل سولانا) را شفاف روی مانیتور در صورت‌حسابتان نشان خواهد داد. آن را تأیید کرده و در ثانیه‌های پایانی یک آدرس اختصاصی کیف پول دیجیتال تحویل بگیرید.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-4 md:gap-5">
+              <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-lg shadow-md">4</div>
+              <div>
+                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">
+                  {isEn ? 'Transfer from your Trusted Crypto Wallet' : 'تأییدیه انتقال وجه ارزی توسط شما (اکسچنج یا ولت)'}
+                </h3>
+                <p className="text-gray-700 leading-7 text-justify">
+                  {isEn ? 'Access your crypto app (Coinbase, Trust Wallet, MetaMask, or any other global broker), copy-paste Soughat’s wallet address alongside the explicit bill amount and instantly complete your token transfer inside minutes!' : 'حالا کافی است که هر نوع اپلیکیشن ارزدیجیتال موردعلاقه خود مانند کوین‌بیس، بایننس، متامسک یا حتی تراست ولت شخصی را در تلفن خود بگشایید، مقدار وجه کریپتوی مذکور را مشخص نموده و آدرس سوغات شاپ را جاگذاری و انتقال امن خود را تأیید فرمایید.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-4 md:gap-5">
+              <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-lg shadow-md">
+                <CheckCircle className="w-6 h-6 text-white"/>
+              </div>
+              <div>
+                <h3 className="text-lg md:text-xl font-bold text-green-700 mb-2">
+                  {isEn ? 'Direct Delivery to Iranian Domestic Card in One Hour' : 'تسویه‌حساب نهایی ریالی سریع به شماره کارت ایران!'}
+                </h3>
+                <p className="text-gray-700 leading-7 text-justify">
+                  {isEn ? 'Within an astonishing hour from verifying block transactions out in cyberspace, Soughat will seamlessly move identical fresh local money safely right onto that local Iran banking debit card you assigned—It guarantees peace-of-mind whenever you question "how to send money to iran" safely with crypto limits out of the picture!' : 'چند لحظه منتظر می‌مانید تا تراکنش کریپتو در فضای بلاکچین روی شبکه تأیید (کانفیرم) بشود. به‌محض تأیید شبکه، واحد مالی ما همسان معادل تومانی همان مبلغ را بلافاصله بدون قطعی (عمدتا زیر ۱ ساعت) روانه‌ی حساب مقصد کارت ایران شما می‌نماید! سوغات شاپ این فرآیند را از ۱۰۰ در ۱۰۰ آسان و بدون استرس برایتان مدیریت کرده است.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+        {/* ======================= E N D - N E W - S E O ====================== */}
+
+        {/* Mid-page CTA banner #2 */}
+        <div className="mb-16 border-2 border-blue-600 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-5">
+          <div className="flex items-center gap-3 text-center md:text-start">
+            <CheckCircle className="h-8 w-8 text-blue-600 flex-shrink-0 hidden md:block" />
+            <p className="font-bold text-lg text-gray-900 leading-7">
+              {isEn
+                ? 'Secure, blockchain-verified transfers — your family receives the money in under an hour.'
+                : 'انتقال امن و تأییدشده روی بلاکچین — خانواده شما در کمتر از یک ساعت پول را دریافت می‌کند.'}
+            </p>
+          </div>
+          <Link
+            href={CTA_LINK}
+            className="flex-shrink-0 inline-flex items-center bg-blue-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-blue-700 transition-all transform hover:scale-105 shadow-lg whitespace-nowrap"
+          >
+            {isEn ? 'Send Money Securely' : 'ارسال امن پول'}
+            <ArrowLeft className={`h-5 w-5 ${isEn ? 'rotate-180 ml-2' : 'mr-2'}`} />
+          </Link>
+        </div>
+
         {/* Gold coins */}
         <section className="mb-12">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
@@ -583,69 +730,6 @@ export default async function SendMoneyToIranPage({ params }: { params: Promise<
             {isEn ? 'Purchasing and sending all types of gold coins to Iran with crypto payments' : 'خرید و ارسال انواع سکه طلا به ایران با پرداخت کریپتو'}
           </figcaption>
         </figure>
-
-        {/* Security & speed */}
-        <section className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            {isEn ? 'Security and Speed in Sending Funds to Iran with Soughat.shop' : 'امنیت و سرعت در ارسال وجه به ایران با سوغات شاپ'}
-          </h2>
-          <p className="text-gray-700 leading-8 text-justify mb-6">
-            {isEn
-              ? 'We understand how crucial trust is in financial matters. Our platform is designed to provide the highest level of security for your crypto transactions. Blockchain technology ensures your payments are transparent and irreversible, and our 24/7 support team strives to finalize your money transfer to Iran in the shortest time possible (usually less than an hour). Here is how it works:'
-              : 'ما درک می‌کنیم که اعتماد در مسائل مالی چقدر مهم است. پلتفرم ما طوری طراحی شده است که بالاترین سطح امنیت را برای تراکنش‌های کریپتویی شما فراهم کند. فناوری بلاکچین اطمینان می‌دهد که پرداخت‌های شما شفاف و غیرقابل بازگشت هستند و تیم پشتیبانی ما ۲۴ ساعته در تلاش است تا ارسال پول به ایران را در کوتاه‌ترین زمان ممکن (معمولاً کمتر از یک ساعت) نهایی کند. فرآیند کار به این شکل است:'}
-          </p>
-          <ol className="space-y-2 list-decimal pr-6 leading-7 text-gray-700">
-            {isEn ? (
-              <>
-                <li>Select a product (Cash or Gold Coin) on the website.</li>
-                <li>Submit the recipient&apos;s details in Iran (Name, phone number, bank card number, or postal address).</li>
-                <li>Receive the USDT wallet address (TRC20 or other networks) from Soughat.shop.</li>
-                <li>Transfer Tether from your wallet to ours.</li>
-                <li>Confirmation of the transaction on the blockchain network and instant deposit of the amount to the Iranian bank card or physical dispatch of gold.</li>
-              </>
-            ) : (
-              <>
-                <li>انتخاب محصول (پول نقد یا سکه طلا) در وب‌سایت.</li>
-                <li>ثبت اطلاعات گیرنده در ایران (نام، شماره تماس، شماره کارت بانکی یا آدرس پستی).</li>
-                <li>دریافت آدرس کیف پول USDT (TRC20 یا شبکه‌های دیگر) از طرف سوغات شاپ.</li>
-                <li>انتقال تتر از کیف پول شما به کیف پول ما.</li>
-                <li>تأیید تراکنش در شبکه بلاکچین و واریز فوری مبلغ به کارت بانکی ایرانی یا ارسال فیزیکی طلا.</li>
-              </>
-            )}
-          </ol>
-        </section>
-
-        <figure className="mb-16 rounded-2xl overflow-hidden shadow-sm border border-gray-100">
-          <img
-            src={isEn
-              ? 'https://hwzowjniahrqdzpnlpas.supabase.co/storage/v1/object/public/media/1783290583933-610.webp'
-              : 'https://hwzowjniahrqdzpnlpas.supabase.co/storage/v1/object/public/media/1783290580363-349.webp'}
-            alt={isEn ? 'Secure and fast verified remittance to Iran' : 'پرداخت سریع با کریپتو به ایران'}
-            className="w-full h-auto"
-          />
-          <figcaption className="text-center text-sm text-gray-500 py-3 bg-gray-50">
-            {isEn ? 'Fast and highly secure crypto payment process for remittance to Iran' : 'فرآیند پرداخت سریع و امن با تتر برای واریز به ایران'}
-          </figcaption>
-        </figure>
-
-        {/* Mid-page CTA banner #2 */}
-        <div className="mb-16 border-2 border-blue-600 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-5">
-          <div className="flex items-center gap-3 text-center md:text-start">
-            <CheckCircle className="h-8 w-8 text-blue-600 flex-shrink-0 hidden md:block" />
-            <p className="font-bold text-lg text-gray-900 leading-7">
-              {isEn
-                ? 'Secure, blockchain-verified transfers — your family receives the money in under an hour.'
-                : 'انتقال امن و تأییدشده روی بلاکچین — خانواده شما در کمتر از یک ساعت پول را دریافت می‌کند.'}
-            </p>
-          </div>
-          <Link
-            href={CTA_LINK}
-            className="flex-shrink-0 inline-flex items-center bg-blue-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-blue-700 transition-all transform hover:scale-105 shadow-lg whitespace-nowrap"
-          >
-            {isEn ? 'Send Money Securely' : 'ارسال امن پول'}
-            <ArrowLeft className={`h-5 w-5 ${isEn ? 'rotate-180 ml-2' : 'mr-2'}`} />
-          </Link>
-        </div>
 
         {/* FAQ */}
         <section>
