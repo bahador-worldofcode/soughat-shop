@@ -1,4 +1,4 @@
-import { Mail, Heart, Lock, ShieldCheck, HelpCircle, ShoppingBag, BookOpen, Package, Info, Phone, Code2, Library, Star, DollarSign, Bug } from 'lucide-react';
+import { Mail, Heart, Lock, ShieldCheck, HelpCircle, ShoppingBag, BookOpen, Package, Info, Phone, Code2, Library, Star, DollarSign, Bug, Gift } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 
@@ -115,6 +115,12 @@ export default function Footer() {
               <li>
                 <Link href="/send-money-to-iran" className="hover:text-blue-600 hover:pr-2 transition-all flex items-center gap-2">
                     <DollarSign className="h-4 w-4" /> {t('remit')}
+                </Link>
+              </li>
+              {/* 🆕 لینک لندینگ پیج جدید: ارسال هدیه به ایران با رمزارز */}
+              <li>
+                <Link href="/send-gift-to-iran-crypto" className="hover:text-blue-600 hover:pr-2 transition-all flex items-center gap-2">
+                    <Gift className="h-4 w-4" /> {t('gift_crypto')}
                 </Link>
               </li>
               <li>
