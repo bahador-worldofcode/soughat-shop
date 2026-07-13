@@ -381,7 +381,12 @@
       "address_ph": "Street, Alley, No...",
       "saved_addresses_hint": "Pick one of your saved addresses, or enter new details",
       "save_for_next_time": "Save this address for next time",
-      "save_label_ph": "Give it a name, e.g. \"Mom's house\""
+      "save_label_ph": "Give it a name, e.g. \"Mom's house\"",
+      "guest_notice": {
+        "title": "You're not signed in yet",
+        "desc": "Orders placed as a guest won't save this address or order history to an account. Creating a free account takes under a minute, and gets you one-click checkout next time plus easy access to your addresses and order tracking.",
+        "cta": "Create a Free Account"
+      }
     },
     "note": {
       "title": "3. Order Notes (Optional)",

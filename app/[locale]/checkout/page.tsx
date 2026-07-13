@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { MapPin, ShoppingCart, ChevronLeft, ChevronRight, Loader2, Globe, FileText, ShieldCheck, ArrowLeft, AlertTriangle, Trash2, XCircle, Info, Star, Wand2 } from 'lucide-react';
+import { MapPin, ShoppingCart, ChevronLeft, ChevronRight, Loader2, Globe, FileText, ShieldCheck, ArrowLeft, AlertTriangle, Trash2, XCircle, Info, Star, Wand2, UserPlus } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import CryptoPayment from '@/components/CryptoPayment';
 import { useTranslations, useLocale } from 'next-intl';
@@ -642,6 +642,31 @@ export default function CheckoutPage() {
                         <MapPin className="h-5 w-5 text-red-500" />
                         {t('receiver.title')}
                     </h3>
+
+                    {/* اطلاع‌رسانیِ مزایای ساخت حساب کاربری — فقط برای کاربر مهمان (لاگین‌نکرده) نشون داده می‌شه.
+                        هدف: قبل از این‌که آدرس رو تایپ کنه، به‌طور خیلی کوتاه بهش بگیم که اگه به‌عنوان
+                        مهمان ادامه بده، این آدرس و سابقه‌ی سفارش ذخیره نمی‌شه؛ و ساخت حساب چقدر سریع و
+                        کم‌دردسره. لینک به صفحه‌ی /login می‌ره (همون صفحه‌ای که تبِ ثبت‌نام هم داره). */}
+                    {!isLoggedIn && (
+                      <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                        <UserPlus className="h-5 w-5 flex-shrink-0 text-amber-600 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-amber-900 leading-6">
+                            {t('receiver.guest_notice.title')}
+                          </p>
+                          <p className="mt-1 text-xs leading-6 text-amber-800/90">
+                            {t('receiver.guest_notice.desc')}
+                          </p>
+                          <Link
+                            href="/login"
+                            className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-900 transition-colors hover:bg-amber-200"
+                          >
+                            {t('receiver.guest_notice.cta')}
+                            <ArrowLeft className={`h-3.5 w-3.5 ${isEn ? 'rotate-180' : ''}`} />
+                          </Link>
+                        </div>
+                      </div>
+                    )}
 
                     {/* انتخاب سریع از آدرس‌های ذخیره‌شده — فقط برای کاربر لاگین‌شده */}
                     {savedAddresses && savedAddresses.length > 0 && (
