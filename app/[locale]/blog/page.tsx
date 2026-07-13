@@ -184,7 +184,7 @@ export default async function BlogIndex({ searchParams, params }: BlogPageProps)
                   }`}
                   aria-disabled={currentPage <= 1}
                 >
-                  {isEn ? <ArrowLeft className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
+                  <ArrowLeft className="h-4 w-4" />
                   {t('prev')}
                 </Link>
 
@@ -203,7 +203,7 @@ export default async function BlogIndex({ searchParams, params }: BlogPageProps)
                   aria-disabled={currentPage >= totalPages}
                 >
                   {t('next')}
-                  {isEn ? <ArrowRight className="h-4 w-4" /> : <ArrowLeft className="h-4 w-4" />}
+                  <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
             )}
