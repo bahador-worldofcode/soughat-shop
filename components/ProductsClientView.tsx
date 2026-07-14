@@ -52,7 +52,7 @@ interface ProductsClientViewProps {
   categories: Category[];
   currentCategory: string;
   currentSearch: string;
-  currentSort: 'newest' | 'price-asc' | 'price-desc';
+  currentSort: 'featured' | 'newest' | 'price-asc' | 'price-desc';
   currentPage: number;
   totalCount: number;
   totalPages: number;
@@ -152,7 +152,7 @@ export default function ProductsClientView({
   };
 
   const handleSortChange = (value: string) => {
-    updateParams({ sort: value === 'newest' ? null : value, page: null });
+    updateParams({ sort: value === 'featured' ? null : value, page: null });
   };
 
   const goToPage = (p: number) => {
@@ -243,6 +243,7 @@ export default function ProductsClientView({
                 <h4 className="text-xs font-bold text-gray-400 uppercase mb-3 tracking-wide">{t('sort_by')}</h4>
                 <div className="flex flex-col gap-2">
                   {[
+                    { value: 'featured', label: t('sort_featured') },
                     { value: 'newest', label: t('sort_newest') },
                     { value: 'price-asc', label: t('sort_cheapest') },
                     { value: 'price-desc', label: t('sort_expensive') },
@@ -359,6 +360,7 @@ export default function ProductsClientView({
               onChange={(e) => handleSortChange(e.target.value)}
               className="bg-gray-50 hover:bg-gray-100 w-full p-3 rounded-xl border border-gray-200 text-sm outline-none cursor-pointer font-medium text-gray-700 transition-colors"
             >
+              <option value="featured">{t('sort_featured')}</option>
               <option value="newest">{t('sort_newest')}</option>
               <option value="price-asc">{t('sort_cheapest')}</option>
               <option value="price-desc">{t('sort_expensive')}</option>

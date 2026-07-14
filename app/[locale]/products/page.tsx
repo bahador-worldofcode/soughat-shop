@@ -135,8 +135,10 @@ export default async function ProductsPage({ params, searchParams }: Props) {
 
   const currentCategory = sp.category ? decodeURIComponent(sp.category).trim() : 'all';
   const currentSearch = sp.q || '';
-  const currentSort: 'newest' | 'price-asc' | 'price-desc' =
-    sp.sort === 'price-asc' || sp.sort === 'price-desc' ? sp.sort : 'newest';
+  // 🆕 مرتب‌سازی «پیشنهادی» (featured) پیش‌فرض جدیده. «جدیدترین‌ها» (newest)
+  // حذف نشده، فقط دیگه پیش‌فرض نیست و کاربر باید صریحاً از دراپ‌داون انتخابش کنه.
+  const currentSort: 'featured' | 'newest' | 'price-asc' | 'price-desc' =
+    sp.sort === 'newest' || sp.sort === 'price-asc' || sp.sort === 'price-desc' ? sp.sort : 'featured';
   const currentPage = Math.max(1, parseInt(sp.page || '1', 10) || 1);
 
   // ۱. دسته‌بندی‌ها (روی سرور، یک‌بار در همین رندر)
@@ -150,7 +152,22 @@ export default async function ProductsPage({ params, searchParams }: Props) {
     currentCategory !== 'all' ? categories.find((c) => c.slug === currentCategory) || null : null;
 
   // ۲. محصولات (روی سرور، با همون فیلترهایی که قبلاً کلاینت‌ساید انجام می‌شد)
-  let query = supabase.from('products').select('*', { count: 'exact' });
+  //
+  // 🆕 رفع باگ «یک‌نواختی صفحه‌ی همه‌ی محصولات»: وقتی مرتب‌سازی روی حالت
+  // پیش‌فرض «پیشنهادی» (featured) باشه، به‌جای جدول products مستقیم، از یک
+  // View به اسم products_diversified می‌خونیم که دقیقاً همون ستون‌های جدول
+  // اصلی رو داره به‌علاوه‌ی یک ستون محاسبه‌شده‌ی category_rank (یعنی «این
+  // محصول، چندمین محصولِ تازه‌ی همین دسته‌بندیه؟» — جدیدترینِ هر دسته رتبه‌ی
+  // ۱، دومین‌جدیدترین رتبه‌ی ۲ و...). با مرتب‌سازی روی (category_rank,
+  // created_at) به‌جای created_at خام، محصولاتِ همه‌ی دسته‌بندی‌ها به‌طور
+  // طبیعی با هم قاطی می‌شن (اول جدیدترینِ هر دسته، بعد دومین‌جدیدترینِ هر
+  // دسته، و...) — منظم و قابل‌پیش‌بینی، نه تصادفی محض. اگه دسته‌بندی خاصی هم
+  // فیلتر شده باشه، این View خودبه‌خود دقیقاً معادل «جدیدترین اول» می‌شه،
+  // چون فقط یک دسته باقی می‌مونه و category_rank با ترتیب زمانی یکی می‌شه.
+  // ساخت این View فقط با یک اسکریپت SQL توی Supabase انجام می‌شه (یک‌بار)،
+  // جدول اصلی products اصلاً دست‌نخورده می‌مونه.
+  const sourceTable = currentSort === 'featured' ? 'products_diversified' : 'products';
+  let query = supabase.from(sourceTable).select('*', { count: 'exact' });
 
   if (currentSearch) {
     if (isEn) {
@@ -164,7 +181,9 @@ export default async function ProductsPage({ params, searchParams }: Props) {
     query = query.eq('category', currentCategory);
   }
 
-  if (currentSort === 'newest') {
+  if (currentSort === 'featured') {
+    query = query.order('category_rank', { ascending: true }).order('created_at', { ascending: false });
+  } else if (currentSort === 'newest') {
     query = query.order('created_at', { ascending: false });
   } else if (currentSort === 'price-asc') {
     query = query.order('price', { ascending: true });
