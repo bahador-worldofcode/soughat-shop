@@ -45,6 +45,10 @@ export default function CheckoutPage() {
   const router = useRouter();
   
   const { cart, totalPrice, getSymbol, convertPrice, currency } = useStore();
+
+  // این فیلدها فقط برای محصول «ارسال حواله نقدی» نمایش داده می‌شوند
+  const REMITTANCE_PRODUCT_SLUG = 'send-money-cash-iran-remittance-card-to-card';
+  const hasRemittanceItem = cart.some((item) => item.slug === REMITTANCE_PRODUCT_SLUG);
   
   const displayTotal = totalPrice();
   const symbol = getSymbol();
@@ -126,6 +130,9 @@ export default function CheckoutPage() {
     city: '',
     address: '',
     notes: '', 
+    recipientCardNumber: '',
+    recipientIban: '',
+    recipientAccountNumber: '',
   });
 
   // بازیابی پیش‌نویس فرم بعد از رفرش یا بازگشت به این صفحه
@@ -293,7 +300,8 @@ export default function CheckoutPage() {
   const clearForm = () => {
     const emptyState = {
         senderName: '', senderPhone: '', senderCountry: '',
-        receiverName: '', receiverPhone: '', city: '', address: '', notes: ''
+        receiverName: '', receiverPhone: '', city: '', address: '', notes: '',
+        recipientCardNumber: '', recipientIban: '', recipientAccountNumber: '',
     };
     setFormData(emptyState);
     setFormErrors({});
@@ -397,6 +405,9 @@ export default function CheckoutPage() {
           totalPrice: totalBaseUSD, 
           displayFiatAmount: displayTotal, 
           displayCurrency: currency, 
+          recipientCardNumber: formData.recipientCardNumber,
+          recipientIban: formData.recipientIban,
+          recipientAccountNumber: formData.recipientAccountNumber,
         }),
       });
 
@@ -770,6 +781,58 @@ export default function CheckoutPage() {
                       </div>
                     )}
                 </div>
+
+                {/* اطلاعات واریز — فقط برای محصول «ارسال حواله نقدی»، هر سه فیلد اختیاری */}
+                {hasRemittanceItem && (
+                  <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                    <h3 className="font-bold text-gray-800 mb-1 flex items-center gap-2 border-b border-gray-100 pb-2">
+                      {t('receiver.bank_info.title')}
+                    </h3>
+                    <p className="text-xs text-gray-500 mb-4">
+                      {t('receiver.bank_info.hint')}
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-xs text-gray-600">{t('receiver.bank_info.card_number')}</label>
+                        <input
+                          type="text"
+                          name="recipientCardNumber"
+                          dir="ltr"
+                          inputMode="numeric"
+                          placeholder={t('receiver.bank_info.card_number_ph')}
+                          className="w-full rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm outline-none text-left font-mono transition-colors focus:bg-white focus:border-blue-500"
+                          onChange={handleInputChange}
+                          value={formData.recipientCardNumber}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs text-gray-600">{t('receiver.bank_info.iban')}</label>
+                        <input
+                          type="text"
+                          name="recipientIban"
+                          dir="ltr"
+                          placeholder={t('receiver.bank_info.iban_ph')}
+                          className="w-full rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm outline-none text-left font-mono transition-colors focus:bg-white focus:border-blue-500"
+                          onChange={handleInputChange}
+                          value={formData.recipientIban}
+                        />
+                      </div>
+                      <div className="space-y-1 md:col-span-2">
+                        <label className="text-xs text-gray-600">{t('receiver.bank_info.account_number')}</label>
+                        <input
+                          type="text"
+                          name="recipientAccountNumber"
+                          dir="ltr"
+                          inputMode="numeric"
+                          placeholder={t('receiver.bank_info.account_number_ph')}
+                          className="w-full rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm outline-none text-left font-mono transition-colors focus:bg-white focus:border-blue-500"
+                          onChange={handleInputChange}
+                          value={formData.recipientAccountNumber}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
                     <h3 className="font-bold text-gray-700 mb-4 flex items-center gap-2 border-b border-gray-200 pb-2">

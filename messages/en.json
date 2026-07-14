@@ -387,6 +387,16 @@
         "title": "You're not signed in yet",
         "desc": "Orders placed as a guest won't save this address or order history to an account. Creating a free account takes under a minute, and gets you one-click checkout next time plus easy access to your addresses and order tracking.",
         "cta": "Create a Free Account"
+      },
+      "bank_info": {
+        "title": "Recipient's Bank Details in Iran (Optional)",
+        "hint": "Fill in whichever of these you have on hand — you don't need to fill in all of them.",
+        "card_number": "Card Number (16 digits)",
+        "card_number_ph": "6037-XXXX-XXXX-XXXX",
+        "iban": "IBAN (Shaba)",
+        "iban_ph": "IR...",
+        "account_number": "Account Number",
+        "account_number_ph": "Recipient's bank account number"
       }
     },
     "note": {

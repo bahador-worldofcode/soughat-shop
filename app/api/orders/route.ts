@@ -30,6 +30,9 @@ export async function POST(request: Request) {
       totalPrice,
       displayFiatAmount,
       displayCurrency,
+      recipientCardNumber,
+      recipientIban,
+      recipientAccountNumber,
     } = body;
 
     // اعتبارسنجی حداقلی سمت سرور — چک‌اوت سمت کلاینت هم اعتبارسنجی
@@ -73,6 +76,9 @@ export async function POST(request: Request) {
           total_price: totalPrice,
           display_fiat_amount: displayFiatAmount ?? null,
           display_currency: displayCurrency ?? null,
+          recipient_card_number: recipientCardNumber?.trim() || null,
+          recipient_iban: recipientIban?.trim() || null,
+          recipient_account_number: recipientAccountNumber?.trim() || null,
           status: 'pending',
         },
       ])

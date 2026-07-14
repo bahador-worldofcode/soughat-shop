@@ -13,6 +13,7 @@ export interface Product {
   category?: string;
   pricing_type?: string; 
   weight?: number; // ✅ اضافه شد برای محصولات طلا
+  slug?: string; // ✅ برای تشخیص محصول «ارسال حواله» در checkout
 }
 
 interface CartItem extends Product {
