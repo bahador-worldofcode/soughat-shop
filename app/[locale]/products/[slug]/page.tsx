@@ -190,7 +190,37 @@ export default async function ProductPage({ params }: Props) {
       />
 
       <div className="container mx-auto px-4 max-w-6xl">
-        {/* نوار بازگشت */}
+        {/* بردکرامپ بصری واقعی: خانه › دسته‌بندی › محصول
+            این بردکرامپ دقیقاً با breadcrumbJsonLd بالا هماهنگ است تا هم گوگل
+            (از طریق لینک‌های واقعی قابل کراول) و هم کاربر مسیر درست را ببینند. */}
+        <nav
+          aria-label="Breadcrumb"
+          className="mb-6 flex items-center flex-wrap gap-x-2 gap-y-1 text-sm text-gray-500"
+        >
+          <Link href="/" className="hover:text-blue-600 transition-colors">
+            {tHeader('home')}
+          </Link>
+
+          <span className="text-gray-300" aria-hidden="true">/</span>
+
+          <Link
+            href={`/products?category=${encodeURIComponent(product.category)}`}
+            className="hover:text-blue-600 transition-colors"
+          >
+            {categoryName}
+          </Link>
+
+          <span className="text-gray-300" aria-hidden="true">/</span>
+
+          <span
+            className="text-gray-700 font-medium max-w-[200px] sm:max-w-xs truncate"
+            aria-current="page"
+          >
+            {localizedProduct.title}
+          </span>
+        </nav>
+
+        {/* نوار بازگشت به لیست کامل محصولات */}
         <div className="mb-6 flex items-center justify-between">
             <Link href="/products" className="inline-flex items-center text-sm text-gray-500 hover:text-blue-600 transition-colors">
                 <ArrowRight className={`h-4 w-4 ${isEn ? 'rotate-180 mr-1' : 'ml-1'}`} />
