@@ -12,6 +12,10 @@ interface Order {
   customer_phone: string;
   city: string;
   address: string;
+  // اطلاعات واریز حواله (اختیاری — فقط برای محصول ارسال حواله نقدی پر می‌شود)
+  recipient_card_number?: string | null;
+  recipient_iban?: string | null;
+  recipient_account_number?: string | null;
   // اطلاعات فرستنده (خارج)
   sender_name: string;
   sender_phone: string;
@@ -218,7 +222,14 @@ export default function OrdersPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm font-bold text-gray-900">{order.customer_name}</div>
-                    <div className="text-xs text-gray-500 mt-1">{order.city}</div>
+                    <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                      {order.city}
+                      {(order.recipient_card_number || order.recipient_iban || order.recipient_account_number) && (
+                        <span title="این سفارش اطلاعات واریز (کارت/شبا/حساب) دارد">
+                          <Landmark className="h-3 w-3 text-green-600" />
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-sm font-bold text-gray-900 dir-ltr">${order.total_price}</td>
                   <td className="px-6 py-4">
@@ -361,6 +372,74 @@ export default function OrdersPage() {
                         </div>
                     </div>
                  </div>
+
+                 {/* باکس اطلاعات واریز حواله — فقط اگر مشتری حداقل یکی از این سه فیلد را پر کرده باشد */}
+                 {(selectedOrder.recipient_card_number || selectedOrder.recipient_iban || selectedOrder.recipient_account_number) && (
+                   <div className="bg-green-50/60 p-5 rounded-2xl border border-green-200 space-y-3">
+                      <h4 className="font-bold text-green-900 flex items-center gap-2 text-sm border-b border-green-200 pb-2 mb-2">
+                          <Landmark className="h-4 w-4" /> اطلاعات واریز حواله
+                      </h4>
+                      <div className="grid grid-cols-1 gap-3 text-sm">
+                          {selectedOrder.recipient_card_number && (
+                            <div>
+                                <span className="text-xs text-gray-500 block mb-1">شماره کارت</span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-bold text-gray-800 font-mono dir-ltr">{selectedOrder.recipient_card_number}</span>
+                                  <button
+                                    onClick={(e) => handleCopyId(selectedOrder.recipient_card_number as string, e)}
+                                    className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 p-1 rounded-md transition-colors"
+                                    title="کپی شماره کارت"
+                                  >
+                                    {copiedId === selectedOrder.recipient_card_number ? (
+                                      <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                                    ) : (
+                                      <Copy className="h-3.5 w-3.5" />
+                                    )}
+                                  </button>
+                                </div>
+                            </div>
+                          )}
+                          {selectedOrder.recipient_iban && (
+                            <div>
+                                <span className="text-xs text-gray-500 block mb-1">شماره شبا</span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-bold text-gray-800 font-mono dir-ltr">{selectedOrder.recipient_iban}</span>
+                                  <button
+                                    onClick={(e) => handleCopyId(selectedOrder.recipient_iban as string, e)}
+                                    className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 p-1 rounded-md transition-colors"
+                                    title="کپی شماره شبا"
+                                  >
+                                    {copiedId === selectedOrder.recipient_iban ? (
+                                      <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                                    ) : (
+                                      <Copy className="h-3.5 w-3.5" />
+                                    )}
+                                  </button>
+                                </div>
+                            </div>
+                          )}
+                          {selectedOrder.recipient_account_number && (
+                            <div>
+                                <span className="text-xs text-gray-500 block mb-1">شماره حساب</span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-bold text-gray-800 font-mono dir-ltr">{selectedOrder.recipient_account_number}</span>
+                                  <button
+                                    onClick={(e) => handleCopyId(selectedOrder.recipient_account_number as string, e)}
+                                    className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 p-1 rounded-md transition-colors"
+                                    title="کپی شماره حساب"
+                                  >
+                                    {copiedId === selectedOrder.recipient_account_number ? (
+                                      <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                                    ) : (
+                                      <Copy className="h-3.5 w-3.5" />
+                                    )}
+                                  </button>
+                                </div>
+                            </div>
+                          )}
+                      </div>
+                   </div>
+                 )}
               </div>
 
               {/* باکس یادداشت */}
