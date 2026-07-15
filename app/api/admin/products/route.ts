@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { verifyAdmin } from '@/lib/verifyAdmin';
 
@@ -9,10 +9,26 @@ const LOCALES = ['fa', 'en'] as const;
 // محصولات را خودکار خالی می‌کنیم (هم لیست، هم جزئیات هر محصول)،
 // تا ادمین برای دیدنِ تغییرش مجبور نباشد به صفحه‌ی «مدیریت کش»
 // برود و دستی دکمه بزند.
+//
+// 🆕 رفع باگِ «تازه نشدنِ فوریِ لیست محصولات بعد از رفع بحران CPU»:
+// -----------------------------------------------------------------------
+// بعد از رفع بحران «Exceeded free resources - Fluid Active CPU»،
+// app/[locale]/products/page.tsx دیگر مستقیم از Supabase نمی‌خواند؛ نتیجه‌ی
+// کوئری محصولات را با unstable_cache و تگِ 'products-list' تا ۶۰ ثانیه در
+// Data Cache خودِ Next.js نگه می‌دارد (به app/[locale]/products/page.tsx و
+// app/api/admin/cache/route.ts مراجعه کنید). revalidatePath بالا فقط
+// خروجیِ رندرشده‌ی صفحه را پاک می‌کند و برای صفحه‌ی جزئیاتِ هر محصول
+// (که با revalidate=60 ایستا/ISR است) کافی است؛ اما هیچ اثری روی آن Data
+// Cache تگ‌دار ندارد. بدون خط زیر، بعد از افزودن/ویرایش/حذفِ یک محصول در
+// پنل ادمین، صفحه‌ی «همه‌ی محصولات» تا ۶۰ ثانیه همچنان لیستِ قدیمی را از
+// همان کش نشان می‌داد — دقیقاً همان «کهنه ماندنِ اطلاعات دیتابیس» که در
+// قوانینِ اولیه‌ی این پروژه ممنوع بود. با revalidateTag('products-list')،
+// همان لحظه‌ی ثبتِ تغییر در ادمین، این Data Cache هم خالی می‌شود.
 function revalidateProductsCache() {
   LOCALES.forEach((locale) => {
     revalidatePath(`/${locale}/products`, 'layout');
   });
+  revalidateTag('products-list');
 }
 
 // 1. افزودن محصول جدید (POST)

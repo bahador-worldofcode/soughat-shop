@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
-import { useSearchParams } from 'next/navigation';
 import {
   Home,
   LayoutGrid,
@@ -89,7 +88,15 @@ export default function MobileBottomNav() {
   // next-intl's usePathname عمداً query string را برنمی‌گرداند؛ برای همین جدا
   // از next/navigation می‌گیریمش تا هنگام سوییچ زبان بتوانیم آن را حفظ کنیم
   // (دقیقاً همان اصلاح Header.tsx، برای هماهنگی رفتار موبایل و دسکتاپ).
-  const searchParams = useSearchParams();
+  //
+  // 🆕 رفع خطای بیلد «useSearchParams() should be wrapped in a suspense boundary»:
+  // درست مثل Header.tsx — چون این کامپوننت هم روی همه‌ی صفحات (از لایوت
+  // مشترک) رندر می‌شود، بعد از اضافه‌شدنِ generateStaticParams به
+  // app/[locale]/layout.tsx، همین هوک به‌تنهایی کل بیلدِ Vercel را متوقف
+  // می‌کرد. چون searchParams اینجا هم فقط داخل toggleLanguage (هنگام کلیک)
+  // لازم است نه در JSX، دیگر از هوکِ useSearchParams استفاده نمی‌کنیم و
+  // مستقیم از window.location.search (فقط داخل کنترل‌گر کلیک، یعنی فقط در
+  // مرورگر) می‌خوانیم.
 
   useEffect(() => {
     setMounted(true);
@@ -119,7 +126,7 @@ export default function MobileBottomNav() {
     // رفع باگ: قبلاً فقط pathname (بدون query string) پاس داده می‌شد، برای همین
     // فیلترهایی مثل ?category=... یا ?q=... موقع سوییچ زبان پاک می‌شدند.
     // حالا query string فعلی را عیناً به مسیر مقصد اضافه می‌کنیم تا حفظ شود.
-    const query = searchParams.toString();
+    const query = typeof window !== 'undefined' ? window.location.search.replace(/^\?/, '') : '';
     const target = query ? `${pathname}?${query}` : pathname;
     startLangTransition(() => {
       router.replace(target, { locale: newLocale });

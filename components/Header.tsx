@@ -1,6 +1,5 @@
 'use client';
 import { useState, useEffect, useRef, useTransition } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { ShoppingBag, Globe, Search, X, Loader2, User, LogIn } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useTranslations, useLocale } from 'next-intl';
@@ -44,7 +43,22 @@ export default function Header() {
   const pathname = usePathname();
   // next-intl's usePathname عمداً query string را برنمی‌گرداند؛ برای همین جدا
   // از next/navigation می‌گیریمش تا هنگام سوییچ زبان بتوانیم آن را حفظ کنیم.
-  const searchParams = useSearchParams();
+  //
+  // 🆕 رفع خطای بیلد «useSearchParams() should be wrapped in a suspense boundary»:
+  // -----------------------------------------------------------------------
+  // از وقتی app/[locale]/layout.tsx دارای generateStaticParams شد، Next.js
+  // واقعاً سعی می‌کند صفحات را در زمان Build به‌صورت استاتیک اکسپورت کند؛ و
+  // چون Header روی همه‌ی صفحات (از همان لایوت مشترک) رندر می‌شود، هوکِ
+  // useSearchParams() اینجا کل صفحه را مجبور به داشتن یک Suspense boundary
+  // می‌کرد — که نبود، و بیلد را با خطا متوقف می‌کرد. راه‌حلِ درست این نیست که
+  // یک Suspense دور کل هدر بگذاریم (باعث چشمک زدنِ کل هدر در هر بار لود
+  // می‌شد)، چون در واقع مقدار searchParams فقط داخل تابع toggleLanguage
+  // (هنگام کلیک) لازم است، نه در خروجی JSX. برای همین دیگر از هوکِ
+  // useSearchParams استفاده نمی‌کنیم و به‌جایش دقیقاً همان لحظه‌ی کلیک،
+  // مستقیم از window.location.search (یک API خالص مرورگری، نه چیزی از
+  // Next.js) می‌خوانیم — این کامپوننت هرحال 'use client' است و این خط فقط
+  // داخل یک کنترل‌گر کلیک اجرا می‌شود، پس فقط در مرورگر (بعد از لود کامل
+  // صفحه) اجرا می‌شود، نه در زمان Build/SSR.
 
   // در موبایل، آیتم‌های اصلی ناوبری (خانه، محصولات، سبد خرید، پیگیری، منو)
   // به نوار پایین صفحه منتقل شده‌اند. آیکون سبد خرید هدر فقط در صفحاتی که
@@ -83,7 +97,7 @@ export default function Header() {
     // رفع باگ: قبلاً فقط pathname (بدون query string) پاس داده می‌شد، برای همین
     // فیلترهایی مثل ?category=... یا ?q=... موقع سوییچ زبان پاک می‌شدند.
     // حالا query string فعلی را عیناً به مسیر مقصد اضافه می‌کنیم تا حفظ شود.
-    const query = searchParams.toString();
+    const query = typeof window !== 'undefined' ? window.location.search.replace(/^\?/, '') : '';
     const target = query ? `${pathname}?${query}` : pathname;
     startLangTransition(() => {
       router.replace(target, { locale: newLocale });
