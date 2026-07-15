@@ -13,7 +13,7 @@ import InstallPWAPrompt from "@/components/InstallPWAPrompt";
 import { supabase } from '@/lib/supabase';
 import { ArrowLeft, Layers, Sparkles, ChevronsRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import type { Metadata } from 'next';
 
 export const revalidate = 60;
@@ -506,6 +506,14 @@ export default async function Home({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+
+  // 🆕 رفع بحران CPU (گام ۱، ادامه): بدون این خط، صفحه‌ی اصلی با وجود
+  // export const revalidate = 60 در عمل هیچ‌وقت واقعاً ایستا/ISR نمی‌شد و
+  // برای هر بازدیدکننده (و هر ربات) از نو روی سرور رندر می‌شد و به Supabase
+  // وصل می‌شد. حالا با این خط، صفحه فقط هر ۶۰ ثانیه یک‌بار در پس‌زمینه
+  // بازسازی می‌شود، نه برای هر درخواست.
+  setRequestLocale(locale);
+
   const t = await getTranslations('Home');
 
   return (

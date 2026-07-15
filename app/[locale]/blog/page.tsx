@@ -1,14 +1,43 @@
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { Calendar, ArrowLeft, ArrowRight } from 'lucide-react';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import type { Metadata } from 'next';
+import { unstable_cache } from 'next/cache';
 
 // کش کردن دیتا برای سرعت بالا (ISR) - هر ۶۰ ثانیه
 export const revalidate = 60;
 
 // تعداد پست در هر صفحه
 const POSTS_PER_PAGE = 9;
+
+// 🆕 رفع بحران «Exceeded free resources - Fluid Active CPU»:
+// -----------------------------------------------------------------------
+// این صفحه هم — درست مثل app/[locale]/products/page.tsx — چون از
+// searchParams (شماره‌ی صفحه‌ی pagination) استفاده می‌کند، طبق قوانین
+// Next.js همیشه به‌صورت داینامیک رندر می‌شود؛ export const revalidate بالا
+// به‌تنهایی برای چنین صفحه‌ای کافی نیست. برای همینِ دقیق، کوئری Supabase را
+// جدا با unstable_cache کش می‌کنیم (به‌ازای هر شماره‌صفحه، تا ۶۰ ثانیه)،
+// بدون این‌که ساختار pagination یا سئوی صفحه‌بندی‌شده (که خودش drivenِ
+// searchParams است) تغییر کند.
+const getCachedBlogPosts = unstable_cache(
+  async (from: number, to: number): Promise<{ data: any[]; count: number }> => {
+    const { data, count, error } = await supabase
+      .from('posts')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (error) {
+      // مثل products/page.tsx: throw می‌کنیم تا خطای موقت کش نشه.
+      throw new Error(error.message);
+    }
+
+    return { data: data || [], count: count || 0 };
+  },
+  ['blog-page-list'],
+  { revalidate: 60, tags: ['blog-list'] }
+);
 
 interface BlogPageProps {
   searchParams: Promise<{ page?: string }>;
@@ -75,6 +104,11 @@ export async function generateMetadata({ searchParams, params }: BlogPageProps):
 export default async function BlogIndex({ searchParams, params }: BlogPageProps) {
   const { locale } = await params;
   const isEn = locale === 'en';
+
+  // این صفحه هم به‌خاطر searchParams همیشه داینامیک می‌ماند، اما طبق
+  // توصیه‌ی next-intl این خط را برای هماهنگی صدا می‌زنیم.
+  setRequestLocale(locale);
+
   const t = await getTranslations({locale, namespace: 'Blog'});
 
   // 1. دریافت شماره صفحه از URL
@@ -85,15 +119,18 @@ export default async function BlogIndex({ searchParams, params }: BlogPageProps)
   const from = (currentPage - 1) * POSTS_PER_PAGE;
   const to = from + POSTS_PER_PAGE - 1;
 
-  // 3. دریافت پست‌ها با محدودیت (Range)
-  const { data: posts, count } = await supabase
-    .from('posts')
-    .select('*', { count: 'exact' })
-    .order('created_at', { ascending: false })
-    .range(from, to);
+  // 3. دریافت پست‌ها با محدودیت (Range) — از Data Cache، حداکثر ۶۰ ثانیه کهنه
+  let posts: any[] = [];
+  let totalPosts = 0;
+  try {
+    const { data, count } = await getCachedBlogPosts(from, to);
+    posts = data;
+    totalPosts = count;
+  } catch (err) {
+    console.error('Error fetching blog posts (server):', err);
+  }
 
   // 4. محاسبه تعداد کل صفحات
-  const totalPosts = count || 0;
   const totalPages = Math.ceil(totalPosts / POSTS_PER_PAGE);
 
   return (

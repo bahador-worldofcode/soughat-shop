@@ -3,12 +3,31 @@ import { supabase } from '@/lib/supabase';
 import { Calendar, ArrowRight, ArrowLeft, User, Tag, Folder } from 'lucide-react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import PostContent from '@/components/PostContent';
 import ShareButtons from '@/components/ShareButtons';
 
 // --- تنظیمات کش ---
 export const revalidate = 60;
+
+// 🆕 رفع بحران «Exceeded free resources - Fluid Active CPU» (گام ۱):
+// -----------------------------------------------------------------------
+// این تابع، اسلاگِ همه‌ی پست‌های وبلاگ را در زمان Build از Supabase می‌خواند
+// و به Next.js می‌گوید همین الان (نه در لحظه‌ی درخواستِ کاربر) HTML همه‌ی
+// این صفحات را برای هر دو زبان بسازد. چون این صفحه زیرِ app/[locale]/layout.tsx
+// قرار دارد و آن لایوت خودش generateStaticParams برای fa/en دارد، Next.js
+// خودکار این اسلاگ‌ها را با هر دو زبان ترکیب می‌کند (یعنی /fa/blog/x و
+// /en/blog/x هر دو ساخته می‌شوند) — نیازی نیست خودمان locale را اینجا
+// دوباره برگردانیم.
+//
+// اگر پستِ جدیدی بعد از آخرین Build اضافه شود، در این آرایه نیست؛ نگران
+// نباشید — dynamicParams پیش‌فرض Next.js روی true است، یعنی همان اولین
+// بازدیدکننده‌ی آن پست جدید، صفحه را می‌سازد و از آن به بعد هم مثل بقیه
+// ایستا/کش می‌ماند.
+export async function generateStaticParams() {
+  const { data: posts } = await supabase.from('posts').select('slug');
+  return (posts || []).map((post) => ({ slug: post.slug }));
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string; locale: string }> }): Promise<Metadata> {
   const { slug, locale } = await params;
@@ -83,6 +102,11 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
   const { slug, locale } = await params;
   const decodedSlug = decodeURIComponent(slug);
   const isEn = locale === 'en';
+
+  // 🆕 رفع بحران CPU: باید قبل از هر getTranslations صدا زده شود تا این
+  // صفحه واقعاً به‌صورت ایستا/ISR سرو شود، نه SSR کامل در هر درخواست.
+  setRequestLocale(locale);
+
   const t = await getTranslations('Blog');
   // TASK-07: برای متن «خانه» و «وبلاگ» در BreadcrumbList از همون کلیدهای
   // موجود namespace هدر استفاده می‌کنیم — نیازی به کلید ترجمه‌ی جدید نیست.

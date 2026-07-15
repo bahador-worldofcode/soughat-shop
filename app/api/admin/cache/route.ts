@@ -13,7 +13,7 @@
 // --------------------------------------------------------------
 
 import { NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { verifyAdmin } from '@/lib/verifyAdmin';
 
 // زبان‌های سایت — چون هر مسیر با پیشوندِ زبان کش می‌شود
@@ -37,12 +37,26 @@ function revalidateProducts() {
     // نیازی نیست تک‌تکِ اسلاگ‌های محصولات را جداگانه بدهیم.
     revalidatePath(`/${locale}/products`, 'layout');
   });
+
+  // 🆕 صفحه‌ی لیست محصولات (app/[locale]/products/page.tsx) از این به بعد
+  // کوئری‌های Supabase خودش را جدا با unstable_cache و این دو تگ کش
+  // می‌کند. revalidatePath بالا فقط خروجیِ رندرشده‌ی صفحه را پاک می‌کند؛
+  // این دو خط هم لازم‌اند تا خودِ داده‌های کش‌شده (لیست فیلترشده‌ی محصولات
+  // و لیست دسته‌بندی‌ها) هم واقعاً تازه شوند، وگرنه ممکن است تا ۶۰ ثانیه‌ی
+  // دیگر داده‌ی قدیمی از Data Cache برگردد.
+  revalidateTag('products-list');
+  revalidateTag('categories');
 }
 
 function revalidateBlog() {
   LOCALES.forEach((locale) => {
     revalidatePath(`/${locale}/blog`, 'layout');
   });
+
+  // 🆕 لیستِ وبلاگ (app/[locale]/blog/page.tsx) هم از این به بعد کوئریِ
+  // خودش را جدا با unstable_cache کش می‌کند؛ همون دلیلِ revalidateTag در
+  // revalidateProducts بالا.
+  revalidateTag('blog-list');
 }
 
 export async function POST(request: Request) {
@@ -63,9 +77,13 @@ export async function POST(request: Request) {
     // بدون خالی‌کردنِ کلِ کش، فقط همین یکی را فوری تازه کند.
     if (slug && type === 'products') {
       LOCALES.forEach((locale) => revalidatePath(`/${locale}/products/${slug}`, 'page'));
+      // 🆕 لیستِ محصولات هم ممکن است همین محصول را (با عنوان/قیمت/عکسِ
+      // قدیمی) در کشِ خودش داشته باشد؛ برای هماهنگی این را هم تازه می‌کنیم.
+      revalidateTag('products-list');
       cleared.push(`product:${slug}`);
     } else if (slug && type === 'blog') {
       LOCALES.forEach((locale) => revalidatePath(`/${locale}/blog/${slug}`, 'page'));
+      revalidateTag('blog-list');
       cleared.push(`blog:${slug}`);
     } else {
       // پاک‌سازیِ کلِ یک بخش

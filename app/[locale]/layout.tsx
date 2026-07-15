@@ -1,7 +1,8 @@
 import "../globals.css";
 import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
+import { getMessages, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { routing } from '@/i18n/routing';
 import type { Metadata } from "next";
 import { Vazirmatn } from 'next/font/google';
 import NextTopLoader from 'nextjs-toploader';
@@ -27,6 +28,18 @@ const GA_MEASUREMENT_ID = 'G-E6M9G3032G';
 // آدرس پایه‌ی سایت — یک‌بار اینجا تعریف می‌شود تا هم metadataBase و هم
 // alternates از همین یک منبع واحد استفاده کنند (جلوگیری از mismatch).
 const SITE_URL = 'https://soughat.shop';
+
+// 🆕 رفع بحران «Exceeded free resources - Fluid Active CPU» (گام ۱):
+// -----------------------------------------------------------------------
+// این تابع به Next.js می‌گوید که مسیرهای /fa و /en را در زمان Build بسازد،
+// نه این‌که برای تک‌تک بازدیدکننده‌ها (و ربات‌های گوگل/هوش مصنوعی) از نو
+// روی سرور رندر کند. این خودِ این تابع فقط لایوت را ایستا می‌کند؛ برای
+// این‌که صفحاتِ زیرمجموعه (هوم، بلاگ/[slug]، محصولات/[slug]) هم واقعاً
+// ایستا رندر شوند، هرکدام باید جداگانه setRequestLocale را هم صدا بزنند
+// (دقیقاً طبق مستندات next-intl) — این کار در همان فایل‌ها انجام شده.
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
 
 // --- تنظیمات متادیتا (سئو) ---
 // تبدیل به تابع برای اینکه بتوانیم زبان را داینامیک از آدرس بگیریم
@@ -116,6 +129,17 @@ export default async function LocaleLayout({
   if (!['fa', 'en'].includes(locale)) {
     notFound();
   }
+
+  // 🆕 رفع بحران CPU (گام ۱، ادامه): این خط باید همیشه قبل از هر تابع
+  // دیگری از next-intl (مثل getMessages/getTranslations) صدا زده شود.
+  // بدون این خط، next-intl برای فهمیدن زبان جاری مجبور می‌شود از هدرهای
+  // درخواست (headers()) بخواند که یک "دسترسی داینامیک" است و باعث می‌شود
+  // Next.js کل صفحه را — حتی با وجود generateStaticParams — برای هر
+  // بازدیدکننده از نو روی سرور رندر کند (دقیقاً همان چیزی که مصرف CPU را
+  // بالا برده). با ثبت زبان همین‌جا، همه‌ی کامپوننت‌های سرورِ زیرمجموعه
+  // (از جمله بخش‌های داخل صفحه‌ی اصلی) هم به‌صورت خودکار از همین مقدار
+  // استفاده می‌کنند و نیازی به صدا زدن دوباره‌ی این تابع در آن‌ها نیست.
+  setRequestLocale(locale);
 
   // 3. دریافت فایل ترجمه مربوطه (fa.json یا en.json)
   const messages = await getMessages();

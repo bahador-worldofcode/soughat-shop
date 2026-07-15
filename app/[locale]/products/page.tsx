@@ -1,7 +1,8 @@
 import { supabase } from '@/lib/supabase';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Suspense } from 'react';
+import { unstable_cache } from 'next/cache';
 import ProductsClientView from '@/components/ProductsClientView';
 import ProductsSEOContent from '@/components/ProductsSEOContent';
 import LazySection from '@/components/LazySection';
@@ -11,8 +12,95 @@ import { stripHtmlToText, truncateAtWordBoundary } from '@/lib/sanitizeHtml';
 // همیشه به‌صورت داینامیک روی سرور رندر می‌شه (نه استاتیک) — دقیقاً چیزی که برای
 // دیده‌شدن توسط گوگل و بات‌های هوش مصنوعی لازم داریم: HTML اولیه‌ی هر درخواست
 // همیشه شامل محصولات واقعیه، نه یک صفحه‌ی خالی که بعداً با JS پر بشه.
-
+//
+// 🆕 رفع بحران «Exceeded free resources - Fluid Active CPU» (گام ۲):
+// -----------------------------------------------------------------------
+// این صفحه به هیچ عنوان استاتیک/ISR نمی‌شود (و طبق «قانون هشدار» پرامپت
+// شما، دست‌نخورده هم می‌ماند) چون searchParams برای فیلترها لازم است و
+// خیلی از ربات‌های هوش مصنوعی اصلاً جاوااسکریپت اجرا نمی‌کنند — پس اگر
+// این بخش را به fetch سمت کلاینت (SWR/React Query) تبدیل کنیم، آن‌ها
+// صفحه را خالی می‌بینند و دقیقاً همان چیزی می‌شود که قانون شماره‌ی ۳
+// پرامپت گفته بود «به هیچ وجه کد را تغییر نده».
+//
+// راه‌حلِ درست (و همانی که در پرامپت‌تان پیشنهاد شده بود): خودِ رندر شدنِ
+// صفحه در هر درخواست اجتناب‌ناپذیر است، اما کوئری‌های سنگین Supabase که
+// واقعاً هزینه‌ی اصلی CPU/شبکه را ایجاد می‌کنند را می‌شود جدا، با
+// unstable_cache، به‌ازای هر ترکیبِ فیلتر (دسته/جستجو/مرتب‌سازی/صفحه) تا
+// ۶۰ ثانیه کش کرد. یعنی اگر دو کاربر (یا گوگل‌بات و یک کاربر) دقیقاً همون
+// فیلتر را در همون بازه‌ی ۶۰ ثانیه بخواهند، دومی به‌جای زدن کوئری تازه به
+// Supabase، مستقیم از Data Cache خودِ Next.js جواب می‌گیرد — همون فلسفه‌ی
+// دکمه‌ی «کش سایت» که همین الان در app/admin/cache/page.tsx دارید، فقط
+// یک لایه عمیق‌تر و خودکار.
 export const revalidate = 0;
+
+const getCachedCategories = unstable_cache(
+  async (): Promise<Category[]> => {
+    const { data } = await supabase.from('categories').select('*').order('name');
+    return (data || []) as Category[];
+  },
+  ['products-page-categories'],
+  { revalidate: 60, tags: ['categories'] }
+);
+
+// توجه مهم: تمام پارامترهایی که روی نتیجه‌ی این کوئری اثر می‌گذارند (جدول
+// مبدا، عبارت جستجو، زبان، دسته‌بندی، مرتب‌سازی، بازه‌ی صفحه‌بندی) باید
+// حتماً به‌عنوان آرگومان به این تابع پاس داده شوند، نه این‌که از بیرون
+// (closure) خوانده شوند؛ چون Next.js کلید کش را دقیقاً از روی همین
+// آرگومان‌ها می‌سازد. اگر یکی از این‌ها را از بیرون بخوانیم، همه‌ی
+// فیلترها با هم قاطی می‌شوند و کاربر محصولاتِ فیلترِ اشتباه را می‌بیند —
+// دقیقاً همان چیزی که «قانون بدون خرابی فیچرها»ی شما ممنوع کرده.
+const getCachedProducts = unstable_cache(
+  async (
+    sourceTable: string,
+    currentSearch: string,
+    isEn: boolean,
+    currentCategory: string,
+    currentSort: string,
+    from: number,
+    to: number
+  ): Promise<{ data: any[]; count: number }> => {
+    let query = supabase.from(sourceTable).select('*', { count: 'exact' });
+
+    if (currentSearch) {
+      if (isEn) {
+        query = query.or(`title.ilike.%${currentSearch}%,title_en.ilike.%${currentSearch}%`);
+      } else {
+        query = query.ilike('title', `%${currentSearch}%`);
+      }
+    }
+
+    if (currentCategory !== 'all') {
+      query = query.eq('category', currentCategory);
+    }
+
+    if (currentSort === 'featured') {
+      query = query.order('category_rank', { ascending: true }).order('created_at', { ascending: false });
+    } else if (currentSort === 'newest') {
+      query = query.order('created_at', { ascending: false });
+    } else if (currentSort === 'price-asc') {
+      query = query.order('price', { ascending: true });
+    } else if (currentSort === 'price-desc') {
+      query = query.order('price', { ascending: false });
+    }
+
+    query = query.range(from, to);
+
+    const { data, count, error } = await query;
+
+    // 🆕 عمداً اینجا throw می‌کنیم (نه return با error داخلش): اگر خطای
+    // موقتِ Supabase را return کنیم، unstable_cache همان خطا/نتیجه‌ی خالی
+    // را هم تا ۶۰ ثانیه کش می‌کند و کاربرهای بعدی هم صفحه‌ی خالی می‌بینند.
+    // با throw کردن، Next.js این نتیجه را اصلاً کش نمی‌کند و درخواستِ بعدی
+    // دوباره تلاش می‌کند؛ خطا پایین‌تر در همان جایی که همیشه بود گرفته می‌شود.
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return { data: data || [], count: count || 0 };
+  },
+  ['products-page-list'],
+  { revalidate: 60, tags: ['products-list'] }
+);
 
 interface Product {
   id: string;
@@ -53,12 +141,11 @@ function getSiteUrl() {
 
 async function getActiveCategory(categorySlug: string | undefined): Promise<Category | null> {
   if (!categorySlug || categorySlug === 'all') return null;
-  const { data } = await supabase
-    .from('categories')
-    .select('*')
-    .eq('slug', categorySlug)
-    .single();
-  return (data as Category) || null;
+  // 🆕 به‌جای یک کوئری جداگانه‌ی «فقط همین دسته»، از همون لیستِ کشِ‌شده‌ی
+  // دسته‌بندی‌ها استفاده می‌کنیم (که چند خط پایین‌تر در خودِ صفحه هم دوباره
+  // لازم است) — یعنی این تابع دیگر یک کوئری اضافه به Supabase نمی‌زند.
+  const categories = await getCachedCategories();
+  return categories.find((c) => c.slug === categorySlug) || null;
 }
 
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
@@ -127,6 +214,12 @@ export default async function ProductsPage({ params, searchParams }: Props) {
   const { locale } = await params;
   const sp = await searchParams;
   const isEn = locale === 'en';
+
+  // 🆕 خودِ این صفحه به‌خاطر searchParams همیشه داینامیک می‌ماند (طبق طراحیِ
+  // درستِ فعلی)، اما صدا زدنِ این خط ضرری ندارد و برای هماهنگی با بقیه‌ی
+  // صفحات، طبق توصیه‌ی next-intl، همچنان انجام می‌شود.
+  setRequestLocale(locale);
+
   const t = await getTranslations('ProductsPage');
   // TASK-07: برای متن «خانه» و «محصولات» در BreadcrumbList از همون کلیدهای
   // موجود namespace هدر استفاده می‌کنیم — نیازی به کلید ترجمه‌ی جدید نیست.
@@ -141,12 +234,8 @@ export default async function ProductsPage({ params, searchParams }: Props) {
     sp.sort === 'newest' || sp.sort === 'price-asc' || sp.sort === 'price-desc' ? sp.sort : 'featured';
   const currentPage = Math.max(1, parseInt(sp.page || '1', 10) || 1);
 
-  // ۱. دسته‌بندی‌ها (روی سرور، یک‌بار در همین رندر)
-  const { data: catData } = await supabase
-    .from('categories')
-    .select('*')
-    .order('name');
-  const categories = (catData || []) as Category[];
+  // ۱. دسته‌بندی‌ها (روی سرور، از Data Cache — حداکثر ۶۰ ثانیه کهنه)
+  const categories = await getCachedCategories();
 
   const activeCategoryInfo =
     currentCategory !== 'all' ? categories.find((c) => c.slug === currentCategory) || null : null;
@@ -167,47 +256,33 @@ export default async function ProductsPage({ params, searchParams }: Props) {
   // ساخت این View فقط با یک اسکریپت SQL توی Supabase انجام می‌شه (یک‌بار)،
   // جدول اصلی products اصلاً دست‌نخورده می‌مونه.
   const sourceTable = currentSort === 'featured' ? 'products_diversified' : 'products';
-  let query = supabase.from(sourceTable).select('*', { count: 'exact' });
-
-  if (currentSearch) {
-    if (isEn) {
-      query = query.or(`title.ilike.%${currentSearch}%,title_en.ilike.%${currentSearch}%`);
-    } else {
-      query = query.ilike('title', `%${currentSearch}%`);
-    }
-  }
-
-  if (currentCategory !== 'all') {
-    query = query.eq('category', currentCategory);
-  }
-
-  if (currentSort === 'featured') {
-    query = query.order('category_rank', { ascending: true }).order('created_at', { ascending: false });
-  } else if (currentSort === 'newest') {
-    query = query.order('created_at', { ascending: false });
-  } else if (currentSort === 'price-asc') {
-    query = query.order('price', { ascending: true });
-  } else if (currentSort === 'price-desc') {
-    query = query.order('price', { ascending: false });
-  }
-
   const from = (currentPage - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
-  query = query.range(from, to);
 
-  const { data, count, error } = await query;
+  let products: Product[] = [];
+  let totalCount = 0;
 
-  if (error) {
-    console.error('Error fetching products (server):', error);
+  try {
+    const { data, count } = await getCachedProducts(
+      sourceTable,
+      currentSearch,
+      isEn,
+      currentCategory,
+      currentSort,
+      from,
+      to
+    );
+
+    products = (data || []).map((p: any) => ({
+      ...p,
+      weight: p.weight || 0,
+      pricing_type: p.pricing_type || 'fixed',
+    }));
+    totalCount = count || 0;
+  } catch (err) {
+    console.error('Error fetching products (server):', err);
   }
 
-  const products: Product[] = (data || []).map((p: any) => ({
-    ...p,
-    weight: p.weight || 0,
-    pricing_type: p.pricing_type || 'fixed',
-  }));
-
-  const totalCount = count || 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   // ۳. تیتر و زیرتیتر صفحه — اگر دسته‌بندی خاصی فعاله، H1 هم واقعاً همون دسته رو نشون بده

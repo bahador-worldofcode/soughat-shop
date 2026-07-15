@@ -4,12 +4,24 @@ import type { Metadata } from 'next';
 import ProductClientView from '@/components/ProductClientView';
 import { ArrowRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 export const revalidate = 60;
 
 interface Props {
   params: Promise<{ slug: string; locale: string }>;
+}
+
+// 🆕 رفع بحران «Exceeded free resources - Fluid Active CPU» (گام ۱):
+// -----------------------------------------------------------------------
+// دقیقاً مثل blog/[slug]/page.tsx: اسلاگِ همه‌ی محصولات را در زمان Build
+// می‌خوانیم تا Next.js صفحه‌ی هر محصول را (برای هر دو زبان) از قبل بسازد،
+// نه این‌که هر بازدید (یا هر کراولِ گوگل/بات هوش مصنوعی) یک رندر کامل و
+// یک کوئری تازه به Supabase بزند. محصولاتِ جدید بعد از Build هم خودکار و
+// بدون خرابی کار می‌کنند (dynamicParams پیش‌فرض true است).
+export async function generateStaticParams() {
+  const { data: products } = await supabase.from('products').select('slug');
+  return (products || []).map((product) => ({ slug: product.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -77,6 +89,11 @@ export default async function ProductPage({ params }: Props) {
   const { slug, locale } = await params;
   const decodedSlug = decodeURIComponent(slug);
   const isEn = locale === 'en';
+
+  // 🆕 رفع بحران CPU: باید قبل از هر getTranslations صدا زده شود تا این
+  // صفحه واقعاً به‌صورت ایستا/ISR سرو شود، نه SSR کامل در هر درخواست.
+  setRequestLocale(locale);
+
   const t = await getTranslations('Product'); // دریافت ترجمه‌ها برای دکمه بازگشت
   // TASK-07: برای متن «خانه» و «محصولات» در BreadcrumbList از همون کلیدهای
   // موجود namespace هدر استفاده می‌کنیم — نیازی به کلید ترجمه‌ی جدید نیست.
@@ -94,20 +111,25 @@ export default async function ProductPage({ params }: Props) {
     notFound();
   }
 
-  // 2. دریافت نام دسته‌بندی
-  const { data: categoryData } = await supabase
-    .from('categories')
-    .select('*')
-    .eq('slug', product.category)
-    .single();
-
-  // 3. دریافت محصولات مرتبط
-  const { data: relatedRaw } = await supabase
-    .from('products')
-    .select('*')
-    .eq('category', product.category)
-    .neq('id', product.id)
-    .limit(4);
+  // 2. دریافت نام دسته‌بندی + 3. دریافت محصولات مرتبط
+  // 🆕 این دو کوئری کاملاً از هم مستقل‌اند (هیچ‌کدام به نتیجه‌ی آن یکی
+  // نیاز ندارد)، پس به‌جای پشت‌سرهم await کردن، با Promise.all موازی
+  // اجرا می‌شوند — دقیقاً همان الگویی که در ReviewsSection صفحه‌ی اصلی هم
+  // استفاده شده. نتیجه: این صفحه تقریباً به اندازه‌ی زمانِ یک کوئری (نه دو
+  // کوئری پشت‌سرهم) طول می‌کشد.
+  const [{ data: categoryData }, { data: relatedRaw }] = await Promise.all([
+    supabase
+      .from('categories')
+      .select('*')
+      .eq('slug', product.category)
+      .single(),
+    supabase
+      .from('products')
+      .select('*')
+      .eq('category', product.category)
+      .neq('id', product.id)
+      .limit(4),
+  ]);
 
   // --- آماده‌سازی داده‌ها بر اساس زبان ---
 
