@@ -215,7 +215,11 @@
     "clear": "پاک کردن",
     "show_results": "مشاهده نتایج",
     "empty_desc": "لطفا جستجو یا فیلترهای خود را تغییر دهید تا نتیجه‌ای پیدا کنید.",
-    "clear_all_filters": "پاک کردن تمام فیلترها"
+    "clear_all_filters": "پاک کردن تمام فیلترها",
+    "gender_filter_label": "جنسیت:",
+    "gender_male": "مردانه",
+    "gender_female": "زنانه",
+    "gender_reset": "بازگشت به حالت عادی"
   },
   "ProductsSEO": {
     "banner_alt": "ارسال هدیه، سوغات و حواله ارزی به ایران با پرداخت رمزارز",

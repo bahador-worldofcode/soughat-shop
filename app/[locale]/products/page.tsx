@@ -57,7 +57,8 @@ const getCachedProducts = unstable_cache(
     currentCategory: string,
     currentSort: string,
     from: number,
-    to: number
+    to: number,
+    currentGender: string
   ): Promise<{ data: any[]; count: number }> => {
     let query = supabase.from(sourceTable).select('*', { count: 'exact' });
 
@@ -71,6 +72,21 @@ const getCachedProducts = unstable_cache(
 
     if (currentCategory !== 'all') {
       query = query.eq('category', currentCategory);
+    }
+
+    // 🆕 فیلتر جنسیت (مردانه/زنانه) — فقط وقتی از URL مقدار معتبر گرفته باشیم اعمال می‌شه.
+    // چون این پارامتر هم مثل بقیه‌ی فیلترها به‌عنوان آرگومان جدا پاس داده می‌شه، کلید کش
+    // unstable_cache خودکار این مقدار رو هم در نظر می‌گیره (طبق همون قاعده‌ای که بالاتر
+    // توضیح داده شده).
+    //
+    // محصولات یونیسکس زیر هر دو فیلتر (مردانه و زنانه) نشون داده می‌شن، چون طبق تعریف
+    // برای هر دو جنسیت مناسبن — فقط وقتی هیچ فیلتری فعال نیست کنارشون گذاشته نمی‌شن.
+    if (currentGender === 'male') {
+      query = query.in('gender', ['male', 'unisex']);
+    } else if (currentGender === 'female') {
+      query = query.in('gender', ['female', 'unisex']);
+    } else if (currentGender === 'unisex') {
+      query = query.eq('gender', 'unisex');
     }
 
     if (currentSort === 'featured') {
@@ -113,6 +129,7 @@ interface Product {
   created_at?: string;
   pricing_type?: string;
   weight?: number;
+  gender?: 'male' | 'female' | 'unisex' | null;
 }
 
 interface Category {
@@ -126,13 +143,14 @@ interface Category {
   seo_title?: string;
   seo_desc?: string;
   seo_desc_en?: string;
+  has_gender_filter?: boolean;
 }
 
 const PAGE_SIZE = 12;
 
 interface Props {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ category?: string; q?: string; sort?: string; page?: string }>;
+  searchParams: Promise<{ category?: string; q?: string; sort?: string; page?: string; gender?: string }>;
 }
 
 function getSiteUrl() {
@@ -240,6 +258,13 @@ export default async function ProductsPage({ params, searchParams }: Props) {
   const activeCategoryInfo =
     currentCategory !== 'all' ? categories.find((c) => c.slug === currentCategory) || null : null;
 
+  // 🆕 فیلتر جنسیت (مردانه/زنانه) — فقط برای دسته‌بندی‌هایی که از پنل ادمین
+  // برایشان فعال شده (activeCategoryInfo.has_gender_filter). اگر کاربر با
+  // دستکاری آدرس، gender رو روی دسته‌ای بدون این قابلیت بذاره، همینجا نادیده
+  // گرفته می‌شه تا فیلتر اشتباه/بی‌ربط اعمال نشه.
+  const genderParam = sp.gender === 'male' || sp.gender === 'female' || sp.gender === 'unisex' ? sp.gender : '';
+  const currentGender = activeCategoryInfo?.has_gender_filter ? genderParam : '';
+
   // ۲. محصولات (روی سرور، با همون فیلترهایی که قبلاً کلاینت‌ساید انجام می‌شد)
   //
   // 🆕 رفع باگ «یک‌نواختی صفحه‌ی همه‌ی محصولات»: وقتی مرتب‌سازی روی حالت
@@ -270,7 +295,8 @@ export default async function ProductsPage({ params, searchParams }: Props) {
       currentCategory,
       currentSort,
       from,
-      to
+      to,
+      currentGender
     );
 
     products = (data || []).map((p: any) => ({
@@ -376,6 +402,7 @@ export default async function ProductsPage({ params, searchParams }: Props) {
           currentCategory={currentCategory}
           currentSearch={currentSearch}
           currentSort={currentSort}
+          currentGender={currentGender}
           currentPage={currentPage}
           totalCount={totalCount}
           totalPages={totalPages}

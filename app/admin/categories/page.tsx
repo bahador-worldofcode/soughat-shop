@@ -16,6 +16,7 @@ interface Category {
   seo_desc?: string;
   seo_title_en?: string;
   seo_desc_en?: string;
+  has_gender_filter?: boolean;
   created_at: string;
 }
 
@@ -109,7 +110,8 @@ export default function CategoriesPage() {
                 seo_title: editingCategory.seo_title,
                 seo_desc: editingCategory.seo_desc,
                 seo_title_en: editingCategory.seo_title_en,
-                seo_desc_en: editingCategory.seo_desc_en
+                seo_desc_en: editingCategory.seo_desc_en,
+                has_gender_filter: !!editingCategory.has_gender_filter
             })
             .eq('id', editingCategory.id);
 
@@ -182,6 +184,9 @@ export default function CategoriesPage() {
                 <td className="px-6 py-4">
                     <span className="font-bold text-gray-800 block">{cat.name}</span>
                     <span className="text-xs text-gray-400 dir-ltr">{cat.slug}</span>
+                    {cat.has_gender_filter && (
+                        <span className="inline-block mt-1 bg-purple-100 text-purple-700 text-[10px] px-2 py-0.5 rounded-full">فیلتر جنسیت فعال</span>
+                    )}
                 </td>
                 <td className="px-6 py-4">
                     {cat.description ? (
@@ -236,6 +241,17 @@ export default function CategoriesPage() {
                         <div>
                             <label className="block text-xs font-bold text-gray-500 mb-1">آدرس آیکون</label>
                             <input type="text" className="w-full p-2 border rounded-lg dir-ltr" value={editingCategory.icon_url || ''} onChange={e => setEditingCategory({...editingCategory, icon_url: e.target.value})} />
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="flex items-center gap-2 p-3 border rounded-lg bg-gray-50 cursor-pointer w-fit">
+                                <input
+                                    type="checkbox"
+                                    className="h-4 w-4"
+                                    checked={!!editingCategory.has_gender_filter}
+                                    onChange={e => setEditingCategory({...editingCategory, has_gender_filter: e.target.checked})}
+                                />
+                                <span className="text-xs font-bold text-gray-700">فیلتر جنسیت (مردانه/زنانه) بالای این دسته‌بندی در صفحه‌ی محصولات نمایش داده بشه</span>
+                            </label>
                         </div>
                     </div>
 

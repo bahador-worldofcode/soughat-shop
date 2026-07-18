@@ -45,6 +45,7 @@ interface Category {
   description_en?: string;
   seo_title?: string;
   seo_desc?: string;
+  has_gender_filter?: boolean;
 }
 
 interface ProductsClientViewProps {
@@ -53,6 +54,7 @@ interface ProductsClientViewProps {
   currentCategory: string;
   currentSearch: string;
   currentSort: 'featured' | 'newest' | 'price-asc' | 'price-desc';
+  currentGender: string;
   currentPage: number;
   totalCount: number;
   totalPages: number;
@@ -79,6 +81,7 @@ export default function ProductsClientView({
   currentCategory,
   currentSearch,
   currentSort,
+  currentGender,
   currentPage,
   totalCount,
   totalPages,
@@ -148,11 +151,17 @@ export default function ProductsClientView({
 
   const handleCategoryChange = (slug: string) => {
     setOptimisticCategory(slug === 'all' ? 'all' : slug);
-    updateParams({ category: slug === 'all' ? null : slug, page: null });
+    updateParams({ category: slug === 'all' ? null : slug, page: null, gender: null });
   };
 
   const handleSortChange = (value: string) => {
     updateParams({ sort: value === 'featured' ? null : value, page: null });
+  };
+
+  // 🆕 فیلتر جنسیت (مردانه/زنانه) — روی همون دسته‌بندی فعلی اعمال می‌شه.
+  // اگه دکمه‌ای که همین الان فعاله دوباره کلیک بشه، خودش ریست می‌شه (حالت toggle).
+  const handleGenderChange = (gender: 'male' | 'female' | null) => {
+    updateParams({ gender: currentGender === gender ? null : gender, page: null });
   };
 
   const goToPage = (p: number) => {
@@ -164,7 +173,7 @@ export default function ProductsClientView({
 
   const clearFilters = () => {
     setSearchTerm('');
-    updateParams({ category: null, q: null, page: null, sort: null });
+    updateParams({ category: null, q: null, page: null, sort: null, gender: null });
   };
 
   const activeDescription = activeCategoryInfo
@@ -421,6 +430,46 @@ export default function ProductsClientView({
             </div>
           )}
 
+          {/* 🆕 فیلتر جنسیت (مردانه/زنانه) — فقط بالای دسته‌بندی‌هایی نشون داده می‌شه که
+              از پنل ادمین (تیک «فیلتر جنسیت») براشون فعال شده، مثل «عطر و ادکلن». */}
+          {activeCategoryInfo?.has_gender_filter && (
+            <div className="mb-6 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-bold text-gray-700">{t('gender_filter_label')}</span>
+                <button
+                  onClick={() => handleGenderChange('female')}
+                  className={`px-5 py-2.5 rounded-xl text-sm font-bold border transition-colors active:scale-95 ${
+                    currentGender === 'female'
+                      ? 'bg-pink-600 border-pink-600 text-white'
+                      : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-pink-50 hover:border-pink-200 hover:text-pink-700'
+                  }`}
+                >
+                  {t('gender_female')}
+                </button>
+                <button
+                  onClick={() => handleGenderChange('male')}
+                  className={`px-5 py-2.5 rounded-xl text-sm font-bold border transition-colors active:scale-95 ${
+                    currentGender === 'male'
+                      ? 'bg-blue-600 border-blue-600 text-white'
+                      : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700'
+                  }`}
+                >
+                  {t('gender_male')}
+                </button>
+              </div>
+
+              {currentGender && (
+                <button
+                  onClick={() => handleGenderChange(null)}
+                  className="flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-red-600 transition-colors"
+                >
+                  <XCircle className="h-4 w-4" />
+                  {t('gender_reset')}
+                </button>
+              )}
+            </div>
+          )}
+
           {products.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 bg-white rounded-3xl border border-dashed border-gray-300 text-center px-4">
               <div className="bg-gray-50 p-6 rounded-full mb-4">
@@ -438,7 +487,7 @@ export default function ProductsClientView({
             </div>
           ) : (
             <>
-              {(currentCategory !== 'all' || currentSearch) && (
+              {(currentCategory !== 'all' || currentSearch || currentGender) && (
                 <div className="flex flex-wrap items-center gap-2 mb-4">
                   {currentCategory !== 'all' && (
                     <button
@@ -450,6 +499,15 @@ export default function ProductsClientView({
                           ? activeCategoryInfo.name_en || activeCategoryInfo.name
                           : activeCategoryInfo.name
                         : t('category_label')}
+                      <XCircle className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                  {currentGender && (
+                    <button
+                      onClick={() => handleGenderChange(null)}
+                      className="flex items-center gap-1.5 bg-purple-50 text-purple-700 border border-purple-200 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-purple-100 transition-colors"
+                    >
+                      {currentGender === 'female' ? t('gender_female') : t('gender_male')}
                       <XCircle className="h-3.5 w-3.5" />
                     </button>
                   )}

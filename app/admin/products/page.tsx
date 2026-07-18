@@ -19,6 +19,7 @@ interface Product {
   created_at?: string;
   weight?: number; 
   pricing_type?: 'fixed' | 'gold'; 
+  gender?: 'male' | 'female' | 'unisex' | null;
 }
 
 interface Category {
@@ -31,7 +32,7 @@ interface Category {
 interface MediaFile {
   name: string;
   url: string;
-  id: string;
+  id: string | null;
 }
 
 const BATCH_SIZE = 20;
@@ -59,7 +60,7 @@ export default function ProductsPage() {
   
   const [formData, setFormData] = useState({ 
     title: '', price: '', price_toman: '', image: '', slug: '', category: '',
-    description: '', features: '', seo_title: '', seo_desc: '', weight: '', pricing_type: 'fixed'
+    description: '', features: '', seo_title: '', seo_desc: '', weight: '', pricing_type: 'fixed', gender: ''
   });
 
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
@@ -255,14 +256,15 @@ export default function ProductsPage() {
         seo_title: product.seo_title || '',
         seo_desc: product.seo_desc || '',
         weight: product.weight ? product.weight.toString() : '',
-        pricing_type: product.pricing_type === 'gold' ? 'gold' : 'fixed' 
+        pricing_type: product.pricing_type === 'gold' ? 'gold' : 'fixed',
+        gender: product.gender || ''
       });
     } else {
       setEditingProduct(null);
       setFormData({ 
         title: '', price: '', price_toman: '', image: '', slug: '', 
         category: categories[0]?.slug || '', description: '', features: '', seo_title: '', seo_desc: '',
-        weight: '', pricing_type: 'fixed'
+        weight: '', pricing_type: 'fixed', gender: ''
       });
     }
     setIsModalOpen(true);
@@ -296,7 +298,8 @@ export default function ProductsPage() {
         seo_title: formData.seo_title,
         seo_desc: formData.seo_desc,
         weight: Number(formData.weight) || 0,
-        pricing_type: formData.pricing_type 
+        pricing_type: formData.pricing_type,
+        gender: formData.gender || null
       };
 
       if (formData.pricing_type === 'gold') {
@@ -471,6 +474,13 @@ export default function ProductsPage() {
                         </div>
                         <div className="p-4 flex flex-col flex-1">
                             <h3 className="font-bold text-gray-900 line-clamp-1 mb-1">{product.title}</h3>
+                            {product.gender && (
+                                <div className="mb-1">
+                                    {product.gender === 'female' && <span className="text-[9px] bg-pink-100 text-pink-700 px-1.5 py-0.5 rounded-full font-bold">زنانه</span>}
+                                    {product.gender === 'male' && <span className="text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-bold">مردانه</span>}
+                                    {product.gender === 'unisex' && <span className="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">یونیسکس</span>}
+                                </div>
+                            )}
                             <div className="mt-auto flex justify-between items-end">
                                 <span className="text-lg font-bold text-blue-600">${product.price}</span>
                                 {isGold && <span className="text-[10px] text-gray-400 font-mono">{product.weight}g</span>}
@@ -499,6 +509,9 @@ export default function ProductsPage() {
                                     <div className="font-bold text-gray-800 text-sm select-all cursor-text flex items-center gap-2">
                                         {product.title}
                                         {isGold && <span className="text-[9px] bg-yellow-200 text-yellow-800 px-1.5 rounded flex items-center gap-0.5"><Gem className="h-3 w-3"/> طلا</span>}
+                                        {product.gender === 'female' && <span className="text-[9px] bg-pink-100 text-pink-700 px-1.5 rounded font-bold">زنانه</span>}
+                                        {product.gender === 'male' && <span className="text-[9px] bg-blue-100 text-blue-700 px-1.5 rounded font-bold">مردانه</span>}
+                                        {product.gender === 'unisex' && <span className="text-[9px] bg-purple-100 text-purple-700 px-1.5 rounded font-bold">یونیسکس</span>}
                                         {isUnavailable && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full">ناموجود</span>}
                                     </div>
                                     <div className="text-xs text-gray-500 flex gap-2">
@@ -652,6 +665,20 @@ export default function ProductsPage() {
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">آدرس صفحه (Slug)</label>
                         <input type="text" className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm dir-ltr text-left" value={formData.slug} onChange={(e) => setFormData({...formData, slug: e.target.value})} />
+                      </div>
+                      <div className="md:col-span-2">
+                          <label className="block text-xs font-medium text-gray-700 mb-1">جنسیت (فقط برای دسته‌بندی‌هایی مثل عطر و ادکلن)</label>
+                          <select
+                              value={formData.gender}
+                              onChange={(e) => setFormData({...formData, gender: e.target.value})}
+                              className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm bg-white"
+                          >
+                              <option value="">بدون جنسیت (پیش‌فرض)</option>
+                              <option value="male">مردانه</option>
+                              <option value="female">زنانه</option>
+                              <option value="unisex">یونیسکس</option>
+                          </select>
+                          <p className="text-[10px] text-gray-500 mt-1">فقط وقتی «فیلتر جنسیت» برای این دسته‌بندی از صفحه‌ی دسته‌بندی‌ها فعال باشه، این مقدار روی سایت اثر می‌ذاره.</p>
                       </div>
                   </div>
               </div>

@@ -215,7 +215,11 @@
     "clear": "Clear",
     "show_results": "Show Results",
     "empty_desc": "Try adjusting your search or filter to find what you are looking for.",
-    "clear_all_filters": "Clear All Filters"
+    "clear_all_filters": "Clear All Filters",
+    "gender_filter_label": "Gender:",
+    "gender_male": "Men",
+    "gender_female": "Women",
+    "gender_reset": "Reset filter"
   },
   "ProductsSEO": {
     "banner_alt": "Send gifts, souvenirs and money transfers to Iran with crypto payment",
