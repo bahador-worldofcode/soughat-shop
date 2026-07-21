@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { Calendar, ArrowRight, ArrowLeft, User, Tag, Folder } from 'lucide-react';
 import Link from 'next/link';
@@ -195,20 +196,24 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
           <>
             {/* پس‌زمینه: نسخه‌ی بلورشده‌ی همون عکس، برای پر کردن فضای خالی اطراف
                 بدون نوار سیاه زشت */}
-            <img
+            <Image
               src={displayImage}
               alt=""
               aria-hidden="true"
-              className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl brightness-75"
+              fill
+              sizes="100vw"
+              className="object-cover scale-110 blur-2xl brightness-75"
             />
             <div className="absolute inset-0 bg-black/10" />
             {/* لایه‌ی اصلی: کل عکس با object-contain — هیچ‌وقت از بالا/پایین یا
                 چپ/راست بریده نمی‌شود، فارغ از نسبت ابعادش */}
             <div className="absolute inset-0 p-3 sm:p-6 md:p-8">
-              <img
+              <Image
                 src={displayImage}
                 alt={displayTitle}
-                className="w-full h-full object-contain rounded-xl md:rounded-2xl shadow-2xl"
+                fill
+                sizes="100vw"
+                className="object-contain rounded-xl md:rounded-2xl shadow-2xl"
               />
             </div>
           </>

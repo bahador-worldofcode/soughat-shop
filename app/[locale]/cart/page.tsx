@@ -5,6 +5,7 @@ import { useStore } from '@/lib/store';
 import { useEffect, useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { useTranslations, useLocale } from 'next-intl';
+import Image from 'next/image';
 
 export default function CartPage() {
   const t = useTranslations('Cart');
@@ -77,11 +78,13 @@ export default function CartPage() {
                   <Trash2 className="h-4 w-4" />
                 </button>
 
-                <div className="h-20 w-20 sm:h-24 sm:w-24 flex-shrink-0 overflow-hidden rounded-xl bg-gray-100 border border-gray-200">
-                  <img 
-                    src={item.image} 
-                    alt={displayTitle} 
-                    className="h-full w-full object-cover"
+                <div className="relative h-20 w-20 sm:h-24 sm:w-24 flex-shrink-0 overflow-hidden rounded-xl bg-gray-100 border border-gray-200">
+                  <Image
+                    src={item.image}
+                    alt={displayTitle}
+                    fill
+                    sizes="96px"
+                    className="object-cover"
                   />
                 </div>
 

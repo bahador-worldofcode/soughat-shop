@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { Calendar, ArrowLeft, ArrowRight } from 'lucide-react';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
@@ -163,10 +164,12 @@ export default async function BlogIndex({ searchParams, params }: BlogPageProps)
                   <article key={post.id} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col group">
                     <Link href={`/blog/${post.slug}`} className="block relative h-56 bg-gray-200 overflow-hidden">
                       {displayImage ? (
-                        <img 
-                          src={displayImage} 
-                          alt={displayTitle} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                        <Image
+                          src={displayImage}
+                          alt={displayTitle}
+                          fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-blue-50 text-blue-200 text-4xl font-bold">Blog</div>

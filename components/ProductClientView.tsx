@@ -6,6 +6,7 @@ import { ShoppingBag, Check, ShieldCheck, Truck, Star, Plus, Minus, Trash2, Tag,
 import { Link } from '@/i18n/navigation';
 import ProductCard from './ProductCard';
 import { useTranslations, useLocale } from 'next-intl';
+import Image from 'next/image';
 
 interface Product {
   id: string;
@@ -169,7 +170,14 @@ export default function ProductClientView({ product, categoryName, categorySlug,
         
             <div className="md:col-span-5 relative">
                 <div className="relative aspect-square bg-gray-50 md:bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm md:sticky md:top-24 group">
-                    <img src={product.image} alt={product.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                    <Image
+                        src={product.image}
+                        alt={product.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 40vw"
+                        priority
+                        className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
                     {quantity > 0 && product.pricing_type !== 'currency' && (
                         <div className="absolute top-4 right-4 bg-blue-600 text-white w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center font-black text-sm md:text-base shadow-lg border-2 border-white animate-in zoom-in">
                             {quantity}
@@ -185,6 +193,9 @@ export default function ProductClientView({ product, categoryName, categorySlug,
                         className="inline-flex items-center gap-2 text-xs md:text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors shadow-sm"
                     >
                         {categoryIcon ? (
+                          // توجه: عمداً از next/image استفاده نشده — دلیل کامل در
+                          // app/[locale]/(home)/page.tsx (بخش دسته‌بندی‌ها) توضیح داده شده:
+                          // آدرس آیکون توسط ادمین به‌صورت متن آزاد وارد می‌شود.
                           <img src={categoryIcon} className="h-4 w-4 md:h-5 md:w-5 object-contain drop-shadow-sm" alt="" />
                         ) : (
                           <Tag className="h-3 w-3" />

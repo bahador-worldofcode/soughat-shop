@@ -73,7 +73,11 @@ export default function MediaPage() {
         const { data: publicUrlData } = supabase.storage.from('media').getPublicUrl(file.name);
         return {
           name: file.name,
-          id: file.id,
+          // نکته: طبق تایپ‌های خودِ سوپابیس، file.id می‌تونه null باشه.
+          // این id فقط به‌عنوان کلید محلی/شناسه‌ی ری‌اکت استفاده می‌شه (نه برای
+          // حذف واقعی از استوریج — اون از fileName استفاده می‌کنه)، پس اگه id
+          // نال بود، از همون fileName (که خودش یکتاست) به‌جاش استفاده می‌کنیم.
+          id: file.id ?? file.name,
           url: publicUrlData.publicUrl,
         };
       });
@@ -106,7 +110,17 @@ export default function MediaPage() {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.floor(Math.random() * 1000)}.${fileExt}`;
 
-      const { error } = await supabase.storage.from('media').upload(fileName, file);
+      // نکته‌ی مهندسی (کاهش مصرف Cached Egress سوپابیس):
+      // چون fileName همیشه یکتاست (Date.now() + عدد رندوم)، هیچ‌وقت یک فایل
+      // با همین اسم دوباره آپلود/جایگزین نمی‌شود؛ پس تنظیم cacheControl روی
+      // یک عدد بزرگ (۱ سال) کاملاً امن است و هیچ‌وقت باعث نمایش عکس قدیمی/
+      // اشتباه نمی‌شود. این تنظیم به مرورگر کاربر، شبکه‌ی توزیع سوپابیس، و
+      // بهینه‌ساز عکس Next.js اجازه می‌دهد همین یک نسخه‌ی کش‌شده را برای مدت
+      // خیلی طولانی‌تری (به‌جای پیش‌فرض ۱ ساعته‌ی سوپابیس) دوباره استفاده کنند.
+      const { error } = await supabase.storage.from('media').upload(fileName, file, {
+        cacheControl: '31536000',
+        upsert: false,
+      });
       if (error) throw error;
 
       // بعد از آپلود، لیست رو رفرش میکنیم
