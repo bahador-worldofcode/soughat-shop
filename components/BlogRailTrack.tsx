@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { Calendar, Folder } from 'lucide-react';
-import Image from 'next/image';
 
 type RailPost = {
   id: string | number;
@@ -129,12 +128,10 @@ export default function BlogRailTrack({
       >
         <div className="relative h-36 sm:h-40 bg-gray-100 overflow-hidden">
           {displayImage ? (
-            <Image
+            <img
               src={displayImage}
               alt={displayTitle}
-              fill
-              sizes="(max-width: 640px) 240px, 280px"
-              className="object-cover group-hover:scale-105 transition-transform duration-500"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-blue-50 text-blue-200 text-3xl font-bold">
