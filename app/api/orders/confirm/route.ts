@@ -1,3 +1,6 @@
+// مسیر فایل در پروژه: app/api/orders/confirm/route.ts
+// این فایل جایگزین فایل فعلی همین مسیر می‌شود (کامل جایگزین کنید).
+
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
@@ -51,7 +54,7 @@ export async function POST(request: Request) {
 🏠 آدرس: ${order.address}
 ${hasBankInfo ? `➖➖➖➖➖➖➖➖
 💳 *اطلاعات واریز حواله:*
-${order.recipient_card_number ? `💳 شماره کارت: ${order.recipient_card_number}\n` : ''}${order.recipient_iban ? `🏦 شماره شبا: ${order.recipient_iban}\n` : ''}${order.recipient_account_number ? `🔢 شماره حساب: ${order.recipient_account_number}\n` : ''}` : ''}➖➖➖➖➖➖➖➖
+${order.recipient_account_holder_name ? `👤 نام صاحب حساب: ${order.recipient_account_holder_name}\n` : ''}${order.recipient_card_number ? `💳 شماره کارت: ${order.recipient_card_number}\n` : ''}${order.recipient_iban ? `🏦 شماره شبا: ${order.recipient_iban}\n` : ''}${order.recipient_account_number ? `🔢 شماره حساب: ${order.recipient_account_number}\n` : ''}` : ''}➖➖➖➖➖➖➖➖
 🛒 *اقلام:*
 ${itemsList}
 

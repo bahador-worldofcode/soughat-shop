@@ -1,3 +1,6 @@
+// مسیر فایل در پروژه: app/admin/orders/page.tsx
+// این فایل جایگزین فایل فعلی همین مسیر می‌شود (کامل جایگزین کنید).
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -16,6 +19,7 @@ interface Order {
   recipient_card_number?: string | null;
   recipient_iban?: string | null;
   recipient_account_number?: string | null;
+  recipient_account_holder_name?: string | null;
   // اطلاعات فرستنده (خارج)
   sender_name: string;
   sender_phone: string;
@@ -380,6 +384,30 @@ export default function OrdersPage() {
                           <Landmark className="h-4 w-4" /> اطلاعات واریز حواله
                       </h4>
                       <div className="grid grid-cols-1 gap-3 text-sm">
+                          {selectedOrder.recipient_account_holder_name && (
+                            <div>
+                                <span className="text-xs text-gray-500 block mb-1 flex items-center gap-1.5">
+                                  نام صاحب حساب
+                                  {selectedOrder.recipient_account_holder_name.trim() !== selectedOrder.customer_name?.trim() && (
+                                    <span className="text-amber-600 font-bold">⚠️ متفاوت از نام گیرنده</span>
+                                  )}
+                                </span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-bold text-gray-800">{selectedOrder.recipient_account_holder_name}</span>
+                                  <button
+                                    onClick={(e) => handleCopyId(selectedOrder.recipient_account_holder_name as string, e)}
+                                    className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 p-1 rounded-md transition-colors"
+                                    title="کپی نام صاحب حساب"
+                                  >
+                                    {copiedId === selectedOrder.recipient_account_holder_name ? (
+                                      <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                                    ) : (
+                                      <Copy className="h-3.5 w-3.5" />
+                                    )}
+                                  </button>
+                                </div>
+                            </div>
+                          )}
                           {selectedOrder.recipient_card_number && (
                             <div>
                                 <span className="text-xs text-gray-500 block mb-1">شماره کارت</span>

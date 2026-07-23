@@ -1,6 +1,9 @@
+// مسیر فایل در پروژه: app/[locale]/checkout/page.tsx
+// این فایل جایگزین فایل فعلی همین مسیر می‌شود (کامل جایگزین کنید).
+
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { MapPin, ShoppingCart, ChevronLeft, ChevronRight, Loader2, Globe, FileText, ShieldCheck, ArrowLeft, AlertTriangle, Trash2, XCircle, Info, Star, Wand2, UserPlus } from 'lucide-react';
+import { MapPin, ShoppingCart, ChevronLeft, ChevronRight, Loader2, Globe, FileText, ShieldCheck, ArrowLeft, AlertTriangle, Trash2, XCircle, Info, Star, Wand2, UserPlus, CheckCircle2, Landmark } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import CryptoPayment from '@/components/CryptoPayment';
 import { useTranslations, useLocale } from 'next-intl';
@@ -20,6 +23,12 @@ interface SavedAddress {
   city: string;
   address: string;
   is_default: boolean;
+  // اختیاری — اگه مشتری قبلاً برای این گیرنده اطلاعاتِ حسابِ بانکی هم
+  // ذخیره کرده باشه، اینجا پر می‌شه؛ در غیر این صورت null است.
+  recipient_card_number: string | null;
+  recipient_iban: string | null;
+  recipient_account_number: string | null;
+  recipient_account_holder_name: string | null;
 }
 
 function getCartSignature(items: { id: string; quantity: number }[]) {
@@ -80,6 +89,11 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [saveNewAddress, setSaveNewAddress] = useState(false);
   const [newAddressLabel, setNewAddressLabel] = useState('');
+  // آیا فیلدهای بانکی همین الان از یک آدرسِ ذخیره‌شده خودکار پر شدن؟ فقط
+  // برای نمایشِ یک نشانه‌ی کوچیک («از گیرنده‌ی ذخیره‌شده پر شد») استفاده
+  // می‌شه؛ به‌محضِ اینکه کاربر دستی یکی از این سه فیلد رو ویرایش کنه یا
+  // دکمه‌ی پاک‌کردن رو بزنه، این نشانه برداشته می‌شه.
+  const [bankInfoAutoFilled, setBankInfoAutoFilled] = useState(false);
 
   // اطلاعات پروفایل کاربر (نام/تلفن/کشور) — برای پرکردن خودکار بخش «فرستنده»
   const [profileInfo, setProfileInfo] = useState<{
@@ -133,6 +147,7 @@ export default function CheckoutPage() {
     recipientCardNumber: '',
     recipientIban: '',
     recipientAccountNumber: '',
+    recipientAccountHolderName: '',
   });
 
   // بازیابی پیش‌نویس فرم بعد از رفرش یا بازگشت به این صفحه
@@ -163,7 +178,9 @@ export default function CheckoutPage() {
 
       const [{ data: addresses }, { data: profileData }, { data: walletRow }] = await Promise.all([
         (supabaseBrowser.from('saved_addresses') as any)
-          .select('id, label, receiver_name, receiver_phone, city, address, is_default')
+          .select(
+            'id, label, receiver_name, receiver_phone, city, address, is_default, recipient_card_number, recipient_iban, recipient_account_number, recipient_account_holder_name'
+          )
           .order('is_default', { ascending: false })
           .order('created_at', { ascending: false }),
         (supabaseBrowser.from('profiles') as any)
@@ -209,12 +226,26 @@ export default function CheckoutPage() {
   const applySavedAddress = (addr: SavedAddress) => {
     setSelectedAddressId(addr.id);
     setSaveNewAddress(false);
+
+    // اطلاعاتِ بانکی رو فقط زمانی جایگزین می‌کنیم که خودِ این آدرس واقعاً
+    // چیزی برای ارائه داشته باشه — اگه این آدرس اطلاعاتِ بانکی نداره، دست
+    // به فیلدهایی که مشتری شاید همین الان دستی توشون تایپ کرده نمی‌زنیم.
+    const hasBankInfo = !!(addr.recipient_card_number || addr.recipient_iban || addr.recipient_account_number);
+
     setFormData((prev) => ({
       ...prev,
       receiverName: addr.receiver_name,
       receiverPhone: addr.receiver_phone,
       city: addr.city,
       address: addr.address,
+      ...(hasBankInfo
+        ? {
+            recipientCardNumber: addr.recipient_card_number || '',
+            recipientIban: addr.recipient_iban || '',
+            recipientAccountNumber: addr.recipient_account_number || '',
+            recipientAccountHolderName: addr.recipient_account_holder_name || '',
+          }
+        : {}),
     }));
     setFormErrors((prev) => ({
       ...prev,
@@ -223,6 +254,21 @@ export default function CheckoutPage() {
       city: false,
       address: false,
     }));
+    setBankInfoAutoFilled(hasBankInfo);
+  };
+
+  // پاک‌کردنِ فقط چهار فیلدِ بانکی — برای وقتی که مشتری فهمید اشتباه ذخیره
+  // کرده یا حسابش عوض شده و می‌خواد از نو دستی وارد کنه. بقیه‌ی فرم
+  // (نام/تلفن/آدرسِ گیرنده، یا حتی آدرسِ انتخاب‌شده) دست‌نخورده می‌مونه.
+  const clearBankInfo = () => {
+    setFormData((prev) => ({
+      ...prev,
+      recipientCardNumber: '',
+      recipientIban: '',
+      recipientAccountNumber: '',
+      recipientAccountHolderName: '',
+    }));
+    setBankInfoAutoFilled(false);
   };
 
   // وقتی هم آدرس‌های ذخیره‌شده لود شدند و هم پیش‌نویس فرم بررسی شد، اگر فرم
@@ -295,13 +341,19 @@ export default function CheckoutPage() {
     if (['receiverName', 'receiverPhone', 'city', 'address'].includes(name) && selectedAddressId) {
       setSelectedAddressId(null);
     }
+    // اگر کاربر دستی یکی از فیلدهای بانکیِ خودکارپرشده رو ویرایش کنه، دیگه
+    // نشانه‌ی «خودکار پر شد» رو نشون نمی‌دیم (چون دیگه دقیقاً همون مقدارِ
+    // ذخیره‌شده نیست).
+    if (['recipientCardNumber', 'recipientIban', 'recipientAccountNumber', 'recipientAccountHolderName'].includes(name) && bankInfoAutoFilled) {
+      setBankInfoAutoFilled(false);
+    }
   };
 
   const clearForm = () => {
     const emptyState = {
         senderName: '', senderPhone: '', senderCountry: '',
         receiverName: '', receiverPhone: '', city: '', address: '', notes: '',
-        recipientCardNumber: '', recipientIban: '', recipientAccountNumber: '',
+        recipientCardNumber: '', recipientIban: '', recipientAccountNumber: '', recipientAccountHolderName: '',
     };
     setFormData(emptyState);
     setFormErrors({});
@@ -309,6 +361,7 @@ export default function CheckoutPage() {
     setSelectedAddressId(null);
     setSaveNewAddress(false);
     setNewAddressLabel('');
+    setBankInfoAutoFilled(false);
     localStorage.removeItem('checkout_draft');
     setShowClearModal(false);
   };
@@ -408,6 +461,7 @@ export default function CheckoutPage() {
           recipientCardNumber: formData.recipientCardNumber,
           recipientIban: formData.recipientIban,
           recipientAccountNumber: formData.recipientAccountNumber,
+          recipientAccountHolderName: formData.recipientAccountHolderName,
         }),
       });
 
@@ -455,6 +509,12 @@ export default function CheckoutPage() {
                 city: formData.city,
                 address: formData.address,
                 is_default: !savedAddresses || savedAddresses.length === 0,
+                // اگه همین الان اطلاعاتِ بانکی هم تایپ کرده، همین‌جا ذخیره‌ش
+                // می‌کنیم تا دفعه‌ی بعد نیازی به تایپِ دوباره نباشه.
+                recipient_card_number: formData.recipientCardNumber?.trim() || null,
+                recipient_iban: formData.recipientIban?.trim() || null,
+                recipient_account_number: formData.recipientAccountNumber?.trim() || null,
+                recipient_account_holder_name: formData.recipientAccountHolderName?.trim() || null,
               },
             ])
             .then(() => {});
@@ -698,6 +758,12 @@ export default function CheckoutPage() {
                               <span className="flex items-center gap-1 text-xs font-bold text-gray-800 whitespace-nowrap">
                                 {addr.is_default && <Star className="h-3 w-3 text-amber-500 fill-current flex-shrink-0" />}
                                 <span className="truncate">{addr.label}</span>
+                                {(addr.recipient_card_number || addr.recipient_iban || addr.recipient_account_number) && (
+                                  <Landmark
+                                    className="h-3 w-3 text-green-600 flex-shrink-0"
+                                    aria-label={t('receiver.bank_info.has_saved_bank_hint')}
+                                  />
+                                )}
                               </span>
                               <span className="block text-[11px] text-gray-500 mt-0.5 truncate">
                                 {addr.city} — {addr.address}
@@ -785,13 +851,46 @@ export default function CheckoutPage() {
                 {/* اطلاعات واریز — فقط برای محصول «ارسال حواله نقدی»، هر سه فیلد اختیاری */}
                 {hasRemittanceItem && (
                   <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                    <h3 className="font-bold text-gray-800 mb-1 flex items-center gap-2 border-b border-gray-100 pb-2">
-                      {t('receiver.bank_info.title')}
-                    </h3>
-                    <p className="text-xs text-gray-500 mb-4">
-                      {t('receiver.bank_info.hint')}
-                    </p>
+                    <div className="flex items-start justify-between gap-3 border-b border-gray-100 pb-2 mb-1">
+                      <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                        {t('receiver.bank_info.title')}
+                      </h3>
+                      {(formData.recipientCardNumber ||
+                        formData.recipientIban ||
+                        formData.recipientAccountNumber ||
+                        formData.recipientAccountHolderName) && (
+                        <button
+                          type="button"
+                          onClick={clearBankInfo}
+                          className="inline-flex items-center gap-1 text-xs font-bold text-red-500 hover:text-red-600 whitespace-nowrap flex-shrink-0"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          {t('receiver.bank_info.clear_btn')}
+                        </button>
+                      )}
+                    </div>
+                    {bankInfoAutoFilled ? (
+                      <p className="text-xs text-green-600 font-bold mb-4 flex items-center gap-1.5">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        {t('receiver.bank_info.autofilled_notice')}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-gray-500 mb-4">
+                        {t('receiver.bank_info.hint')}
+                      </p>
+                    )}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1 md:col-span-2">
+                        <label className="text-xs text-gray-600">{t('receiver.bank_info.account_holder_name')}</label>
+                        <input
+                          type="text"
+                          name="recipientAccountHolderName"
+                          placeholder={t('receiver.bank_info.account_holder_name_ph')}
+                          className="w-full rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm outline-none transition-colors focus:bg-white focus:border-blue-500"
+                          onChange={handleInputChange}
+                          value={formData.recipientAccountHolderName}
+                        />
+                      </div>
                       <div className="space-y-1">
                         <label className="text-xs text-gray-600">{t('receiver.bank_info.card_number')}</label>
                         <input

@@ -396,12 +396,17 @@
       "bank_info": {
         "title": "اطلاعات واریز در ایران (اختیاری)",
         "hint": "هر کدام از فیلدهای زیر را که در دسترس دارید وارد کنید؛ پرکردن همه‌ی آن‌ها لازم نیست.",
+        "account_holder_name": "نام صاحب حساب",
+        "account_holder_name_ph": "ممکنه با گیرنده فرق داشته باشه — مثلاً کارتِ خواهر/برادر",
         "card_number": "شماره کارت (۱۶ رقمی)",
         "card_number_ph": "6037-XXXX-XXXX-XXXX",
         "iban": "شماره شبا",
         "iban_ph": "IR...",
         "account_number": "شماره حساب",
-        "account_number_ph": "شماره حساب بانکی گیرنده"
+        "account_number_ph": "شماره حساب بانکی گیرنده",
+        "clear_btn": "پاک کردن اطلاعات حساب",
+        "autofilled_notice": "از یک گیرنده‌ی ذخیره‌شده خودکار پر شد",
+        "has_saved_bank_hint": "این گیرنده حساب بانکی ذخیره‌شده دارد"
       }
     },
     "note": {
@@ -770,7 +775,17 @@
       "deleted": "آدرس حذف شد",
       "delete_confirm_title": "این آدرس حذف شود؟",
       "delete_confirm_desc": "این عملیات قابل بازگشت نیست.",
-      "confirm_delete": "بله، حذف شود"
+      "confirm_delete": "بله، حذف شود",
+      "bank_info_title": "اطلاعات حساب بانکی گیرنده",
+      "optional": "اختیاری",
+      "bank_info_desc": "فقط اگه برای این گیرنده حواله‌ی بانکی هم می‌فرستی لازمه. اگه اینجا ذخیره‌ش کنی، دفعه‌ی بعد در چک‌اوت خودکار پر می‌شه.",
+      "account_holder_name": "نام صاحب حساب",
+      "account_holder_name_ph": "ممکنه با نام گیرنده فرق داشته باشه",
+      "card_number": "شماره کارت",
+      "iban": "شماره شبا",
+      "account_number": "شماره حساب",
+      "clear_bank_info": "پاک کردن اطلاعات حساب",
+      "has_bank_info_badge": "حساب ذخیره شده"
     },
     "orders": {
       "title": "سفارش‌های من",
@@ -805,6 +820,7 @@
     "recipient_phone": "شماره تماس",
     "recipient_address": "آدرس کامل",
     "bank_title": "اطلاعات واریز حواله",
+    "account_holder_name": "نام صاحب حساب",
     "card_number": "شماره کارت",
     "iban": "شماره شبا",
     "account_number": "شماره حساب",

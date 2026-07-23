@@ -1,3 +1,6 @@
+// مسیر فایل در پروژه: app/api/orders/route.ts
+// این فایل جایگزین فایل فعلی همین مسیر می‌شود (کامل جایگزین کنید).
+
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { verifyAdmin } from '@/lib/verifyAdmin';
@@ -33,6 +36,7 @@ export async function POST(request: Request) {
       recipientCardNumber,
       recipientIban,
       recipientAccountNumber,
+      recipientAccountHolderName,
     } = body;
 
     // اعتبارسنجی حداقلی سمت سرور — چک‌اوت سمت کلاینت هم اعتبارسنجی
@@ -79,6 +83,9 @@ export async function POST(request: Request) {
           recipient_card_number: recipientCardNumber?.trim() || null,
           recipient_iban: recipientIban?.trim() || null,
           recipient_account_number: recipientAccountNumber?.trim() || null,
+          // نام صاحبِ حساب می‌تونه با نامِ گیرنده فرق داشته باشه (مثلاً
+          // آدرس مالِ مادره ولی کارت مالِ برادره) — پس فیلدِ جدا نگه می‌داریم.
+          recipient_account_holder_name: recipientAccountHolderName?.trim() || null,
           status: 'pending',
         },
       ])

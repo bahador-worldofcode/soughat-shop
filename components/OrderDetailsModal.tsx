@@ -63,6 +63,7 @@ interface OrderDetail {
   recipient_card_number: string | null;
   recipient_iban: string | null;
   recipient_account_number: string | null;
+  recipient_account_holder_name: string | null;
   sender_name: string;
   sender_phone: string;
   sender_country: string;
@@ -373,6 +374,15 @@ export default function OrderDetailsModal({ orderId, onClose }: Props) {
                     <Landmark className="h-4 w-4" /> {t('bank_title')}
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                    {order.recipient_account_holder_name && (
+                      <div className="sm:col-span-2">
+                        <span className="text-xs text-gray-500 block mb-1">{t('account_holder_name')}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-gray-800">{order.recipient_account_holder_name}</span>
+                          <CopyButton value={order.recipient_account_holder_name} field="holder" />
+                        </div>
+                      </div>
+                    )}
                     {order.recipient_card_number && (
                       <div>
                         <span className="text-xs text-gray-500 block mb-1">{t('card_number')}</span>

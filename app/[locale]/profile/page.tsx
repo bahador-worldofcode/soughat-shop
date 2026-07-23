@@ -45,6 +45,9 @@ import {
   XCircle,
   Eye,
   Globe,
+  Landmark,
+  ChevronDown,
+  ChevronUp,
   RefreshCw,
   Wallet as WalletIcon,
   ArrowDownCircle,
@@ -75,6 +78,15 @@ interface SavedAddress {
   address: string;
   is_default: boolean;
   created_at: string;
+  // سه فیلدِ اختیاریِ جدید: اطلاعاتِ واریزِ حواله‌یِ همین گیرنده. مقدارشون
+  // می‌تونه null باشه (خیلی از آدرس‌ها فقط برای ارسالِ فیزیکیِ هدیه‌ن و
+  // اصلاً نیازی به اطلاعاتِ بانکی ندارن).
+  recipient_card_number: string | null;
+  recipient_iban: string | null;
+  recipient_account_number: string | null;
+  // اسمِ صاحبِ حساب می‌تونه با نامِ گیرنده (receiver_name) فرق داشته باشه —
+  // مثلاً آدرس مالِ مادره ولی کارتِ بانکی مالِ برادرشه.
+  recipient_account_holder_name: string | null;
 }
 
 interface OrderRow {
@@ -126,6 +138,12 @@ const emptyAddressForm = {
   receiver_phone: '',
   city: '',
   address: '',
+  // اختیاری — فقط برای کسانی که این آدرس رو برای حواله‌ی بانکی هم استفاده
+  // می‌کنن. اگه خالی بمونه، در ذخیره‌سازی به‌جاش null فرستاده می‌شه.
+  recipient_card_number: '',
+  recipient_iban: '',
+  recipient_account_number: '',
+  recipient_account_holder_name: '',
 };
 
 export default function ProfilePage() {
@@ -169,6 +187,9 @@ export default function ProfilePage() {
   const [addressFormErrors, setAddressFormErrors] = useState<Record<string, boolean>>({});
   const [addressSaving, setAddressSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<SavedAddress | null>(null);
+  // باز/بسته‌بودنِ بخشِ اختیاریِ «اطلاعات حساب بانکی گیرنده» — پیش‌فرض بسته
+  // است تا فرم برای کسی که فقط آدرسِ فیزیکی می‌خواد ذخیره کنه، ساده بمونه.
+  const [showBankFields, setShowBankFields] = useState(false);
 
   // ── تب «سفارش‌های من» ────────────────────────────────────────
   const [orders, setOrders] = useState<OrderRow[] | null>(null);
@@ -308,7 +329,9 @@ export default function ProfilePage() {
   const loadAddresses = async () => {
     setAddressesLoading(true);
     const { data, error } = await (supabaseBrowser.from('saved_addresses') as any)
-      .select('id, label, receiver_name, receiver_phone, city, address, is_default, created_at')
+      .select(
+        'id, label, receiver_name, receiver_phone, city, address, is_default, created_at, recipient_card_number, recipient_iban, recipient_account_number, recipient_account_holder_name'
+      )
       .order('is_default', { ascending: false })
       .order('created_at', { ascending: false });
 
@@ -515,6 +538,7 @@ export default function ProfilePage() {
     setEditingAddressId(null);
     setAddressForm(emptyAddressForm);
     setAddressFormErrors({});
+    setShowBankFields(false);
     setShowAddressForm(true);
   };
 
@@ -526,9 +550,26 @@ export default function ProfilePage() {
       receiver_phone: addr.receiver_phone,
       city: addr.city,
       address: addr.address,
+      recipient_card_number: addr.recipient_card_number || '',
+      recipient_iban: addr.recipient_iban || '',
+      recipient_account_number: addr.recipient_account_number || '',
+      recipient_account_holder_name: addr.recipient_account_holder_name || '',
     });
     setAddressFormErrors({});
+    // اگه این آدرس قبلاً اطلاعاتِ بانکی داشته، بخش رو باز نشون بده تا
+    // مشتری غافلگیر نشه که «پس این اطلاعات کجا رفتن».
+    setShowBankFields(!!(addr.recipient_card_number || addr.recipient_iban || addr.recipient_account_number));
     setShowAddressForm(true);
+  };
+
+  const clearBankFieldsInForm = () => {
+    setAddressForm((prev) => ({
+      ...prev,
+      recipient_card_number: '',
+      recipient_iban: '',
+      recipient_account_number: '',
+      recipient_account_holder_name: '',
+    }));
   };
 
   const closeAddressForm = () => {
@@ -560,9 +601,20 @@ export default function ProfilePage() {
     if (!profile) return;
     setAddressSaving(true);
 
+    // فیلدهای بانکی اختیاری‌ان: اگه خالی مونده باشن، به‌جای رشته‌ی خالی،
+    // null ذخیره می‌کنیم — همون قراردادی که در بقیه‌ی پروژه (مثلاً هنگام
+    // ثبتِ سفارش) برای این سه فیلد رعایت شده.
+    const payload = {
+      ...addressForm,
+      recipient_card_number: addressForm.recipient_card_number.trim() || null,
+      recipient_iban: addressForm.recipient_iban.trim() || null,
+      recipient_account_number: addressForm.recipient_account_number.trim() || null,
+      recipient_account_holder_name: addressForm.recipient_account_holder_name.trim() || null,
+    };
+
     if (editingAddressId) {
       const { error } = await (supabaseBrowser.from('saved_addresses') as any)
-        .update({ ...addressForm })
+        .update(payload)
         .eq('id', editingAddressId);
 
       if (error) {
@@ -572,7 +624,7 @@ export default function ProfilePage() {
       }
     } else {
       const { error } = await (supabaseBrowser.from('saved_addresses') as any).insert([
-        { ...addressForm, user_id: profile.id },
+        { ...payload, user_id: profile.id },
       ]);
 
       if (error) {
@@ -1009,6 +1061,12 @@ export default function ProfilePage() {
                         <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-600 text-[11px] font-bold px-2 py-0.5 rounded-full">
                           <Star className="h-3 w-3 fill-current" />
                           {t('addresses.default_badge')}
+                        </span>
+                      )}
+                      {(addr.recipient_card_number || addr.recipient_iban || addr.recipient_account_number) && (
+                        <span className="inline-flex items-center gap-1 bg-green-50 text-green-600 text-[11px] font-bold px-2 py-0.5 rounded-full">
+                          <Landmark className="h-3 w-3" />
+                          {t('addresses.has_bank_info_badge')}
                         </span>
                       )}
                     </div>
@@ -1525,6 +1583,95 @@ export default function ProfilePage() {
                     addressFormErrors.address ? 'border-red-400' : 'border-gray-300 focus:border-blue-500'
                   }`}
                 />
+              </div>
+
+              {/* ── بخشِ اختیاری: اطلاعاتِ حسابِ بانکیِ همین گیرنده ──────
+                  کاملاً اختیاری و پیش‌فرض بسته — کسی که فقط برای هدیه‌ی
+                  فیزیکی آدرس ذخیره می‌کنه، اصلاً این بخش رو نمی‌بینه باز شده. */}
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setShowBankFields((v) => !v)}
+                  className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 hover:bg-gray-100 transition-colors"
+                >
+                  <span className="inline-flex items-center gap-2 text-xs font-bold text-gray-700">
+                    <Landmark className="h-3.5 w-3.5 text-gray-500" />
+                    {t('addresses.bank_info_title')}
+                    <span className="font-normal text-gray-400">({t('addresses.optional')})</span>
+                  </span>
+                  {showBankFields ? (
+                    <ChevronUp className="h-4 w-4 text-gray-400" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-gray-400" />
+                  )}
+                </button>
+
+                {showBankFields && (
+                  <div className="p-3 space-y-3 border-t border-gray-200">
+                    <p className="text-[11px] text-gray-400 leading-5">{t('addresses.bank_info_desc')}</p>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        {t('addresses.account_holder_name')}
+                      </label>
+                      <input
+                        name="recipient_account_holder_name"
+                        value={addressForm.recipient_account_holder_name}
+                        onChange={handleAddressFormChange}
+                        placeholder={t('addresses.account_holder_name_ph')}
+                        className="w-full px-3 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 text-sm outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        {t('addresses.card_number')}
+                      </label>
+                      <input
+                        name="recipient_card_number"
+                        dir="ltr"
+                        value={addressForm.recipient_card_number}
+                        onChange={handleAddressFormChange}
+                        placeholder="6037-XXXX-XXXX-XXXX"
+                        className="w-full px-3 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 text-sm outline-none text-left font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">{t('addresses.iban')}</label>
+                      <input
+                        name="recipient_iban"
+                        dir="ltr"
+                        value={addressForm.recipient_iban}
+                        onChange={handleAddressFormChange}
+                        placeholder="IRXXXXXXXXXXXXXXXXXXXXXX"
+                        className="w-full px-3 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 text-sm outline-none text-left font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        {t('addresses.account_number')}
+                      </label>
+                      <input
+                        name="recipient_account_number"
+                        dir="ltr"
+                        value={addressForm.recipient_account_number}
+                        onChange={handleAddressFormChange}
+                        className="w-full px-3 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 text-sm outline-none text-left font-mono"
+                      />
+                    </div>
+
+                    {(addressForm.recipient_card_number ||
+                      addressForm.recipient_iban ||
+                      addressForm.recipient_account_number ||
+                      addressForm.recipient_account_holder_name) && (
+                      <button
+                        type="button"
+                        onClick={clearBankFieldsInForm}
+                        className="text-xs font-bold text-red-500 hover:text-red-600 hover:underline"
+                      >
+                        {t('addresses.clear_bank_info')}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 

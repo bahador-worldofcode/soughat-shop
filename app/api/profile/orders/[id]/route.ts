@@ -61,6 +61,7 @@ export async function GET(
         `id, status, created_at,
          customer_name, customer_phone, city, address,
          recipient_card_number, recipient_iban, recipient_account_number,
+         recipient_account_holder_name,
          sender_name, sender_phone, sender_country,
          display_currency, display_fiat_amount,
          order_notes, total_price, items`

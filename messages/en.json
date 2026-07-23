@@ -396,12 +396,17 @@
       "bank_info": {
         "title": "Recipient's Bank Details in Iran (Optional)",
         "hint": "Fill in whichever of these you have on hand — you don't need to fill in all of them.",
+        "account_holder_name": "Account Holder's Name",
+        "account_holder_name_ph": "May differ from the recipient — e.g. a sibling's card",
         "card_number": "Card Number (16 digits)",
         "card_number_ph": "6037-XXXX-XXXX-XXXX",
         "iban": "IBAN (Shaba)",
         "iban_ph": "IR...",
         "account_number": "Account Number",
-        "account_number_ph": "Recipient's bank account number"
+        "account_number_ph": "Recipient's bank account number",
+        "clear_btn": "Clear bank details",
+        "autofilled_notice": "Filled in automatically from a saved recipient",
+        "has_saved_bank_hint": "This recipient has saved bank details"
       }
     },
     "note": {
@@ -769,7 +774,17 @@
       "deleted": "Address deleted",
       "delete_confirm_title": "Delete this address?",
       "delete_confirm_desc": "This can't be undone.",
-      "confirm_delete": "Yes, delete"
+      "confirm_delete": "Yes, delete",
+      "bank_info_title": "Recipient's bank details",
+      "optional": "optional",
+      "bank_info_desc": "Only needed if you send bank transfers to this recipient. Saved here, this fills in automatically at checkout next time.",
+      "account_holder_name": "Account holder's name",
+      "account_holder_name_ph": "May differ from the recipient's name",
+      "card_number": "Card number",
+      "iban": "IBAN (Sheba)",
+      "account_number": "Account number",
+      "clear_bank_info": "Clear bank details",
+      "has_bank_info_badge": "Bank info saved"
     },
     "orders": {
       "title": "My Orders",
@@ -804,6 +819,7 @@
     "recipient_phone": "Phone number",
     "recipient_address": "Full address",
     "bank_title": "Bank Transfer Details",
+    "account_holder_name": "Account holder's name",
     "card_number": "Card number",
     "iban": "IBAN (Sheba)",
     "account_number": "Account number",
