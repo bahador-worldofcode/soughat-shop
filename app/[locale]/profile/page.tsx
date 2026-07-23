@@ -1,3 +1,6 @@
+// مسیر فایل در پروژه: app/[locale]/profile/page.tsx
+// این فایل جایگزین فایل فعلی همین مسیر می‌شود (کامل جایگزین کنید).
+
 // --------------------------------------------------------------
 // صفحهٔ پروفایل کاربری (Customer Profile) — نسخهٔ کامل و حرفه‌ای
 // شامل ۳ تب:
@@ -18,6 +21,7 @@ import { compressAvatarImage, ImageCompressError } from '@/lib/imageCompress';
 import Toast from '@/components/Toast';
 import WelcomeOnboardingModal from '@/components/WelcomeOnboardingModal';
 import WalletTopupPayment from '@/components/WalletTopupPayment';
+import OrderDetailsModal from '@/components/OrderDetailsModal';
 import {
   Loader2,
   User as UserIcon,
@@ -39,7 +43,7 @@ import {
   MessageCircle,
   Truck,
   XCircle,
-  ExternalLink,
+  Eye,
   Globe,
   RefreshCw,
   Wallet as WalletIcon,
@@ -80,7 +84,10 @@ interface OrderRow {
   total_price: number;
   display_fiat_amount: number | null;
   display_currency: string | null;
-  items: { name?: string; quantity?: number }[] | null;
+  // نکته: نام واقعی این فیلد در دیتابیس «title» است (نه «name»)؛ قبلاً اینجا
+  // اشتباه تایپ شده بود و باعث می‌شد خلاصه‌ی اقلامِ سفارش هیچ‌وقت نمایش
+  // داده نشود (چون order.items[i].name همیشه undefined بود).
+  items: { title?: string; quantity?: number; price?: number; image?: string }[] | null;
   created_at: string;
 }
 
@@ -167,6 +174,10 @@ export default function ProfilePage() {
   const [orders, setOrders] = useState<OrderRow[] | null>(null);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState(false);
+  // شناسه‌ی سفارشی که مودالِ «جزئیات کامل سفارش» برایش باز است؛ null یعنی
+  // مودال بسته است. خودِ مودال (کامپوننتِ OrderDetailsModal) با این شناسه
+  // جزئیاتِ کامل را از API امنِ جدید می‌خواند.
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   // ── تب «کیف‌پول» ──────────────────────────────────────────────
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
@@ -1069,7 +1080,7 @@ export default function ProfilePage() {
                 const meta = statusMeta(order.status);
                 const StatusIcon = meta.icon;
                 const itemsSummary = (order.items || [])
-                  .map((i) => i.name)
+                  .map((i) => i.title)
                   .filter(Boolean)
                   .join('، ');
 
@@ -1101,11 +1112,11 @@ export default function ProfilePage() {
                             : `$${order.total_price}`}
                         </span>
                         <button
-                          onClick={() => router.push(`/track?id=${order.id}`)}
-                          className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:underline whitespace-nowrap"
+                          onClick={() => setSelectedOrderId(order.id)}
+                          className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
                         >
-                          {t('orders.track_btn')}
-                          <ExternalLink className="h-3 w-3" />
+                          <Eye className="h-3.5 w-3.5" />
+                          {t('orders.details_btn')}
                         </button>
                       </div>
                     </div>
@@ -1561,6 +1572,12 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+
+      {/* ── مودال جزئیات کامل سفارش ────────────────────────────── */}
+      {/* خودِ کامپوننت وقتی selectedOrderId مقدار null داشته باشد چیزی رندر
+          نمی‌کند؛ پس همیشه می‌توانیم آن را اینجا (بیرون از شرط‌های تب) قرار
+          دهیم — دقیقاً مثل بقیه‌ی مودال‌های این صفحه. */}
+      <OrderDetailsModal orderId={selectedOrderId} onClose={() => setSelectedOrderId(null)} />
     </div>
   );
 }
