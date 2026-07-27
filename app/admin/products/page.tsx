@@ -286,7 +286,7 @@ export default function ProductsPage() {
       finalSlug = finalSlug.trim().toLowerCase().replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
       const finalCategory = formData.category || categories[0]?.slug || 'nuts';
 
-      const productData = {
+      const productData: any = {
         title: formData.title,
         price: Number(formData.price),
         price_toman: Number(formData.price_toman),
@@ -333,8 +333,34 @@ export default function ProductsPage() {
         throw new Error(errData.error || 'خطا در ذخیره‌سازی');
       }
 
-      await fetchProducts(true); 
-      await fetchStats();
+      // به‌جای گرفتن دوباره‌ی کل لیست از سرور (که لیست رو به صفحه‌ی اول برمی‌گردوند
+      // و باعث می‌شد اسکرول صفحه بپره بالا)، فقط همون محصولی که ساخته/ویرایش شده
+      // رو مستقیماً توی لیستِ فعلی جایگزین یا اضافه می‌کنیم. این‌طوری جای محصول
+      // توی لیست و موقعیت اسکرول صفحه دقیقاً همون‌جایی که بودید می‌مونه.
+      const resultData = await response.json();
+      const savedProduct = Array.isArray(resultData) ? resultData[0] : resultData;
+
+      if (savedProduct?.id) {
+        const normalizedProduct: Product = {
+          ...savedProduct,
+          weight: savedProduct.weight || 0,
+          pricing_type: savedProduct.pricing_type || 'fixed',
+        };
+
+        if (editingProduct) {
+          setProducts(prev => {
+            const stillMatchesSearch = !searchTerm || normalizedProduct.title.toLowerCase().includes(searchTerm.toLowerCase());
+            // اگه محصول ویرایش‌شده دیگه با متن جستجوی فعلی مچ نمی‌شه، از لیستِ همین حالا حذفش کن
+            if (!stillMatchesSearch) return prev.filter(p => p.id !== normalizedProduct.id);
+            return prev.map(p => (p.id === normalizedProduct.id ? normalizedProduct : p));
+          });
+        } else {
+          // محصول جدید همیشه بالای لیست اضافه می‌شه چون لیست بر اساس جدیدترین مرتب شده
+          setProducts(prev => [normalizedProduct, ...prev]);
+        }
+      }
+
+      fetchStats();
       setIsModalOpen(false);
     } catch (error: any) {
       alert('خطا: ' + error.message);
@@ -726,8 +752,9 @@ export default function ProductsPage() {
               </div>
 
               <div className="pt-4 flex gap-3">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">انصراف</button>
-                <button type="submit" disabled={isSaving || !formData.image} className="flex-1 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 shadow-md disabled:opacity-50">
+                <button type="button" disabled={isSaving} onClick={() => setIsModalOpen(false)} className="flex-1 py-3 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50">انصراف</button>
+                <button type="submit" disabled={isSaving || !formData.image} className="flex-1 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 shadow-md disabled:opacity-50 flex items-center justify-center gap-2">
+                  {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
                   {isSaving ? 'در حال ذخیره...' : 'ذخیره محصول'}
                 </button>
               </div>
