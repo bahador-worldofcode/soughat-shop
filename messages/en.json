@@ -931,5 +931,107 @@
     "close_aria": "Dismiss",
     "ios_step1": "Tap the Share button in Safari",
     "ios_step2": "Then select \"Add to Home Screen\""
-  }
+  },
+
+    "CustomOrder": {
+      "banner": {
+        "eyebrow": "New",
+        "title": "Looking for a product you can't find here?",
+        "subtitle": "Request it and we'll add it to the store fast — Soughat Shop's Custom Gifts service covers exactly what you need.",
+        "cta": "Go to Custom Gifts",
+        "icon_alt": "Custom gift request icon"
+      },
+      "meta": {
+        "title": "Custom Gifts | Request Any Product - Soughat Shop",
+        "description": "Couldn't find a product on Soughat Shop? Enter its price and get a fully transparent final quote in seconds, then send your request over WhatsApp in a few minutes."
+      },
+      "hero": {
+        "eyebrow": "Custom Product Request",
+        "title": "Whatever you're looking for, we'll get it for you",
+        "subtitle": "Just tell us the price you saw on another store. We'll calculate the final price with full transparency, and once you approve, we'll add the product to the store so you can pay with currency or crypto.",
+        "image_alt": "A sample of Soughat Shop's custom gift packaging"
+      },
+      "calculator": {
+        "title": "Instant Price Calculator",
+        "subtitle": "Enter the Toman price of a product you found on another store to see the final price — shipping included, no hidden fees.",
+        "input_label": "Product price on the other store (Toman)",
+        "input_placeholder": "e.g. 3500000",
+        "currency_label": "Show price in:",
+        "result_label": "Final payable price",
+        "breakdown_toggle": "Price transparency: how was this calculated?",
+        "breakdown_product": "Product price (converted to USD)",
+        "breakdown_shipping": "Fixed international shipping cost",
+        "breakdown_margin": "Soughat Shop service fee",
+        "breakdown_margin_note": "Our fee is tiered: the higher the order value, the lower the fee percentage — keeping bigger orders fair and competitive.",
+        "breakdown_total": "Total (payable with currency or crypto)",
+        "rate_note": "Based on the live rate: 1 USD equals",
+        "toman_suffix": "Toman",
+        "empty_state": "Enter the price above to see the final quote.",
+        "loading_settings": "Fetching the live exchange rate...",
+        "error_settings": "Couldn't fetch the live rate. Please refresh the page or message us directly on WhatsApp."
+      },
+      "request": {
+        "title": "Want this product added to the store?",
+        "subtitle": "For speed and security, send the product details straight to us on WhatsApp — nothing here is stored on our servers.",
+        "name_label": "Product name",
+        "name_placeholder": "e.g. Chanel No. 5 perfume, 50ml",
+        "link_label": "Product link (optional)",
+        "link_placeholder": "Link to the product page on the other store",
+        "notes_label": "Notes or extra details (optional)",
+        "notes_placeholder": "Color, size, quantity, or anything else...",
+        "whatsapp_btn": "Send request via WhatsApp",
+        "whatsapp_note": "Clicking this button opens WhatsApp with your message already prepared — just hit send.",
+        "whatsapp_msg_intro": "Hi Soughat Shop 👋 I'd like to request a custom gift:",
+        "whatsapp_msg_name": "Product name",
+        "whatsapp_msg_link": "Product link",
+        "whatsapp_msg_notes": "Notes",
+        "whatsapp_msg_price": "Price I saw on the other store",
+        "whatsapp_msg_calc": "Final price calculated by the site",
+        "whatsapp_msg_outro": "Please review and let me know 🙏"
+      },
+      "trust": {
+        "item1_title": "Nothing stored",
+        "item1_desc": "No data is saved on the site; the conversation happens directly and securely on WhatsApp.",
+        "item2_title": "Transparent pricing",
+        "item2_desc": "Product cost, shipping, and our fee are all shown separately and clearly.",
+        "item3_title": "Fast response",
+        "item3_desc": "Requests are usually reviewed and quoted the same day."
+      },
+      "seo": {
+        "main_title": "Soughat Shop Custom Gifts — any product, from any store",
+        "intro_text": "Soughat Shop already carries hundreds of ready-to-ship products, but sometimes you're after a specific item, a particular brand, or a fully personal gift that isn't in our catalog yet. The Custom Gifts section was built exactly for that: tell us the price you found on any other online store, we'll calculate the final price in full transparency, and once you approve it we'll source the product and ship it to your recipient in Iran — with the same secure currency or crypto payment as every other product on the site.",
+        "how_title": "How does it work?",
+        "how_text": "Simply enter the Toman price of the product in the calculator above. The system instantly shows the final price based on the live dollar rate, a fixed international shipping fee, and our service fee. If you like the quote, send the product details (name, link, and any notes) to our team over WhatsApp with one click, and you'll get a final confirmation and purchase link shortly after.",
+        "pricing_title": "Why isn't our fee the same for every order?",
+        "pricing_text": "Unlike many stores that apply one flat profit margin to everything, Soughat Shop's Custom Gifts pricing is tiered: the higher your order's value, the lower the fee percentage becomes. That means a small, inexpensive gift carries a slightly higher fee to cover handling and support, while a large, high-value purchase gets a noticeably lower and fairer fee. All of this math is shown to you in full, before you ever pay.",
+        "who_title": "Who is this service for?",
+        "who_text": "Iranians living abroad who want to send a gift that perfectly matches their family or friends' taste back in Iran — from a specific perfume or piece of electronics to a piece of jewelry or home decor — without worrying about banking restrictions and sanctions, are exactly who this section was built for. All you need is the link or price of the product; sourcing and shipping inside Iran is handled by the Soughat Shop team.",
+        "security_title": "Your security and privacy",
+        "security_text": "This section was deliberately built without a database-backed form. Your requested product's details are sent only through a direct WhatsApp message to our support team and are never stored on any server — the same speed and security you'd expect from dealing directly with a trusted seller.",
+        "image_alt_1": "How Soughat Shop's custom gift calculator and request flow works",
+        "image_alt_2": "Transparent, tiered pricing for Soughat Shop custom gifts",
+        "image_alt_3": "Sending a custom gift to family and friends in Iran",
+        "image_alt_4": "Security and privacy of a custom gift request over WhatsApp",
+        "keywords": "custom product request, custom gift to Iran, add a product to the store, buy an off-catalog item, send a personalized gift to Iran with currency or crypto"
+      },
+      "faq": {
+        "title": "Custom Gifts FAQ",
+        "subtitle": "Everything you need to know about requesting a custom product",
+        "q1": "How long until my request is reviewed?",
+        "a1": "In most cases, the Soughat Shop support team replies to your WhatsApp message the same business day with the final price and an estimated delivery time.",
+        "q2": "Is the price shown by the calculator final?",
+        "a2": "The displayed price is calculated using the live dollar rate and our transparent formula, and in most cases it is the final price. Only in special cases (a sharp exchange rate swing, or a different shipping cost for bulky items) might our team confirm the figure with you before finalizing it.",
+        "q3": "Why WhatsApp instead of a form?",
+        "a3": "It's for your security and speed: nothing you type is stored on the site, and you get to talk directly with our support team — just like buying from a trusted seller.",
+        "q4": "Can you source any product?",
+        "a4": "Our team tries to source most products available online. If a product can't be sourced for any reason (shipping restrictions, stock, etc.), you'll be told right there in the WhatsApp conversation.",
+        "q5": "How does the final payment work?",
+        "a5": "Just like every other product on Soughat Shop: once the price is confirmed, the item is added to the store and you can pay securely with regular currencies or crypto (USDT, Solana, and more)."
+      },
+      "final_cta": {
+        "title": "Tell us what you're looking for, right now",
+        "subtitle": "Try the calculator above or message us directly on WhatsApp.",
+        "btn": "Start calculating the price"
+      }
+    }
 }

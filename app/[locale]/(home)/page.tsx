@@ -10,6 +10,9 @@ import LazySection from "@/components/LazySection";
 import BlogRail from "@/components/BlogRail";
 import Skeleton from "@/components/skeletons/Skeleton";
 import InstallPWAPrompt from "@/components/InstallPWAPrompt";
+// 🆕 بنر «هدایای سفارشی» — کامپوننت کاملاً جدید و مستقل (components/CustomOrderBanner.tsx)،
+// هیچ کامپوننت موجودی برای این افزودن تغییر نکرده است.
+import CustomOrderBanner from "@/components/CustomOrderBanner";
 import { supabase } from '@/lib/supabase';
 import { ArrowLeft, Layers, Sparkles, ChevronsRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
@@ -538,6 +541,9 @@ export default async function Home({
       <Suspense fallback={<CategorySectionsSkeleton />}>
         <CategorySectionsBlock locale={locale} />
       </Suspense>
+
+      {/* 🆕 بنر «هدایای سفارشی» — دقیقاً طبق درخواست: قبل از بخش «شفافیت مالی» */}
+      <CustomOrderBanner />
 
       {/* 5. نرخ لحظه‌ای ارزها — پایین‌تر از دسته‌بندی‌ها */}
       <LazySection minHeight={400}>
