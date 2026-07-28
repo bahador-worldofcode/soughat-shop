@@ -36,9 +36,14 @@ export default async function CustomOrderBanner() {
       />
 
       <div className="container mx-auto px-4 py-10 md:py-14 relative z-10">
-        <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
+        {/* 🔧 قبلاً بلاک متن «flex-1» بود، یعنی روی مانیتورهای عریض تمام
+            فضای خالی ردیف رو پر می‌کرد و آیکون رو تا لبه‌ی راست هل می‌داد —
+            همون گپ بزرگ و بی‌قاعده‌ای که در اسکرین‌شات دیده می‌شد. حالا
+            متن یک عرض حداکثر منطقی داره و کل ردیف (متن + آیکون) به‌عنوان
+            یک بلوک واحد و با یک gap ثابت و متناسب، وسط‌چین شده. */}
+        <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10 lg:gap-14 max-w-4xl mx-auto">
           {/* سمت متن و عنوان */}
-          <div className="flex-1 text-center md:text-start">
+          <div className="text-center md:text-start md:max-w-md lg:max-w-lg">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-amber-300 text-xs font-bold mb-4">
               <Gift className="h-3.5 w-3.5" />
               {t('eyebrow')}
@@ -48,9 +53,7 @@ export default async function CustomOrderBanner() {
               {t('title')}
             </h2>
 
-            <p className="text-blue-100 text-sm md:text-base max-w-xl mx-auto md:mx-0 mb-6">
-              {t('subtitle')}
-            </p>
+            <p className="text-blue-100 text-sm md:text-base mb-6">{t('subtitle')}</p>
 
             <Link
               href="/custom-gifts"
