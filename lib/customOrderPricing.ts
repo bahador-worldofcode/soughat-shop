@@ -61,7 +61,7 @@ export interface CustomOrderPricingInput {
   customerPriceToman: number;
   /** نرخ روز دلار به تومان (از site_settings.dollar_rate خوانده می‌شود). */
   dollarRateToman: number;
-  /** هزینه ثابت ارسال بین‌المللی به تومان (از site_settings.custom_order_shipping_toman). */
+  /** هزینه ثابت ارسال داخل ایران به تومان (از site_settings.custom_order_shipping_toman). */
   shippingToman: number;
 }
 

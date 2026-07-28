@@ -18,7 +18,7 @@ import CustomOrderCalculator from '@/components/CustomOrderCalculator';
 // معماریِ «جزیره‌ی تعاملی» که در بقیه‌ی صفحات این پروژه هم دیده می‌شود.
 //
 // تصاویر مورد نیاز این صفحه (به CUSTOM_GIFTS_SETUP.md مراجعه کنید):
-//   public/images/custom-gifts-banner-icon.webp   (در بالای صفحه هم استفاده می‌شود)
+//   public/images/custom-gifts-banner-icon.png    (در بالای صفحه هم استفاده می‌شود؛ PNG برای شفافیت پس‌زمینه)
 //   public/images/custom-gifts-content-1.webp
 //   public/images/custom-gifts-content-2.webp
 //   public/images/custom-gifts-content-3.webp
@@ -74,10 +74,34 @@ export default async function CustomGiftsPage({ params }: { params: Promise<{ lo
     })),
   };
 
+  // هر آیتم رنگ مخصوص خودش رو داره (badge دورِ آیکون) تا سه کارت راحت‌تر
+  // از هم تشخیص داده بشن؛ ولی چیدمان و اندازه‌ی هر سه کارت با grid کاملاً
+  // یکسان و هم‌قواره است.
   const trustItems = [
-    { icon: Lock, title: t('trust.item1_title'), desc: t('trust.item1_desc') },
-    { icon: ShieldCheck, title: t('trust.item2_title'), desc: t('trust.item2_desc') },
-    { icon: Zap, title: t('trust.item3_title'), desc: t('trust.item3_desc') },
+    {
+      icon: Lock,
+      title: t('trust.item1_title'),
+      desc: t('trust.item1_desc'),
+      iconBg: 'bg-indigo-50',
+      iconColor: 'text-indigo-600',
+      ring: 'group-hover:ring-indigo-100',
+    },
+    {
+      icon: ShieldCheck,
+      title: t('trust.item2_title'),
+      desc: t('trust.item2_desc'),
+      iconBg: 'bg-emerald-50',
+      iconColor: 'text-emerald-600',
+      ring: 'group-hover:ring-emerald-100',
+    },
+    {
+      icon: Zap,
+      title: t('trust.item3_title'),
+      desc: t('trust.item3_desc'),
+      iconBg: 'bg-amber-50',
+      iconColor: 'text-amber-600',
+      ring: 'group-hover:ring-amber-100',
+    },
   ];
 
   return (
@@ -89,7 +113,7 @@ export default async function CustomGiftsPage({ params }: { params: Promise<{ lo
         <div className="container mx-auto px-4 max-w-3xl">
           <div className="relative w-20 h-20 md:w-28 md:h-28 mx-auto mb-6">
             <Image
-              src="/images/custom-gifts-banner-icon.webp"
+              src="/images/custom-gifts-banner-icon.png"
               alt={t('hero.image_alt')}
               fill
               sizes="112px"
@@ -107,16 +131,18 @@ export default async function CustomGiftsPage({ params }: { params: Promise<{ lo
 
           <p className="text-lg text-gray-500 leading-8 max-w-2xl mx-auto">{t('hero.subtitle')}</p>
 
-          <div className="flex flex-wrap justify-center gap-3 mt-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-10 max-w-2xl mx-auto">
             {trustItems.map((item, i) => (
               <div
                 key={i}
-                className="flex items-center gap-2.5 bg-white border border-gray-100 shadow-sm rounded-xl px-4 py-3 text-start"
+                className={`group flex flex-col items-center text-center gap-3 bg-white border border-gray-100 shadow-sm hover:shadow-md ring-1 ring-transparent ${item.ring} rounded-2xl px-5 py-6 transition-all`}
               >
-                <item.icon className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                <div className={`flex items-center justify-center w-12 h-12 rounded-xl ${item.iconBg} ${item.iconColor}`}>
+                  <item.icon className="h-6 w-6" />
+                </div>
                 <div>
-                  <p className="text-xs font-bold text-gray-800">{item.title}</p>
-                  <p className="text-[11px] text-gray-400">{item.desc}</p>
+                  <p className="text-sm font-bold text-gray-900 mb-1">{item.title}</p>
+                  <p className="text-xs text-gray-500 leading-5">{item.desc}</p>
                 </div>
               </div>
             ))}

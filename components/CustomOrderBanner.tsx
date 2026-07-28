@@ -15,7 +15,8 @@ import { ArrowLeft, Gift } from 'lucide-react';
 //
 // تصویر آیکون از مسیر زیر خوانده می‌شود (به بخش مستندات پروژه مراجعه کنید
 // تا بدانید این فایل را دقیقاً کجا و با چه پرامپتی تولید کنید):
-//   public/images/custom-gifts-banner-icon.webp
+//   public/images/custom-gifts-banner-icon.png
+//   (فرمت PNG عمداً است — چون برای شفاف نگه‌داشتن پس‌زمینه‌ی آیکون لازم شد)
 // =============================================================================
 
 export default async function CustomOrderBanner() {
@@ -67,7 +68,7 @@ export default async function CustomOrderBanner() {
           <div className="flex-shrink-0">
             <div className="relative w-36 h-36 md:w-48 md:h-48 lg:w-56 lg:h-56">
               <Image
-                src="/images/custom-gifts-banner-icon.webp"
+                src="/images/custom-gifts-banner-icon.png"
                 alt={t('icon_alt')}
                 fill
                 sizes="(max-width: 768px) 144px, 224px"

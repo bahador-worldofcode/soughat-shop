@@ -9,7 +9,7 @@ import {
   FALLBACK_DOLLAR_RATE_TOMAN,
   FALLBACK_SHIPPING_TOMAN,
 } from '@/lib/customOrderPricing';
-import { Info, ChevronDown, MessageCircle, Loader2 } from 'lucide-react';
+import { MessageCircle, Loader2 } from 'lucide-react';
 
 // =============================================================================
 // ماشین‌حساب «هدایای سفارشی» + فرم درخواست واتساپ
@@ -58,7 +58,6 @@ export default function CustomOrderCalculator() {
 
   const [mounted, setMounted] = useState(false);
   const [tomanInput, setTomanInput] = useState('');
-  const [showBreakdown, setShowBreakdown] = useState(false);
 
   const [settings, setSettings] = useState({
     dollarRate: FALLBACK_DOLLAR_RATE_TOMAN,
@@ -167,7 +166,11 @@ export default function CustomOrderCalculator() {
         <label htmlFor="custom-order-toman-input" className="block text-sm font-bold text-gray-700 mb-2">
           {t('input_label')}
         </label>
-        <div className="relative mb-1">
+        {/* 🔧 dir="ltr" عمداً روی خودِ wrapper گذاشته شده (نه فقط input) تا
+            موقعیت مطلقِ برچسب «تومان» (end-4) هم دقیقاً هم‌جهت با متن داخل
+            اینپوت محاسبه شود؛ قبلاً چون wrapper جهتِ rtl صفحه را به ارث
+            می‌برد ولی خودِ اینپوت ltr بود، برچسب روی placeholder می‌افتاد. */}
+        <div className="relative mb-1" dir="ltr">
           <input
             id="custom-order-toman-input"
             type="text"
@@ -176,7 +179,6 @@ export default function CustomOrderCalculator() {
             value={tomanInput}
             onChange={handleTomanChange}
             placeholder={t('input_placeholder')}
-            dir="ltr"
             className="w-full ps-4 pe-16 py-3.5 md:py-4 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none text-lg font-bold text-gray-900 transition-colors"
           />
           <span className="absolute top-1/2 -translate-y-1/2 end-4 text-sm text-gray-400 font-medium pointer-events-none">
@@ -214,56 +216,10 @@ export default function CustomOrderCalculator() {
               </div>
             </div>
 
-            <div className="text-3xl md:text-4xl font-extrabold text-blue-700 font-mono mb-4" dir="ltr">
+            <div className="text-3xl md:text-4xl font-extrabold text-blue-700 font-mono" dir="ltr">
               {displaySymbol}
               {displayFinalPrice.toFixed(2)}
             </div>
-
-            <button
-              type="button"
-              onClick={() => setShowBreakdown((v) => !v)}
-              className="flex items-center gap-1.5 text-xs font-bold text-blue-700 hover:text-blue-800"
-              aria-expanded={showBreakdown}
-            >
-              <Info className="h-3.5 w-3.5" />
-              {t('breakdown_toggle')}
-              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showBreakdown ? 'rotate-180' : ''}`} />
-            </button>
-
-            {showBreakdown && (
-              <div className="mt-4 pt-4 border-t border-blue-100 space-y-2 text-sm">
-                <div className="flex justify-between text-gray-600">
-                  <span>{t('breakdown_product')}</span>
-                  <span className="font-mono" dir="ltr">
-                    ${pricing.productCostUsd.toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>{t('breakdown_shipping')}</span>
-                  <span className="font-mono" dir="ltr">
-                    ${pricing.shippingCostUsd.toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>
-                    {t('breakdown_margin')} ({pricing.effectiveMarginPercent.toFixed(0)}%)
-                  </span>
-                  <span className="font-mono" dir="ltr">
-                    ${pricing.profitUsd.toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-dashed border-blue-200">
-                  <span>{t('breakdown_total')}</span>
-                  <span className="font-mono" dir="ltr">
-                    ${pricing.finalPriceUsd.toFixed(2)}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-400 pt-2 leading-relaxed">{t('breakdown_margin_note')}</p>
-                <p className="text-xs text-gray-400" dir="ltr">
-                  {t('rate_note')} {settings.dollarRate.toLocaleString('en-US')} {t('toman_suffix')}
-                </p>
-              </div>
-            )}
           </div>
         ) : (
           <p className="mt-6 text-sm text-gray-400 text-center py-6 bg-gray-50 rounded-xl border border-dashed border-gray-200">
@@ -290,7 +246,6 @@ export default function CustomOrderCalculator() {
             value={productLink}
             onChange={(e) => setProductLink(e.target.value)}
             placeholder={tReq('link_placeholder')}
-            dir="ltr"
             className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:outline-none text-sm bg-white"
           />
           <textarea
