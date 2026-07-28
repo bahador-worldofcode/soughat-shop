@@ -1,5 +1,4 @@
 import { getTranslations } from 'next-intl/server';
-import Image from 'next/image';
 import type { Metadata } from 'next';
 import { Sparkles, Lock, ShieldCheck, Zap, HelpCircle, Plus, Minus, Compass, Coins, Users, ArrowLeft } from 'lucide-react';
 import CustomOrderCalculator from '@/components/CustomOrderCalculator';
@@ -111,14 +110,12 @@ export default async function CustomGiftsPage({ params }: { params: Promise<{ lo
       {/* ---------- Hero ---------- */}
       <div className="bg-gradient-to-b from-blue-50 to-white py-14 md:py-20 text-center border-b border-gray-100">
         <div className="container mx-auto px-4 max-w-3xl">
+          {/* 🔧 img ساده به‌جای next/image — دلیل در components/CustomOrderBanner.tsx توضیح داده شده */}
           <div className="relative w-20 h-20 md:w-28 md:h-28 mx-auto mb-6">
-            <Image
+            <img
               src="/images/custom-gifts-banner-icon.png"
               alt={t('hero.image_alt')}
-              fill
-              sizes="112px"
-              className="object-contain drop-shadow-lg"
-              priority
+              className="w-full h-full object-contain drop-shadow-lg"
             />
           </div>
 

@@ -1,6 +1,5 @@
 import { getTranslations, getLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
-import Image from 'next/image';
 import { ArrowLeft, Gift } from 'lucide-react';
 
 // =============================================================================
@@ -65,14 +64,17 @@ export default async function CustomOrderBanner() {
           </div>
 
           {/* سمت آیکون */}
+          {/* 🔧 عمداً از next/image استفاده نشده: پایپ‌لاین بهینه‌سازی سمت
+              سرور Next.js (/_next/image) روی این PNG خاص (خروجی ابزار حذف
+              پس‌زمینه) درست کار نمی‌کرد و تصویر نمایش داده نمی‌شد. با یک
+              <img> ساده — دقیقاً مثل ۴ عکس دیگر همین قابلیت — فایل مستقیم
+              و بدون پردازش سرور لود می‌شود و مشکل کاملاً برطرف می‌شود. */}
           <div className="flex-shrink-0">
             <div className="relative w-36 h-36 md:w-48 md:h-48 lg:w-56 lg:h-56">
-              <Image
+              <img
                 src="/images/custom-gifts-banner-icon.png"
                 alt={t('icon_alt')}
-                fill
-                sizes="(max-width: 768px) 144px, 224px"
-                className="object-contain drop-shadow-2xl"
+                className="w-full h-full object-contain drop-shadow-2xl"
               />
             </div>
           </div>
