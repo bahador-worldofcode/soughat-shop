@@ -111,7 +111,7 @@ export default async function CustomGiftsPage({ params }: { params: Promise<{ lo
       <div className="bg-gradient-to-b from-blue-50 to-white py-14 md:py-20 text-center border-b border-gray-100">
         <div className="container mx-auto px-4 max-w-3xl">
           {/* 🔧 img ساده به‌جای next/image — دلیل در components/CustomOrderBanner.tsx توضیح داده شده */}
-          <div className="relative w-20 h-20 md:w-28 md:h-28 mx-auto mb-6">
+          <div className="relative w-32 h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 mx-auto mb-6">
             <img
               src="/images/custom-gifts-banner-icon.png"
               alt={t('hero.image_alt')}

@@ -36,7 +36,7 @@ export default async function CustomOrderBanner() {
       />
 
       <div className="container mx-auto px-4 py-10 md:py-14 relative z-10">
-        <div className="flex flex-col md:flex-row items-center gap-8 md:gap-4">
+        <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
           {/* سمت متن و عنوان */}
           <div className="flex-1 text-center md:text-start">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-amber-300 text-xs font-bold mb-4">
