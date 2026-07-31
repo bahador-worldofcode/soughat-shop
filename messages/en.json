@@ -221,7 +221,11 @@
     "gender_filter_label": "Gender:",
     "gender_male": "Men",
     "gender_female": "Women",
-    "gender_reset": "Reset filter"
+    "gender_reset": "Reset filter",
+    "vehicle_type_filter_label": "Vehicle Type:",
+    "vehicle_type_motorcycle": "Motorcycle",
+    "vehicle_type_bicycle": "Bicycle",
+    "vehicle_type_reset": "Reset filter"
   },
   "ProductsSEO": {
     "banner_alt": "Send gifts, souvenirs and money transfers to Iran with crypto payment",

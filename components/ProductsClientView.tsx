@@ -46,6 +46,7 @@ interface Category {
   seo_title?: string;
   seo_desc?: string;
   has_gender_filter?: boolean;
+  has_vehicle_type_filter?: boolean;
 }
 
 interface ProductsClientViewProps {
@@ -55,6 +56,7 @@ interface ProductsClientViewProps {
   currentSearch: string;
   currentSort: 'featured' | 'newest' | 'price-asc' | 'price-desc';
   currentGender: string;
+  currentVehicleType: string;
   currentPage: number;
   totalCount: number;
   totalPages: number;
@@ -82,6 +84,7 @@ export default function ProductsClientView({
   currentSearch,
   currentSort,
   currentGender,
+  currentVehicleType,
   currentPage,
   totalCount,
   totalPages,
@@ -151,7 +154,7 @@ export default function ProductsClientView({
 
   const handleCategoryChange = (slug: string) => {
     setOptimisticCategory(slug === 'all' ? 'all' : slug);
-    updateParams({ category: slug === 'all' ? null : slug, page: null, gender: null });
+    updateParams({ category: slug === 'all' ? null : slug, page: null, gender: null, vehicle_type: null });
   };
 
   const handleSortChange = (value: string) => {
@@ -164,6 +167,11 @@ export default function ProductsClientView({
     updateParams({ gender: currentGender === gender ? null : gender, page: null });
   };
 
+  // 🆕 فیلتر نوع وسیله نقلیه (موتور/دوچرخه) — هم‌الگو با فیلتر جنسیت بالا
+  const handleVehicleTypeChange = (vehicleType: 'motorcycle' | 'bicycle' | null) => {
+    updateParams({ vehicle_type: currentVehicleType === vehicleType ? null : vehicleType, page: null });
+  };
+
   const goToPage = (p: number) => {
     updateParams({ page: p > 1 ? String(p) : null });
     if (typeof window !== 'undefined') {
@@ -173,7 +181,7 @@ export default function ProductsClientView({
 
   const clearFilters = () => {
     setSearchTerm('');
-    updateParams({ category: null, q: null, page: null, sort: null, gender: null });
+    updateParams({ category: null, q: null, page: null, sort: null, gender: null, vehicle_type: null });
   };
 
   const activeDescription = activeCategoryInfo
@@ -470,6 +478,46 @@ export default function ProductsClientView({
             </div>
           )}
 
+          {/* 🆕 فیلتر نوع وسیله نقلیه (موتور/دوچرخه) — فقط بالای دسته‌بندی‌هایی نشون داده می‌شه که
+              از پنل ادمین (تیک «فیلتر نوع وسیله نقلیه») براشون فعال شده، مثل «وسایل نقلیه». */}
+          {activeCategoryInfo?.has_vehicle_type_filter && (
+            <div className="mb-6 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-bold text-gray-700">{t('vehicle_type_filter_label')}</span>
+                <button
+                  onClick={() => handleVehicleTypeChange('motorcycle')}
+                  className={`px-5 py-2.5 rounded-xl text-sm font-bold border transition-colors active:scale-95 ${
+                    currentVehicleType === 'motorcycle'
+                      ? 'bg-blue-600 border-blue-600 text-white'
+                      : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700'
+                  }`}
+                >
+                  {t('vehicle_type_motorcycle')}
+                </button>
+                <button
+                  onClick={() => handleVehicleTypeChange('bicycle')}
+                  className={`px-5 py-2.5 rounded-xl text-sm font-bold border transition-colors active:scale-95 ${
+                    currentVehicleType === 'bicycle'
+                      ? 'bg-green-600 border-green-600 text-white'
+                      : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-green-50 hover:border-green-200 hover:text-green-700'
+                  }`}
+                >
+                  {t('vehicle_type_bicycle')}
+                </button>
+              </div>
+
+              {currentVehicleType && (
+                <button
+                  onClick={() => handleVehicleTypeChange(null)}
+                  className="flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-red-600 transition-colors"
+                >
+                  <XCircle className="h-4 w-4" />
+                  {t('vehicle_type_reset')}
+                </button>
+              )}
+            </div>
+          )}
+
           {products.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 bg-white rounded-3xl border border-dashed border-gray-300 text-center px-4">
               <div className="bg-gray-50 p-6 rounded-full mb-4">
@@ -487,7 +535,7 @@ export default function ProductsClientView({
             </div>
           ) : (
             <>
-              {(currentCategory !== 'all' || currentSearch || currentGender) && (
+              {(currentCategory !== 'all' || currentSearch || currentGender || currentVehicleType) && (
                 <div className="flex flex-wrap items-center gap-2 mb-4">
                   {currentCategory !== 'all' && (
                     <button
@@ -508,6 +556,15 @@ export default function ProductsClientView({
                       className="flex items-center gap-1.5 bg-purple-50 text-purple-700 border border-purple-200 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-purple-100 transition-colors"
                     >
                       {currentGender === 'female' ? t('gender_female') : t('gender_male')}
+                      <XCircle className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                  {currentVehicleType && (
+                    <button
+                      onClick={() => handleVehicleTypeChange(null)}
+                      className="flex items-center gap-1.5 bg-purple-50 text-purple-700 border border-purple-200 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-purple-100 transition-colors"
+                    >
+                      {currentVehicleType === 'bicycle' ? t('vehicle_type_bicycle') : t('vehicle_type_motorcycle')}
                       <XCircle className="h-3.5 w-3.5" />
                     </button>
                   )}

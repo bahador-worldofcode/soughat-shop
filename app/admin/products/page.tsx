@@ -20,6 +20,7 @@ interface Product {
   weight?: number; 
   pricing_type?: 'fixed' | 'gold'; 
   gender?: 'male' | 'female' | 'unisex' | null;
+  vehicle_type?: 'motorcycle' | 'bicycle' | null;
 }
 
 interface Category {
@@ -60,7 +61,7 @@ export default function ProductsPage() {
   
   const [formData, setFormData] = useState({ 
     title: '', price: '', price_toman: '', image: '', slug: '', category: '',
-    description: '', features: '', seo_title: '', seo_desc: '', weight: '', pricing_type: 'fixed', gender: ''
+    description: '', features: '', seo_title: '', seo_desc: '', weight: '', pricing_type: 'fixed', gender: '', vehicle_type: ''
   });
 
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
@@ -257,14 +258,15 @@ export default function ProductsPage() {
         seo_desc: product.seo_desc || '',
         weight: product.weight ? product.weight.toString() : '',
         pricing_type: product.pricing_type === 'gold' ? 'gold' : 'fixed',
-        gender: product.gender || ''
+        gender: product.gender || '',
+        vehicle_type: product.vehicle_type || ''
       });
     } else {
       setEditingProduct(null);
       setFormData({ 
         title: '', price: '', price_toman: '', image: '', slug: '', 
         category: categories[0]?.slug || '', description: '', features: '', seo_title: '', seo_desc: '',
-        weight: '', pricing_type: 'fixed', gender: ''
+        weight: '', pricing_type: 'fixed', gender: '', vehicle_type: ''
       });
     }
     setIsModalOpen(true);
@@ -299,7 +301,8 @@ export default function ProductsPage() {
         seo_desc: formData.seo_desc,
         weight: Number(formData.weight) || 0,
         pricing_type: formData.pricing_type,
-        gender: formData.gender || null
+        gender: formData.gender || null,
+        vehicle_type: formData.vehicle_type || null
       };
 
       if (formData.pricing_type === 'gold') {
@@ -705,6 +708,19 @@ export default function ProductsPage() {
                               <option value="unisex">یونیسکس</option>
                           </select>
                           <p className="text-[10px] text-gray-500 mt-1">فقط وقتی «فیلتر جنسیت» برای این دسته‌بندی از صفحه‌ی دسته‌بندی‌ها فعال باشه، این مقدار روی سایت اثر می‌ذاره.</p>
+                      </div>
+                      <div className="md:col-span-2">
+                          <label className="block text-xs font-medium text-gray-700 mb-1">نوع وسیله نقلیه (فقط برای دسته‌بندی وسایل نقلیه)</label>
+                          <select
+                              value={formData.vehicle_type}
+                              onChange={(e) => setFormData({...formData, vehicle_type: e.target.value})}
+                              className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:border-blue-500 text-sm bg-white"
+                          >
+                              <option value="">بدون نوع (پیش‌فرض)</option>
+                              <option value="motorcycle">موتور سیکلت</option>
+                              <option value="bicycle">دوچرخه</option>
+                          </select>
+                          <p className="text-[10px] text-gray-500 mt-1">فقط وقتی «فیلتر نوع وسیله نقلیه» برای این دسته‌بندی از صفحه‌ی دسته‌بندی‌ها فعال باشه، این مقدار روی سایت اثر می‌ذاره.</p>
                       </div>
                   </div>
               </div>

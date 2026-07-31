@@ -58,7 +58,8 @@ const getCachedProducts = unstable_cache(
     currentSort: string,
     from: number,
     to: number,
-    currentGender: string
+    currentGender: string,
+    currentVehicleType: string
   ): Promise<{ data: any[]; count: number }> => {
     let query = supabase.from(sourceTable).select('*', { count: 'exact' });
 
@@ -87,6 +88,13 @@ const getCachedProducts = unstable_cache(
       query = query.in('gender', ['female', 'unisex']);
     } else if (currentGender === 'unisex') {
       query = query.eq('gender', 'unisex');
+    }
+
+    // 🆕 فیلتر نوع وسیله نقلیه (موتور/دوچرخه) — هم‌الگو با فیلتر جنسیت بالا
+    if (currentVehicleType === 'motorcycle') {
+      query = query.eq('vehicle_type', 'motorcycle');
+    } else if (currentVehicleType === 'bicycle') {
+      query = query.eq('vehicle_type', 'bicycle');
     }
 
     if (currentSort === 'featured') {
@@ -130,6 +138,7 @@ interface Product {
   pricing_type?: string;
   weight?: number;
   gender?: 'male' | 'female' | 'unisex' | null;
+  vehicle_type?: 'motorcycle' | 'bicycle' | null;
 }
 
 interface Category {
@@ -144,13 +153,14 @@ interface Category {
   seo_desc?: string;
   seo_desc_en?: string;
   has_gender_filter?: boolean;
+  has_vehicle_type_filter?: boolean;
 }
 
 const PAGE_SIZE = 12;
 
 interface Props {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ category?: string; q?: string; sort?: string; page?: string; gender?: string }>;
+  searchParams: Promise<{ category?: string; q?: string; sort?: string; page?: string; gender?: string; vehicle_type?: string }>;
 }
 
 function getSiteUrl() {
@@ -265,6 +275,10 @@ export default async function ProductsPage({ params, searchParams }: Props) {
   const genderParam = sp.gender === 'male' || sp.gender === 'female' || sp.gender === 'unisex' ? sp.gender : '';
   const currentGender = activeCategoryInfo?.has_gender_filter ? genderParam : '';
 
+  // 🆕 فیلتر نوع وسیله نقلیه (موتور/دوچرخه) — هم‌الگو با فیلتر جنسیت بالا
+  const vehicleTypeParam = sp.vehicle_type === 'motorcycle' || sp.vehicle_type === 'bicycle' ? sp.vehicle_type : '';
+  const currentVehicleType = activeCategoryInfo?.has_vehicle_type_filter ? vehicleTypeParam : '';
+
   // ۲. محصولات (روی سرور، با همون فیلترهایی که قبلاً کلاینت‌ساید انجام می‌شد)
   //
   // 🆕 رفع باگ «یک‌نواختی صفحه‌ی همه‌ی محصولات»: وقتی مرتب‌سازی روی حالت
@@ -296,7 +310,8 @@ export default async function ProductsPage({ params, searchParams }: Props) {
       currentSort,
       from,
       to,
-      currentGender
+      currentGender,
+      currentVehicleType
     );
 
     products = (data || []).map((p: any) => ({
@@ -403,6 +418,7 @@ export default async function ProductsPage({ params, searchParams }: Props) {
           currentSearch={currentSearch}
           currentSort={currentSort}
           currentGender={currentGender}
+          currentVehicleType={currentVehicleType}
           currentPage={currentPage}
           totalCount={totalCount}
           totalPages={totalPages}

@@ -221,7 +221,11 @@
     "gender_filter_label": "جنسیت:",
     "gender_male": "مردانه",
     "gender_female": "زنانه",
-    "gender_reset": "بازگشت به حالت عادی"
+    "gender_reset": "بازگشت به حالت عادی",
+    "vehicle_type_filter_label": "نوع وسیله:",
+    "vehicle_type_motorcycle": "موتور سیکلت",
+    "vehicle_type_bicycle": "دوچرخه",
+    "vehicle_type_reset": "بازگشت به حالت عادی"
   },
   "ProductsSEO": {
     "banner_alt": "ارسال هدیه، سوغات و حواله ارزی به ایران با پرداخت رمزارز",

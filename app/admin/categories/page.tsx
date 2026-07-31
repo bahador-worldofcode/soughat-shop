@@ -17,6 +17,7 @@ interface Category {
   seo_title_en?: string;
   seo_desc_en?: string;
   has_gender_filter?: boolean;
+  has_vehicle_type_filter?: boolean;
   created_at: string;
 }
 
@@ -111,7 +112,8 @@ export default function CategoriesPage() {
                 seo_desc: editingCategory.seo_desc,
                 seo_title_en: editingCategory.seo_title_en,
                 seo_desc_en: editingCategory.seo_desc_en,
-                has_gender_filter: !!editingCategory.has_gender_filter
+                has_gender_filter: !!editingCategory.has_gender_filter,
+                has_vehicle_type_filter: !!editingCategory.has_vehicle_type_filter
             })
             .eq('id', editingCategory.id);
 
@@ -187,6 +189,9 @@ export default function CategoriesPage() {
                     {cat.has_gender_filter && (
                         <span className="inline-block mt-1 bg-purple-100 text-purple-700 text-[10px] px-2 py-0.5 rounded-full">فیلتر جنسیت فعال</span>
                     )}
+                    {cat.has_vehicle_type_filter && (
+                        <span className="inline-block mt-1 mr-1 bg-orange-100 text-orange-700 text-[10px] px-2 py-0.5 rounded-full">فیلتر نوع وسیله فعال</span>
+                    )}
                 </td>
                 <td className="px-6 py-4">
                     {cat.description ? (
@@ -251,6 +256,17 @@ export default function CategoriesPage() {
                                     onChange={e => setEditingCategory({...editingCategory, has_gender_filter: e.target.checked})}
                                 />
                                 <span className="text-xs font-bold text-gray-700">فیلتر جنسیت (مردانه/زنانه) بالای این دسته‌بندی در صفحه‌ی محصولات نمایش داده بشه</span>
+                            </label>
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="flex items-center gap-2 p-3 border rounded-lg bg-gray-50 cursor-pointer w-fit">
+                                <input
+                                    type="checkbox"
+                                    className="h-4 w-4"
+                                    checked={!!editingCategory.has_vehicle_type_filter}
+                                    onChange={e => setEditingCategory({...editingCategory, has_vehicle_type_filter: e.target.checked})}
+                                />
+                                <span className="text-xs font-bold text-gray-700">فیلتر نوع وسیله نقلیه (موتور/دوچرخه) بالای این دسته‌بندی در صفحه‌ی محصولات نمایش داده بشه</span>
                             </label>
                         </div>
                     </div>
