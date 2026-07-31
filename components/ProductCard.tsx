@@ -5,7 +5,7 @@ import { useStore } from '@/lib/store';
 import { useEffect, useState } from 'react';
 import { Link } from '@/i18n/navigation'; 
 import { useTranslations, useLocale } from 'next-intl'; 
-import Image from 'next/image';
+import SmartImage from './SmartImage';
 
 interface ProductCardProps {
   id: string;
@@ -95,7 +95,7 @@ export default function ProductCard({ id, title, title_en, price, image, slug, p
     >
       
       <Link href={`/products/${slug}`} className="relative aspect-square overflow-hidden bg-gray-100 block flex-shrink-0">
-        <Image
+        <SmartImage
           src={image}
           alt={displayTitle}
           fill

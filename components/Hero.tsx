@@ -1,7 +1,7 @@
 import { Link } from '@/i18n/navigation';
 import { ArrowLeft, Gift, ShieldCheck } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
-import Image from 'next/image';
+import SmartImage from './SmartImage';
 
 interface HeroProps {
   banner?: string;
@@ -71,7 +71,7 @@ export default function Hero({ banner, title, subtitle }: HeroProps) {
             
             {hasBanner ? (
                  <div className="relative w-[250px] h-[300px] md:w-[450px] md:h-[500px] drop-shadow-2xl animate-in fade-in zoom-in duration-700">
-                   <Image
+                   <SmartImage
                       src={banner!}
                       alt={t('hero_gift_alt')}
                       fill
