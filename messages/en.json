@@ -27,7 +27,8 @@
     "lang_name_fa": "فارسی",
     "lang_name_en": "English",
     "profile_aria": "My Profile",
-    "login": "Login"
+    "login": "Login",
+    "freeTools": "Free Tools"
   },
   "NotFound": {
     "title": "Page not found",
@@ -72,7 +73,8 @@
     "partners": "Partners",
     "remit": "Send Money to Iran",
     "gift_crypto": "Send a Gift to Iran with Crypto",
-    "report_bug": "Report a Bug"
+    "report_bug": "Report a Bug",
+    "freeTools": "Free Tools"
   },
   "Home": {
     "hero_start": "Start Shopping",

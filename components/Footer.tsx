@@ -1,6 +1,10 @@
-import { Mail, Heart, Lock, ShieldCheck, HelpCircle, ShoppingBag, BookOpen, Package, Info, Phone, Code2, Library, Star, DollarSign, Bug, Gift } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+// مسیر فایل در پروژه (سایت اصلی soughat-shop، نه هاب): components/Footer.tsx
+
+import { Mail, Heart, Lock, ShieldCheck, HelpCircle, ShoppingBag, BookOpen, Package, Info, Phone, Code2, Library, Star, DollarSign, Bug, Gift, Sparkles } from 'lucide-react';
+import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
+
+const HUB_URL = process.env.NEXT_PUBLIC_HUB_URL || 'https://tools.soughat.shop';
 
 // آیکون شبکه اجتماعی X (توییتر سابق) — نسخه مدرن لوگوی X
 function XIcon() {
@@ -22,6 +26,7 @@ function FacebookIcon() {
 
 export default function Footer() {
   const t = useTranslations('Footer');
+  const locale = useLocale();
   const currentYear = new Date().getFullYear(); // دریافت سال جاری (مثلاً 2026)
 
   return (
@@ -104,6 +109,17 @@ export default function Footer() {
                 <Link href="/review" className="hover:text-blue-600 hover:pr-2 transition-all flex items-center gap-2">
                     <Star className="h-4 w-4" /> {t('review')}
                 </Link>
+              </li>
+              {/* 🆕 لینک به هاب ابزارهای رایگان — دامنه‌ی جدا (tools.soughat.shop)،
+                  پس Link داخلی next-intl کار نمی‌کند و باید یک <a> معمولی با آدرس
+                  کامل و locale-matched باشد. */}
+              <li>
+                <a
+                  href={`${HUB_URL}/${locale}`}
+                  className="hover:text-blue-600 hover:pr-2 transition-all flex items-center gap-2"
+                >
+                    <Sparkles className="h-4 w-4" /> {t('freeTools')}
+                </a>
               </li>
             </ul>
           </div>

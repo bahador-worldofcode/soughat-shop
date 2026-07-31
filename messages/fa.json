@@ -27,7 +27,8 @@
     "lang_name_fa": "فارسی",
     "lang_name_en": "English",
     "profile_aria": "پروفایل من",
-    "login": "ورود"
+    "login": "ورود",
+    "freeTools": "ابزارهای رایگان"
   },
   "NotFound": {
     "title": "صفحه مورد نظر پیدا نشد",
@@ -72,7 +73,8 @@
     "partners": "همکاران تجاری",
     "remit": "ارسال پول به ایران",
     "gift_crypto": "ارسال هدیه به ایران با رمزارز",
-    "report_bug": "گزارش باگ / مشکل"
+    "report_bug": "گزارش باگ / مشکل",
+    "freeTools": "ابزارهای رایگان"
   },
   "Home": {
     "hero_start": "شروع خرید",

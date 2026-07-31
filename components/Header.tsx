@@ -1,12 +1,16 @@
+// مسیر فایل در پروژه (سایت اصلی soughat-shop، نه هاب): components/Header.tsx
+
 'use client';
 import { useState, useEffect, useRef, useTransition } from 'react';
-import { ShoppingBag, Globe, Search, X, Loader2, User, LogIn } from 'lucide-react';
+import { ShoppingBag, Globe, Search, X, Loader2, User, LogIn, Sparkles } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link, useRouter, usePathname } from '@/i18n/navigation';
 import { isMobileNavHidden } from '@/lib/navVisibility';
 import { useAuthState } from '@/lib/useAuthState';
 import NotificationBell from '@/components/NotificationBell';
+
+const HUB_URL = process.env.NEXT_PUBLIC_HUB_URL || 'https://tools.soughat.shop';
 
 export default function Header() {
   const t = useTranslations('Header');
@@ -256,6 +260,16 @@ export default function Header() {
             <Link href="/review" className="text-sm font-bold text-gray-600 hover:text-blue-600 transition-colors">
               {t('review')}
             </Link>
+            {/* 🆕 لینک جدید به هاب ابزارهای رایگان — دامنه‌ی جدا (tools.soughat.shop)،
+                پس Link داخلی next-intl کار نمی‌کند و باید یک <a> معمولی با آدرس
+                کامل و locale-matched باشد. */}
+            <a
+              href={`${HUB_URL}/${locale}`}
+              className="flex items-center gap-1.5 text-sm font-bold text-gray-600 hover:text-blue-600 transition-colors"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              {t('freeTools')}
+            </a>
           </nav>
 
           {/* Actions */}
