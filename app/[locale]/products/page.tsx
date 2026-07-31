@@ -1,3 +1,6 @@
+// مسیر این فایل در پروژه: app/[locale]/products/page.tsx
+// این فایل رو دقیقاً جایگزین فایل فعلی با همین مسیر بکن (Overwrite کن).
+
 import { supabase } from '@/lib/supabase';
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
@@ -150,6 +153,7 @@ interface Category {
   description?: string;
   description_en?: string;
   seo_title?: string;
+  seo_title_en?: string;
   seo_desc?: string;
   seo_desc_en?: string;
   has_gender_filter?: boolean;
@@ -191,8 +195,8 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 
   const title = activeCategory
     ? (isEn
-        ? (activeCategory.seo_title || `${categoryName} | Soughat Shop`)
-        : (activeCategory.seo_title || `${categoryName} | سوغات شاپ`))
+        ? (activeCategory.seo_title_en || `Buy & Send ${categoryName} to Iran | Soughat Shop`)
+        : (activeCategory.seo_title || `خرید و ارسال ${categoryName} به ایران | سوغات شاپ`))
     : (isEn
         ? 'All Products | Soughat Shop - Send Gifts to Iran with Crypto'
         : 'همه‌ی محصولات | سوغات شاپ - ارسال هدیه به ایران با کریپتو');

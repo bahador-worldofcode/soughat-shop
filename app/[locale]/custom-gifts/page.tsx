@@ -1,3 +1,6 @@
+// مسیر این فایل در پروژه: app/[locale]/custom-gifts/page.tsx
+// این فایل رو دقیقاً جایگزین فایل فعلی با همین مسیر بکن (Overwrite کن).
+
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { Sparkles, Lock, ShieldCheck, Zap, HelpCircle, Plus, Minus, Compass, Coins, Users, ArrowLeft } from 'lucide-react';
@@ -30,7 +33,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat.shop';
 
   return {
-    title: t('title'),
+    // رفع باگ «۲ بار سوغات شاپ»: t('title') از قبل شامل نام برند است، پس با
+    // title.absolute جلوی اضافه‌شدنِ دوباره‌ی آن توسط قالب لایوت گرفته می‌شود —
+    // دقیقاً همون راه‌حلی که در app/[locale]/products/page.tsx و
+    // app/[locale]/blog/page.tsx استفاده شده.
+    title: { absolute: t('title') },
     description: t('description'),
     alternates: {
       canonical: `${siteUrl}/${locale}/custom-gifts`,
