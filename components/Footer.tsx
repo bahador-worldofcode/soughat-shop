@@ -1,6 +1,6 @@
 // مسیر فایل در پروژه (سایت اصلی soughat-shop، نه هاب): components/Footer.tsx
 
-import { Mail, Heart, Lock, ShieldCheck, HelpCircle, ShoppingBag, BookOpen, Package, Info, Phone, Code2, Library, Star, DollarSign, Bug, Gift, Sparkles } from 'lucide-react';
+import { Mail, Heart, Lock, ShieldCheck, HelpCircle, ShoppingBag, BookOpen, Package, Info, Phone, Code2, Star, DollarSign, Bug, Gift, Sparkles } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 
@@ -74,15 +74,12 @@ export default function Footer() {
                 <a href="https://x.com/Soughatshop" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)" className="bg-gray-50 p-2 rounded-lg text-gray-400 hover:text-black hover:bg-gray-100 transition-all"><XIcon /></a>
                 <a href="https://www.facebook.com/share/14eJwCenVjC/" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="bg-gray-50 p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"><FacebookIcon /></a>
                 <Link href="/contact" className="bg-gray-50 p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"><Mail className="h-5 w-5" /></Link>
-                
-                {/* لینک همکاران (Partners) */}
-                <Link 
-                    href="/partners" 
-                    title={t('partners')}
-                    className="bg-gray-50 p-2 rounded-lg text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all"
-                >
-                    <Library className="h-5 w-5" />
-                </Link>
+                {/* ⚠️ اصلاح مهم: لینک «همکاران (Partners)» که اینجا بود حذف شد.
+                    دلیل: بخشی از یک شبکه‌ی لینک‌سازیِ متقابل بین چند سایت هم‌مالک
+                    بود که طبق دستورالعمل رسمی گوگل (Link Schemes) ریسک افت رتبه
+                    یا نادیده‌گرفتن کل شبکه توسط گوگل را داشت. صفحه‌ی
+                    app/[locale]/partners هم باید کامل حذف شود؛ یک ریدایرکت ۳۰۱
+                    در next.config.ts جایگزینش شده تا کسی به خطای ۴۰۴ نخورد. */}
             </div>
           </div>
 

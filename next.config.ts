@@ -108,6 +108,22 @@ const nextConfig: NextConfig = {
     ];
   },
 
+  // ⚠️ اضافه‌شده: ریدایرکتِ صفحه‌ی /partners که کامل حذف شد.
+  // چون این پروژه از next-intl با localePrefix:'always' استفاده می‌کند،
+  // آدرس واقعی همیشه یکی از /fa/partners یا /en/partners بوده، نه فقط
+  // /partners. الگوی :locale(fa|en) هر دو حالت را می‌گیرد و کاربر را به
+  // صفحه‌ی اصلی همان زبان (نه هرزبان دیگر) هدایت می‌کند — بدون خطای ۴۰۴،
+  // و بدون گم‌شدن ارزش لینک‌های احتمالاً قبلاً ایندکس‌شده توسط گوگل.
+  async redirects() {
+    return [
+      {
+        source: '/:locale(fa|en)/partners',
+        destination: '/:locale',
+        permanent: true,
+      },
+    ];
+  },
+
   // این بخش برای جلوگیری از خطاهای بیلد ESLint
   eslint: {
     ignoreDuringBuilds: true,
