@@ -20,5 +20,17 @@ self.addEventListener('activate', (event) => {
 // هیچ پاسخی. این یعنی سایت همیشه آخرین و درست‌ترین نسخه‌ی محتوا را نشان
 // می‌دهد، دقیقاً مثل حالتی که اصلاً سرویس‌ورکری وجود نداشت.
 self.addEventListener('fetch', (event) => {
+  // رفعِ باگ: بعضی درخواست‌های داخلیِ خودِ مرورگر (پیش‌بارگذاریِ لینک‌ها،
+  // یا بررسی‌های bfcache) با ترکیبِ cache: 'only-if-cached' و
+  // mode غیر از 'same-origin' فرستاده می‌شوند. اگر این‌ها را مستقیم به
+  // fetch() پاس بدهیم، خودِ مرورگر بلافاصله خطای
+  // "TypeError: Failed to fetch" می‌دهد و باعث می‌شود ناوبریِ صفحه
+  // (مثلاً سوییچ بین تب‌های پنل ادمین) با خطای شبکه مواجه شود.
+  // برای همین این حالت خاص را دست نمی‌زنیم و می‌گذاریم خودِ مرورگر
+  // مستقیم مدیریتش کند.
+  if (event.request.cache === 'only-if-cached' && event.request.mode !== 'same-origin') {
+    return;
+  }
+
   event.respondWith(fetch(event.request));
 });
