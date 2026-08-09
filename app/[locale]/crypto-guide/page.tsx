@@ -1,4 +1,8 @@
 // مسیر این فایل در پروژه: app/[locale]/crypto-guide/page.tsx
+// این نسخه شامل ۷ عکس هم هست — جایگزین کامل نسخه‌ی قبلی (بدون عکس) کن.
+// نیازی به تغییر next.config نیست چون همه‌ی عکس‌ها از public/ خود پروژه میان (لوکال، نه ریموت).
+
+// مسیر این فایل در پروژه: app/[locale]/crypto-guide/page.tsx
 // این فایل رو دقیقاً جایگزین فایل فعلی با همین مسیر بکن (Overwrite کن).
 //
 // همراه با این فایل، باید فایل‌های fa.json و en.json (که در همین پیام فرستادم)
@@ -6,6 +10,7 @@
 // محتوایش رو از namespace به اسم CryptoGuide توی همون فایل‌ها می‌خونه.
 
 import { Link } from '@/i18n/navigation';
+import Image from 'next/image';
 import {
   HelpCircle, ShieldAlert, Smartphone, DollarSign, CheckCircle, Wallet, Lock,
   Coins, Globe2, Clock, Send, AlertTriangle, MessageCircle, BookOpen, TrendingDown,
@@ -97,12 +102,33 @@ export default async function CryptoGuidePage({ params }: { params: Promise<{ lo
 
       <div className="container mx-auto px-4 py-12 max-w-4xl">
 
+        {/* عکس هدر — کاور بصری کل صفحه */}
+        <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden mb-12 shadow-lg">
+          <Image
+            src="/images/crypto-guide/crypto-payment-guide-hero.webp"
+            alt={isEn ? 'Guide to paying with cryptocurrency to send gifts to Iran' : 'راهنمای پرداخت با ارز دیجیتال برای ارسال هدیه به ایران'}
+            fill
+            priority
+            sizes="(max-width: 768px) 100vw, 896px"
+            className="object-cover"
+          />
+        </div>
+
         {/* کریپتو چیست؟ */}
         <section className="mb-12">
           <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
             <Coins className="h-6 w-6 text-blue-600" />
             {t('what_title')}
           </h2>
+          <div className="relative w-full aspect-[3/2] rounded-xl overflow-hidden mb-6">
+            <Image
+              src="/images/crypto-guide/what-is-cryptocurrency-explained.webp"
+              alt={isEn ? 'Simple explanation of what cryptocurrency is and how it works' : 'توضیح ساده اینکه ارز دیجیتال چیست و چطور کار می‌کند'}
+              fill
+              sizes="(max-width: 768px) 100vw, 896px"
+              className="object-cover"
+            />
+          </div>
           <p className="text-gray-700 leading-8 text-justify">{t('what_text_1')}</p>
           <p className="text-gray-700 leading-8 mt-4 text-justify">{t('what_text_2')}</p>
         </section>
@@ -113,6 +139,15 @@ export default async function CryptoGuidePage({ params }: { params: Promise<{ lo
             <TrendingDown className="h-6 w-6 text-blue-600 rotate-180" />
             {t('mainstream_title')}
           </h2>
+          <div className="relative w-full aspect-[3/2] rounded-xl overflow-hidden mb-6">
+            <Image
+              src="/images/crypto-guide/mainstream-crypto-adoption-banking.webp"
+              alt={isEn ? 'Growing mainstream adoption of crypto in trusted banking apps' : 'استفاده روزافزون از ارز دیجیتال در اپلیکیشن‌های بانکی معتبر'}
+              fill
+              sizes="(max-width: 768px) 100vw, 896px"
+              className="object-cover"
+            />
+          </div>
           <p className="text-gray-700 leading-8 text-justify">{t('mainstream_text_1')}</p>
           <p className="text-gray-700 leading-8 mt-4 text-justify">{t('mainstream_text_2')}</p>
         </section>
@@ -133,6 +168,15 @@ export default async function CryptoGuidePage({ params }: { params: Promise<{ lo
             <Wallet className="h-6 w-6 text-blue-600" />
             {t('wallets_title')}
           </h2>
+          <div className="relative w-full aspect-[3/2] rounded-xl overflow-hidden mb-6">
+            <Image
+              src="/images/crypto-guide/crypto-wallet-options-comparison.webp"
+              alt={isEn ? 'Different wallet options for paying with cryptocurrency' : 'انواع کیف‌پول برای پرداخت با ارز دیجیتال'}
+              fill
+              sizes="(max-width: 768px) 100vw, 896px"
+              className="object-cover"
+            />
+          </div>
           <p className="text-gray-600 mb-6">{t('wallets_intro')}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {wallets.map((w, i) => (
@@ -151,6 +195,15 @@ export default async function CryptoGuidePage({ params }: { params: Promise<{ lo
             {t('currencies_title')}
           </h2>
           <p className="text-gray-600 mb-6">{t('currencies_intro')}</p>
+          <div className="relative w-full aspect-[3/2] rounded-xl overflow-hidden mb-6">
+            <Image
+              src="/images/crypto-guide/supported-cryptocurrencies-icons.webp"
+              alt={isEn ? 'Accepted cryptocurrencies including USDT, Bitcoin, and Solana' : 'ارزهای دیجیتال قابل قبول برای پرداخت شامل تتر، بیت‌کوین و سولانا'}
+              fill
+              sizes="(max-width: 768px) 100vw, 896px"
+              className="object-cover"
+            />
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-green-50 border border-green-100 rounded-xl p-5">
               <h3 className="font-bold text-gray-900 mb-2">{t('currencies_stablecoins_title')}</h3>
@@ -184,7 +237,16 @@ export default async function CryptoGuidePage({ params }: { params: Promise<{ lo
         </section>
 
         {/* مراحل قدم‌به‌قدم */}
-        <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center border-b pb-4">{t('steps_title')}</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center border-b pb-4">{t('steps_title')}</h2>
+        <div className="relative w-full aspect-[16/10] rounded-xl overflow-hidden mb-8">
+          <Image
+            src="/images/crypto-guide/crypto-payment-steps-infographic.webp"
+            alt={isEn ? 'Steps to pay with crypto from order placement to confirmation' : 'مراحل پرداخت با ارز دیجیتال از ثبت سفارش تا تایید'}
+            fill
+            sizes="(max-width: 768px) 100vw, 896px"
+            className="object-contain"
+          />
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
           {steps.map((s, i) => {
             const icons = [Send, MessageCircle, Wallet, Smartphone, CheckCircle];
@@ -219,6 +281,15 @@ export default async function CryptoGuidePage({ params }: { params: Promise<{ lo
             <AlertTriangle className="h-6 w-6 text-red-600" />
             {t('network_warning_title')}
           </h2>
+          <div className="relative w-full aspect-[12/7] rounded-xl overflow-hidden mb-4">
+            <Image
+              src="/images/crypto-guide/crypto-network-mismatch-warning.webp"
+              alt={isEn ? 'Important warning about matching the correct network when sending crypto' : 'هشدار مهم درباره تطابق شبکه هنگام ارسال ارز دیجیتال'}
+              fill
+              sizes="(max-width: 768px) 100vw, 896px"
+              className="object-cover"
+            />
+          </div>
           <p className="text-red-900/80 leading-8 text-justify">{t('network_warning_text')}</p>
         </section>
 
