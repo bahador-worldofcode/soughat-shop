@@ -1,3 +1,6 @@
+// مسیر این فایل در پروژه: components/FAQ.tsx
+// این فایل رو دقیقاً جایگزین فایل فعلی با همین مسیر بکن (Overwrite کن).
+
 'use client';
 
 import { useState } from 'react';
@@ -82,9 +85,13 @@ export default function FAQ() {
                 }`}
               >
                 <div className="overflow-hidden px-5">
-                  <p className="text-gray-600 leading-7 text-sm md:text-base border-t border-blue-100 pt-3 text-justify">
-                    {item.a}
-                  </p>
+                  {/* از p ساده به div با dangerouslySetInnerHTML تغییر کرد تا
+                      لینک‌های داخل جواب‌ها (مثل لینک به /crypto-guide در سوال ۳)
+                      واقعاً کلیک‌پذیر رندر بشن، نه به‌صورت متن خام. */}
+                  <div
+                    className="text-gray-600 leading-7 text-sm md:text-base border-t border-blue-100 pt-3 text-justify [&_a]:text-blue-600 [&_a]:underline [&_a]:font-bold"
+                    dangerouslySetInnerHTML={{ __html: item.a }}
+                  />
                 </div>
               </div>
             </div>

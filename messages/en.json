@@ -74,7 +74,8 @@
     "remit": "Send Money to Iran",
     "gift_crypto": "Send a Gift to Iran with Crypto",
     "report_bug": "Report a Bug",
-    "freeTools": "Free Tools"
+    "freeTools": "Free Tools",
+    "crypto_guide": "Crypto Payment Guide"
   },
   "Home": {
     "hero_start": "Start Shopping",
@@ -134,7 +135,7 @@
       "q2": "Why can't I pay with Visa/Mastercard?",
       "a2": "Due to international banking sanctions, global payment gateways do not service Iran. To operate and deliver goods within Iran, we use the borderless Crypto payment system.",
       "q3": "Is paying with Crypto difficult? I haven't done it before.",
-      "a3": "Not at all! The entire process takes less than 3 minutes. Just install a wallet (like Trust Wallet) and buy Tether from a reputable exchange inside it. A visual guide is available in our site menu.",
+      "a3": "Not at all! The entire process takes less than 3 minutes. Just install a wallet (like Trust Wallet) and buy Tether from a reputable exchange inside it. Check out our <a href=\"/en/crypto-guide\">complete visual guide</a> from start to finish.",
       "q4": "Is the quality of nuts and edibles guaranteed?",
       "a4": "Yes. We contract directly with top-tier gardeners and producers. If the recipient is unhappy with the quality or freshness, we will take the package back and refund the money.",
       "q5": "How long does delivery take?",

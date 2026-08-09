@@ -1,6 +1,9 @@
+// مسیر این فایل در پروژه: components/Footer.tsx
+// این فایل رو دقیقاً جایگزین فایل فعلی با همین مسیر بکن (Overwrite کن).
+
 // مسیر فایل در پروژه (سایت اصلی soughat-shop، نه هاب): components/Footer.tsx
 
-import { Mail, Heart, Lock, ShieldCheck, HelpCircle, ShoppingBag, BookOpen, Package, Info, Phone, Code2, Star, DollarSign, Bug, Gift, Sparkles } from 'lucide-react';
+import { Mail, Heart, Lock, ShieldCheck, HelpCircle, ShoppingBag, BookOpen, Package, Info, Phone, Code2, Star, DollarSign, Bug, Gift, Sparkles, Coins } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 
@@ -134,6 +137,12 @@ export default function Footer() {
               <li>
                 <Link href="/send-gift-to-iran-crypto" className="hover:text-blue-600 hover:pr-2 transition-all flex items-center gap-2">
                     <Gift className="h-4 w-4" /> {t('gift_crypto')}
+                </Link>
+              </li>
+              {/* 🆕 لینک راهنمای کامل پرداخت با ارز دیجیتال */}
+              <li>
+                <Link href="/crypto-guide" className="hover:text-blue-600 hover:pr-2 transition-all flex items-center gap-2">
+                    <Coins className="h-4 w-4" /> {t('crypto_guide')}
                 </Link>
               </li>
               <li>
