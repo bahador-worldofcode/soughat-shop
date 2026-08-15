@@ -306,27 +306,43 @@ async function CategorySectionsBlock({ locale }: { locale: string }) {
               <Link
                 key={cat.id}
                 href={`/products?category=${cat.slug}`}
-                className="group relative flex aspect-square flex-col items-center justify-between rounded-2xl border border-blue-100/70 bg-gradient-to-br from-white to-blue-50/60 p-2 md:p-3 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg"
+                className="group relative flex aspect-square flex-col overflow-hidden rounded-2xl border border-blue-100/70 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg"
               >
-                <div className="relative flex w-full flex-1 items-center justify-center overflow-hidden">
-                  {cat.icon_url ? (
-                    // توجه: عمداً از next/image استفاده نشده. آدرس آیکون توسط ادمین
-                    // به‌صورت متن آزاد وارد می‌شود (می‌تواند هر دامنه یا فرمتی، از جمله
-                    // SVG، باشد) و next/image برای دامنه‌های ناشناس/SVG خطای رانتایم
-                    // می‌دهد. چون آیکون خیلی کوچک است، سود بهینه‌سازی ارزش این ریسک را ندارد.
+                {cat.icon_url ? (
+                  <>
+                    {/* 🆕 آیکون حالا کل کارت رو می‌پوشونه (object-cover به‌جای
+                        object-contain، بدون padding و بدون فضای خالیِ سفید
+                        دورش) — چون خودِ عکس‌های آیکون ۴۰۰×۴۰۰ و کاملاً
+                        مربعی‌ان، این کار باعث می‌شه کل کارت رو به‌شکلِ یک
+                        ویترینِ شیک و پر پُر کنه، نه یک آیکونِ کوچیکِ گمشده
+                        وسطِ یک باکسِ خالی. توجه: عمداً از next/image
+                        استفاده نشده، چون آدرس آیکون توسط ادمین به‌صورت متن
+                        آزاد وارد می‌شود (هر دامنه/فرمتی، از جمله SVG) و
+                        next/image برای دامنه‌های ناشناس/SVG خطای رانتایم
+                        می‌دهد. */}
                     <img
                       src={cat.icon_url}
                       alt={catName}
-                      className="h-full w-full object-contain p-1 transition-transform duration-300 group-hover:scale-110"
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
                     />
-                  ) : (
-                    <Layers className="h-1/2 w-1/2 text-blue-400" />
-                  )}
-                </div>
-
-                <h3 className="line-clamp-1 w-full px-1 text-[11px] md:text-xs font-medium text-gray-400 transition-colors duration-300 group-hover:text-blue-500">
-                  {catName}
-                </h3>
+                    {/* یک سایه‌ی گرادیانیِ ملایم فقط در پایینِ کارت — تا اسمِ
+                        دسته روی هر عکسی (روشن یا تیره) همیشه خوانا بمونه،
+                        بدون این‌که خودِ آیکونِ بامزه رو کدر یا محو کنه. */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent" />
+                    <h3 className="relative z-10 mt-auto line-clamp-1 px-2 pb-2 md:pb-3 text-center text-[11px] md:text-xs font-bold text-white drop-shadow-md">
+                      {catName}
+                    </h3>
+                  </>
+                ) : (
+                  <div className="flex h-full w-full flex-col items-center justify-between bg-gradient-to-br from-white to-blue-50/60 p-2 md:p-3">
+                    <div className="relative flex w-full flex-1 items-center justify-center">
+                      <Layers className="h-1/2 w-1/2 text-blue-400" />
+                    </div>
+                    <h3 className="line-clamp-1 w-full px-1 text-[11px] md:text-xs font-medium text-gray-400 transition-colors duration-300 group-hover:text-blue-500">
+                      {catName}
+                    </h3>
+                  </div>
+                )}
               </Link>
             );
           })}
@@ -346,10 +362,9 @@ function CategorySectionsSkeleton() {
         {Array.from({ length: 8 }).map((_, i) => (
           <div
             key={i}
-            className="aspect-square rounded-2xl border border-gray-100 bg-white p-2 md:p-3 flex flex-col items-center justify-center gap-2"
+            className="aspect-square rounded-2xl border border-gray-100 overflow-hidden"
           >
-            <Skeleton className="h-8 w-8 md:h-10 md:w-10 rounded-full" />
-            <Skeleton className="h-2.5 w-3/4" />
+            <Skeleton className="h-full w-full" />
           </div>
         ))}
       </div>
