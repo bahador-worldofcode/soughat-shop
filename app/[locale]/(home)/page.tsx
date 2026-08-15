@@ -298,7 +298,7 @@ async function CategorySectionsBlock({ locale }: { locale: string }) {
           </h2>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4">
+        <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2.5 md:gap-3">
           {categories.map((cat) => {
             const catName = isEn ? (cat.name_en || cat.name) : cat.name;
 
@@ -325,13 +325,18 @@ async function CategorySectionsBlock({ locale }: { locale: string }) {
                       alt={catName}
                       className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
                     />
-                    {/* یک سایه‌ی گرادیانیِ ملایم فقط در پایینِ کارت — تا اسمِ
-                        دسته روی هر عکسی (روشن یا تیره) همیشه خوانا بمونه،
-                        بدون این‌که خودِ آیکونِ بامزه رو کدر یا محو کنه. */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent" />
-                    <h3 className="relative z-10 mt-auto line-clamp-1 px-2 pb-2 md:pb-3 text-center text-[11px] md:text-xs font-bold text-white drop-shadow-md">
-                      {catName}
-                    </h3>
+                    {/* 🆕 به‌جای تیره‌کردنِ کل عکس، یک نوارِ شیشه‌ای/بلورِ
+                        کوچیک فقط زیرِ اسمِ دسته — آیکون همون‌طور واضح و
+                        رنگی می‌مونه، فقط پشتِ خودِ نوشته کمی بلور و
+                        نیمه‌شفاف می‌شه تا هم متن خوانا باشه هم آبجکتِ
+                        عکس از پشتِ بلور دیده بشه (backdrop-blur). */}
+                    <div className="absolute inset-x-0 bottom-0 z-10">
+                      <div className="backdrop-blur-md bg-white/25 border-t border-white/40 px-2 py-1.5 md:py-2">
+                        <h3 className="line-clamp-1 text-center text-[11px] md:text-xs font-bold text-gray-900 [text-shadow:0_1px_2px_rgba(255,255,255,0.5)]">
+                          {catName}
+                        </h3>
+                      </div>
+                    </div>
                   </>
                 ) : (
                   <div className="flex h-full w-full flex-col items-center justify-between bg-gradient-to-br from-white to-blue-50/60 p-2 md:p-3">
@@ -358,7 +363,7 @@ function CategorySectionsSkeleton() {
       <div className="flex flex-col items-center gap-3 mb-8 md:mb-10">
         <Skeleton className="h-7 md:h-8 w-56" />
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4">
+      <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2.5 md:gap-3">
         {Array.from({ length: 8 }).map((_, i) => (
           <div
             key={i}
