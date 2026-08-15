@@ -7,6 +7,18 @@ import { verifyAdmin } from '@/lib/verifyAdmin';
 
 export const dynamic = 'force-dynamic';
 
+// ─── گرد کردنِ مبالغ پولی به ۲ رقمِ اعشار ──────────────────────────────
+// جمعِ قیمت‌های اعشاری در جاوااسکریپت (مثلاً 27.48 + 20.65 + 18.57 + 20.23)
+// به‌خاطرِ نحوه‌ی ذخیره‌سازیِ اعداد اعشاری در کامپیوتر، گاهی به‌جای یک عددِ
+// دقیقِ ۲ رقمی، چیزی مثلِ 86.92999999999999 تولید می‌کند. این تابع همیشه
+// قبل از ذخیره در دیتابیس، عدد را به ۲ رقمِ اعشارِ تمیز گرد می‌کند تا این
+// خطا اصلاً وارد دیتابیس نشود — چه سفارش از چک‌اوتِ سایت بیاید، چه از هر
+// مسیرِ دیگری در آینده.
+function roundMoney(value: number): number {
+  const num = Number(value);
+  return Math.round((num + Number.EPSILON) * 100) / 100;
+}
+
 // ─── ثبت سفارش جدید (صفحه‌ی چک‌اوت سمت مشتری این را صدا می‌زند) ──────
 // این تابع POST قبلاً این‌جا وجود داشت ولی در یکی از ویرایش‌های اخیر این
 // فایل (هم‌زمان با اضافه‌شدنِ verifyAdmin به GET/PATCH/DELETE) به‌اشتباه
@@ -77,8 +89,10 @@ export async function POST(request: Request) {
           city,
           address,
           items,
-          total_price: totalPrice,
-          display_fiat_amount: displayFiatAmount ?? null,
+          // گرد شده به ۲ رقمِ اعشار — رفعِ باگِ نمایشِ اعدادی مثل
+          // 86.92999999999999 به‌جای 86.93 در پنل ادمین.
+          total_price: roundMoney(totalPrice),
+          display_fiat_amount: displayFiatAmount != null ? roundMoney(displayFiatAmount) : null,
           display_currency: displayCurrency ?? null,
           recipient_card_number: recipientCardNumber?.trim() || null,
           recipient_iban: recipientIban?.trim() || null,
