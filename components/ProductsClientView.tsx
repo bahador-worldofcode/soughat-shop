@@ -20,7 +20,7 @@ import {
 import { useSearchParams } from 'next/navigation';
 import { useRouter, usePathname } from '@/i18n/navigation';
 import { useTranslations, useLocale } from 'next-intl';
-import { sanitizePostHtml } from '@/lib/sanitizeHtml';
+import { sanitizePostHtml, stripHtmlToText, truncateAtWordBoundary } from '@/lib/sanitizeHtml';
 
 interface Product {
   id: string;
@@ -77,6 +77,83 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
+// 🆕 طراحی جدید بخش «دسته‌بندی‌ها»: هر دسته یک کارت-ردیفِ رنگی با آیکونِ
+// واقعیِ خودِ دسته (icon_url از دیتابیس) + نام + یک خط توضیحِ کوتاه (در
+// صورت وجود description در دیتابیس). چون تعداد و ترتیب دسته‌ها پویاست،
+// رنگ هر ردیف را از یک پالتِ ثابت و به‌ترتیبِ ایندکس برمی‌داریم — همیشه
+// چشم‌نواز می‌ماند، حتی اگر دسته‌ها زیاد/کم بشن. این‌جا فقط رنگِ پس‌زمینه
+// عوض می‌شه، نه خودِ آیکون (آیکون‌ها همون‌طور که هستن و رنگی می‌مونن).
+const CATEGORY_ROW_THEMES = [
+  'bg-emerald-50',
+  'bg-rose-50',
+  'bg-violet-50',
+  'bg-amber-50',
+  'bg-sky-50',
+  'bg-teal-50',
+  'bg-fuchsia-50',
+  'bg-lime-50',
+  'bg-orange-50',
+  'bg-cyan-50',
+];
+
+function CategoryRow({
+  cat,
+  index,
+  isActive,
+  label,
+  description,
+  isEn,
+  onClick,
+}: {
+  cat: Category;
+  index: number;
+  isActive: boolean;
+  label: string;
+  description: string;
+  isEn: boolean;
+  onClick: () => void;
+}) {
+  const theme = CATEGORY_ROW_THEMES[index % CATEGORY_ROW_THEMES.length];
+  // در حالتِ راست‌به‌چپ (فارسی)، جهتِ «جلو» یعنی چپ؛ در حالتِ چپ‌به‌راست
+  // (انگلیسی) یعنی راست — این فلش فقط یک نشانه‌ی تزئینیِ «قابل کلیک بودن»ه.
+  const ChevronIcon = isEn ? ChevronRight : ChevronLeft;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={label}
+      className={`w-full flex items-center gap-3 p-2.5 rounded-2xl border transition-all duration-150 text-start active:scale-[0.98] ${
+        isActive
+          ? 'bg-blue-50 border-blue-300 ring-1 ring-blue-200'
+          : `${theme} border-transparent hover:border-gray-200 hover:shadow-sm`
+      }`}
+    >
+      <span className="flex-shrink-0 w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center overflow-hidden">
+        {cat.slug === 'all' ? (
+          <Filter className={`h-5 w-5 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
+        ) : cat.icon_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={cat.icon_url} alt="" className="w-6 h-6 object-contain" />
+        ) : (
+          <Layers className={`h-5 w-5 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
+        )}
+      </span>
+
+      <span className="min-w-0 flex-1">
+        <span className={`block text-sm font-bold truncate ${isActive ? 'text-blue-700' : 'text-gray-800'}`}>
+          {label}
+        </span>
+        {description && (
+          <span className="block text-[11px] text-gray-500 truncate mt-0.5">{description}</span>
+        )}
+      </span>
+
+      <ChevronIcon className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-blue-500' : 'text-gray-300'}`} />
+    </button>
+  );
+}
+
 export default function ProductsClientView({
   initialProducts,
   categories: rawCategories,
@@ -121,6 +198,15 @@ export default function ProductsClientView({
   }, [currentCategory]);
 
   const isCatActive = (slug: string) => (slug || '').trim() === optimisticCategory;
+
+  // توضیحِ کوتاهِ زیرِ نام هر دسته در کارت جدید — اگر ادمین برای دسته‌ای
+  // description ثبت نکرده باشه، این مقدار خالی برمی‌گرده و کارت فقط با
+  // آیکون+نام نمایش داده می‌شه (بدون فضای خالی عجیب).
+  const getCatDescription = (cat: Category) => {
+    const raw = (isEn ? cat.description_en || cat.description : cat.description) || '';
+    if (!raw) return '';
+    return truncateAtWordBoundary(stripHtmlToText(raw), 44);
+  };
 
   const [searchTerm, setSearchTerm] = useState(currentSearch);
   const debouncedSearch = useDebounce(searchTerm, 500);
@@ -285,30 +371,23 @@ export default function ProductsClientView({
               {/* Categories */}
               <div>
                 <h4 className="text-xs font-bold text-gray-400 uppercase mb-3 tracking-wide">{t('category_label')}</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {categories.map((cat) => {
+                <div className="flex flex-col gap-2">
+                  {categories.map((cat, index) => {
                     const catName = isEn ? cat.name_en || cat.name : cat.name;
-                    const isActive = isCatActive(cat.slug);
                     return (
-                      <button
+                      <CategoryRow
                         key={cat.id}
+                        cat={cat}
+                        index={index}
+                        isActive={isCatActive(cat.slug)}
+                        label={catName}
+                        description={getCatDescription(cat)}
+                        isEn={isEn}
                         onClick={() => {
                           handleCategoryChange(cat.slug);
                           setIsFilterSheetOpen(false);
                         }}
-                        className={`flex items-center gap-2 px-3 py-3 rounded-xl text-sm font-bold border transition-colors text-start ${
-                          isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200'
-                        }`}
-                      >
-                        {cat.slug === 'all' ? (
-                          <Filter className="h-4 w-4 flex-shrink-0" />
-                        ) : cat.icon_url ? (
-                          <img src={cat.icon_url} alt="" className={`w-4 h-4 object-contain flex-shrink-0 ${isActive ? 'brightness-200' : ''}`} />
-                        ) : (
-                          <Layers className="h-4 w-4 flex-shrink-0" />
-                        )}
-                        <span className="truncate">{catName}</span>
-                      </button>
+                      />
                     );
                   })}
                 </div>
@@ -384,45 +463,34 @@ export default function ProductsClientView({
             </select>
           </div>
 
-          {/* لیست دسته‌بندی — دکمه‌ها با flex-wrap کنار هم می‌شینن و هرکدوم
-              دقیقاً به اندازه‌ی محتوای خودش (آیکون+اسم) عرض می‌گیره، پس هیچ
-              فضای خالی توی ردیف نمی‌مونه. بدون انیمیشن/کتابخونه‌ی اضافه —
-              فقط یک transition-colors ساده‌ی CSS برای هاور/فعال بودن. */}
+          {/* لیست دسته‌بندی — طراحیِ جدید: هر دسته یک کارت-ردیفِ رنگی با
+              آیکونِ واقعیِ خودش، نام، و (در صورت وجود) یک خط توضیح کوتاه.
+              چون سایدبار باریکه، فرمِ لیستِ عمودی (نه گرید عریض) بهترین
+              جواب رو توی همین فضا می‌ده. */}
           <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
             <h3 className="font-bold text-gray-800 flex items-center gap-2 mb-4">
               <Layers className="h-5 w-5 text-blue-600" />
               {t('categories_label')}
             </h3>
 
-            <div className="flex flex-wrap gap-2">
-              {categories.map((cat) => {
+            {/* لیستِ کارت‌های جدید بلندتر از دکمه‌های ریزِ قبلیه، پس برای
+                اینکه سایدبار از ارتفاعِ صفحه سرریز نکنه و اسکرولِ کلیِ
+                صفحه رو به‌هم نریزه، خودِ همین باکس یک اسکرولِ داخلیِ
+                کوتاه و تمیز داره (تا ۷–۸ ردیف بدونِ اسکرول دیده می‌شه). */}
+            <div className="flex flex-col gap-2 max-h-[420px] overflow-y-auto pr-1 -mr-1">
+              {categories.map((cat, index) => {
                 const catName = isEn ? cat.name_en || cat.name : cat.name;
-                const isActive = isCatActive(cat.slug);
-
                 return (
-                  <button
+                  <CategoryRow
                     key={cat.id}
+                    cat={cat}
+                    index={index}
+                    isActive={isCatActive(cat.slug)}
+                    label={catName}
+                    description={getCatDescription(cat)}
+                    isEn={isEn}
                     onClick={() => handleCategoryChange(cat.slug)}
-                    title={catName}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-bold transition-colors duration-150 active:scale-95 ${
-                      isActive
-                        ? 'bg-blue-600 border-blue-600 text-white'
-                        : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700'
-                    }`}
-                  >
-                    {cat.slug === 'all' ? (
-                      <Filter className={`h-3.5 w-3.5 flex-shrink-0 ${isActive ? 'text-white' : 'text-gray-400'}`} />
-                    ) : cat.icon_url ? (
-                      <img
-                        src={cat.icon_url}
-                        alt=""
-                        className={`w-3.5 h-3.5 object-contain flex-shrink-0 ${isActive ? 'brightness-200' : ''}`}
-                      />
-                    ) : (
-                      <Layers className={`h-3.5 w-3.5 flex-shrink-0 ${isActive ? 'text-white' : 'text-gray-400'}`} />
-                    )}
-                    <span className="truncate max-w-[9rem]">{catName}</span>
-                  </button>
+                  />
                 );
               })}
             </div>
