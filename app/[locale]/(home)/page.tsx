@@ -21,10 +21,20 @@ import type { Metadata } from 'next';
 
 export const revalidate = 60;
 
+// 🆕 این عدد دیگر فقط «تعداد نظرِ نمایشی به کاربر» نیست — بلکه تعداد
+// نظری‌ست که کامل و به‌صورت متنِ خام سمت سرور رندر می‌شود (برای گوگل و
+// ربات‌های هوش مصنوعی که جاوااسکریپت اجرا نمی‌کنند). کاربرِ عادی در
+// نگاه اول فقط ۶ تای اول را می‌بیند (در ReviewsFeed.tsx) و بقیه‌ی همین
+// دسته را با یک کلیکِ آنیِ کاملاً سمت کلاینت (بدون درخواستِ جدید به
+// سرور) می‌بیند؛ فقط وقتی تعدادِ کلِ نظرات از همین عدد فراتر برود، دکمه‌ی
+// «نظرات بیشتر» یک دسته‌ی جدیدِ واقعی از سرور می‌گیرد. عمداً روی ۲۴
+// گذاشته شده: چون هر نظر فقط متن است (نه عکس)، رندرِ سرورِ همین تعداد
+// هیچ فشارِ محسوسی به سرعتِ صفحه نمی‌زند، ولی پوششِ سئوی خیلی بهتری از
+// نظراتِ واقعی (چه قدیم چه جدید) به‌دست می‌دهد.
 // ⚠️ این عدد باید همیشه دقیقاً با BATCH_SIZE داخل components/ReviewsFeed.tsx
-// یکی باشد (همون تعداد نظری که هر بار لود می‌شود). اگر یکی را عوض کردی،
-// آن یکی را هم عوض کن.
-const REVIEWS_BATCH_SIZE = 6;
+// یکی باشد (چون منطقِ offset صفحه‌بندیِ سمتِ کلاینت به آن وابسته است).
+// اگر یکی را عوض کردی، آن یکی را هم عوض کن.
+const REVIEWS_BATCH_SIZE = 24;
 
 function getSiteUrl() {
   return process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat.shop';
@@ -408,7 +418,7 @@ async function ReviewsSection() {
     ? allApprovedRatings.reduce((sum, r) => sum + (r.rating || 0), 0) / allApprovedRatings.length
     : 0;
 
-  const reviewsInitialHasMore = (initialReviews?.length || 0) === REVIEWS_BATCH_SIZE;
+  const reviewsInitialHasMore = reviewCount > (initialReviews?.length || 0);
 
   // 🔧 رفع مشکل «دو Schema سازمانی جدا روی هوم‌پیج»:
   // قبلاً اینجا یک Organization کاملاً جدا (با name/url مستقل) ساخته
@@ -489,6 +499,7 @@ async function ReviewsSection() {
         <ReviewsFeed
           initialReviews={initialReviews || []}
           initialHasMore={reviewsInitialHasMore}
+          totalCount={reviewCount}
         />
 
       </div>
