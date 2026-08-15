@@ -6,6 +6,8 @@ import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import PostContent from '@/components/PostContent';
 import ShareButtons from '@/components/ShareButtons';
+import TableOfContents from '@/components/TableOfContents';
+import { extractHeadings } from '@/lib/extractHeadings';
 
 // --- تنظیمات کش ---
 export const revalidate = 60;
@@ -131,6 +133,13 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
   // ✅ تصویر انگلیسی با بازگشت خودکار به تصویر اصلی در صورت خالی بودن image_en
   const displayImage = isEn ? (post.image_en || post.image) : post.image;
 
+  // 🆕 فهرست مطالب سایدبار: تیترهای h2 دارای id از خودِ محتوای خام استخراج
+  // می‌شوند (lib/extractHeadings.ts) تا components/TableOfContents.tsx کنار
+  // مقاله (دسکتاپ) یا در یک شیت شناور (موبایل) نمایششان بدهد. این جایگزین
+  // لیست قدیمی «فهرست مطالب» است که قبلاً بالای خودِ متن مقاله چاپ می‌شد و
+  // مقاله را طولانی‌تر و اسکرول اولیه را خسته‌کننده می‌کرد.
+  const headings = extractHeadings(displayContent);
+
   const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat.shop';
   const pageUrl = `${siteUrl}/${locale}/blog/${decodedSlug}`;
 
@@ -220,71 +229,83 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
       </div>
 
       {/* 2. Main Content */}
+      {/* 🆕 قبلاً این یک ستون تک بود (فقط کارت سفید max-w-4xl). حالا یک ردیف
+          flex شامل «سایدبار فهرست مطالب» + «کارت سفید مقاله» است تا فهرست
+          مطالب کنار مقاله بشینه، نه داخل خودِ متن مقاله. چون این کانتینر هیچ
+          dir صریحی نداره، جهتِ html (rtl برای fa، ltr برای en — از
+          app/[locale]/layout.tsx) رو ارث می‌بره، پس flex-row خودش به‌درستی
+          آینه می‌شه: در فارسی سایدبار سمت راست، در انگلیسی سمت چپ می‌افته،
+          دقیقاً مثل بقیه‌ی چیدمان‌های منطقی (logical) این پروژه. */}
       <div className="container mx-auto px-4 relative z-10 -mt-10">
-        <div className="bg-white rounded-3xl shadow-xl p-6 md:p-12 max-w-4xl mx-auto border border-gray-100">
+        <div className="max-w-6xl mx-auto flex flex-col lg:flex-row lg:items-start gap-6">
 
-          {/* عنوان و دسته‌بندی حالا داخل کارت سفید و در جریان عادی صفحه هستند
-              (دیگه روی عکس اورلی نمی‌شن)، پس توی هیچ سایزی زیر چیزی گم یا بریده نمی‌شن */}
-          {displayCategory && (
-              <span className="inline-flex items-center gap-1 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold mb-4">
-                   <Folder className="h-3 w-3" /> {displayCategory}
+          <TableOfContents headings={headings} isEn={isEn} />
+
+          <div className="bg-white rounded-3xl shadow-xl p-6 md:p-12 flex-1 min-w-0 border border-gray-100">
+
+            {/* عنوان و دسته‌بندی حالا داخل کارت سفید و در جریان عادی صفحه هستند
+                (دیگه روی عکس اورلی نمی‌شن)، پس توی هیچ سایزی زیر چیزی گم یا بریده نمی‌شن */}
+            {displayCategory && (
+                <span className="inline-flex items-center gap-1 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold mb-4">
+                     <Folder className="h-3 w-3" /> {displayCategory}
+                </span>
+            )}
+            <h1 className="text-2xl sm:text-3xl md:text-5xl font-extrabold text-gray-900 leading-tight mb-6" dir={isEn ? 'ltr' : 'rtl'}>
+                {displayTitle}
+            </h1>
+
+            <div className="flex flex-wrap items-center gap-6 text-gray-500 text-sm font-medium mb-10 pb-6 border-b border-gray-100" dir={isEn ? 'ltr' : 'rtl'}>
+              <span className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-blue-500" />
+                {new Date(post.created_at).toLocaleDateString(isEn ? 'en-US' : 'fa-IR', { dateStyle: 'long' })}
               </span>
-          )}
-          <h1 className="text-2xl sm:text-3xl md:text-5xl font-extrabold text-gray-900 leading-tight mb-6" dir={isEn ? 'ltr' : 'rtl'}>
-              {displayTitle}
-          </h1>
-
-          <div className="flex flex-wrap items-center gap-6 text-gray-500 text-sm font-medium mb-10 pb-6 border-b border-gray-100" dir={isEn ? 'ltr' : 'rtl'}>
-            <span className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-blue-500" />
-              {new Date(post.created_at).toLocaleDateString(isEn ? 'en-US' : 'fa-IR', { dateStyle: 'long' })}
-            </span>
-            <span className="flex items-center gap-2">
-              <User className="h-4 w-4 text-blue-500" />
-              {t('author')}
-            </span>
-          </div>
-
-          <article className="max-w-none" dir={isEn ? 'ltr' : 'rtl'}>
-             <PostContent content={displayContent} dir={isEn ? 'ltr' : 'rtl'} />
-          </article>
-
-          {displayTags && displayTags.length > 0 && (
-            <div className="mt-12 pt-8 border-t border-gray-100" dir={isEn ? 'ltr' : 'rtl'}>
-                <div className="flex items-center gap-2 mb-4 text-gray-700 font-bold text-sm">
-                   <Tag className="h-4 w-4" /> {t('tags')}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                    {displayTags.map((tag: string, idx: number) => (
-                        <Link key={idx} href={`/blog`} className="bg-gray-100 hover:bg-blue-50 hover:text-blue-600 transition-colors text-gray-600 px-3 py-1.5 rounded-lg text-xs">
-                            #{tag}
-                        </Link>
-                    ))}
-                </div>
+              <span className="flex items-center gap-2">
+                <User className="h-4 w-4 text-blue-500" />
+                {t('author')}
+              </span>
             </div>
-          )}
 
-          {/* اشتراک‌گذاری — چون عنوان/توضیحات/عکس/تگ‌ها بالاتر توی Open Graph
-              ست شدن، وقتی فقط لینک شِر بشه، خودِ شبکه‌ی اجتماعی این‌ها رو خودکار
-              از صفحه می‌خونه؛ نیازی به تایپ دستی متن یا تایتل نیست */}
-          <div className="mt-10 pt-8 border-t border-gray-100">
-            <ShareButtons url={pageUrl} title={displayTitle} isEn={isEn} />
+            <article className="max-w-none" dir={isEn ? 'ltr' : 'rtl'}>
+               <PostContent content={displayContent} dir={isEn ? 'ltr' : 'rtl'} />
+            </article>
+
+            {displayTags && displayTags.length > 0 && (
+              <div className="mt-12 pt-8 border-t border-gray-100" dir={isEn ? 'ltr' : 'rtl'}>
+                  <div className="flex items-center gap-2 mb-4 text-gray-700 font-bold text-sm">
+                     <Tag className="h-4 w-4" /> {t('tags')}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                      {displayTags.map((tag: string, idx: number) => (
+                          <Link key={idx} href={`/blog`} className="bg-gray-100 hover:bg-blue-50 hover:text-blue-600 transition-colors text-gray-600 px-3 py-1.5 rounded-lg text-xs">
+                              #{tag}
+                          </Link>
+                      ))}
+                  </div>
+              </div>
+            )}
+
+            {/* اشتراک‌گذاری — چون عنوان/توضیحات/عکس/تگ‌ها بالاتر توی Open Graph
+                ست شدن، وقتی فقط لینک شِر بشه، خودِ شبکه‌ی اجتماعی این‌ها رو خودکار
+                از صفحه می‌خونه؛ نیازی به تایپ دستی متن یا تایتل نیست */}
+            <div className="mt-10 pt-8 border-t border-gray-100">
+              <ShareButtons url={pageUrl} title={displayTitle} isEn={isEn} />
+            </div>
+
+            <div className="mt-10" dir={isEn ? 'ltr' : 'rtl'}>
+               <Link href="/blog" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-bold transition-colors group">
+                   {isEn ? (
+                      <>
+                         <ArrowRight className="mr-2 h-4 w-4 rotate-180 group-hover:mr-3 transition-all" /> {t('back_to_blog')}
+                      </>
+                   ) : (
+                      <>
+                         <ArrowRight className="ml-2 h-4 w-4 group-hover:mr-1 transition-all" /> {t('back_to_blog')}
+                      </>
+                   )}
+              </Link>
+            </div>
+
           </div>
-
-          <div className="mt-10" dir={isEn ? 'ltr' : 'rtl'}>
-             <Link href="/blog" className="inline-flex items-center text-blue-600 hover:text-blue-800 font-bold transition-colors group">
-                 {isEn ? (
-                    <>
-                       <ArrowRight className="mr-2 h-4 w-4 rotate-180 group-hover:mr-3 transition-all" /> {t('back_to_blog')}
-                    </>
-                 ) : (
-                    <>
-                       <ArrowRight className="ml-2 h-4 w-4 group-hover:mr-1 transition-all" /> {t('back_to_blog')}
-                    </>
-                 )}
-            </Link>
-          </div>
-
         </div>
       </div>
     </div>

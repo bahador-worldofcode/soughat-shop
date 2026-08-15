@@ -22,14 +22,13 @@ html, body {
   max-width: 100%;
 }
 
-/* 🆕 اسکرول نرم برای لینک‌های «فهرست مطالب» داخل پست وبلاگ ===== */
-/* وقتی کاربر روی یکی از لینک‌های فهرست مطالب (مثلاً href="#sec-3") کلیک
-   می‌کند، بدون این قانون مرورگر به‌صورت آنی و ناگهانی می‌پرد؛ با
+/* 🆕 اسکرول نرم برای لینک‌های «فهرست مطالب» (چه سایدبار دسکتاپ، چه شیت
+   موبایل در components/TableOfContents.tsx). بدون این قانون، مرورگر با
+   کلیک روی یک لینک #sec-N به‌صورت آنی و ناگهانی می‌پرد؛ با
    scroll-behavior: smooth این پرش به یک اسکرول نرم و حرفه‌ای تبدیل می‌شود.
-   نکته: این یک قانون CSS خالص است و هیچ جاوااسکریپت/کتابخانه‌ی جدیدی
-   نیاز ندارد. برای کاربرانی که در سیستم‌عاملشان «حرکت کاهش‌یافته»
-   (Reduced Motion) را فعال کرده‌اند، طبق استاندارد دسترس‌پذیری، این افکت
-   غیرفعال می‌شود تا حالت تهوع/سرگیجه ایجاد نکند. */
+   این یک قانون CSS خالص است و هیچ جاوااسکریپت/کتابخانه‌ی جدیدی نیاز ندارد.
+   برای کاربرانی که در سیستم‌عاملشان «حرکت کاهش‌یافته» (Reduced Motion) را
+   فعال کرده‌اند، طبق استاندارد دسترس‌پذیری، این افکت غیرفعال می‌شود. */
 html {
   scroll-behavior: smooth;
 }
@@ -181,43 +180,6 @@ html {
 
 .post-content li {
   margin-bottom: 0.4rem;
-}
-
-/* 🆕 باکس ویژه‌ی «فهرست مطالب»: همیشه اولین <ul> داخل هر پست، خودِ فهرست
-   مطالب است (چون بلافاصله بعد از پاراگراف مقدمه و قبل از هر لیست دیگری در
-   محتوا می‌آید)، پس با ul:first-of-type می‌توانیم بدون نیاز به تغییر دوباره‌ی
-   محتوای دیتابیس، فقط همین یک لیست را به شکل یک باکس شیک و جدا از بقیه‌ی
-   لیست‌های داخل مقاله دربیاوریم. */
-.post-content > ul:first-of-type {
-  list-style: none;
-  margin: 1.25rem 0 2rem;
-  padding: 1.25rem 1.5rem;
-  background: #f8fafc; /* slate-50 */
-  border: 1px solid #e2e8f0; /* slate-200 */
-  border-inline-start: 4px solid #2563eb;
-  border-radius: 0.75rem;
-}
-
-.post-content > ul:first-of-type li {
-  margin-bottom: 0.55rem;
-  padding-inline-start: 0;
-}
-
-.post-content > ul:first-of-type li:last-child {
-  margin-bottom: 0;
-}
-
-.post-content > ul:first-of-type a {
-  display: inline-block;
-  color: #1e3a8a; /* blue-900 */
-  font-weight: 600;
-  text-decoration: none;
-  transition: color 0.15s ease, padding-inline-start 0.15s ease;
-}
-
-.post-content > ul:first-of-type a:hover {
-  color: #2563eb;
-  padding-inline-start: 0.25rem;
 }
 
 .post-content img {
