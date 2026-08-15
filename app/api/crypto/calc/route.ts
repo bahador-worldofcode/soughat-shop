@@ -17,12 +17,20 @@ export async function POST(request: Request) {
     // 1. دریافت مبلغ سفارش از دیتابیس
     const { data: order, error: dbError } = await supabaseAdmin
       .from('orders')
-      .select('total_price')
+      .select('total_price, status')
       .eq('id', orderId)
       .single();
 
     if (dbError || !order) {
       return NextResponse.json({ error: 'سفارش یافت نشد' }, { status: 404 });
+    }
+
+    // 🆕 محافظِ منطقی: اگه سفارش دیگه در وضعیتِ «در انتظار پرداخت» نباشه
+    // (قبلاً پرداخت شده یا لغو شده)، دیگه معنا نداره یک مبلغِ قابل‌پرداخت
+    // براش محاسبه و نمایش بدیم — مستقل از اینکه سمتِ کلاینت چه چک‌هایی
+    // شده، همین‌جا هم جلوش گرفته می‌شه.
+    if (order.status !== 'pending') {
+      return NextResponse.json({ error: 'این سفارش دیگر در وضعیتِ در انتظار پرداخت نیست.' }, { status: 409 });
     }
 
     // 2. دریافت نرخ لحظه‌ای
@@ -69,6 +77,11 @@ export async function POST(request: Request) {
       amount: payableAmount,
       rate: rate,
       symbol: cleanSymbol,
+      // مبلغِ پایه‌ی واقعیِ همین سفارش (از دیتابیس، نه سبدِ خریدِ کلاینت) —
+      // تا فرانت‌اند بتونه «ارزش سفارش» رو مستقل از وضعیتِ فعلیِ سبدِ خرید
+      // درست نمایش بده (مهم برای وقتی کاربر داره یک سفارشِ قدیمی رو ادامه
+      // می‌ده و سبدش خالی/متفاوته).
+      totalPriceUSD: order.total_price,
     });
 
   } catch (error: any) {

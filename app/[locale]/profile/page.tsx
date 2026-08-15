@@ -53,6 +53,7 @@ import {
   ArrowDownCircle,
   ArrowUpCircle,
   SlidersHorizontal,
+  CreditCard,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------
@@ -1163,12 +1164,25 @@ export default function ProfilePage() {
                       <div className="text-xs text-gray-500">
                         {formatOrderDate(order.created_at)} — {order.city}
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-bold text-gray-900 text-sm">
                           {order.display_fiat_amount
                             ? `${order.display_fiat_amount.toLocaleString()} ${order.display_currency ?? ''}`
                             : `$${order.total_price}`}
                         </span>
+                        {/* 🆕 سفارشی که هنوز پرداخت نشده — مشتری از همین‌جا،
+                            بدون نیاز به پیام دادن یا وارد کردن دوباره‌ی
+                            اطلاعات، مستقیم می‌ره به مرحله‌ی پرداختِ همین
+                            سفارش. */}
+                        {order.status === 'pending' && (
+                          <button
+                            onClick={() => router.push(`/pay/${order.id}`)}
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap shadow-sm"
+                          >
+                            <CreditCard className="h-3.5 w-3.5" />
+                            {t('orders.pay_now_btn')}
+                          </button>
+                        )}
                         <button
                           onClick={() => setSelectedOrderId(order.id)}
                           className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"

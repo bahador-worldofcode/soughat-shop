@@ -21,11 +21,20 @@ interface Props {
 
 export default function CryptoPayment({ orderId }: Props) {
   const t = useTranslations('CryptoPayment');
-  const { cart, convertPrice, getSymbol, currency, rates } = useStore();
+  const { convertPrice, getSymbol, currency, rates } = useStore();
   const router = useRouter();
 
-  const totalBaseUSD = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const displayPrice = convertPrice(totalBaseUSD);
+  // 🆕 مبلغِ واقعیِ سفارش دیگه از سبدِ خریدِ لحظه‌ای (cart) خونده نمی‌شه —
+  // چون این کامپوننت ممکنه برای یک سفارشِ قدیمیِ «در انتظار پرداخت» هم
+  // صدا زده بشه (مثلاً وقتی مشتری از تبِ «سفارش‌های من» می‌خواد پرداختِ
+  // یک سفارشِ چند ساعت/چند روز پیش رو تکمیل کنه)؛ در اون حالت سبدِ خرید
+  // ممکنه خالی یا کاملاً متفاوت باشه و دیگه هیچ ربطی به مبلغِ واقعیِ اون
+  // سفارش نداره. برای همین این عدد رو از همون پاسخِ API محاسبه‌ی کریپتو
+  // (که با orderId مستقیم از دیتابیس می‌خونه) می‌گیریم — یک منبعِ واحد و
+  // همیشه‌درست برای «مبلغِ این سفارش»، چه توی چک‌اوتِ همون لحظه باشیم چه
+  // توی صفحه‌ی ادامه‌ی پرداختِ یک سفارشِ قدیمی.
+  const [orderTotalUSD, setOrderTotalUSD] = useState<number | null>(null);
+  const displayPrice = orderTotalUSD !== null ? convertPrice(orderTotalUSD) : null;
   const displaySymbol = getSymbol();
 
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
@@ -35,6 +44,10 @@ export default function CryptoPayment({ orderId }: Props) {
   const [serverRate, setServerRate] = useState<number | null>(null);
   const [payableAmount, setPayableAmount] = useState<string>('...');
   const [loadingCalc, setLoadingCalc] = useState(false);
+  // 🆕 اگه محاسبه‌ی قیمت شکست بخوره (مثلاً این سفارش دیگه در انتظار
+  // پرداخت نیست — قبلاً پرداخت یا لغو شده)، به‌جای اینکه کاربر با یک
+  // باکسِ خالی/هنگ‌کرده روبه‌رو بشه، یک پیامِ واضح نشونش می‌دیم.
+  const [calcError, setCalcError] = useState<string>('');
 
   const [isChecking, setIsChecking] = useState(false);
 
@@ -58,6 +71,7 @@ export default function CryptoPayment({ orderId }: Props) {
     if (!selectedMethod || !orderId) return;
 
     setLoadingCalc(true);
+    setCalcError('');
     try {
       const res = await fetch('/api/crypto/calc', {
         method: 'POST',
@@ -73,12 +87,16 @@ export default function CryptoPayment({ orderId }: Props) {
 
       setPayableAmount(data.amount);
       setServerRate(data.rate);
+      if (typeof data.totalPriceUSD === 'number') {
+        setOrderTotalUSD(data.totalPriceUSD);
+      }
     } catch (error: any) {
       console.error(error);
+      setCalcError(error?.message || t('calc_error_generic'));
     } finally {
       setLoadingCalc(false);
     }
-  }, [selectedMethod, orderId]);
+  }, [selectedMethod, orderId, t]);
 
   useEffect(() => {
     fetchSecurePrice();
@@ -133,6 +151,7 @@ export default function CryptoPayment({ orderId }: Props) {
   // و در حالت سولانا، نرخ لحظه‌ای هم از API دریافت شده باشد
   const isHintReady =
     !loadingCalc &&
+    orderTotalUSD !== null &&
     payableAmount !== '...' &&
     (selectedMethod?.symbol !== 'SOL' || serverRate !== null);
 
@@ -146,7 +165,7 @@ export default function CryptoPayment({ orderId }: Props) {
     ? selectedMethod.symbol === 'USDT'
       ? currency === 'USD'
         ? t.rich('hint_usdt_usd', {
-            usdAmount: totalBaseUSD.toFixed(2),
+            usdAmount: (orderTotalUSD ?? 0).toFixed(2),
             cryptoAmount: payableAmount,
             ltr: ltrIsolate,
           })
@@ -154,12 +173,12 @@ export default function CryptoPayment({ orderId }: Props) {
             fiatName,
             fiatCode: currency,
             fiatRate: fiatRateToUsd.toFixed(4),
-            usdAmount: totalBaseUSD.toFixed(2),
+            usdAmount: (orderTotalUSD ?? 0).toFixed(2),
             cryptoAmount: payableAmount,
             ltr: ltrIsolate,
           })
       : t.rich('hint_sol', {
-          usdAmount: totalBaseUSD.toFixed(2),
+          usdAmount: (orderTotalUSD ?? 0).toFixed(2),
           solRate: serverRate ? serverRate.toFixed(2) : '0',
           cryptoAmount: payableAmount,
           ltr: ltrIsolate,
@@ -194,7 +213,28 @@ export default function CryptoPayment({ orderId }: Props) {
       </div>
 
       <div className="p-6">
-        
+
+        {calcError && !loadingCalc ? (
+          /* 🆕 حالتِ خطا — مثلاً وقتی این سفارش دیگه در انتظار پرداخت
+             نیست (قبلاً پرداخت/لغو شده) یا لحظه‌ای دریافتِ نرخ ناموفق
+             بوده. به‌جای نمایشِ باکس‌های نیمه‌خالی، یک پیامِ واضح با
+             گزینه‌ی تلاشِ دوباره نشون می‌دیم. */
+          <div className="flex flex-col items-center text-center py-6">
+            <div className="bg-red-50 p-4 rounded-full mb-4">
+              <Info className="h-8 w-8 text-red-500" />
+            </div>
+            <p className="text-sm font-bold text-gray-800 mb-1">{t('calc_error_title')}</p>
+            <p className="text-xs text-gray-500 mb-6 max-w-xs">{calcError}</p>
+            <button
+              onClick={fetchSecurePrice}
+              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2.5 px-5 rounded-xl transition-colors"
+            >
+              <RefreshCw className="h-4 w-4" />
+              {t('refresh_rate')}
+            </button>
+          </div>
+        ) : (
+        <>
         {/* نمایش مبلغ نهایی */}
         <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 mb-8 space-y-3 relative overflow-hidden">
            {loadingCalc && (
@@ -208,7 +248,9 @@ export default function CryptoPayment({ orderId }: Props) {
 
            <div className="flex justify-between items-center text-gray-500 text-sm">
              <span>{t('fiat_value')}</span>
-             <span className="font-mono">{displaySymbol} {displayPrice}</span>
+             <span className="font-mono">
+               {displayPrice !== null ? `${displaySymbol} ${displayPrice}` : '...'}
+             </span>
            </div>
            
            <div className="flex justify-between items-center text-gray-900 border-t border-gray-200 pt-3">
@@ -287,6 +329,8 @@ export default function CryptoPayment({ orderId }: Props) {
                     <span>{t('refresh_rate')}</span>
                 </button>
             </div>
+        )}
+        </>
         )}
 
       </div>

@@ -485,7 +485,9 @@
       "EUR": "Euro",
       "GBP": "British Pound",
       "SEK": "Swedish Krona"
-    }
+    },
+    "calc_error_title": "This payment can't be completed",
+    "calc_error_generic": "Something went wrong while calculating the amount. Please try again."
   },
   "Track": {
     "title": "Track Your Order",
@@ -500,11 +502,24 @@
     "steps": {
       "pending": "Pending Payment",
       "paid": "Paid",
-      "sent": "Shipped to Iran",
+      "sent": "Shipped",
       "delivered": "Delivered"
     },
     "processing": "Processing",
     "contact_support": "Having issues? Contact Support"
+  },
+  "PayOrder": {
+    "loading": "Checking your order...",
+    "not_found_title": "Order not found",
+    "not_found_desc": "This link isn't valid, or the order couldn't be found. Please try again from the \"My Orders\" tab in your profile.",
+    "back_to_profile": "Back to profile",
+    "already_paid_title": "This order is already paid",
+    "already_paid_desc": "Payment for this order has already been confirmed, so there's no need to pay again. You can check its status on the tracking page.",
+    "cancelled_title": "This order was cancelled",
+    "cancelled_desc": "This order has been cancelled and can no longer be paid. Please contact support if you have questions.",
+    "track_btn": "Track order",
+    "title": "Complete Your Payment",
+    "subtitle": "All your order details (recipient, address, and items) are already saved — just complete the payment below."
   },
   "Success": {
     "title": "Payment Successful!",
@@ -855,7 +870,8 @@
       "order_number": "Order ID",
       "track_btn": "Track order",
       "load_error": "Couldn't load your orders. Please try again.",
-      "details_btn": "View details"
+      "details_btn": "View details",
+      "pay_now_btn": "Complete Payment"
     }
   },
   "OrderDetails": {
