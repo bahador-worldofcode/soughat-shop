@@ -22,6 +22,24 @@ html, body {
   max-width: 100%;
 }
 
+/* 🆕 اسکرول نرم برای لینک‌های «فهرست مطالب» داخل پست وبلاگ ===== */
+/* وقتی کاربر روی یکی از لینک‌های فهرست مطالب (مثلاً href="#sec-3") کلیک
+   می‌کند، بدون این قانون مرورگر به‌صورت آنی و ناگهانی می‌پرد؛ با
+   scroll-behavior: smooth این پرش به یک اسکرول نرم و حرفه‌ای تبدیل می‌شود.
+   نکته: این یک قانون CSS خالص است و هیچ جاوااسکریپت/کتابخانه‌ی جدیدی
+   نیاز ندارد. برای کاربرانی که در سیستم‌عاملشان «حرکت کاهش‌یافته»
+   (Reduced Motion) را فعال کرده‌اند، طبق استاندارد دسترس‌پذیری، این افکت
+   غیرفعال می‌شود تا حالت تهوع/سرگیجه ایجاد نکند. */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 /* ===== نوارهای اسکرول افقی (ریل محصولات/دسته‌بندی‌ها در صفحه اصلی) ===== */
 /* اسکرول‌بار را مخفی می‌کند تا تجربه‌ی نواری شبیه اسنپ/دیجی‌کالا باشد،
    بدون اینکه قابلیت اسکرول با انگشت/موس از بین برود. */
@@ -111,6 +129,25 @@ html, body {
   margin-bottom: 0.5rem;
 }
 
+/* 🆕 فاصله‌ی امن بین تیترها و لبه‌ی بالای صفحه هنگام پرش با فهرست مطالب.
+   هدر سایت در دسکتاپ (md به بالا) به‌صورت sticky با ارتفاع h-16 (=۴rem)
+   بالای صفحه می‌چسبد (ببینید components/Header.tsx)؛ بدون scroll-margin-top
+   وقتی کاربر روی یک لینک فهرست مطالب کلیک می‌کند، همان تیتر درست زیر هدر
+   ثابت پنهان می‌شود. این قانون یک فاصله‌ی امن روی «نقطه‌ی توقف اسکرول»
+   می‌گذارد تا تیتر همیشه کاملاً زیر هدر و قابل‌خواندن دیده شود. در موبایل
+   چون هدر sticky نیست (فقط در md+ فعال است)، فاصله‌ی کوچک‌تری کافی است. */
+.post-content h2,
+.post-content h3 {
+  scroll-margin-top: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .post-content h2,
+  .post-content h3 {
+    scroll-margin-top: 5.5rem;
+  }
+}
+
 .post-content strong,
 .post-content b {
   font-weight: 800;
@@ -146,6 +183,43 @@ html, body {
   margin-bottom: 0.4rem;
 }
 
+/* 🆕 باکس ویژه‌ی «فهرست مطالب»: همیشه اولین <ul> داخل هر پست، خودِ فهرست
+   مطالب است (چون بلافاصله بعد از پاراگراف مقدمه و قبل از هر لیست دیگری در
+   محتوا می‌آید)، پس با ul:first-of-type می‌توانیم بدون نیاز به تغییر دوباره‌ی
+   محتوای دیتابیس، فقط همین یک لیست را به شکل یک باکس شیک و جدا از بقیه‌ی
+   لیست‌های داخل مقاله دربیاوریم. */
+.post-content > ul:first-of-type {
+  list-style: none;
+  margin: 1.25rem 0 2rem;
+  padding: 1.25rem 1.5rem;
+  background: #f8fafc; /* slate-50 */
+  border: 1px solid #e2e8f0; /* slate-200 */
+  border-inline-start: 4px solid #2563eb;
+  border-radius: 0.75rem;
+}
+
+.post-content > ul:first-of-type li {
+  margin-bottom: 0.55rem;
+  padding-inline-start: 0;
+}
+
+.post-content > ul:first-of-type li:last-child {
+  margin-bottom: 0;
+}
+
+.post-content > ul:first-of-type a {
+  display: inline-block;
+  color: #1e3a8a; /* blue-900 */
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s ease, padding-inline-start 0.15s ease;
+}
+
+.post-content > ul:first-of-type a:hover {
+  color: #2563eb;
+  padding-inline-start: 0.25rem;
+}
+
 .post-content img {
   max-width: 100%;
   height: auto;
@@ -172,4 +246,36 @@ html, body {
   border: none;
   border-top: 1px solid #e5e7eb;
   margin: 1.5rem 0;
+}
+
+/* 🆕 استایل جدول‌های داخل مقاله (مثل جدول مقایسه‌ی روش‌های ارسال پول).
+   display:block + overflow-x:auto روی خودِ table باعث می‌شود جدول در
+   موبایل به‌جای بهم‌ریختن چیدمان صفحه، خودش به‌صورت افقی اسکرول شود؛ بدون
+   اینکه نیاز به یک <div> پوششی اضافه در HTML محتوا باشد. */
+.post-content table {
+  width: 100%;
+  border-collapse: collapse;
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 1.25rem 0;
+  font-size: 0.95rem;
+}
+
+.post-content th,
+.post-content td {
+  border: 1px solid #e5e7eb;
+  padding: 0.65rem 0.9rem;
+  text-align: start;
+}
+
+.post-content thead th {
+  background: #eff6ff; /* blue-50 */
+  color: #1e3a8a; /* blue-900 */
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.post-content tbody tr:nth-child(even) {
+  background: #f9fafb; /* gray-50 */
 }
