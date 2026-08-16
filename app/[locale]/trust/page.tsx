@@ -1,4 +1,3 @@
-// مسیر فایل در پروژه: app/[locale]/trust/page.tsx
 // این فایل جایگزین فایل فعلی همین مسیر می‌شود (کامل جایگزین کنید).
 // --------------------------------------------------------------
 // بازطراحی کامل صفحه‌ی «چرا به سوغات شاپ اعتماد کنیم؟». نسخه‌ی قبلی فقط
@@ -156,6 +155,19 @@ export default async function TrustPage({ params }: { params: Promise<{ locale: 
               {t('hero_pill_ai')}
             </span>
           </div>
+
+          {/* بج ریویوی مستقل Trustpilot */}
+          <a
+            href="https://www.trustpilot.com/review/soughat.shop"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-6 inline-flex items-center gap-3 bg-green-50 border border-green-200 rounded-2xl px-5 py-4 hover:bg-green-100 transition-all"
+          >
+            <ShieldCheck className="h-6 w-6 text-green-600" />
+            <span className="text-sm font-medium text-green-800">
+              {isEn ? 'See our independent reviews on Trustpilot' : 'نظرات مستقل مشتریان ما را در Trustpilot ببینید'}
+            </span>
+          </a>
         </div>
       </div>
 

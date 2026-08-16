@@ -1,4 +1,3 @@
-// مسیر این فایل در پروژه: components/Footer.tsx
 // این فایل رو دقیقاً جایگزین فایل فعلی با همین مسیر بکن (Overwrite کن).
 
 // مسیر فایل در پروژه (سایت اصلی soughat-shop، نه هاب): components/Footer.tsx
@@ -23,6 +22,15 @@ function FacebookIcon() {
   return (
     <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
       <path d="M22 12.06C22 6.505 17.523 2 12 2S2 6.505 2 12.06c0 5.02 3.657 9.184 8.438 9.94v-7.03H7.898v-2.91h2.54V9.845c0-2.508 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.462h-1.26c-1.243 0-1.63.771-1.63 1.562v1.876h2.773l-.443 2.91h-2.33V22c4.78-.756 8.437-4.92 8.437-9.94z"/>
+    </svg>
+  );
+}
+
+// آیکون ستاره‌ی Trustpilot
+function TrustpilotIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+      <path d="M12 1.5l3.09 6.26 6.91 1-5 4.87 1.18 6.87L12 17.27l-6.18 3.23L7 13.63l-5-4.87 6.91-1L12 1.5z"/>
     </svg>
   );
 }
@@ -76,6 +84,7 @@ export default function Footer() {
             <div className="flex items-center gap-4 mt-6">
                 <a href="https://x.com/Soughatshop" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)" className="bg-gray-50 p-2 rounded-lg text-gray-400 hover:text-black hover:bg-gray-100 transition-all"><XIcon /></a>
                 <a href="https://www.facebook.com/share/14eJwCenVjC/" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="bg-gray-50 p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"><FacebookIcon /></a>
+                <a href="https://www.trustpilot.com/review/soughat.shop" target="_blank" rel="noopener noreferrer" aria-label="Trustpilot" className="bg-gray-50 p-2 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition-all"><TrustpilotIcon /></a>
                 <Link href="/contact" className="bg-gray-50 p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"><Mail className="h-5 w-5" /></Link>
                 {/* ⚠️ اصلاح مهم: لینک «همکاران (Partners)» که اینجا بود حذف شد.
                     دلیل: بخشی از یک شبکه‌ی لینک‌سازیِ متقابل بین چند سایت هم‌مالک
