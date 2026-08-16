@@ -54,6 +54,7 @@ import {
   ArrowUpCircle,
   SlidersHorizontal,
   CreditCard,
+  Tag,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------
@@ -102,6 +103,10 @@ interface OrderRow {
   // داده نشود (چون order.items[i].name همیشه undefined بود).
   items: { title?: string; quantity?: number; price?: number; image?: string }[] | null;
   created_at: string;
+  // 🆕 اگه این سفارش با کد تخفیف ثبت شده باشه، پر می‌شه؛ برای نمایشِ یک
+  // نشانِ کوچیکِ «۱۵٪ تخفیف اعمال شد» روی کارتِ سفارش.
+  discount_code: string | null;
+  discount_percent: number | null;
 }
 
 interface WalletTx {
@@ -1159,6 +1164,16 @@ export default function ProfilePage() {
                     </div>
 
                     {itemsSummary && <p className="text-sm text-gray-700 mt-3 line-clamp-2">{itemsSummary}</p>}
+
+                    {/* 🆕 اگه این سفارش با کد تخفیف ثبت شده، همین‌جا مشخصه —
+                        دقیقاً طبق خواسته: «در پروفایل کاربر هم اگر تخفیفی
+                        استفاده کرده حتماً بیفته». */}
+                    {order.discount_code && (
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full mt-2 w-fit">
+                        <Tag className="h-3 w-3" />
+                        {t('orders.discount_used_label', { percent: order.discount_percent ?? 0 })}
+                      </span>
+                    )}
 
                     <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 flex-wrap gap-2">
                       <div className="text-xs text-gray-500">

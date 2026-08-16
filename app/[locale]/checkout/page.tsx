@@ -3,7 +3,7 @@
 
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { MapPin, ShoppingCart, ChevronLeft, ChevronRight, Loader2, Globe, FileText, ShieldCheck, ArrowLeft, AlertTriangle, Trash2, XCircle, Info, Star, Wand2, UserPlus, CheckCircle2, Landmark } from 'lucide-react';
+import { MapPin, ShoppingCart, ChevronLeft, ChevronRight, Loader2, Globe, FileText, ShieldCheck, ArrowLeft, AlertTriangle, Trash2, XCircle, Info, Star, Wand2, UserPlus, CheckCircle2, Landmark, Tag } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import CryptoPayment from '@/components/CryptoPayment';
 import { useTranslations, useLocale } from 'next-intl';
@@ -110,9 +110,125 @@ export default function CheckoutPage() {
   const [payingWithWallet, setPayingWithWallet] = useState(false);
   const [walletPayError, setWalletPayError] = useState('');
 
+  // === سیستم کد تخفیف ===================================================
+  // appliedDiscount همیشه از پاسخِ سرور (app/api/discounts/validate) پر
+  // می‌شه — هیچ‌وقت خودمون سمتِ کلاینت درصد×مبلغ حساب نمی‌کنیم، تا این
+  // عدد همیشه دقیقاً با چیزی که در لحظه‌ی ثبتِ سفارش دوباره سمتِ سرور
+  // محاسبه می‌شه یکی باشه.
+  const [discountCode, setDiscountCode] = useState('');
+  const [appliedDiscount, setAppliedDiscount] = useState<{
+    code: string;
+    percent: number;
+    discountAmountUSD: number;
+    finalTotalUSD: number;
+  } | null>(null);
+  const [discountLoading, setDiscountLoading] = useState(false);
+  const [discountError, setDiscountError] = useState('');
+  // فقط برای اینکه تلاشِ خودکارِ اعمالِ کدِ شخصی، بیشتر از یک‌بار انجام نشه
+  const [discountAutoAttempted, setDiscountAutoAttempted] = useState(false);
+
+  // 🆕 مبلغِ نهاییِ قابل‌پرداخت — تنها منبعِ حقیقتی که از این به بعد در کل
+  // فایل به‌جای totalBaseUSD برای «چقدر باید پرداخت بشه» استفاده می‌شه
+  // (چک کردنِ موجودیِ کیف‌پول، نمایشِ مبلغ، ارسال به سرور برای ثبتِ سفارش).
+  // totalBaseUSD (جمعِ خامِ سبد) هنوز جای خودش رو داره: برای محاسبه‌ی خودِ
+  // تخفیف (چون درصد باید روی جمعِ کامل اعمال بشه، نه روی مبلغِ تخفیف‌خورده).
+  //
+  // ⚠️ نکته‌ی مهم دربابِ ترتیب: این خط عمداً همین‌جا، قبل از canPayWithWallet
+  // پایین‌تر، تعریف شده — چون آن خط از همین متغیر استفاده می‌کند. جاوااسکریپت
+  // (برخلاف تابع‌ها) متغیرهای const را hoist نمی‌کند، پس تعریف‌شان باید همیشه
+  // قبل از اولین استفاده باشد؛ جابه‌جا کردنِ این بلوک به پایین‌تر از
+  // canPayWithWallet باعثِ خطای «used before its declaration» می‌شود.
+  const finalTotalUSD = appliedDiscount ? appliedDiscount.finalTotalUSD : totalBaseUSD;
+
   // تبِ «پرداخت با کیف‌پول» فقط وقتی فعاله که کاربر لاگین باشه، موجودی خونده
-  // شده باشه، و موجودی حداقل به‌اندازه‌ی مبلغِ کلِ سفارش (دلاری) کافی باشه
-  const canPayWithWallet = isLoggedIn && walletBalance !== null && walletBalance >= totalBaseUSD;
+  // شده باشه، و موجودی حداقل به‌اندازه‌ی مبلغِ نهاییِ سفارش (بعد از تخفیف،
+  // اگه تخفیفی اعمال شده) کافی باشه
+  const canPayWithWallet = isLoggedIn && walletBalance !== null && walletBalance >= finalTotalUSD;
+
+  // اعمالِ یک کد تخفیف (چه با تایپِ دستی، چه خودکار برای کاربرِ لاگین‌کرده).
+  // silent=true یعنی «اگه شکست خورد، به کاربر پیام خطا نشون نده» — فقط
+  // برای تلاشِ خودکار استفاده می‌شه (چون طبیعیه که خیلی از کاربرها اصلاً
+  // کدِ فعالی نداشته باشن، و نمایشِ خطا برای این حالت گیج‌کننده‌ست).
+  const applyDiscountCode = async (codeToApply: string, opts?: { silent?: boolean }) => {
+    const code = codeToApply.trim();
+    if (!code) return;
+
+    setDiscountLoading(true);
+    if (!opts?.silent) setDiscountError('');
+
+    try {
+      const {
+        data: { session },
+      } = await supabaseBrowser.auth.getSession();
+
+      const res = await fetch('/api/discounts/validate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ code, subtotalUSD: totalBaseUSD }),
+      });
+      const result = await res.json();
+
+      if (!res.ok || !result.valid) {
+        throw new Error(result.error || t('discount.invalid'));
+      }
+
+      setAppliedDiscount({
+        code: result.code,
+        percent: result.percent,
+        discountAmountUSD: result.discountAmountUSD,
+        finalTotalUSD: result.finalTotalUSD,
+      });
+      setDiscountCode(result.code);
+      setDiscountError('');
+    } catch (err: any) {
+      setAppliedDiscount(null);
+      if (!opts?.silent) setDiscountError(err.message);
+    } finally {
+      setDiscountLoading(false);
+    }
+  };
+
+  const handleRemoveDiscount = () => {
+    setAppliedDiscount(null);
+    setDiscountCode('');
+    setDiscountError('');
+  };
+
+  // برای کاربرِ لاگین‌کرده که هنوز از کدِ شخصیِ سفارشِ اولش استفاده نکرده،
+  // به‌محضِ ورود به این صفحه، خودکار پیدا و اعمالش می‌کنیم — دقیقاً طبق
+  // خواسته: «به‌طور خودکار سیستم در مرحله‌ی پرداخت کد را برای شما اعمال
+  // می‌کند». اگه کاربر خودش دستی یک کدِ دیگه وارد/حذف کرده باشه، دیگه
+  // دست به این‌جا نمی‌زنیم (به همین خاطر شرطِ discountAutoAttempted و
+  // appliedDiscount را چک می‌کنیم).
+  useEffect(() => {
+    if (!mounted || !isLoggedIn || discountAutoAttempted || appliedDiscount || totalBaseUSD <= 0) return;
+    setDiscountAutoAttempted(true);
+
+    (async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabaseBrowser.auth.getSession();
+        if (!session?.access_token) return;
+
+        const res = await fetch('/api/discounts/my-code', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        const result = await res.json();
+        if (result?.code) {
+          await applyDiscountCode(result.code, { silent: true });
+        }
+      } catch {
+        // بی‌سروصدا نادیده گرفته می‌شه — نبودِ کدِ خودکار مشکلی نیست،
+        // کاربر همیشه می‌تونه دستی هم کد وارد کنه.
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, isLoggedIn, totalBaseUSD]);
+
 
   // ===== ساده‌سازیِ باکسِ پرداخت با کیف‌پول =====
   // برخلافِ کریپتو (که چون تراکنش برگشت‌ناپذیره و مشتری با ارز غریبه‌ست، به
@@ -133,7 +249,7 @@ export default function CheckoutPage() {
   // آیتم‌هاست). این‌طوری هر سه عدد از یک مسیرِ محاسبه میان و همیشه دقیقاً
   // جمع‌وتفریق‌پذیرن — یعنی «موجودیِ قبل − ارزشِ سفارش» همیشه دقیقاً برابرِ
   // «موجودیِ بعد» می‌شه، بدونِ حتی یک سِنت اختلافِ گردکردن.
-  const walletOrderValueDisplay = convertPrice(totalBaseUSD);
+  const walletOrderValueDisplay = convertPrice(finalTotalUSD);
 
   const [formData, setFormData] = useState({
     senderName: '',
@@ -456,12 +572,19 @@ export default function CheckoutPage() {
           address: formData.address,
           items: cart,
           totalPrice: totalBaseUSD, 
-          displayFiatAmount: displayTotal, 
+          // 🆕 مبلغِ نمایشیِ ارزِ محلی هم باید بعد از تخفیف باشه — وگرنه
+          // توی پنل ادمین، مبلغِ نمایشی با total_price (که سرور بعد از
+          // کسرِ تخفیف ذخیره می‌کنه) هم‌خوانی نداره.
+          displayFiatAmount: appliedDiscount ? convertPrice(finalTotalUSD) : displayTotal, 
           displayCurrency: currency, 
           recipientCardNumber: formData.recipientCardNumber,
           recipientIban: formData.recipientIban,
           recipientAccountNumber: formData.recipientAccountNumber,
           recipientAccountHolderName: formData.recipientAccountHolderName,
+          // 🆕 کدِ تخفیفِ اعمال‌شده (اگه باشه) — سرور خودش دوباره از نو
+          // اعتبارسنجی و مصرفش می‌کنه؛ همین‌جا فقط می‌گیم «این کد رو
+          // امتحان کن».
+          discountCode: appliedDiscount?.code || null,
         }),
       });
 
@@ -529,6 +652,12 @@ export default function CheckoutPage() {
 
     } catch (error: any) {
       setGlobalError(t('errors.server_error') + ': ' + error.message);
+      // اگه خطا مربوط به خودِ کد تخفیف بود (مثلاً هم‌زمان جای دیگه مصرف
+      // شده)، خودکار پاکش می‌کنیم تا کاربر گیر نکنه و بتونه بدونِ کد یا با
+      // یک کدِ دیگه دوباره امتحان کنه.
+      if (appliedDiscount) {
+        setAppliedDiscount(null);
+      }
       window.scrollTo({ top: 0, behavior: 'smooth' });
       console.error(error);
     } finally {
@@ -1061,8 +1190,10 @@ export default function CheckoutPage() {
                     {/* یک باکسِ واحد و ساده: ارزشِ سفارش، موجودیِ فعلی، موجودیِ پس از
                         پرداخت — هر سه با همون ارزِ نمایشیِ بالای سایت (چون این ارزیه که
                         مشتری باهاش راحته) و زیرِ هر کدوم، ریز و کم‌رنگ، مبنای دقیقِ
-                        دلاریِ سیستم. هر سه عدد از convertPrice ساخته می‌شن تا همیشه
-                        دقیقاً جمع‌وتفریق‌پذیر بمونن (نکته‌ی فنیِ بالای فایل رو ببین). */}
+                        دلاریِ سیستم. هر سه عدد از convertPrice(finalTotalUSD) ساخته
+                        می‌شن (نه totalBaseUSD خام) تا اگه تخفیفی اعمال شده باشه هم
+                        همیشه دقیقاً جمع‌وتفریق‌پذیر بمونن (نکته‌ی فنیِ بالای فایل رو
+                        ببین). */}
                     <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 mb-6 space-y-3">
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-gray-500">{tCrypto('fiat_value')}</span>
@@ -1071,7 +1202,7 @@ export default function CheckoutPage() {
                             {symbol} {walletOrderValueDisplay.toFixed(2)}
                           </span>
                           <span className="text-[11px] text-gray-400 font-mono">
-                            {tWallet('balance_usd_note', { usdAmount: totalBaseUSD.toFixed(2) })}
+                            {tWallet('balance_usd_note', { usdAmount: finalTotalUSD.toFixed(2) })}
                           </span>
                         </span>
                       </div>
@@ -1091,10 +1222,10 @@ export default function CheckoutPage() {
                         <span className="text-gray-500">{tWallet('balance_after_payment')}</span>
                         <span className="text-right">
                           <span className="font-bold text-green-600 font-mono block">
-                            ≈ {symbol} {convertPrice((walletBalance ?? 0) - totalBaseUSD).toFixed(2)}
+                            ≈ {symbol} {convertPrice((walletBalance ?? 0) - finalTotalUSD).toFixed(2)}
                           </span>
                           <span className="text-[11px] text-gray-400 font-mono">
-                            {tWallet('balance_usd_note', { usdAmount: ((walletBalance ?? 0) - totalBaseUSD).toFixed(2) })}
+                            {tWallet('balance_usd_note', { usdAmount: ((walletBalance ?? 0) - finalTotalUSD).toFixed(2) })}
                           </span>
                         </span>
                       </div>
@@ -1154,14 +1285,86 @@ export default function CheckoutPage() {
               })}
             </div>
 
-            <div className="border-t border-blue-200 pt-4 space-y-2">
+            <div className="border-t border-blue-200 pt-4 space-y-3">
+
+              {/* 🆕 باکس کد تخفیف — فقط در مرحله‌ی اول (چون در مرحله‌ی دوم
+                  سفارش از قبل با یک مبلغِ مشخص ثبت شده و دیگه قابل‌تغییر
+                  نیست). */}
+              {step === 1 && (
+                <div>
+                  {appliedDiscount ? (
+                    <div className="flex items-center justify-between gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2.5">
+                      <div className="flex items-center gap-1.5 text-green-700 text-xs font-bold min-w-0">
+                        <Tag className="h-3.5 w-3.5 flex-shrink-0" />
+                        <span className="font-mono truncate">{appliedDiscount.code}</span>
+                        <span className="flex-shrink-0">({appliedDiscount.percent}٪)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRemoveDiscount}
+                        className="text-green-600 hover:text-red-600 transition-colors flex-shrink-0"
+                        title={t('discount.remove_btn')}
+                      >
+                        <XCircle className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={discountCode}
+                        onChange={(e) => setDiscountCode(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            applyDiscountCode(discountCode);
+                          }
+                        }}
+                        placeholder={t('discount.placeholder')}
+                        className="flex-1 min-w-0 rounded-lg border border-gray-200 px-3 py-2 text-sm dir-ltr text-left focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => applyDiscountCode(discountCode)}
+                        disabled={discountLoading || !discountCode.trim()}
+                        className="flex-shrink-0 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs font-bold px-4 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {discountLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : t('discount.apply_btn')}
+                      </button>
+                    </div>
+                  )}
+                  {discountError && (
+                    <p className="text-red-500 text-[11px] mt-1.5 leading-5">{discountError}</p>
+                  )}
+                  {!appliedDiscount && !discountError && (
+                    <Link href="/first-order-discount" className="text-[11px] text-blue-500 hover:underline mt-1.5 inline-block">
+                      {t('discount.learn_more')}
+                    </Link>
+                  )}
+                </div>
+              )}
+
               <div className="flex justify-between items-center text-sm text-blue-800">
                  <span>{t('cart_summary.shipping')}</span>
                  <span className="text-green-600 font-bold">{t('cart_summary.free')}</span>
               </div>
+
+              {appliedDiscount && (
+                <div className="flex justify-between items-center text-sm text-green-700">
+                  <span>{t('discount.applied_label', { percent: appliedDiscount.percent })}</span>
+                  <span className="font-bold font-mono">
+                    -{symbol} {convertPrice(appliedDiscount.discountAmountUSD).toFixed(2)}
+                  </span>
+                </div>
+              )}
+
               <div className="flex justify-between items-center font-bold text-lg text-blue-900 mt-2">
                 <span>{t('cart_summary.total')}</span>
-                <span>{mounted ? `${symbol} ${displayTotal.toFixed(2)}` : '...'}</span>
+                <span>
+                  {mounted
+                    ? `${symbol} ${(appliedDiscount ? convertPrice(finalTotalUSD) : displayTotal).toFixed(2)}`
+                    : '...'}
+                </span>
               </div>
             </div>
 

@@ -43,6 +43,7 @@ import {
   ShoppingBag,
   ExternalLink,
   MessageCircle,
+  Tag,
 } from 'lucide-react';
 
 interface OrderItem {
@@ -71,6 +72,11 @@ interface OrderDetail {
   display_fiat_amount: number | null;
   order_notes: string | null;
   total_price: number;
+  // 🆕 جزئیات تخفیف (اگه سفارش با کد تخفیف ثبت شده باشه)
+  subtotal_price: number | null;
+  discount_code: string | null;
+  discount_percent: number | null;
+  discount_amount_usd: number | null;
   items: OrderItem[];
 }
 
@@ -466,9 +472,31 @@ export default function OrderDetailsModal({ orderId, onClose }: Props) {
                     </div>
                   ))}
                 </div>
-                <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-100">
-                  <span className="font-bold text-gray-600">{t('order_total_label')}</span>
-                  <span className="text-2xl font-bold text-blue-700 font-mono">${order.total_price}</span>
+                <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
+                  {/* 🆕 اگه این سفارش با کد تخفیف ثبت شده، جزئیاتش رو شفاف نشون می‌دیم:
+                      جمع‌جزء قبل از تخفیف، خط تخفیف، و در آخر مبلغ نهایی. */}
+                  {order.discount_code && order.subtotal_price != null && (
+                    <>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-500">{t('subtotal_label')}</span>
+                        <span className="font-mono text-gray-700">${order.subtotal_price}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="flex items-center gap-1.5 text-green-700">
+                          <Tag className="h-3.5 w-3.5" />
+                          {t('discount_applied_label', { percent: order.discount_percent ?? 0 })}
+                          <span className="font-mono text-[11px] text-green-600">({order.discount_code})</span>
+                        </span>
+                        <span className="font-mono text-green-700 font-bold">
+                          -${order.discount_amount_usd}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+                    <span className="font-bold text-gray-600">{t('order_total_label')}</span>
+                    <span className="text-2xl font-bold text-blue-700 font-mono">${order.total_price}</span>
+                  </div>
                 </div>
               </div>
             </>

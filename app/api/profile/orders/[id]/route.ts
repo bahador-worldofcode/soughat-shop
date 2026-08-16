@@ -64,7 +64,8 @@ export async function GET(
          recipient_account_holder_name,
          sender_name, sender_phone, sender_country,
          display_currency, display_fiat_amount,
-         order_notes, total_price, items`
+         order_notes, total_price, items,
+         subtotal_price, discount_code, discount_percent, discount_amount_usd`
       )
       .eq('id', id)
       .eq('user_id', userData.user.id)

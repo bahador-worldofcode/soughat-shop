@@ -35,7 +35,7 @@ export async function GET(request: Request) {
 
     const { data, error } = await supabaseAdmin
       .from('orders')
-      .select('id, status, city, total_price, display_fiat_amount, display_currency, items, created_at')
+      .select('id, status, city, total_price, display_fiat_amount, display_currency, items, created_at, discount_code, discount_percent')
       .eq('user_id', userData.user.id)
       .order('created_at', { ascending: false })
       .limit(50);

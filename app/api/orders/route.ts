@@ -49,6 +49,8 @@ export async function POST(request: Request) {
       recipientIban,
       recipientAccountNumber,
       recipientAccountHolderName,
+      // 🆕 کدِ تخفیف (اختیاری) — همان کدی که مشتری در چک‌اوت اعمال کرده.
+      discountCode,
     } = body;
 
     // اعتبارسنجی حداقلی سمت سرور — چک‌اوت سمت کلاینت هم اعتبارسنجی
@@ -65,6 +67,8 @@ export async function POST(request: Request) {
     // اگر کاربر لاگین باشد (توکن فرستاده باشد)، سفارش را به حسابش وصل
     // می‌کنیم تا در تب «سفارش‌های من» دیده شود. اگر لاگین نباشد (مهمان)،
     // user_id خالی می‌ماند و سفارش دقیقاً مثل قبل و بدون مشکل ثبت می‌شود.
+    // (userId این‌جا زودتر از قبل محاسبه می‌شود — چون منطقِ تخفیفِ زیر هم
+    // بهش نیاز داره: کدهای شخصیِ «سفارشِ اول» باید مالکیتِ کاربر رو چک کنن.)
     let userId: string | null = null;
     const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
     if (authHeader) {
@@ -74,6 +78,44 @@ export async function POST(request: Request) {
         if (userData?.user) userId = userData.user.id;
       }
     }
+
+    // 🆕 اگر مشتری کد تخفیفی اعمال کرده، همین‌جا — و فقط همین‌جا — به‌طور
+    // واقعی «مصرف» می‌شود. چک‌اوت قبلاً همین کد را یک‌بار از طریق
+    // app/api/discounts/validate/route.ts پیش‌نمایش کرده بود، ولی آن
+    // فراخوانی چیزی مصرف نمی‌کند؛ فقط همین‌جا (با تابعِ RPC که به‌صورتِ
+    // اتمیک uses_count را چک و افزایش می‌دهد) کد واقعاً یک‌بار مصرف
+    // می‌شود. عمداً به هیچ عددی که از کلاینت آمده (مثل درصد یا مبلغِ
+    // تخفیف) اعتماد نمی‌کنیم — همه‌چیز اینجا از نو، سمتِ سرور، محاسبه
+    // می‌شود.
+    const subtotal = roundMoney(totalPrice);
+    let finalTotal = subtotal;
+    let discountPercent: number | null = null;
+    let discountAmountUSD: number | null = null;
+    let appliedDiscountCode: string | null = null;
+
+    if (discountCode && typeof discountCode === 'string' && discountCode.trim()) {
+      const { data: redeemData, error: redeemError } = await supabaseAdmin.rpc('redeem_discount_code', {
+        p_code: discountCode.trim(),
+        p_user_id: userId,
+        p_subtotal_usd: subtotal,
+      });
+
+      if (redeemError) throw redeemError;
+
+      const redeemRow = Array.isArray(redeemData) ? redeemData[0] : redeemData;
+      if (!redeemRow || !redeemRow.valid) {
+        return NextResponse.json(
+          { error: redeemRow?.error_message || 'کد تخفیف دیگر معتبر نیست. لطفاً آن را حذف کنید و دوباره تلاش کنید.' },
+          { status: 409 }
+        );
+      }
+
+      appliedDiscountCode = redeemRow.out_code;
+      discountPercent = Number(redeemRow.out_percent);
+      discountAmountUSD = Number(redeemRow.out_discount_amount_usd);
+      finalTotal = Number(redeemRow.out_final_total_usd);
+    }
+
 
     const { data, error } = await supabaseAdmin
       .from('orders')
@@ -89,9 +131,16 @@ export async function POST(request: Request) {
           city,
           address,
           items,
-          // گرد شده به ۲ رقمِ اعشار — رفعِ باگِ نمایشِ اعدادی مثل
-          // 86.92999999999999 به‌جای 86.93 در پنل ادمین.
-          total_price: roundMoney(totalPrice),
+          // 🆕 total_price همیشه «مبلغِ نهاییِ قابل‌پرداخت» است — یعنی
+          // اگر تخفیفی اعمال شده، از قبل کسر شده؛ اگر نه، برابرِ subtotal.
+          // همه‌ی سیستم‌های دیگر (محاسبه‌ی کریپتو، کسرِ کیف‌پول، نمایش در
+          // پروفایل/پنل ادمین) دقیقاً همین ستون رو می‌خونن و نیازی به هیچ
+          // تغییری ندارن.
+          total_price: roundMoney(finalTotal),
+          subtotal_price: subtotal,
+          discount_code: appliedDiscountCode,
+          discount_percent: discountPercent,
+          discount_amount_usd: discountAmountUSD,
           display_fiat_amount: displayFiatAmount != null ? roundMoney(displayFiatAmount) : null,
           display_currency: displayCurrency ?? null,
           recipient_card_number: recipientCardNumber?.trim() || null,

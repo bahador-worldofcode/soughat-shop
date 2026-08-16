@@ -53,6 +53,9 @@ const STATIC_ROUTES: StaticRoute[] = [
   { path: '', lastMod: '2026-07-06', changeFreq: 'daily', priority: 1 },
   { path: '/products', lastMod: '2026-07-07', changeFreq: 'daily', priority: 0.9 },
   { path: '/send-money-to-iran', lastMod: '2026-07-07', changeFreq: 'weekly', priority: 0.9 },
+  // 🆕 صفحه‌ی «کد تخفیف ۱۵٪ سفارش اول» — صفحه‌ی سئومحورِ تبدیل، اولویتش
+  // نزدیک به /products نگه داشته شده چون هدفش مستقیم جذبِ کاربرِ جدید است.
+  { path: '/first-order-discount', lastMod: '2026-08-16', changeFreq: 'monthly', priority: 0.85 },
   // 🆕 صفحه‌ی «هدایای سفارشی» — درخواست افزودن محصول دلخواه به فروشگاه
   { path: '/custom-gifts', lastMod: '2026-07-27', changeFreq: 'weekly', priority: 0.8 },
   { path: '/blog', lastMod: '2026-07-05', changeFreq: 'daily', priority: 0.7 },
