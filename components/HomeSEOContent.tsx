@@ -1,29 +1,35 @@
-'use client';
-
 import { MapPin, ShieldCheck, Zap, Globe, Coins, Package, Gift, Lock } from 'lucide-react';
-import { useTranslations, useLocale } from 'next-intl';
+import { getTranslations, getLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
+import { supabase } from '@/lib/supabase';
 
-// دسته‌بندی‌های سایت — اسلاگ‌ها دقیقاً از جدول categories توی Supabase گرفته شده.
-// اگه یک روز دسته‌بندی جدیدی اضافه یا حذف شد، یا اسلاگی عوض شد، همین‌جا هم آپدیتش کن.
-const CATEGORIES = [
-  { slug: 'flowers', name_fa: 'گل و گیاه', name_en: 'Flowers & Plants' },
-  { slug: 'handicrafts', name_fa: 'صنایع دستی', name_en: 'Handicrafts' },
-  { slug: 'sweets', name_fa: 'شیرینی و تنقلات', name_en: 'Sweets & Snacks' },
-  { slug: 'digital-goods', name_fa: 'کالای دیجیتال', name_en: 'Digital Goods' },
-  { slug: 'saffron', name_fa: 'زعفران اعلاء', name_en: 'Premium Saffron' },
-  { slug: 'gift-packs', name_fa: 'پک‌های هدیه', name_en: 'Gift Packs' },
-  { slug: 'herbal-tea', name_fa: 'دمنوش و گیاهی', name_en: 'Herbal Teas' },
-  { slug: 'nuts', name_fa: 'آجیل و خشکبار', name_en: 'Nuts & Dried Fruits' },
-  { slug: 'home-appliances', name_fa: 'لوازم خانگی و برقی', name_en: 'Home Appliances' },
-  { slug: 'gold-and-money', name_fa: 'طلا و پول', name_en: 'Gold & Money' },
-  { slug: 'chocolates', name_fa: 'شکلات و تافی', name_en: 'Chocolates & Toffee' },
-];
-
-export default function HomeSEOContent() {
-  const t = useTranslations('HomeSEO');
-  const locale = useLocale();
+// 🔧 رفع باگِ «دسته‌بندی‌ها این‌جا استاتیکه»: قبلاً این‌جا یک آرایه‌ی
+// هاردکد به اسم CATEGORIES بود («فقط ۱۱ دسته‌بندی») که وقتی سایت تازه
+// راه افتاده بود دستی نوشته شده بود، و با اضافه‌شدنِ ۶ دسته‌بندیِ بعدی
+// (جمعاً ۱۷ تا) هیچ‌وقت به‌روزرسانی نشد — چون هیچ ارتباطی با دیتابیس
+// نداشت. الان این کامپوننت (که دقیقاً برای هدفِ سئو ساخته شده) مستقیم
+// از همون جدولِ categories در سوپابیس می‌خونه — دقیقاً همون کوئریِ
+// ساده‌ای که در بخشِ ویترینِ دسته‌بندی‌های صفحه‌ی اصلی هم استفاده
+// می‌شه، بدون هیچ limit یا slice ای — پس هر دسته‌بندیِ جدیدی که در
+// آینده اضافه بشه، خودکار همین‌جا هم ظاهر می‌شه، بدون نیاز به دست‌زدن
+// به کد.
+//
+// 🔧 نکته‌ی مهم‌ترِ فنی: این کامپوننت قبلاً 'use client' بود، یعنی
+// حتی اگه دسته‌بندی‌ها را با fetch سمت مرورگر هم می‌گرفتیم، باز محتوا
+// فقط بعد از اجرای جاوااسکریپت در دسترس بود — دقیقاً برعکسِ چیزی که
+// از یک کامپوننتِ «محتوای سئو» انتظار می‌ره (که باید همون اول، در HTML
+// خام، برای گوگل و ربات‌های هوش مصنوعی موجود باشه). با تبدیلِ این
+// کامپوننت به یک Server Component (حذفِ 'use client' و استفاده از
+// نسخه‌ی سرورِ next-intl)، این تناقض هم رفع شد.
+export default async function HomeSEOContent() {
+  const t = await getTranslations('HomeSEO');
+  const locale = await getLocale();
   const isEn = locale === 'en';
+
+  const { data: categories } = await supabase
+    .from('categories')
+    .select('slug, name, name_en')
+    .order('name');
 
   // 🖼️ عکس‌ها: فایل‌های واقعی داخل public/images پروژه با همین اسم‌ها قرار دارند.
   const images = isEn
@@ -129,13 +135,13 @@ export default function HomeSEOContent() {
             {t('categories_text')}
           </p>
           <div className="flex flex-wrap gap-3">
-            {CATEGORIES.map((cat) => (
+            {(categories || []).map((cat) => (
               <Link
                 key={cat.slug}
                 href={`/products?category=${cat.slug}`}
                 className="bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg text-sm font-bold text-blue-800 border border-blue-100 transition-colors"
               >
-                {isEn ? cat.name_en : cat.name_fa}
+                {isEn ? (cat.name_en || cat.name) : cat.name}
               </Link>
             ))}
           </div>
