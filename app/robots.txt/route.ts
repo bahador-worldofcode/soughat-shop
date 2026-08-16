@@ -37,6 +37,8 @@ Disallow: /admin/
 Disallow: /cart/
 Disallow: /checkout/
 Disallow: /success/
+Disallow: /profile/
+Disallow: /pay/
 Disallow: /api/
 
 Sitemap: ${baseUrl}/sitemap.xml

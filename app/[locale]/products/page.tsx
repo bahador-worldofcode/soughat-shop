@@ -189,6 +189,18 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const currentCategory = sp.category ? decodeURIComponent(sp.category).trim() : 'all';
   const activeCategory = await getActiveCategory(currentCategory);
 
+  // 🔧 رفع باگِ سئو: قبلاً شماره‌ی صفحه (sp.page) اصلاً در canonical لحاظ
+  // نمی‌شد — یعنی /products?category=nuts&page=2 هم دقیقاً همون canonical
+  // صفحه‌ی اول رو اعلام می‌کرد، در حالی که محصولاتِ صفحه‌ی دوم کاملاً
+  // متفاوتن. این یعنی به گوگل می‌گفتیم «این صفحه با صفحه‌ی اول یکیه»،
+  // در حالی که نبود؛ نتیجه‌اش این بود که محصولاتی که فقط در صفحه‌ی ۲ به
+  // بعد دیده می‌شن، شانس کمتری برای ایندکس‌شدنِ مستقل داشتن. همین الگو
+  // (self-referencing canonical برای هر صفحه) از قبل توی
+  // app/[locale]/blog/page.tsx درست پیاده‌سازی شده بود؛ این‌جا فقط از
+  // قلم افتاده بود.
+  const currentPage = Math.max(1, Number(sp?.page) || 1);
+  const pageQuerySuffix = currentPage > 1 ? `${currentCategory !== 'all' ? '&' : '?'}page=${currentPage}` : '';
+
   const categoryName = activeCategory
     ? (isEn ? (activeCategory.name_en || activeCategory.name) : activeCategory.name)
     : null;
@@ -209,7 +221,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
         ? 'Browse every Soughat Shop product: Iranian sweets, handicrafts, gold, jewelry and gift cards. Pay with USDT, Bitcoin or Solana — delivered anywhere in Iran.'
         : 'همه‌ی محصولات سوغات شاپ را ببینید: شیرینی، صنایع‌دستی، طلا، جواهر و کارت هدیه ایرانی. پرداخت با تتر، بیت‌کوین یا سولانا و تحویل در سراسر ایران.');
 
-  const canonicalPath = currentCategory !== 'all' ? `/products?category=${encodeURIComponent(currentCategory)}` : '/products';
+  const canonicalPath = (currentCategory !== 'all' ? `/products?category=${encodeURIComponent(currentCategory)}` : '/products') + pageQuerySuffix;
 
   return {
     // 🔧 رفع باگ «۲ بار سوغات شاپ در تایتل»: متغیر title بالاتر همیشه خودش
@@ -237,6 +249,11 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
       languages: {
         fa: `${siteUrl}/fa${canonicalPath}`,
         en: `${siteUrl}/en${canonicalPath}`,
+        // 🔧 x-default قبلاً این‌جا فراموش شده بود — در حالی که در
+        // app/[locale]/blog/page.tsx و app/[locale]/trust/page.tsx (و
+        // app/[locale]/layout.tsx به‌عنوان پیش‌فرضِ کلی) از قبل تنظیم
+        // شده. برای هماهنگیِ کاملِ hreflang در کل سایت اضافه شد.
+        'x-default': `${siteUrl}/en${canonicalPath}`,
       },
     },
   };
