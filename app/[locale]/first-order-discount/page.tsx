@@ -179,7 +179,7 @@ export default async function FirstOrderDiscountPage({ params }: { params: Promi
             <img
               src="/images/first-order-discount-signup-steps.webp"
               alt={t('steps_image_alt')}
-              className="w-full aspect-square md:aspect-[4/5] object-cover rounded-3xl border border-gray-100 shadow-lg"
+              className="w-full aspect-square object-cover rounded-3xl border border-gray-100 shadow-lg"
               loading="lazy"
             />
           </div>
@@ -193,7 +193,7 @@ export default async function FirstOrderDiscountPage({ params }: { params: Promi
             <img
               src="/images/first-order-discount-gifts-iran.webp"
               alt={t('gifts_image_alt')}
-              className="w-full aspect-square md:aspect-[4/5] object-cover rounded-3xl border border-gray-100 shadow-lg"
+              className="w-full aspect-square object-cover rounded-3xl border border-gray-100 shadow-lg"
               loading="lazy"
             />
           </div>
@@ -267,7 +267,7 @@ export default async function FirstOrderDiscountPage({ params }: { params: Promi
             <img
               src="/images/first-order-discount-money-transfer.webp"
               alt={t('money_image_alt')}
-              className="w-full aspect-square md:aspect-[4/5] object-cover rounded-3xl border border-gray-100 shadow-lg"
+              className="w-full aspect-square object-cover rounded-3xl border border-gray-100 shadow-lg"
               loading="lazy"
             />
           </div>
