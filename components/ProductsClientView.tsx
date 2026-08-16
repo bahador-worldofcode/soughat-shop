@@ -129,14 +129,21 @@ function CategoryRow({
           : `${theme} border-transparent hover:border-gray-200 hover:shadow-sm`
       }`}
     >
-      <span className="flex-shrink-0 w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center overflow-hidden">
+      <span className="relative flex-shrink-0 w-10 h-10 rounded-xl bg-white shadow-sm overflow-hidden">
         {cat.slug === 'all' ? (
-          <Filter className={`h-5 w-5 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
+          <span className="flex h-full w-full items-center justify-center">
+            <Filter className={`h-5 w-5 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
+          </span>
         ) : cat.icon_url ? (
+          // 🆕 object-cover به‌جای object-contain — چیپ رو کامل پر می‌کنه،
+          // بدون فضای خالیِ سفید دور آیکون (همون منطقِ رفع‌شده‌ی صفحه‌ی
+          // اصلی، این‌جا در مقیاس کوچیک‌تر).
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={cat.icon_url} alt="" className="w-6 h-6 object-contain" />
+          <img src={cat.icon_url} alt="" className="absolute inset-0 h-full w-full object-cover" />
         ) : (
-          <Layers className={`h-5 w-5 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
+          <span className="flex h-full w-full items-center justify-center">
+            <Layers className={`h-5 w-5 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
+          </span>
         )}
       </span>
 
