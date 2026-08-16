@@ -3,7 +3,7 @@
 
 // مسیر فایل در پروژه (سایت اصلی soughat-shop، نه هاب): components/Footer.tsx
 
-import { Mail, Heart, Lock, ShieldCheck, HelpCircle, ShoppingBag, BookOpen, Package, Info, Phone, Code2, Star, DollarSign, Bug, Gift, Sparkles, Coins } from 'lucide-react';
+import { Mail, Heart, Lock, ShieldCheck, HelpCircle, ShoppingBag, BookOpen, Package, Info, Phone, Code2, Star, DollarSign, Bug, Gift, Sparkles, Coins, Tag } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 
@@ -128,6 +128,14 @@ export default function Footer() {
           <div>
             <h3 className="font-bold text-gray-900 mb-4 text-lg">{t('links_access')}</h3>
             <ul className="space-y-3 text-sm text-gray-500 font-medium">
+              {/* 🆕 لینک صفحه‌ی «کد تخفیف ۱۵٪ سفارش اول» — عمداً اولین آیتمِ
+                  همین ستون، چون برای بازدیدکننده‌ی تازه (که هنوز حسابی
+                  نساخته) مهم‌ترین لینکِ تبدیل‌محورِ کل فوتره. */}
+              <li>
+                <Link href="/first-order-discount" className="hover:text-blue-600 hover:pr-2 transition-all flex items-center gap-2">
+                    <Tag className="h-4 w-4" /> {t('first_order_discount')}
+                </Link>
+              </li>
               <li>
                 <Link href="/send-money-to-iran" className="hover:text-blue-600 hover:pr-2 transition-all flex items-center gap-2">
                     <DollarSign className="h-4 w-4" /> {t('remit')}
