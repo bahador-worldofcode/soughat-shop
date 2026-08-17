@@ -81,6 +81,16 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
                 <a href={`https://wa.me/989168038017?text=${encodeURIComponent(t('whatsapp_msg'))}`} target="_blank" className="text-xs inline-flex items-center text-green-600 hover:underline" dir={isEn ? 'ltr' : 'rtl'}>
                    {t('whatsapp_btn')} <ArrowLeft className={`h-3 w-3 ${isEn ? 'ml-1 rotate-180' : 'mr-1'}`} />
                 </a>
+
+                {/* شماره‌ی جدید آمریکا — برای مخاطبینی که واتساپ ندارند (مثلاً از لندن یا آمریکا)
+                    این شماره هم قابلیت دریافت تماس دارد و هم پیامک (SMS) */}
+                <div className="w-full border-t border-gray-200 mt-3 pt-3 flex flex-col items-center gap-1">
+                    <span className="text-[11px] text-gray-400">{t('card_sms_title')}</span>
+                    <a href="tel:+16506712358" className="text-gray-900 font-bold text-base hover:text-green-600 transition-colors font-mono">
+                        +1 (650) 671-2358
+                    </a>
+                    <span className="text-[11px] text-gray-400 max-w-[200px] leading-relaxed">{t('card_sms_note')}</span>
+                </div>
             </div>
           </div>
 

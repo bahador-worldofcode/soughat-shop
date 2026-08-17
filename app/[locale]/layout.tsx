@@ -170,13 +170,22 @@ export default async function LocaleLayout({
     'url': 'https://soughat.shop',
     'logo': 'https://soughat.shop/logo.png',
     'description': 'اولین پلتفرم تخصصی ارسال هدیه و سوغات به ایران با پرداخت ارزی و کریپتو',
-    'contactPoint': {
-      '@type': 'ContactPoint',
-      'telephone': '+98-916-803-8017',
-      'contactType': 'customer service',
-      'areaServed': ['IR', 'US', 'CA', 'DE', 'GB', 'SE'],
-      'availableLanguage': ['en', 'fa']
-    },
+    'contactPoint': [
+      {
+        '@type': 'ContactPoint',
+        'telephone': '+1-650-671-2358',
+        'contactType': 'customer service',
+        'areaServed': ['US', 'CA', 'GB', 'DE', 'SE'],
+        'availableLanguage': ['en', 'fa']
+      },
+      {
+        '@type': 'ContactPoint',
+        'telephone': '+98-916-803-8017',
+        'contactType': 'customer service',
+        'areaServed': 'IR',
+        'availableLanguage': ['en', 'fa']
+      }
+    ],
     'sameAs': [
       'https://x.com/Soughatshop',
       'https://www.facebook.com/share/14eJwCenVjC/'

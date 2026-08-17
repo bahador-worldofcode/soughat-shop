@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from '@/i18n/navigation';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, Phone } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 
 const isMobileViewport = () =>
@@ -70,9 +70,21 @@ export default function FloatingContact() {
 
   return (
     <div
-      className={`fixed right-6 z-50 flex flex-col items-end font-[family-name:var(--font-vazir)] transition-all duration-300 ${bottomPosClass} ${hideForHero ? 'opacity-0 translate-y-3 pointer-events-none' : 'opacity-100 translate-y-0'}`}
+      className={`fixed right-6 z-50 flex flex-col items-end gap-3 font-[family-name:var(--font-vazir)] transition-all duration-300 ${bottomPosClass} ${hideForHero ? 'opacity-0 translate-y-3 pointer-events-none' : 'opacity-100 translate-y-0'}`}
       dir={isEn ? 'ltr' : 'rtl'}
     >
+      {/* دکمه‌ی پیامک/تماس — شماره‌ی جدید آمریکا، مخصوص کسانی که واتساپ ندارند
+          (مثلاً از لندن یا آمریکا). عمداً کوچک‌تر و کم‌رنگ‌تر از دکمه‌ی اصلی واتساپ است،
+          چون واتساپ همچنان مسیر پیش‌فرض و اصلی است. */}
+      <a
+        href="tel:+16506712358"
+        aria-label={t('sms_aria_label')}
+        title={t('sms_aria_label')}
+        className="group relative flex items-center justify-center w-[42px] h-[42px] sm:w-11 sm:h-11 bg-blue-600 hover:brightness-110 text-white rounded-full shadow-[0_4px_18px_rgba(0,0,0,0.2)] hover:shadow-[0_6px_22px_rgba(0,0,0,0.25)] transition-all active:scale-95 z-50"
+      >
+        <Phone className="h-[18px] w-[18px] sm:h-5 sm:w-5 drop-shadow-sm" />
+      </a>
+
       <a
         href={`https://wa.me/989168038017?text=${encodeURIComponent(t('whatsapp_msg'))}`}
         target="_blank"

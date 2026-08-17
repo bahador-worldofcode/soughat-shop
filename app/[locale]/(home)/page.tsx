@@ -17,7 +17,7 @@ import CustomOrderBanner from "@/components/CustomOrderBanner";
 // (send-gift-to-iran)، درست بالای فوتر.
 import { CityLinksGrid } from "@/components/CityLinksGrid";
 import { supabase } from '@/lib/supabase';
-import { ArrowLeft, Layers, Sparkles, ChevronsRight } from 'lucide-react';
+import { ArrowLeft, Layers, Sparkles, ChevronsRight, MessageCircle, Phone } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import type { Metadata } from 'next';
@@ -565,6 +565,41 @@ export default async function Home({
       <Suspense fallback={<MarketRatesSkeleton />}>
         <MarketRates />
       </Suspense>
+
+      {/* 2.۵ نوار تماس: تفکیک واضح بین شماره‌ی واتساپ (ایران) و شماره‌ی پیامک/تماس آمریکا،
+          برای مشتریان فارسی و انگلیسی‌زبانِ خارج از کشور که واتساپ ندارند. */}
+      <section className="bg-white border-y border-gray-100 py-4">
+        <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-10 text-center">
+          <a
+            href={`https://wa.me/989168038017?text=${encodeURIComponent(t('contact_whatsapp_msg'))}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-sm"
+            dir="ltr"
+          >
+            <span className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-600 shrink-0">
+              <MessageCircle className="h-4 w-4" />
+            </span>
+            <span className="flex flex-col items-start">
+              <span className="font-bold text-gray-900 font-mono">+98 916 803 8017</span>
+              <span className="text-[11px] text-gray-400">{t('contact_whatsapp_note')}</span>
+            </span>
+          </a>
+          <a
+            href="tel:+16506712358"
+            className="flex items-center gap-2 text-sm"
+            dir="ltr"
+          >
+            <span className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 shrink-0">
+              <Phone className="h-4 w-4" />
+            </span>
+            <span className="flex flex-col items-start">
+              <span className="font-bold text-gray-900 font-mono">+1 (650) 671-2358</span>
+              <span className="text-[11px] text-gray-400">{t('contact_sms_note')}</span>
+            </span>
+          </a>
+        </div>
+      </section>
 
       {/* 3. جدیدترین محصولات */}
       <Suspense fallback={<NewestProductsSkeleton />}>
