@@ -1,3 +1,4 @@
+// مسیر این فایل در پروژه: app/[locale]/how-it-works/page.tsx
 import { Search, MapPin, Wallet, Gift, Truck, CheckCircle, ArrowLeft } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -23,7 +24,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       title: t('title'),
       description: t('header_desc'),
       url: `${siteUrl}/${locale}/how-it-works`,
-      locale: locale === 'fa' ? 'fa_IR' : 'en_US',
+      locale: locale === 'fa' ? 'fa' : 'en',
       type: 'website',
       // 🔧 رفع «og:image وجود نداره»
       images: [{ url: `${siteUrl}/images/og-default.jpg`, width: 1200, height: 630, alt: t('title') }],

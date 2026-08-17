@@ -51,7 +51,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       title: t('title'),
       description: t('description'),
       url: `${siteUrl}/${locale}/custom-gifts`,
-      locale: locale === 'fa' ? 'fa_IR' : 'en_US',
+      locale: locale === 'fa' ? 'fa' : 'en',
       type: 'website',
       images: [{ url: `${siteUrl}/images/og-default.jpg`, width: 1200, height: 630, alt: t('title') }],
     },

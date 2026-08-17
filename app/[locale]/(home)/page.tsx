@@ -1,3 +1,4 @@
+// مسیر این فایل در پروژه: app/[locale]/(home)/page.tsx
 import { Suspense } from 'react';
 import Hero from "@/components/Hero";
 import MarketRates from "@/components/MarketRates";

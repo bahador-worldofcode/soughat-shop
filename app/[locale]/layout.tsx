@@ -1,3 +1,4 @@
+// مسیر این فایل در پروژه: app/[locale]/layout.tsx
 import "../globals.css";
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
@@ -104,7 +105,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       description: meta.description,
       url: SITE_URL,
       siteName: 'Soughat Shop',
-      locale: locale === 'fa' ? 'fa_IR' : 'en_US',
+      locale: locale === 'fa' ? 'fa' : 'en',
       type: 'website',
     },
     
@@ -182,7 +183,7 @@ export default async function LocaleLayout({
         '@type': 'ContactPoint',
         'telephone': '+98-916-803-8017',
         'contactType': 'customer service',
-        'areaServed': 'IR',
+        'areaServed': ['US', 'CA', 'GB', 'DE', 'SE'],
         'availableLanguage': ['en', 'fa']
       }
     ],

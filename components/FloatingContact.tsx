@@ -1,5 +1,6 @@
 'use client';
 
+// مسیر این فایل در پروژه: components/FloatingContact.tsx
 import { useState, useEffect } from 'react';
 import { usePathname } from '@/i18n/navigation';
 import { MessageCircle, Phone } from 'lucide-react';

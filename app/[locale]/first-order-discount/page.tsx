@@ -1,4 +1,4 @@
-// مسیر فایل در پروژه: app/[locale]/first-order-discount/page.tsx
+// مسیر این فایل در پروژه: app/[locale]/first-order-discount/page.tsx
 // این یک فایل جدید است — باید در همین مسیر ساخته شود.
 // --------------------------------------------------------------
 // صفحه‌ی سئومحورِ «کد تخفیف ۱۵٪ سفارش اول». هدف: کسی که توی گوگل چیزهایی
@@ -55,7 +55,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       title: t('meta_title'),
       description: t('meta_desc'),
       url: `${siteUrl}/${locale}/first-order-discount`,
-      locale: locale === 'fa' ? 'fa_IR' : 'en_US',
+      locale: locale === 'fa' ? 'fa' : 'en',
       type: 'website',
       images: [{ url: `${siteUrl}/images/og-default.jpg`, width: 1200, height: 630, alt: t('meta_title') }],
     },

@@ -1,4 +1,5 @@
-import { MapPin, Phone, ArrowLeft, ShieldCheck, Mail } from 'lucide-react';
+// مسیر این فایل در پروژه: app/[locale]/contact/page.tsx
+import { Phone, ArrowLeft, ShieldCheck, Mail } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
@@ -42,7 +43,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       title: t('title'),
       description: t('header_desc'),
       url: `${siteUrl}/${locale}/contact`,
-      locale: locale === 'fa' ? 'fa_IR' : 'en_US',
+      locale: locale === 'fa' ? 'fa' : 'en',
       type: 'website',
       // 🔧 رفع «og:image وجود نداره»
       images: [{ url: `${siteUrl}/images/og-default.jpg`, width: 1200, height: 630, alt: t('title') }],
@@ -61,7 +62,7 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
         <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">{t('header_title')}</h1>
         <p className="text-gray-500 text-center mb-12">{t('header_desc')}</p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16 max-w-3xl mx-auto">
           
           {/* کارت تماس */}
           <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 text-center hover:shadow-md transition-shadow group relative overflow-hidden">
@@ -92,16 +93,6 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
                     <span className="text-[11px] text-gray-400 max-w-[200px] leading-relaxed">{t('card_sms_note')}</span>
                 </div>
             </div>
-          </div>
-
-          {/* کارت آدرس */}
-          <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 text-center hover:shadow-md transition-shadow group">
-            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-600 group-hover:bg-red-600 group-hover:text-white transition-colors">
-              <MapPin className="h-6 w-6" />
-            </div>
-            <h3 className="font-bold text-gray-900 mb-2">{t('card_address_title')}</h3>
-            <p className="text-gray-500 text-sm mb-4">{t('card_address_desc')}</p>
-            <span className="text-gray-700 text-sm block">{t('address_line')}</span>
           </div>
 
           {/* کارت ایمیل و شبکه‌های اجتماعی */}

@@ -1,4 +1,5 @@
-// این فایل جایگزین فایل فعلی همین مسیر می‌شود (کامل جایگزین کنید).
+// مسیر این فایل در پروژه: app/[locale]/trust/page.tsx
+// (این فایل جایگزین فایل فعلی همین مسیر می‌شود — کامل جایگزین کنید.)
 // --------------------------------------------------------------
 // بازطراحی کامل صفحه‌ی «چرا به سوغات شاپ اعتماد کنیم؟». نسخه‌ی قبلی فقط
 // ۵ کارتِ کوچکِ کلی‌گو داشت («پشتیبانی انسانی»، «پرداخت امن» و…) که به
@@ -64,7 +65,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       title: t('title'),
       description: t('hero_desc'),
       url: `${siteUrl}/${locale}/trust`,
-      locale: locale === 'fa' ? 'fa_IR' : 'en_US',
+      locale: locale === 'fa' ? 'fa' : 'en',
       type: 'website',
       images: [{ url: `${siteUrl}/images/og-default.jpg`, width: 1200, height: 630, alt: t('title') }],
     },

@@ -1,3 +1,4 @@
+// مسیر این فایل در پروژه: app/[locale]/about/page.tsx
 import { Heart, Globe, ShieldCheck, Truck } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -23,7 +24,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       title: t('title'),
       description: t('hero_desc'),
       url: `${siteUrl}/${locale}/about`,
-      locale: locale === 'fa' ? 'fa_IR' : 'en_US',
+      locale: locale === 'fa' ? 'fa' : 'en',
       type: 'website',
       // 🔧 رفع «og:image وجود نداره»: این صفحه openGraph مخصوص خودش را
       // override می‌کند، پس عکس پیش‌فرض لایوت به آن ارث نمی‌رسد — باید

@@ -1,3 +1,4 @@
+// مسیر این فایل در پروژه: app/[locale]/send-gift-to-iran-crypto/page.tsx
 import { Link } from '@/i18n/navigation';
 import type { Metadata } from 'next';
 import { CheckCircle, ArrowLeft, Send, Zap, Wallet, ShieldCheck, Coins } from 'lucide-react';
@@ -132,7 +133,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       title,
       description,
       url: `${siteUrl}/${locale}/send-gift-to-iran-crypto`,
-      locale: isEn ? 'en_US' : 'fa_IR',
+      locale: isEn ? 'en' : 'fa',
       type: 'article',
       images: [{ url: ogImage }],
     },
