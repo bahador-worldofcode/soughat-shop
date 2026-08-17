@@ -13,6 +13,9 @@ import InstallPWAPrompt from "@/components/InstallPWAPrompt";
 // 🆕 بنر «هدایای سفارشی» — کامپوننت کاملاً جدید و مستقل (components/CustomOrderBanner.tsx)،
 // هیچ کامپوننت موجودی برای این افزودن تغییر نکرده است.
 import CustomOrderBanner from "@/components/CustomOrderBanner";
+// 🆕 دکمه‌های رنگیِ «ارسال هدیه از شهر شما» — لینک به لندینگ‌پیج‌های شهر
+// (send-gift-to-iran)، درست بالای فوتر.
+import { CityLinksGrid } from "@/components/CityLinksGrid";
 import { supabase } from '@/lib/supabase';
 import { ArrowLeft, Layers, Sparkles, ChevronsRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
@@ -604,9 +607,15 @@ export default async function Home({
         <HomeSEOContent />
       </LazySection>
 
-      {/* 9. وبلاگ — پایین‌ترین بخش صفحه، درست بالای فوتر. */}
+      {/* 9. وبلاگ */}
       <LazySection minHeight={480}>
         <BlogRail />
+      </LazySection>
+
+      {/* 10. ارسال هدیه از شهر شما — دکمه‌های رنگی لینک به لندینگ‌پیج‌های شهر
+          (send-gift-to-iran)، پایین‌ترین بخش صفحه، درست بالای فوتر. */}
+      <LazySection minHeight={220}>
+        <CityLinksGrid locale={locale as 'fa' | 'en'} />
       </LazySection>
 
       {/* 🆕 نوتیف/کارت شناور «نصب اپلیکیشن» — عمداً فقط همین‌جا (صفحه‌ی
