@@ -1,5 +1,9 @@
 import type { MetadataRoute } from 'next';
 import { supabase } from '@/lib/supabase';
+// 🆕 صفحات لندینگ شهر (send-gift-to-iran) — داده‌شون توی کد است، نه
+// Supabase، پس مثل STATIC_ROUTES مستقیم ایمپورت می‌شن نه واکشی می‌شن.
+import { targetCities } from '@/lib/data/cities';
+import { citiesContent } from '@/lib/data/citiesContent';
 
 // سایت‌مپ حداکثر هر ساعت یک‌بار دوباره ساخته می‌شه (نه در لحظه‌ی build و نه در هر
 // درخواست) — همین باعث می‌شه محصولات/پست‌های جدید خیلی زود توی سایت‌مپ ظاهر بشن
@@ -58,6 +62,8 @@ const STATIC_ROUTES: StaticRoute[] = [
   { path: '/first-order-discount', lastMod: '2026-08-16', changeFreq: 'monthly', priority: 0.85 },
   // 🆕 صفحه‌ی «هدایای سفارشی» — درخواست افزودن محصول دلخواه به فروشگاه
   { path: '/custom-gifts', lastMod: '2026-07-27', changeFreq: 'weekly', priority: 0.8 },
+  // 🆕 صفحه‌ی هاب/فهرست ۴۰ شهر — والدِ لینکیِ همه‌ی صفحات send-gift-to-iran/{city}
+  { path: '/send-gift-to-iran', lastMod: '2026-08-17', changeFreq: 'monthly', priority: 0.8 },
   { path: '/blog', lastMod: '2026-07-05', changeFreq: 'daily', priority: 0.7 },
   { path: '/crypto-guide', lastMod: '2026-07-04', changeFreq: 'monthly', priority: 0.7 },
   { path: '/how-it-works', lastMod: '2026-07-04', changeFreq: 'monthly', priority: 0.7 },
@@ -161,12 +167,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       alternates: buildAlternates(`/products?category=${encodeURIComponent(cat.slug)}`),
     }));
 
+    // ۵. صفحات لندینگ شهر (send-gift-to-iran/{city})
+    // فقط شهرهایی که واقعاً محتوا دارن (همون فیلتری که خودِ صفحات هم برای
+    // generateStaticParams استفاده می‌کنن) — تا سایت‌مپ به یک URL بدون
+    // محتوا/404 اشاره نکنه.
+    const cityEntries: MetadataRoute.Sitemap = targetCities
+      .filter((city) => citiesContent[locale]?.[city.slug])
+      .map((city) => ({
+        url: `${siteUrl}/${locale}/send-gift-to-iran/${city.slug}`,
+        lastModified: '2026-08-17',
+        changeFrequency: 'monthly',
+        priority: 0.75,
+        alternates: buildAlternates(`/send-gift-to-iran/${city.slug}`),
+      }));
+
     sitemapEntries = [
       ...sitemapEntries,
       ...staticEntries,
       ...blogEntries,
       ...productEntries,
       ...categoryEntries,
+      ...cityEntries,
     ];
   }
 
