@@ -1,21 +1,20 @@
 // مسیر واقعی در پروژه: app/[locale]/send-gift-to-iran/[city]/page.tsx
-// (اینجا فقط برای خوانایی توی این پوشه‌ی موقت، پوشه‌ها ساده‌سازی شدن)
+// این نسخه، جایگزین کامل فایل قبلیه — فقط ظاهر (JSX/className) عوض شده،
+// هیچ‌کدوم از منطق سئو (generateStaticParams، generateMetadata، JSON-LD،
+// alt متن‌ها، لینک‌های داخلی) دست نخورده.
 //
-// ⚠️ نکته‌ی مهم قبل از پیست‌کردن: طبق AGENTS.md خودِ پروژه، این نسخه از Next.js
-// (16.3.0) ممکنه در generateStaticParams/params-as-Promise رفتار متفاوتی نسبت به
-// چیزی داشته باشه که من می‌شناسم. قبل از commit، یه نگاه به
-// node_modules/next/dist/docs/ بنداز (دقیقاً همون چیزی که AGENTS.md می‌گه) تا
-// مطمئن بشی امضای generateStaticParams/generateMetadata هنوز همینه.
+// چرا هنوز 'use client' نداره: آکاردئون FAQ با ترفند CSS-only
+// (group + group-open:) پیاده شده، نه useState — یعنی HTML سوال‌وجواب‌ها
+// از همون اول توی صفحه هست (خوب برای سئو) و نیازی به جاوااسکریپت کلاینت
+// هم نداره.
 
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import type { Metadata } from "next";
+import { HelpCircle, Plus, Minus, MapPin, ArrowLeft, ExternalLink } from "lucide-react";
 import { getCityBySlug, targetCities } from "@/lib/data/cities";
 import { citiesContent } from "@/lib/data/citiesContent";
 
-// همین ۳ عکس، عیناً برای هر ۴۰ شهر استفاده می‌شه — فقط altِ هرکدوم per-city عوض می‌شه.
-// این آرایه رو با CITY_IMAGE_PROMPTS.md هماهنگ نگه دار (همون فایلی که پرامپت‌های
-// ساخت عکس توشه).
 const CITY_IMAGES = [
   { file: "hero-family-delivery.webp", altKey: "delivery" as const },
   { file: "ordering-from-abroad.webp", altKey: "ordering" as const },
@@ -35,10 +34,6 @@ function isLocale(value: string): value is Locale {
 }
 
 export function generateStaticParams() {
-  // این فقط پارامترِ همین سگمنت ([city]) رو برمی‌گردونه؛ سگمنتِ [locale]
-  // معمولاً از قبل توی app/[locale]/layout.tsx خودِ پروژه جنریت می‌شه.
-  // فقط شهرهایی که واقعاً محتوا دارن (در citiesContent) رو استاتیک بساز؛
-  // بقیه تا وقتی محتوا اضافه نشده 404 می‌گیرن، نه صفحه‌ی نصفه‌کاره.
   return Object.keys(citiesContent.fa).map((slug) => ({ city: slug }));
 }
 
@@ -89,8 +84,6 @@ export default async function CityLandingPage({ params }: PageProps) {
   const cityName = locale === "fa" ? city.nameFa : city.nameEn;
   const isRtl = locale === "fa";
 
-  // FAQPage structured data — کمک به rich results و اینکه ایجنت‌های AI هم
-  // ساختار سوال/جواب رو تمیز بخونن.
   const faqJsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -102,90 +95,150 @@ export default async function CityLandingPage({ params }: PageProps) {
   };
 
   return (
-    <main dir={isRtl ? "rtl" : "ltr"} className="mx-auto max-w-3xl px-4 py-12">
+    <main dir={isRtl ? "rtl" : "ltr"} className="font-[family-name:var(--font-vazir)]">
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
 
-      <h1 className="text-3xl font-bold leading-snug">
-        {locale === "fa" ? `ارسال هدیه و پول از ${cityName} به ایران` : `Send Gifts & Money to Iran from ${cityName}`}
-      </h1>
+      {/* هیرو — پس‌زمینه‌ی آبی ملایم، هم‌خانواده با برند سایت */}
+      <section className="bg-gradient-to-b from-blue-50 to-white py-12 md:py-16">
+        <div className="container mx-auto max-w-3xl px-4">
+          <div className="mb-4 inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">
+            <MapPin className="h-3.5 w-3.5" />
+            {cityName}
+          </div>
 
-      <p className="mt-4 text-lg leading-relaxed text-neutral-700">{content.heroIntro}</p>
+          <h1 className="text-2xl font-black leading-snug text-gray-900 md:text-3xl">
+            {locale === "fa"
+              ? `ارسال هدیه و پول از ${cityName} به ایران`
+              : `Send Gifts & Money to Iran from ${cityName}`}
+          </h1>
 
-      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {CITY_IMAGES.map((img) => {
-          const altText = {
-            delivery:
-              locale === "fa"
-                ? `تحویل هدیه درب منزل در ${cityName === city.nameFa ? "" : ""}ایران، برای مشتری از ${cityName}`
-                : `Gift delivered to a family's door in Iran, ordered from ${cityName}`,
-            ordering:
-              locale === "fa"
-                ? `سفارش آنلاین هدیه به ایران از ${cityName} با پرداخت کریپتو`
-                : `Ordering a gift to Iran online from ${cityName} with crypto payment`,
-            giftbox:
-              locale === "fa"
-                ? `باکس هدیه لوکس ایرانی قابل ارسال از ${cityName} به ایران`
-                : `Luxury Persian gift box shippable from ${cityName} to Iran`,
-          }[img.altKey];
+          <p className="mt-4 text-lg leading-8 text-gray-600">{content.heroIntro}</p>
 
-          return (
-            <div key={img.file} className="relative aspect-square overflow-hidden rounded-xl">
-              <Image
-                src={`/images/send-gift-to-iran/${img.file}`}
-                alt={altText}
-                fill
-                sizes="(min-width: 640px) 33vw, 100vw"
-                className="object-cover"
-              />
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {CITY_IMAGES.map((img) => {
+              const altText = {
+                delivery:
+                  locale === "fa"
+                    ? `تحویل هدیه درب منزل در ایران، برای مشتری از ${cityName}`
+                    : `Gift delivered to a family's door in Iran, ordered from ${cityName}`,
+                ordering:
+                  locale === "fa"
+                    ? `سفارش آنلاین هدیه به ایران از ${cityName} با پرداخت کریپتو`
+                    : `Ordering a gift to Iran online from ${cityName} with crypto payment`,
+                giftbox:
+                  locale === "fa"
+                    ? `باکس هدیه لوکس ایرانی قابل ارسال از ${cityName} به ایران`
+                    : `Luxury Persian gift box shippable from ${cityName} to Iran`,
+              }[img.altKey];
+
+              return (
+                <div
+                  key={img.file}
+                  className="relative aspect-square overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/5"
+                >
+                  <Image
+                    src={`/images/send-gift-to-iran/${img.file}`}
+                    alt={altText}
+                    fill
+                    sizes="(min-width: 640px) 33vw, 100vw"
+                    className="object-cover"
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* بخش‌های محتوا — کارت‌های سفید با سایه‌ی ملایم */}
+      <section className="bg-white py-12 md:py-16">
+        <div className="container mx-auto max-w-3xl space-y-5 px-4">
+          {content.sections.map((section) => (
+            <div
+              key={section.title}
+              className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm"
+            >
+              <h2 className="text-lg font-bold text-gray-900 md:text-xl">{section.title}</h2>
+              <p className="mt-2 leading-7 text-gray-600">{section.paragraph}</p>
             </div>
-          );
-        })}
-      </div>
-
-      <div className="mt-10 space-y-8">
-        {content.sections.map((section) => (
-          <section key={section.title}>
-            <h2 className="text-xl font-semibold">{section.title}</h2>
-            <p className="mt-2 leading-relaxed text-neutral-700">{section.paragraph}</p>
-          </section>
-        ))}
-      </div>
-
-      <div className="mt-10">
-        <h2 className="text-xl font-semibold">
-          {locale === "fa" ? "سوالات پرتکرار" : "Frequently Asked Questions"}
-        </h2>
-        <div className="mt-4 space-y-3">
-          {content.faqs.map((faq) => (
-            <details key={faq.question} className="rounded-lg border border-neutral-200 p-4">
-              <summary className="cursor-pointer font-medium">{faq.question}</summary>
-              <p className="mt-2 leading-relaxed text-neutral-700">{faq.answer}</p>
-            </details>
           ))}
         </div>
-      </div>
+      </section>
 
-      <div className="mt-10 flex flex-wrap gap-3">
-        {content.relatedProducts.map((product) => (
+      {/* سوالات پرتکرار — دقیقاً هم‌سبک با FAQ.tsx خودِ سایت */}
+      <section className="border-t border-gray-100 bg-white py-12 md:py-16">
+        <div className="container mx-auto max-w-3xl px-4">
+          <div className="mb-8 text-center">
+            <div className="mb-4 inline-flex items-center justify-center rounded-full bg-blue-50 p-3">
+              <HelpCircle className="h-7 w-7 text-blue-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              {locale === "fa" ? "سوالات پرتکرار" : "Frequently Asked Questions"}
+            </h2>
+          </div>
+
+          <div className="space-y-3">
+            {content.faqs.map((faq) => (
+              <details
+                key={faq.question}
+                className="group rounded-xl border border-gray-200 transition-colors open:border-blue-200 open:bg-blue-50/30"
+              >
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5 text-start">
+                  <span className="text-sm font-bold text-gray-700 group-open:text-blue-800 md:text-base">
+                    {faq.question}
+                  </span>
+                  <Plus className="h-5 w-5 shrink-0 text-gray-400 group-open:hidden" />
+                  <Minus className="hidden h-5 w-5 shrink-0 text-blue-600 group-open:block" />
+                </summary>
+                <div className="border-t border-blue-100 px-5 pb-5 pt-3">
+                  <p className="text-sm leading-7 text-gray-600 md:text-base">{faq.answer}</p>
+                </div>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* لینک‌های داخلی مرتبط + CTA به صفحه‌ی هاب */}
+      <section className="border-t border-gray-100 bg-gray-50 py-12 md:py-16">
+        <div className="container mx-auto max-w-3xl px-4">
+          <h2 className="mb-4 text-sm font-bold text-gray-500">
+            {locale === "fa" ? "پیشنهاد می‌کنیم ببینید" : "You might also like"}
+          </h2>
+          <div className="flex flex-wrap gap-3">
+            {content.relatedProducts.map((product) => (
+              <a
+                key={product.slug}
+                href={`/${locale}/products/${product.slug}`}
+                className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+              >
+                {product.title}
+              </a>
+            ))}
+            <a
+              href={`/${locale}/blog/${content.relatedPost.slug}`}
+              className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+            >
+              {content.relatedPost.title}
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          </div>
+
           <a
-            key={product.slug}
-            href={`/${locale}/products/${product.slug}`}
-            className="rounded-full border border-neutral-300 px-4 py-2 text-sm hover:bg-neutral-50"
+            href={`/${locale}/send-gift-to-iran`}
+            className="mt-8 flex items-center justify-between rounded-2xl border-2 border-dashed border-blue-200 bg-white p-5 transition-colors hover:bg-blue-50/50"
           >
-            {product.title}
+            <span className="text-sm font-bold text-gray-800">
+              {locale === "fa" ? "شهر خودت رو نمی‌بینی؟ همه‌ی ۴۰ شهر رو ببین" : "Don't see your city? Browse all 40 cities"}
+            </span>
+            <ArrowLeft className={`h-5 w-5 text-blue-500 ${!isRtl ? "rotate-180" : ""}`} />
           </a>
-        ))}
-        <a
-          href={`/${locale}/blog/${content.relatedPost.slug}`}
-          className="rounded-full border border-neutral-300 px-4 py-2 text-sm hover:bg-neutral-50"
-        >
-          {content.relatedPost.title}
-        </a>
-      </div>
+        </div>
+      </section>
     </main>
   );
 }
