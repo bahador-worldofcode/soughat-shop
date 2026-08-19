@@ -190,7 +190,7 @@ function SuccessContent() {
             معنا نداره و نباید نشون داده بشه. */}
         {!isPaid && (
           <a 
-              href={`https://wa.me/989168038017?text=${encodeURIComponent(t('whatsapp_order_msg', { code: trackingCode }))}`}
+              href={`https://wa.me/16506712358?text=${encodeURIComponent(t('whatsapp_order_msg', { code: trackingCode }))}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 w-full py-4 px-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-green-200 hover:-translate-y-1"

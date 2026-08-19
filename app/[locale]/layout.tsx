@@ -171,17 +171,16 @@ export default async function LocaleLayout({
     'url': 'https://soughat.shop',
     'logo': 'https://soughat.shop/logo.png',
     'description': 'اولین پلتفرم تخصصی ارسال هدیه و سوغات به ایران با پرداخت ارزی و کریپتو',
+    // 🔧 شماره‌ی ایران عمداً از این اسکیمای سراسری (که در همه‌ی صفحات سایت
+    // رندر می‌شود) حذف شد. چون بیزنس ما بین‌المللی است و areaServed هم اصلاً
+    // ایران را شامل نمی‌شود، وجود این شماره در اینجا فقط به گوگل سیگنال
+    // اشتباه می‌داد و باعث می‌شد کاربران ایرانی هم وارد سایت شوند. شماره‌ی
+    // ایران هنوز به‌صورت مستقل و فقط به‌عنوان گزینه‌ی دوم در خودِ صفحه‌ی
+    // Contact (app/[locale]/contact/page.tsx) در دسترس است.
     'contactPoint': [
       {
         '@type': 'ContactPoint',
         'telephone': '+1-650-671-2358',
-        'contactType': 'customer service',
-        'areaServed': ['US', 'CA', 'GB', 'DE', 'SE'],
-        'availableLanguage': ['en', 'fa']
-      },
-      {
-        '@type': 'ContactPoint',
-        'telephone': '+98-916-803-8017',
         'contactType': 'customer service',
         'areaServed': ['US', 'CA', 'GB', 'DE', 'SE'],
         'availableLanguage': ['en', 'fa']

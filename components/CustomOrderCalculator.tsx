@@ -41,7 +41,9 @@ const CURRENCY_OPTIONS: { code: CurrencyCode; symbol: string }[] = [
 
 // همان شماره‌ی واتساپِ استفاده‌شده در components/FloatingContact.tsx —
 // عمداً هاردکد شده تا با شماره‌ی فعلی سایت همیشه یکی بماند.
-const WHATSAPP_NUMBER = '989168038017';
+// شماره‌ی تجاری بین‌المللی (آمریکا) — طبق تصمیم بیزنسی، دیگر از شماره‌ی
+// ایران برای این فرم استفاده نمی‌شود.
+const WHATSAPP_NUMBER = '16506712358';
 
 export default function CustomOrderCalculator() {
   const t = useTranslations('CustomOrder.calculator');

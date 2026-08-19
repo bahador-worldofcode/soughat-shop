@@ -76,21 +76,22 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
             <p className="text-gray-500 text-sm mb-4">{t('card_phone_desc')}</p>
             
             <div className="flex flex-col gap-2 items-center justify-center" dir="ltr">
-                <a href="tel:+989168038017" className="text-gray-900 font-bold text-lg hover:text-green-600 transition-colors font-mono">
-                    +98 916 803 8017
+                <a href="tel:+16506712358" className="text-gray-900 font-bold text-lg hover:text-green-600 transition-colors font-mono">
+                    +1 (650) 671-2358
                 </a>
-                <a href={`https://wa.me/989168038017?text=${encodeURIComponent(t('whatsapp_msg'))}`} target="_blank" className="text-xs inline-flex items-center text-green-600 hover:underline" dir={isEn ? 'ltr' : 'rtl'}>
+                <a href={`https://wa.me/16506712358?text=${encodeURIComponent(t('whatsapp_msg'))}`} target="_blank" className="text-xs inline-flex items-center text-green-600 hover:underline" dir={isEn ? 'ltr' : 'rtl'}>
                    {t('whatsapp_btn')} <ArrowLeft className={`h-3 w-3 ${isEn ? 'ml-1 rotate-180' : 'mr-1'}`} />
                 </a>
 
-                {/* شماره‌ی جدید آمریکا — برای مخاطبینی که واتساپ ندارند (مثلاً از لندن یا آمریکا)
-                    این شماره هم قابلیت دریافت تماس دارد و هم پیامک (SMS) */}
+                {/* شماره‌ی ایران — طبق تصمیم بیزنسی، فقط و فقط همین‌جا (صفحه‌ی تماس با ما)
+                    و صرفاً به‌عنوان گزینه‌ی دوم نمایش داده می‌شود؛ در هیچ صفحه‌ی دیگری
+                    (از جمله صفحه‌ی اصلی) نباید ظاهر شود. */}
                 <div className="w-full border-t border-gray-200 mt-3 pt-3 flex flex-col items-center gap-1">
-                    <span className="text-[11px] text-gray-400">{t('card_sms_title')}</span>
-                    <a href="tel:+16506712358" className="text-gray-900 font-bold text-base hover:text-green-600 transition-colors font-mono">
-                        +1 (650) 671-2358
+                    <span className="text-[11px] text-gray-400">{t('card_iran_title')}</span>
+                    <a href="tel:+989168038017" className="text-gray-900 font-bold text-base hover:text-green-600 transition-colors font-mono">
+                        +98 916 803 8017
                     </a>
-                    <span className="text-[11px] text-gray-400 max-w-[200px] leading-relaxed">{t('card_sms_note')}</span>
+                    <span className="text-[11px] text-gray-400 max-w-[200px] leading-relaxed">{t('card_iran_note')}</span>
                 </div>
             </div>
           </div>

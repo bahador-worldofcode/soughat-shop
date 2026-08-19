@@ -273,7 +273,7 @@ export default async function SendMoneyToIranPage({ params }: { params: Promise<
                 send money quickly and securely to their families back in Iran. Traditional money transfer methods
                 are often slow, expensive, and fraught with restrictions. However, with the advent of
                 cryptocurrencies, the landscape has completely changed. The <strong>Soughat.shop</strong> service
-                allows you to bypass banking hurdles and use crypto (like Tether or USDT) to deposit funds directly
+                allows you to skip the hassle of traditional banking and use crypto (like Tether or USDT) to deposit funds directly
                 into your family&apos;s Iranian bank account in the shortest possible time.
               </>
             ) : (

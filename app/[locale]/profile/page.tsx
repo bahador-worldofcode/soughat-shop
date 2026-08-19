@@ -1501,7 +1501,7 @@ export default function ProfilePage() {
                       حالا پیام، ارز و مبلغِ دقیقِ کریپتویی رو هم داره؛ نه فقط مبلغِ فیاتِ اولیه —
                       تا خودِ مشتری هم مجبور نباشه این اطلاعات رو دستی توی پیامش بنویسه. */}
                   <a
-                    href={`https://wa.me/989168038017?text=${encodeURIComponent(
+                    href={`https://wa.me/16506712358?text=${encodeURIComponent(
                       tWallet('whatsapp_topup_msg', {
                         id: activeTopupId || '',
                         amount: `${chargeAmount} ${chargeCurrency}`,

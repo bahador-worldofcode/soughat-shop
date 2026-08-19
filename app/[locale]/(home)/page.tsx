@@ -18,7 +18,7 @@ import CustomOrderBanner from "@/components/CustomOrderBanner";
 // (send-gift-to-iran)، درست بالای فوتر.
 import { CityLinksGrid } from "@/components/CityLinksGrid";
 import { supabase } from '@/lib/supabase';
-import { ArrowLeft, Layers, Sparkles, ChevronsRight, MessageCircle, Phone } from 'lucide-react';
+import { ArrowLeft, Layers, Sparkles, ChevronsRight, MessageCircle } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import type { Metadata } from 'next';
@@ -567,12 +567,17 @@ export default async function Home({
         <MarketRates />
       </Suspense>
 
-      {/* 2.۵ نوار تماس: تفکیک واضح بین شماره‌ی واتساپ (ایران) و شماره‌ی پیامک/تماس آمریکا،
-          برای مشتریان فارسی و انگلیسی‌زبانِ خارج از کشور که واتساپ ندارند. */}
+      {/* 2.۵ نوار تماس: چون بیزنس ما بین‌المللی است و فقط به کاربران خارج از ایران
+          نیاز داریم، شماره‌ی ایران عمداً از این صفحه (و کل سایت به‌جز صفحه‌ی
+          تماس با ما) حذف شده تا سیگنال اشتباه به گوگل و کاربران ایرانی ندهد.
+          🔧 دکمه‌ی تماس/پیامک هم عمداً حذف شد: طبق تصمیم بیزنسی نمی‌خواهیم
+          کاربر را به سمت تماس یا پیامک ترغیب کنیم (پاسخ‌گویی صرفاً از طریق
+          واتساپ انجام می‌شود)، پس فقط دکمه‌ی واتساپ روی شماره‌ی تجاری
+          بین‌المللی باقی می‌ماند. */}
       <section className="bg-white border-y border-gray-100 py-4">
-        <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-10 text-center">
+        <div className="container mx-auto px-4 flex items-center justify-center text-center">
           <a
-            href={`https://wa.me/989168038017?text=${encodeURIComponent(t('contact_whatsapp_msg'))}`}
+            href={`https://wa.me/16506712358?text=${encodeURIComponent(t('contact_whatsapp_msg'))}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 text-sm"
@@ -582,21 +587,8 @@ export default async function Home({
               <MessageCircle className="h-4 w-4" />
             </span>
             <span className="flex flex-col items-start">
-              <span className="font-bold text-gray-900 font-mono">+98 916 803 8017</span>
-              <span className="text-[11px] text-gray-400">{t('contact_whatsapp_note')}</span>
-            </span>
-          </a>
-          <a
-            href="tel:+16506712358"
-            className="flex items-center gap-2 text-sm"
-            dir="ltr"
-          >
-            <span className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 shrink-0">
-              <Phone className="h-4 w-4" />
-            </span>
-            <span className="flex flex-col items-start">
               <span className="font-bold text-gray-900 font-mono">+1 (650) 671-2358</span>
-              <span className="text-[11px] text-gray-400">{t('contact_sms_note')}</span>
+              <span className="text-[11px] text-gray-400">{t('contact_whatsapp_note')}</span>
             </span>
           </a>
         </div>
