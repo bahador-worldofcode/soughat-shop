@@ -6,6 +6,7 @@ import { Package, ArrowRight, Copy, AlertCircle, MessageCircle, ClipboardCheck, 
 import { useStore } from '@/lib/store';
 import { Link } from '@/i18n/navigation';
 import { useTranslations, useLocale } from 'next-intl';
+import PaymentHelpCards, { PaymentSecurityNote } from '@/components/PaymentHelpCards';
 
 function SuccessContent() {
   const t = useTranslations('Success');
@@ -195,19 +196,23 @@ function SuccessContent() {
             سفارشی که با کیف‌پول و همین الان پرداخت شده، این دکمه اصلاً
             معنا نداره و نباید نشون داده بشه. */}
         {!isPaid && (
-          <a 
-              href={`https://wa.me/16506712358?text=${encodeURIComponent(
-                wantsAltCrypto
-                  ? `${t('whatsapp_order_msg', { code: trackingCode })}\n\n${t('whatsapp_alt_crypto_suffix')}`
-                  : t('whatsapp_order_msg', { code: trackingCode })
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 w-full py-4 px-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-green-200 hover:-translate-y-1"
-          >
-              <MessageCircle className="h-6 w-6" />
-              {t('whatsapp_get_address_btn')}
-          </a>
+          <>
+            <PaymentSecurityNote />
+            <a 
+                href={`https://wa.me/16506712358?text=${encodeURIComponent(
+                  wantsAltCrypto
+                    ? `${t('whatsapp_order_msg', { code: trackingCode })}\n\n${t('whatsapp_alt_crypto_suffix')}`
+                    : t('whatsapp_order_msg', { code: trackingCode })
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 w-full py-4 px-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-green-200 hover:-translate-y-1"
+            >
+                <MessageCircle className="h-6 w-6" />
+                {t('whatsapp_get_address_btn')}
+            </a>
+            <PaymentHelpCards trackingCode={trackingCode} />
+          </>
         )}
 
         {/* دکمه‌های فرعی پیگیری و بازگشت */}
@@ -242,3 +247,4 @@ export default function SuccessPage() {
     </Suspense>
   );
 }
+

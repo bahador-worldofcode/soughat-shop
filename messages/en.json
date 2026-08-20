@@ -612,7 +612,39 @@
     "copied_label": "Copied",
     "whatsapp_get_address_btn": "Get Wallet Address via WhatsApp",
     "whatsapp_order_msg": "Hello, I placed order #{code}. Please provide the wallet address for payment.",
-    "whatsapp_alt_crypto_suffix": "🪙 By the way, I'd like to pay with a different cryptocurrency (not USDT or Solana)."
+    "whatsapp_alt_crypto_suffix": "🪙 By the way, I'd like to pay with a different cryptocurrency (not USDT or Solana).",
+    "security_note_title": "Why isn't the wallet address shown directly here?",
+    "security_note_text": "For extra security, we don't fully automate this last step — if a fixed address were always displayed on the site, it could be altered in the unlikely event of a breach. That's why our team shares the exact address with you personally over WhatsApp — one simple step that keeps your payment fully secure.",
+    "alt_help_intro": "Not sure how to send crypto? These might help:",
+    "paypal_question": "🇺🇸 Are you in the US?",
+    "europe_question": "🌍 Based in Europe, the UK, or Australia?",
+    "other_question": "💳 Using a different app or exchange?",
+    "paypal_modal_title": "Paying with PayPal (US residents)",
+    "paypal_modal_intro": "Good news: if you're in the US, you probably already have PayPal — no new app needed. PayPal officially supports buying and sending Bitcoin:",
+    "paypal_steps": [
+      "Open the PayPal app or website and make sure your account is verified — if not, PayPal will guide you through it right there.",
+      "From the bottom menu or Finances, open the Crypto section.",
+      "Tap Bitcoin and buy the amount you need (plus a bit extra for the network fee), using your balance, a card, or a linked bank account.",
+      "Go back to Crypto, tap Bitcoin, tap the Transfer arrows, then choose Send.",
+      "Paste the wallet address our team sends you on WhatsApp, enter the amount, and confirm."
+    ],
+    "paypal_modal_note": "⚠️ Important: PayPal only supports sending Bitcoin externally (not Tether or Solana). Just mention in your WhatsApp message that you'll pay with Bitcoin — we'll send you the correct address right away.",
+    "revolut_modal_title": "Paying with Revolut (Europe, UK & Australia)",
+    "revolut_modal_intro": "Revolut is one of the easiest options — setup and verification take just a few minutes, and it directly supports the same Tether or Solana Soughat Shop already uses:",
+    "revolut_steps": [
+      "If you don't have the Revolut app yet, install it from your app store and create an account (verification usually takes a few minutes).",
+      "From the bottom menu, open the Crypto section.",
+      "Choose Tether (USDT) or Solana (SOL) and buy exactly the amount your order needs.",
+      "Go back to Crypto, select the coin you bought, and tap Send.",
+      "If you bought USDT, make sure to select the TRC20 (Tron) network — the exact one Soughat Shop uses; if you bought SOL, no network selection is needed.",
+      "Paste the wallet address our team sends you and confirm the transfer."
+    ],
+    "other_modal_title": "No problem!",
+    "other_modal_text": "Whatever app or exchange you already use (Coinbase, Binance, Cash App, Kraken, or anything else), it almost certainly supports buying and sending crypto. Just tell us on WhatsApp what you're using, and we'll walk you through it step by step for that exact app.",
+    "modal_whatsapp_btn": "Continue on WhatsApp",
+    "wa_method_paypal": "PayPal (with Bitcoin)",
+    "wa_method_revolut": "Revolut",
+    "whatsapp_order_msg_with_method": "Hello, I placed order #{code} and I'd like to pay with {method}. Please send me the wallet address."
   },
   "CryptoGuide": {
     "title": "Complete Guide to Paying with Cryptocurrency | Soughat Shop",
