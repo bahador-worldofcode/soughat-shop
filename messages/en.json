@@ -635,9 +635,8 @@
       "If you don't have the Revolut app yet, install it from your app store and create an account (verification usually takes a few minutes).",
       "From the bottom menu, open the Crypto section.",
       "Choose Tether (USDT) or Solana (SOL) and buy exactly the amount your order needs.",
-      "Go back to Crypto, select the coin you bought, and tap Send.",
-      "If you bought USDT, make sure to select the TRC20 (Tron) network — the exact one Soughat Shop uses; if you bought SOL, no network selection is needed.",
-      "Paste the wallet address our team sends you and confirm the transfer."
+      "Go back to Crypto, select the coin you bought, tap Send, and choose the Solana network — much lower fees and faster.",
+      "Paste the wallet address our team sends you on WhatsApp and confirm the transfer."
     ],
     "other_modal_title": "No problem!",
     "other_modal_text": "Whatever app or exchange you already use (Coinbase, Binance, Cash App, Kraken, or anything else), it almost certainly supports buying and sending crypto. Just tell us on WhatsApp what you're using, and we'll walk you through it step by step for that exact app.",
