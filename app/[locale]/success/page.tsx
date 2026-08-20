@@ -24,6 +24,11 @@ function SuccessContent() {
   // صفحه بر اساسِ همین مقدار تصمیم می‌گیره کدوم تجربه رو نشون بده.
   const [orderStatus, setOrderStatus] = useState<string | null>(null);
 
+  // 🆕 اگه مشتری توی صفحه‌ی پرداخت تیکِ «ارز دیگه‌ای می‌خوام» رو زده
+  // بود، همینجا هم می‌فهمیم — تا پیامِ آماده‌ی واتساپ خودکار یک خط
+  // اضافه بگیره و پشتیبانی از همون پیامِ اول بفهمه.
+  const [wantsAltCrypto, setWantsAltCrypto] = useState(false);
+
   // قبل از این اصلاح، این صفحه به هر orderId توی آدرس اعتماد می‌کرد؛ حتی اگر
   // کسی مستقیم یک لینک ساختگی (یا حتی pending_order_id خودِ کاربر که هنوز
   // پرداخت نشده) را باز می‌کرد، سبد خریدش پاک و پیام «پرداخت موفق» نشانش
@@ -49,6 +54,7 @@ function SuccessContent() {
         if (data?.exists) {
           setTrackingCode(orderId);
           setOrderStatus(data.status ?? null);
+          setWantsAltCrypto(!!data.wantsAltCrypto);
           clearCart();
           setIsValid(true);
         } else {
@@ -190,7 +196,11 @@ function SuccessContent() {
             معنا نداره و نباید نشون داده بشه. */}
         {!isPaid && (
           <a 
-              href={`https://wa.me/16506712358?text=${encodeURIComponent(t('whatsapp_order_msg', { code: trackingCode }))}`}
+              href={`https://wa.me/16506712358?text=${encodeURIComponent(
+                wantsAltCrypto
+                  ? `${t('whatsapp_order_msg', { code: trackingCode })}\n\n${t('whatsapp_alt_crypto_suffix')}`
+                  : t('whatsapp_order_msg', { code: trackingCode })
+              )}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 w-full py-4 px-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-green-200 hover:-translate-y-1"
@@ -232,3 +242,33 @@ export default function SuccessPage() {
     </Suspense>
   );
 }
+
+===== File: app/[locale]/terms/loading.tsx =====
+# Modified: 2026-07-04T00:04:10.613410 | Size: 170 bytes | SHA1: 00f3c8825f30065f44f04e76113c556c0a5be084
+import SimplePageSkeleton from '@/components/skeletons/SimplePageSkeleton';
+
+export default function TermsLoading() {
+  return <SimplePageSkeleton cardCount={3} />;
+}
+
+===== File: app/[locale]/terms/page.tsx =====
+# Modified: 2026-08-18T02:58:30.622512 | Size: 4566 bytes | SHA1: 7e9fa8399026a61d2ee382df8b3f54e82fc220e4
+// مسیر این فایل در پروژه: app/[locale]/terms/page.tsx
+import { ShieldCheck, AlertCircle, CheckCircle } from 'lucide-react';
+import { Link } from '@/i18n/navigation';
+import { getTranslations } from 'next-intl/server';
+import type { Metadata } from 'next';
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({locale, namespace: 'Terms'});
+  const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat.shop';
+
+  return {
+    title: t('title'),
+    description: t('header_desc'),
+    alternates: {
+      canonical: `${siteUrl}/${locale}/terms`,
+      languages: {
+        'fa': `${siteUrl}/fa/terms`,
+        'en': `${siteUrl}/en/terms`,

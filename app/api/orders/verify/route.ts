@@ -27,7 +27,7 @@ export async function GET(request: Request) {
 
     const { data, error } = await supabaseAdmin
       .from('orders')
-      .select('id, status')
+      .select('id, status, wants_alt_crypto')
       .eq('id', orderId)
       .single();
 
@@ -35,7 +35,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ exists: false }, { status: 200 });
     }
 
-    return NextResponse.json({ exists: true, status: data.status }, { status: 200 });
+    return NextResponse.json(
+      { exists: true, status: data.status, wantsAltCrypto: !!data.wants_alt_crypto },
+      { status: 200 }
+    );
   } catch (error: any) {
     // اگر orderId فرمت درستی نداشته باشد (مثلاً UUID نامعتبر)، همینجا با خطا مواجه می‌شویم؛
     // در این حالت هم باید safe-fail کنیم و بگوییم سفارش معتبر نیست، نه اینکه 500 برگردانیم
@@ -43,3 +46,4 @@ export async function GET(request: Request) {
     return NextResponse.json({ exists: false }, { status: 200 });
   }
 }
+

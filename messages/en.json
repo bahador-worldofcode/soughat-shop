@@ -501,7 +501,9 @@
       "SEK": "Swedish Krona"
     },
     "calc_error_title": "This payment can't be completed",
-    "calc_error_generic": "Something went wrong while calculating the amount. Please try again."
+    "calc_error_generic": "Something went wrong while calculating the amount. Please try again.",
+    "alt_crypto_checkbox_label": "I'd like to pay with a different cryptocurrency",
+    "alt_crypto_confirm_note": "No problem — go ahead and confirm with USDT as shown above. Once you message us on WhatsApp, just tell us which coin you'd actually like to pay with and we'll arrange it."
   },
   "Track": {
     "title": "Track Your Order",
@@ -609,7 +611,8 @@
     "tracking_code_label": "Order Tracking Code",
     "copied_label": "Copied",
     "whatsapp_get_address_btn": "Get Wallet Address via WhatsApp",
-    "whatsapp_order_msg": "Hello, I placed order #{code}. Please provide the wallet address for payment."
+    "whatsapp_order_msg": "Hello, I placed order #{code}. Please provide the wallet address for payment.",
+    "whatsapp_alt_crypto_suffix": "🪙 By the way, I'd like to pay with a different cryptocurrency (not USDT or Solana)."
   },
   "CryptoGuide": {
     "title": "Complete Guide to Paying with Cryptocurrency | Soughat Shop",

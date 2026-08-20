@@ -7,7 +7,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { orderId, paymentMethod } = body;
+    const { orderId, paymentMethod, wantsAltCrypto } = body;
 
     // 1. دریافت اطلاعات کامل سفارش از دیتابیس
     const { data: order, error } = await supabaseAdmin
@@ -17,6 +17,17 @@ export async function POST(request: Request) {
       .single();
 
     if (error || !order) throw new Error('Order not found');
+
+    // 🆕 اگه مشتری تیکِ «ارز دیگه‌ای می‌خوام» رو زده، همین‌جا روی خودِ
+    // سفارش ذخیره‌ش می‌کنیم — هم برای پنل ادمین، هم برای اینکه صفحه‌ی
+    // موفقیت بتونه پیامِ واتساپ رو بر همون اساس تنظیم کنه.
+    if (wantsAltCrypto === true) {
+      await supabaseAdmin
+        .from('orders')
+        .update({ wants_alt_crypto: true })
+        .eq('id', orderId);
+      order.wants_alt_crypto = true;
+    }
 
     // فقط وقتی این بخش به پیام اضافه می‌شود که:
     // ۱) سفارش شامل محصولِ «ارسال حواله نقدی» باشد
@@ -41,7 +52,7 @@ export async function POST(request: Request) {
 🛍 *سفارش جدید (پرداخت شده)*
 🔖 کد: ${order.id}
 💎 *روش پرداخت: ${paymentMethod}*
-➖➖➖➖➖➖➖➖
+${order.wants_alt_crypto ? '🪙 *توجه: مشتری می‌خواد با یک ارزِ دیجیتالِ دیگه (نه تتر/سولانا) پرداخت کنه — منتظرِ پیامِ واتساپش با اسمِ ارز باش.*\n' : ''}➖➖➖➖➖➖➖➖
 🌍 *اطلاعات فرستنده (خارج):*
 👤 نام: ${order.sender_name}
 📱 تلفن: ${order.sender_phone}
@@ -80,4 +91,6 @@ ${order.order_notes || 'ندارد'}
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+
 

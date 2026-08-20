@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useStore } from '@/lib/store';
-import { Loader2, CheckCircle, Info, RefreshCw, ShieldCheck, Calculator } from 'lucide-react';
+import { Loader2, CheckCircle, Info, RefreshCw, ShieldCheck, Calculator, Coins } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
@@ -50,6 +50,14 @@ export default function CryptoPayment({ orderId }: Props) {
   const [calcError, setCalcError] = useState<string>('');
 
   const [isChecking, setIsChecking] = useState(false);
+
+  // 🆕 مشتری فقط با تتر و سولانا محدود نیست — اگه ارزِ دیگه‌ای می‌خواد،
+  // همینجا با یک تیک ساده اعلامش می‌کنه؛ سفارش با همون تتر (به‌عنوانِ
+  // مرجعِ محاسبه) ثبت می‌شه و این ترجیح هم روی سفارش ذخیره و هم توی
+  // پیامِ ادمین و پیامِ واتساپِ صفحه‌ی موفقیت به‌صورتِ خودکار منعکس
+  // می‌شه — بدون اینکه از مشتری اسمِ دقیقِ ارز رو همینجا بپرسیم (اون
+  // بخش رو پشتیبانی توی واتساپ ازش می‌پرسه).
+  const [wantsAltCrypto, setWantsAltCrypto] = useState(false);
 
   useEffect(() => {
     async function fetchMethods() {
@@ -111,7 +119,8 @@ export default function CryptoPayment({ orderId }: Props) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 orderId: orderId,
-                paymentMethod: selectedMethod?.symbol || 'Crypto'
+                paymentMethod: selectedMethod?.symbol || 'Crypto',
+                wantsAltCrypto
             })
         });
 
@@ -210,6 +219,27 @@ export default function CryptoPayment({ orderId }: Props) {
             </button>
           ))}
         </div>
+
+        {/* 🆕 تیکِ «ارز دیگه‌ای می‌خوام» — عمداً کوچیک و کم‌رنگه که با
+            دکمه‌های اصلیِ بالا رقابتِ بصری نکنه؛ فقط برای کسی که واقعاً
+            دنبالشه قابلِ‌دیدنه. */}
+        <div className="flex items-center justify-center mt-3">
+          <label className="flex items-center gap-1.5 text-xs text-blue-700/70 hover:text-blue-700 cursor-pointer transition-colors select-none">
+            <input
+              type="checkbox"
+              checked={wantsAltCrypto}
+              onChange={(e) => setWantsAltCrypto(e.target.checked)}
+              className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0"
+            />
+            <Coins className="h-3.5 w-3.5" />
+            <span>{t('alt_crypto_checkbox_label')}</span>
+          </label>
+        </div>
+        {wantsAltCrypto && (
+          <p className="text-[11px] text-center text-blue-700 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 mt-2 max-w-sm mx-auto leading-5">
+            {t('alt_crypto_confirm_note')}
+          </p>
+        )}
       </div>
 
       <div className="p-6">
@@ -337,4 +367,6 @@ export default function CryptoPayment({ orderId }: Props) {
     </div>
   );
 }
+
+
 
