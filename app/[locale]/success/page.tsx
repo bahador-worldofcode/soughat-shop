@@ -242,33 +242,3 @@ export default function SuccessPage() {
     </Suspense>
   );
 }
-
-===== File: app/[locale]/terms/loading.tsx =====
-# Modified: 2026-07-04T00:04:10.613410 | Size: 170 bytes | SHA1: 00f3c8825f30065f44f04e76113c556c0a5be084
-import SimplePageSkeleton from '@/components/skeletons/SimplePageSkeleton';
-
-export default function TermsLoading() {
-  return <SimplePageSkeleton cardCount={3} />;
-}
-
-===== File: app/[locale]/terms/page.tsx =====
-# Modified: 2026-08-18T02:58:30.622512 | Size: 4566 bytes | SHA1: 7e9fa8399026a61d2ee382df8b3f54e82fc220e4
-// مسیر این فایل در پروژه: app/[locale]/terms/page.tsx
-import { ShieldCheck, AlertCircle, CheckCircle } from 'lucide-react';
-import { Link } from '@/i18n/navigation';
-import { getTranslations } from 'next-intl/server';
-import type { Metadata } from 'next';
-
-export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
-  const { locale } = await params;
-  const t = await getTranslations({locale, namespace: 'Terms'});
-  const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://soughat.shop';
-
-  return {
-    title: t('title'),
-    description: t('header_desc'),
-    alternates: {
-      canonical: `${siteUrl}/${locale}/terms`,
-      languages: {
-        'fa': `${siteUrl}/fa/terms`,
-        'en': `${siteUrl}/en/terms`,
