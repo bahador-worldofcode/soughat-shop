@@ -258,7 +258,7 @@ export default function WalletTopupPayment({ topupId, requestedAmount, requested
 
            <div className="flex justify-between items-center text-gray-500 text-sm">
              <span>{t('fiat_value')}</span>
-             <span className="font-mono">{displaySymbol} {displayPrice}</span>
+             <span className="font-mono">{displaySymbol} {Number(displayPrice).toFixed(2)}</span>
            </div>
 
            <div className="flex justify-between items-center text-gray-900 border-t border-gray-200 pt-3">
@@ -343,3 +343,4 @@ export default function WalletTopupPayment({ topupId, requestedAmount, requested
     </div>
   );
 }
+

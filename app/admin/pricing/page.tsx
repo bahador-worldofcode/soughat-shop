@@ -301,7 +301,7 @@ export default function PricingPage() {
                                 )}
                             </td>
                             <td className="px-6 py-4 font-mono text-gray-600">
-                                ${product.price}
+                                ${Number(product.price).toFixed(2)}
                             </td>
                             <td className="px-6 py-4">
                                 {isGold ? (
@@ -309,7 +309,7 @@ export default function PricingPage() {
                                 ) : (
                                     <div className="flex items-center gap-2">
                                         <span className={`font-mono font-bold text-lg ${isMoreExpensive ? 'text-red-500' : isCheaper ? 'text-green-500' : 'text-gray-800'}`}>
-                                            ${newCalculatedPrice}
+                                            ${Number(newCalculatedPrice).toFixed(2)}
                                         </span>
                                         {isMoreExpensive && <span className="text-[10px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded">+{priceDiff.toFixed(2)}</span>}
                                         {isCheaper && <span className="text-[10px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded">{priceDiff.toFixed(2)}</span>}
@@ -325,3 +325,4 @@ export default function PricingPage() {
     </div>
   );
 }
+

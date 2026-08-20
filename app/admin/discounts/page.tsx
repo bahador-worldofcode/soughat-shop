@@ -468,11 +468,11 @@ export default function AdminDiscountsPage() {
                           <td className="p-3 font-mono text-[11px] text-gray-500 dir-ltr">{o.id.slice(0, 8)}…</td>
                           <td className="p-3 text-gray-800">{o.customer_name}</td>
                           <td className="p-3 font-mono text-xs text-blue-600">{o.discount_code}</td>
-                          <td className="p-3 font-mono text-gray-600">${o.subtotal_price}</td>
+                          <td className="p-3 font-mono text-gray-600">${Number(o.subtotal_price).toFixed(2)}</td>
                           <td className="p-3 font-bold text-gray-700">{o.discount_percent}٪</td>
-                          <td className="p-3 font-mono text-green-700">-${o.discount_amount_usd}</td>
+                          <td className="p-3 font-mono text-green-700">-${Number(o.discount_amount_usd).toFixed(2)}</td>
                           <td className="p-3 font-mono font-bold text-gray-900">
-                            ${o.total_price}
+                            ${Number(o.total_price).toFixed(2)}
                             {mismatch && (
                               <span className="ms-2 inline-flex items-center gap-1 text-[10px] font-bold text-red-600">
                                 <AlertCircle className="h-3 w-3" /> ناهم‌خوانی!
@@ -592,3 +592,4 @@ export default function AdminDiscountsPage() {
     </div>
   );
 }
+

@@ -315,12 +315,12 @@ export default function OrderDetailsModal({ orderId, onClose }: Props) {
                           'en-US',
                           { minimumFractionDigits: 2, maximumFractionDigits: 2 }
                         )} ${!FIAT_SYMBOLS[order.display_currency || ''] ? order.display_currency ?? '' : ''}`
-                      : `$${order.total_price}`}
+                      : `$${Number(order.total_price).toFixed(2)}`}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
                   <span>{t('usd_reference')}</span>
-                  <span className="font-mono text-gray-700 dir-ltr">${order.total_price} USD</span>
+                  <span className="font-mono text-gray-700 dir-ltr">${Number(order.total_price).toFixed(2)} USD</span>
                 </div>
               </div>
 
@@ -479,7 +479,7 @@ export default function OrderDetailsModal({ orderId, onClose }: Props) {
                     <>
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-gray-500">{t('subtotal_label')}</span>
-                        <span className="font-mono text-gray-700">${order.subtotal_price}</span>
+                        <span className="font-mono text-gray-700">${Number(order.subtotal_price).toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between items-center text-sm">
                         <span className="flex items-center gap-1.5 text-green-700">
@@ -488,14 +488,14 @@ export default function OrderDetailsModal({ orderId, onClose }: Props) {
                           <span className="font-mono text-[11px] text-green-600">({order.discount_code})</span>
                         </span>
                         <span className="font-mono text-green-700 font-bold">
-                          -${order.discount_amount_usd}
+                          -${Number(order.discount_amount_usd).toFixed(2)}
                         </span>
                       </div>
                     </>
                   )}
                   <div className="flex justify-between items-center pt-2 border-t border-gray-100">
                     <span className="font-bold text-gray-600">{t('order_total_label')}</span>
-                    <span className="text-2xl font-bold text-blue-700 font-mono">${order.total_price}</span>
+                    <span className="text-2xl font-bold text-blue-700 font-mono">${Number(order.total_price).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -528,3 +528,4 @@ export default function OrderDetailsModal({ orderId, onClose }: Props) {
     </div>
   );
 }
+

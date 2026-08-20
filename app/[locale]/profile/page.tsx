@@ -1183,7 +1183,7 @@ export default function ProfilePage() {
                         <span className="font-bold text-gray-900 text-sm">
                           {order.display_fiat_amount
                             ? `${order.display_fiat_amount.toLocaleString()} ${order.display_currency ?? ''}`
-                            : `$${order.total_price}`}
+                            : `$${Number(order.total_price).toFixed(2)}`}
                         </span>
                         {/* 🆕 سفارشی که هنوز پرداخت نشده — مشتری از همین‌جا،
                             بدون نیاز به پیام دادن یا وارد کردن دوباره‌ی
@@ -1757,3 +1757,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+

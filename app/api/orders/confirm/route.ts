@@ -62,8 +62,8 @@ ${itemsList}
 ${order.order_notes || 'ندارد'}
 ➖➖➖➖➖➖➖➖
 💰 *مالی:*
-💵 پایه: ${order.total_price} دلار
-💱 پرداختی مشتری: ${order.display_currency} ${order.display_fiat_amount}
+💵 پایه: ${Number(order.total_price).toFixed(2)} دلار
+💱 پرداختی مشتری: ${order.display_currency} ${order.display_fiat_amount != null ? Number(order.display_fiat_amount).toFixed(2) : "-"}
 ✅ وضعیت: مشتری اعلام پرداخت کرده
 ➖➖➖➖➖➖➖➖
 `.trim();
@@ -80,3 +80,4 @@ ${order.order_notes || 'ندارد'}
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+

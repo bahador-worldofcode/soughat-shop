@@ -235,7 +235,7 @@ export default function OrdersPage() {
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-900 dir-ltr">${order.total_price}</td>
+                  <td className="px-6 py-4 text-sm font-bold text-gray-900 dir-ltr">${Number(order.total_price).toFixed(2)}</td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${getStatusColor(order.status)}`}>
                       {getStatusText(order.status)}
@@ -328,7 +328,7 @@ export default function OrdersPage() {
                   </div>
                   <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
                       <span>ارزش پایه ثبت شده (برای کریپتو):</span>
-                      <span className="font-mono text-gray-700">${selectedOrder.total_price} USD</span>
+                      <span className="font-mono text-gray-700">${Number(selectedOrder.total_price).toFixed(2)} USD</span>
                   </div>
               </div>
               
@@ -489,18 +489,18 @@ export default function OrdersPage() {
                         <img src={item.image} className="w-12 h-12 rounded-lg object-cover border border-gray-200" />
                         <div className="flex-1">
                             <p className="text-sm font-bold text-gray-900">{item.title}</p>
-                            <p className="text-xs text-gray-500">قیمت واحد: ${item.price}</p>
+                            <p className="text-xs text-gray-500">قیمت واحد: ${Number(item.price).toFixed(2)}</p>
                         </div>
                         <div className="text-left">
                             <span className="block font-bold text-gray-900">x{item.quantity}</span>
-                            <span className="block text-sm font-bold text-blue-600 font-mono">${item.price * item.quantity}</span>
+                            <span className="block text-sm font-bold text-blue-600 font-mono">${(item.price * item.quantity).toFixed(2)}</span>
                         </div>
                         </div>
                     ))}
                  </div>
                  <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-100">
                     <span className="font-bold text-gray-600">جمع کل سفارش (دلار)</span>
-                    <span className="text-2xl font-bold text-blue-700 font-mono">${selectedOrder.total_price}</span>
+                    <span className="text-2xl font-bold text-blue-700 font-mono">${Number(selectedOrder.total_price).toFixed(2)}</span>
                  </div>
               </div>
 
@@ -511,3 +511,4 @@ export default function OrdersPage() {
     </div>
   );
 }
+

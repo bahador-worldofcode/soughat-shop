@@ -51,8 +51,8 @@ export async function POST(request: Request) {
 💰 مبلغِ دقیقِ قابلِ‌پرداخت: ${payableAmount || '-'} ${paymentMethod}
 👤 مشتری: ${topup.profiles?.full_name || '-'} (${topup.profiles?.email || '-'})
 📱 تلفن: ${topup.profiles?.phone || '-'}
-💱 مبلغ درخواستی: ${topup.requested_currency} ${topup.requested_amount}
-💵 معادل دلاری: $${topup.amount_usd}
+💱 مبلغ درخواستی: ${topup.requested_currency} ${Number(topup.requested_amount).toFixed(2)}
+💵 معادل دلاری: $${Number(topup.amount_usd).toFixed(2)}
 ✅ وضعیت: مشتری اعلام پرداخت کرده — منتظر تایید دستی ادمین
 ➖➖➖➖➖➖➖➖
 برای شارژ کیف‌پول، پنل ادمین → «کیف‌پول مشتریان» → تایید کن.
@@ -65,3 +65,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+

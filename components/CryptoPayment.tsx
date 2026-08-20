@@ -249,7 +249,7 @@ export default function CryptoPayment({ orderId }: Props) {
            <div className="flex justify-between items-center text-gray-500 text-sm">
              <span>{t('fiat_value')}</span>
              <span className="font-mono">
-               {displayPrice !== null ? `${displaySymbol} ${displayPrice}` : '...'}
+               {displayPrice !== null ? `${displaySymbol} ${displayPrice.toFixed(2)}` : '...'}
              </span>
            </div>
            
@@ -337,3 +337,4 @@ export default function CryptoPayment({ orderId }: Props) {
     </div>
   );
 }
+

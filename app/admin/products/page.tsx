@@ -511,7 +511,7 @@ export default function ProductsPage() {
                                 </div>
                             )}
                             <div className="mt-auto flex justify-between items-end">
-                                <span className="text-lg font-bold text-blue-600">${product.price}</span>
+                                <span className="text-lg font-bold text-blue-600">${Number(product.price).toFixed(2)}</span>
                                 {isGold && <span className="text-[10px] text-gray-400 font-mono">{product.weight}g</span>}
                             </div>
                         </div>
@@ -544,7 +544,7 @@ export default function ProductsPage() {
                                         {isUnavailable && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full">ناموجود</span>}
                                     </div>
                                     <div className="text-xs text-gray-500 flex gap-2">
-                                        <span>${product.price}</span>
+                                        <span>${Number(product.price).toFixed(2)}</span>
                                         {isGold && <span className="border-r pr-2 border-gray-300">{product.weight} گرم</span>}
                                     </div>
                                 </div>
@@ -818,3 +818,4 @@ export default function ProductsPage() {
     </div>
   );
 }
+
