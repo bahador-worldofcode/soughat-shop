@@ -7,6 +7,8 @@
 // فرمول و لحن محتوا قبل از تولید ۳۸ شهر باقی‌مونده تایید بشه.
 // بقیه‌ی ۳۸ شهر رو با همین ساختار دقیق اضافه می‌کنیم.
 
+import { citiesContentExpansion } from "./citiesContentExpansion";
+
 export type CityContentSection = {
   title: string;
   paragraph: string;
@@ -34,7 +36,7 @@ export type CityContent = {
 
 type Locale = "fa" | "en";
 
-export const citiesContent: Record<Locale, Record<string, CityContent>> = {
+const citiesContentBase: Record<Locale, Record<string, CityContent>> = {
   fa: {
     "los-angeles": {
       heroIntro:
@@ -1627,3 +1629,10 @@ export const citiesContent: Record<Locale, Record<string, CityContent>> = {
 // محتوا نباید فرمولی/کپی با تعویض اسم شهر باشه — هرکدوم باید حداقل یکی از این محورها رو
 // واقعاً متفاوت روایت کنه: شخصیت جامعه‌ی ایرانی همون شهر، ارز محلی، اختلاف ساعت،
 // و زاویه‌ی احساسی مناسبت‌ها.
+
+// محتوای ۳۲ شهر جدید (فاز دوم گسترش سئو) اینجا با محتوای ۴۰ شهر قبلی ادغام می‌شه.
+// citiesContentBase (بالا) دست‌نخورده باقی می‌مونه — چیزی به آن اضافه یا از آن کم نشده.
+export const citiesContent: Record<Locale, Record<string, CityContent>> = {
+  fa: { ...citiesContentBase.fa, ...citiesContentExpansion.fa },
+  en: { ...citiesContentBase.en, ...citiesContentExpansion.en },
+};

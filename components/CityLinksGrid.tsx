@@ -112,7 +112,7 @@ export function CityLinksGrid({ locale }: { locale: Locale }) {
           <Globe className="h-9 w-9 shrink-0 text-blue-500" />
           <div className="text-right">
             <p className="text-[15px] font-bold text-slate-800">
-              {locale === "fa" ? "همه‌ی ۴۰ شهر" : "All 40 cities"}
+              {locale === "fa" ? `همه‌ی ${Object.keys(citiesContent.fa).length} شهر` : `All ${Object.keys(citiesContent.fa).length} cities`}
             </p>
             <p className="text-xs text-slate-400">
               {locale === "fa" ? "انتخاب از سایر شهرهای جهان" : "Browse every city we cover"}

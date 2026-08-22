@@ -18,6 +18,7 @@ const REGION_LABEL: Record<CityRegion, { fa: string; en: string }> = {
   europe: { fa: "اروپا", en: "Europe" },
   oceania: { fa: "استرالیا و اقیانوسیه", en: "Australia & Oceania" },
   "middle-east": { fa: "خاورمیانه", en: "Middle East" },
+  asia: { fa: "آسیا", en: "Asia" },
 };
 
 export async function generateMetadata({
@@ -65,7 +66,7 @@ export default async function SendGiftToIranHubPage({
       acc[city.region] = [...(acc[city.region] ?? []), city];
       return acc;
     },
-    { "north-america": [], europe: [], oceania: [], "middle-east": [] }
+    { "north-america": [], europe: [], oceania: [], "middle-east": [], asia: [] }
   );
 
   return (

@@ -233,7 +233,7 @@ export default async function CityLandingPage({ params }: PageProps) {
             className="mt-8 flex items-center justify-between rounded-2xl border-2 border-dashed border-blue-200 bg-white p-5 transition-colors hover:bg-blue-50/50"
           >
             <span className="text-sm font-bold text-gray-800">
-              {locale === "fa" ? "شهر خودت رو نمی‌بینی؟ همه‌ی ۴۰ شهر رو ببین" : "Don't see your city? Browse all 40 cities"}
+              {locale === "fa" ? `شهر خودت رو نمی‌بینی؟ همه‌ی ${Object.keys(citiesContent.fa).length} شهر رو ببین` : `Don't see your city? Browse all ${Object.keys(citiesContent.fa).length} cities`}
             </span>
             <ArrowLeft className={`h-5 w-5 text-blue-500 ${!isRtl ? "rotate-180" : ""}`} />
           </a>
